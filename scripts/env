@@ -1,0 +1,6 @@
+#Docker volume specs can only use absolute path
+DOCKER_IMAGE=tezos/tezos:v7.0-rc1_cde7fbbb_20200416150132
+PROJECT_ROOT_DIR=$(cd -- "${BASH_SOURCE%/*}/../" && pwd)
+echo "Project root dir: ${PROJECT_ROOT_DIR}"
+
+set +o allexport
