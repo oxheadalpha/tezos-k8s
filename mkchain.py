@@ -2,6 +2,7 @@ import argparse
 import subprocess
 import os
 import sys
+import json
 
 common_templates = ["deployment/tznode.yaml"]
 local_templates = []
@@ -9,7 +10,9 @@ eks_templates = []
 
 my_path = os.path.abspath(os.path.dirname(__file__))
 config_path = os.path.join(my_path, "work", "node", "config.json")
+parameters_path = os.path.join(my_path, "work", "client", "parameters.json")
 tezos_dir = os.path.expanduser('~/.tq/')
+
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -27,6 +30,9 @@ def get_args():
     )
     parser.add_argument(
         "-c", "--config-file", default=config_path
+    )
+    parser.add_argument(
+        "-p", "--parameters-file", default=parameters_path
     )
     parser.add_argument(
         "-e", "--extra", action="append", help="pass additional template values in the form foo=bar"
@@ -53,7 +59,8 @@ def main():
     args = vars(get_args())
 
     # assign the contents of config.json to a template variable for the ConfigMap
-    args["config_json"] = open(args["config_file"], 'r').read()
+    args["config_json"] = json.dumps(json.load(open(args["config_file"], 'r')))
+    args["parameters_json"] = json.dumps(json.load(open(args["parameters_file"], 'r')))
     if args["extra"]:
         for extra in args["extra"]:
             arg, val = extra.split("=", 1)
