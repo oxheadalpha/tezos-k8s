@@ -14,7 +14,7 @@ tezos_dir = os.path.expanduser('~/.tq/')
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("chain-name")
-    parser.add_argument("tezos-dir", default=tezos_dir)
+    parser.add_argument("--tezos-dir", default=tezos_dir)
 
     subparsers = parser.add_subparsers(help="targets")
 
@@ -59,20 +59,20 @@ def main():
             arg, val = extra.split("=", 1)
             args[arg] = val
 
-    if args.get("minikube"):
-        minkube_gw, minicube_iface = subprocess.check_output(
-            '''minikube ssh "route -n | awk /^0.0.0.0/'{print \$2 \" \" \$8}'"''',
-            shell=True,
-        ).split()
-        minikube_ip = subprocess.check_output(
-            '''minikube ssh "ip addr show eth0|awk /^[[:space:]]+inet/'{print \$2}'"''',
-            shell=True,
-        ).split("/")[0]
+    # if args.get("minikube"):
+    #     minkube_gw, minicube_iface = subprocess.check_output(
+    #         '''minikube ssh "route -n | awk /^0.0.0.0/'{print \$2 \" \" \$8}'"''',
+    #         shell=True,
+    #     ).split()
+    #     minikube_ip = subprocess.check_output(
+    #         '''minikube ssh "ip addr show eth0|awk /^[[:space:]]+inet/'{print \$2}'"''',
+    #         shell=True,
+    #     ).split("/")[0]
 
     if args["stdout"]:
         out = sys.stdout
     else:
-        out = open("tq-{}.yaml".format(args["chain_name"]), "wb")
+        out = open("tq-{}.yaml".format(args["chain-name"]), "wb")
 
     with out as yaml_file:
         for template in args["template"]:
@@ -80,7 +80,7 @@ def main():
                 template = template_file.read()
                 out_yaml = template.format(**args)
             yaml_file.write(out_yaml.encode("utf-8"))
-            yaml_file.write("\n---\n")
+            yaml_file.write(b"\n---\n")
 
 
 if __name__ == "__main__":
