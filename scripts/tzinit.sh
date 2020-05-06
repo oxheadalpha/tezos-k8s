@@ -10,9 +10,10 @@ usage() {
     echo "  [--chain-name]  private chain name"
 }
 
+
 gen_key() {
     # generate a genesis key
-    docker run --rm -v $WORK_DIR/client:/data $DOCKER_IMAGE tezos-client -d /data --protocol PsCARTHAGazK gen keys genesis --force
+    docker run --entrypoint /usr/local/bin/tezos-client -u $UID --rm -v $WORK_DIR/client:/data $DOCKER_IMAGE -d /data --protocol PsCARTHAGazK gen keys genesis --force
 }
 
 write_config() {
@@ -55,7 +56,7 @@ EOM
 
 gen_id() {
     # generate first node id using genesis config
-    docker run --rm --entrypoint "/usr/local/bin/tezos-node" -v $WORK_DIR/node:/data $DOCKER_IMAGE identity generate --data-dir /data --config-file /data/config.json
+    docker run -u $UID --rm --entrypoint "/usr/local/bin/tezos-node" -v $WORK_DIR/node:/data $DOCKER_IMAGE identity generate --data-dir /data --config-file /data/config.json
 }
 
 while true; do
