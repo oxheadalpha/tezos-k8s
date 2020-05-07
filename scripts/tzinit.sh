@@ -90,7 +90,7 @@ write_parameters() {
     "time_between_blocks": [
       "10",
       "20"
-    ]
+    ],
     "endorsers_per_block": 32,
     "hard_gas_limit_per_operation": "800000",
     "hard_gas_limit_per_block": "8000000",
