@@ -10,9 +10,9 @@ eks_templates = []
 
 my_path = os.path.abspath(os.path.dirname(__file__))
 init_path = os.path.join(my_path, "scripts", "tzinit.sh")
-config_path = os.path.join(my_path, "work", "node", "config.json")
-parameters_path = os.path.join(my_path, "work", "client", "parameters.json")
 tezos_dir = os.path.expanduser("~/.tq/")
+config_path = os.path.join(tezos_dir, "node", "config.json")
+parameters_path = os.path.join(tezos_dir, "client", "parameters.json")
 
 
 def get_args():
@@ -61,9 +61,6 @@ def get_args():
 def main():
 
     args = vars(get_args())
-    # assign the contents of config.json to a template variable for the ConfigMap
-    args["config_json"] = json.dumps(json.load(open(args["config_file"], "r")))
-    args["parameters_json"] = json.dumps(json.load(open(args["parameters_file"], "r")))
     if args["extra"]:
         for extra in args["extra"]:
             arg, val = extra.split("=", 1)
@@ -78,7 +75,7 @@ def main():
             minikube_ip = subprocess.check_output(
                 '''minikube ssh "ip addr show eth0|awk /^[[:space:]]+inet/'{print \$2}'"''',
                 shell=True,
-            ).split("/")[0]
+            ).split(b"/")[0]
         except subprocess.CalledProcessError as e:
             print("failed to get minikube route %r" % e)
 
@@ -90,10 +87,14 @@ def main():
         )
         args["template"].append("deployment/activate.yaml")
 
+    # assign the contents of config.json to a template variable for the ConfigMap
+    args["config_json"] = json.dumps(json.load(open(args["config_file"], "r")))
+    args["parameters_json"] = json.dumps(json.load(open(args["parameters_file"], "r")))
+
     if args["stdout"]:
         out = sys.stdout
     else:
-        out = open("tq-{}.yaml".format(args["chain-name"]), "wb")
+        out = open("tq-{}.yaml".format(args["chain_name"]), "wb")
 
     with out as yaml_file:
         for template in args["template"]:

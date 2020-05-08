@@ -5,7 +5,7 @@ source ${BASH_SOURCE%/*}/env
 
 usage() {
     echo "OPTIONS:"
-    echo "  [--chain-name]  private chain name"
+    echo "  [--chain-name]  private chain name [--work-dir]  storage directory"
 }
 
 tezos_client() {
