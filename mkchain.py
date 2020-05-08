@@ -9,15 +9,18 @@ local_templates = []
 eks_templates = []
 
 my_path = os.path.abspath(os.path.dirname(__file__))
+init_path = os.path.join(my_path, "scripts", "tzinit.sh")
 config_path = os.path.join(my_path, "work", "node", "config.json")
 parameters_path = os.path.join(my_path, "work", "client", "parameters.json")
-tezos_dir = os.path.expanduser('~/.tq/')
+tezos_dir = os.path.expanduser("~/.tq/")
 
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("chain-name")
+    parser.add_argument("chain_name")
     parser.add_argument("--tezos-dir", default=tezos_dir)
+    parser.add_argument("--create", action="store_true")
+    parser.add_argument("--join", help="ip of peer")
 
     subparsers = parser.add_subparsers(help="targets")
 
@@ -28,17 +31,18 @@ def get_args():
     parser.add_argument(
         "--docker-image", default="tezos/tezos:v7.0-rc1_cde7fbbb_20200416150132"
     )
+    parser.add_argument("-c", "--config-file", default=config_path)
+    parser.add_argument("-p", "--parameters-file", default=parameters_path)
     parser.add_argument(
-        "-c", "--config-file", default=config_path
-    )
-    parser.add_argument(
-        "-p", "--parameters-file", default=parameters_path
-    )
-    parser.add_argument(
-        "-e", "--extra", action="append", help="pass additional template values in the form foo=bar"
+        "-e",
+        "--extra",
+        action="append",
+        help="pass additional template values in the form foo=bar",
     )
 
-    parser_minikube = subparsers.add_parser("minikube", help="generate config for Minikube")
+    parser_minikube = subparsers.add_parser(
+        "minikube", help="generate config for Minikube"
+    )
     parser_minikube.add_argument(
         "-t", "--template", action="append", default=common_templates + local_templates
     )
@@ -57,24 +61,34 @@ def get_args():
 def main():
 
     args = vars(get_args())
-
     # assign the contents of config.json to a template variable for the ConfigMap
-    args["config_json"] = json.dumps(json.load(open(args["config_file"], 'r')))
-    args["parameters_json"] = json.dumps(json.load(open(args["parameters_file"], 'r')))
+    args["config_json"] = json.dumps(json.load(open(args["config_file"], "r")))
+    args["parameters_json"] = json.dumps(json.load(open(args["parameters_file"], "r")))
     if args["extra"]:
         for extra in args["extra"]:
             arg, val = extra.split("=", 1)
             args[arg] = val
 
-    # if args.get("minikube"):
-    #     minkube_gw, minicube_iface = subprocess.check_output(
-    #         '''minikube ssh "route -n | awk /^0.0.0.0/'{print \$2 \" \" \$8}'"''',
-    #         shell=True,
-    #     ).split()
-    #     minikube_ip = subprocess.check_output(
-    #         '''minikube ssh "ip addr show eth0|awk /^[[:space:]]+inet/'{print \$2}'"''',
-    #         shell=True,
-    #     ).split("/")[0]
+    if args.get("minikube"):
+        try:
+            minikube_route = subprocess.check_output(
+                '''minikube ssh "route -n | grep ^0.0.0.0"''', shell=True
+            ).split()
+            minkube_gw, minicube_iface = minikube_route[0], minikube_route[7]
+            minikube_ip = subprocess.check_output(
+                '''minikube ssh "ip addr show eth0|awk /^[[:space:]]+inet/'{print \$2}'"''',
+                shell=True,
+            ).split("/")[0]
+        except subprocess.CalledProcessError as e:
+            print("failed to get minikube route %r" % e)
+
+    if args["create"]:
+        subprocess.check_output(
+            "%s --chain-name %s --work-dir %s"
+            % (init_path, args["chain_name"], args["tezos_dir"]),
+            shell=True
+        )
+        args["template"].append("deployment/activate.yaml")
 
     if args["stdout"]:
         out = sys.stdout

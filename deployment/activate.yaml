@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: activate-job
+spec:
+  template:
+    metadata:
+      name: activate-job
+    spec:
+      initContainers:
+      - name: activate
+        image: {docker_image}
+        command: ["/usr/local/bin/tezos-client"]
+        args: ["-A", "tezos-rpc", "-P", "8732", "-d", "/var/tezos/client", "-l", "--block", "genesis", "activate", "protocol", "{protocol_hash}", "with", "fitness", "25", "and", "key", "genesis", "and", "parameters", "/etc/tezos/parameters.json"]
+      - name: bake
+        image: {docker_image}
+        command: ["/usr/local/bin/tezos-client"]
+        args: ["-A", "tezos-rpc", "-P", "8732", "-d", "/var/tezos/client", "-l", "bake", "for", "baker", "--minimal-timestamp"]
+      containers:
+      - name: job-done
+        image: busybox
+        command: ['sh', '-c', 'echo "private chain activated']
+      restartPolicy: Never
+      volumes:
+      - name: var-volume
+        persistentVolumeClaim:
+          claimName: tezos-pv-claim

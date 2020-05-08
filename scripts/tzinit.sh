@@ -2,8 +2,6 @@
 set -e
 
 source ${BASH_SOURCE%/*}/env
-WORK_DIR=$PROJECT_ROOT_DIR/work
-mkdir -p $WORK_DIR/{node,client}
 
 usage() {
     echo "OPTIONS:"
@@ -129,6 +127,10 @@ while true; do
             CHAIN_NAME="$2"
             shift 2
             ;;
+        --work-dir)
+            WORK_DIR="$2"
+            shift 2
+            ;;
         *)
             echo "Unexpected option \"$1\"."
             usage
@@ -146,6 +148,7 @@ fi
 
 [[ $exit_flag == "true" ]] && exit 1
 
+mkdir -p $WORK_DIR/{node,client}
 gen_key genesis
 gen_key bootstrap_account_1
 gen_key bootstrap_account_2
