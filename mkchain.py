@@ -6,16 +6,6 @@ import subprocess
 import sys
 from ipaddress import IPv4Address
 
-common_templates = ["deployment/tznode.yaml"]
-local_templates = []
-eks_templates = []
-
-my_path = os.path.abspath(os.path.dirname(__file__))
-init_path = os.path.join(my_path, "scripts", "tzinit.sh")
-tezos_dir = os.path.expanduser("~/.tq/")
-config_path = os.path.join(tezos_dir, "node", "config.json")
-parameters_path = os.path.join(tezos_dir, "client", "parameters.json")
-
 
 def run_docker(entrypoint, mount, *args, image="tezos/tezos:v7-release"):
     subprocess.check_output(
@@ -187,7 +177,8 @@ def generate_parameters_config(parameters_argv):
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("chain_name")
-    parser.add_argument("--tezos-dir", default=tezos_dir)
+
+    parser.add_argument("--tezos-dir", default=os.path.expanduser("~/.tq/"))
 
     subparsers = parser.add_subparsers(help="targets")
     create_parser = subparsers.add_parser("create", help="Create a private chain")
@@ -210,22 +201,16 @@ def get_args():
     parser_minikube = subparsers.add_parser(
         "minikube", help="generate config for Minikube"
     )
-    parser_minikube.add_argument(
-        "-t", "--template", action="append", default=common_templates + local_templates
-    )
     parser_minikube.set_defaults(minikube=True)
 
     parser_eks = subparsers.add_parser("eks", help="generate config for EKS")
-    parser_eks.add_argument(
-        "-t", "--template", action="append", default=common_templates + eks_templates
-    )
     parser_eks.add_argument("gdb_volume_id")
     parser_eks.add_argument("gdb_aws_region")
 
     return parser.parse_args()
 
 
-def write_node_config(node_dir, chain_name, genesis_key, timestamp, bootstrap_peers):
+def get_node_config(node_dir, chain_name, genesis_key, timestamp, bootstrap_peers):
 
     p2p = ["p2p"]
     for bootstrap_peer in bootstrap_peers:
@@ -245,49 +230,50 @@ def write_node_config(node_dir, chain_name, genesis_key, timestamp, bootstrap_pe
         genesis_key,
     ]
     print("node config args: %r" % node_config_args)
-    node_config = generate_node_config(node_config_args)
-
-    with open(os.path.join(node_dir, "config.json"), "w") as f:
-        json.dump(node_config, f)
+    return generate_node_config(node_config_args)
 
 
-def write_parameters_config(client_dir, bootstrap_accounts):
+def get_parameters_config(client_dir, bootstrap_accounts):
     parameter_config_argv = []
     for account in bootstrap_accounts:
-        parameter_config_argv.extend(["--bootstrap-accounts", account, get_key(client_dir, account)])
-    parameters_config = generate_parameters_config(parameter_config_argv)
-    with open(os.path.join(client_dir, "parameters.json"), "w") as f:
-        json.dump(parameters_config, f)
+        parameter_config_argv.extend(
+            ["--bootstrap-accounts", account, get_key(client_dir, account)]
+        )
+    return generate_parameters_config(parameter_config_argv)
 
 
 def main():
     args = get_args()
 
-    if os.path.exists(args.tezos_dir):
+    if "create" in args and os.path.exists(args.tezos_dir):
         raise Exception(
             "detected existing installation, please remove it first: %s"
             % (args.tezos_dir)
         )
     node_dir = os.path.join(args.tezos_dir, "node")
     client_dir = os.path.join(args.tezos_dir, "client")
-    os.makedirs(node_dir)
-    os.makedirs(client_dir)
+    os.makedirs(node_dir, exist_ok=True)
+    os.makedirs(client_dir, exist_ok=True)
 
     genesis_key = None
     timestamp = None
     bootstrap_peers = []
-    bootstrap_accounts = ["bootstrap_account_1", "bootstrap_account_2", "bootstrap_account_3"]
+    bootstrap_accounts = [
+        "bootstrap_account_1",
+        "bootstrap_account_2",
+        "bootstrap_account_3",
+    ]
+    k8s_templates = ["deployment/common.yaml", "deployment/node.yaml"]
 
     if "create" in args:
         for account in bootstrap_accounts + ["genesis"]:
             gen_key(client_dir, account)
+        genesis_key = get_key(client_dir, "genesis")
+        bootstrap_peers = []
         timestamp = (
             datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat()
         )
-        genesis_key = get_key(client_dir, "genesis")
-        bootstrap_peers = []
-
-        write_parameters_config(client_dir, bootstrap_accounts)
+        k8s_templates.append("deployment/activate.yaml")
 
     if "join" in args:
         genesis_key = args.genesis_key
@@ -296,10 +282,13 @@ def main():
         timestamp = args.timestamp
 
     # generate the id for the node.
-    write_node_config(
-        node_dir, args.chain_name, genesis_key, timestamp, bootstrap_peers
-    )
-    gen_id(node_dir)
+    node_config = get_node_config(
+            node_dir, args.chain_name, genesis_key, timestamp, bootstrap_peers
+        )
+    if not os.path.isfile(os.path.join(node_dir, "identity.json")):
+        with open(os.path.join(node_dir, "config.json"), "w") as f:
+            json.dump(node_config, f)
+        gen_id(node_dir)
 
     # if args.get("minikube"):
     #     try:
@@ -314,30 +303,21 @@ def main():
     #     except subprocess.CalledProcessError as e:
     #         print("failed to get minikube route %r" % e)
 
-    # if args["create"]:
-    #     subprocess.check_output(
-    #         "%s --chain-name %s --work-dir %s"
-    #         % (init_path, args["chain_name"], args["tezos_dir"]),
-    #         shell=True,
-    #     )
-    #     args["template"].append("deployment/activate.yaml")
+    if args.stdout:
+        out = sys.stdout
+    else:
+        out = open("tq-{}.yaml".format(args.chain_name), "wb")
 
-    # # assign the contents of config.json to a template variable for the ConfigMap
-    # args["config_json"] = json.dumps(json.load(open(args["config_file"], "r")))
-    # args["parameters_json"] = json.dumps(json.load(open(args["parameters_file"], "r")))
-
-    # if args["stdout"]:
-    #     out = sys.stdout
-    # else:
-    #     out = open("tq-{}.yaml".format(args["chain_name"]), "wb")
-
-    # with out as yaml_file:
-    #     for template in args["template"]:
-    #         with open(template) as template_file:
-    #             template = template_file.read()
-    #             out_yaml = template.format(**args)
-    #         yaml_file.write(out_yaml.encode("utf-8"))
-    #         yaml_file.write(b"\n---\n")
+    with out as yaml_file:
+        args = vars(args)
+        args["config_json"] = json.dumps(node_config)
+        args["parameters_json"] = json.dumps(get_parameters_config(client_dir, bootstrap_accounts))
+        for template in k8s_templates:
+            with open(template) as template_file:
+                template = template_file.read()
+                out_yaml = template.format(**args)
+            yaml_file.write(out_yaml.encode("utf-8"))
+            yaml_file.write(b"\n---\n")
 
 
 if __name__ == "__main__":

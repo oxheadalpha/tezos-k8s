@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tezos-baker
+  namespace: "tqtezos"
+spec:
+  selector:
+    matchLabels:
+      app: tezos-baker
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: tezos-baker
+    spec:
+      containers:
+      - image: {docker_image}
+        imagePullPolicy: Always
+        name: tezos-baker
+        command: [{baker_command}]
+        args: ["-A", "tezos-rpc", "-P", "8732", "-d", "/var/tezos/client", "--chain", {chain_name}, "run", "with", "local", "node", {node_dir}, "baker"]
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/tezos
+        - name: var-volume
+          mountPath: /var/tezos
+      volumes:
+      - name: config-volume
+        configMap:
+          name: tezos-config
+      - name: var-volume
+        persistentVolumeClaim:
+          claimName: tezos-pv-claim

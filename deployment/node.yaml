@@ -1,36 +1,4 @@
 apiVersion: v1
-kind: Namespace
-metadata:
-  name: "tqtezos"
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: tezos-pv-claim
-  namespace: "tqtezos"
-spec:
-  storageClassName: manual
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 2Gi
-  selector:
-    matchLabels:
-      storage-type: var-files
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: tezos-config
-  namespace: "tqtezos"
-data:
-  parameters.json: |
-    {parameters_json}
-  config.json: |
-    {config_json}
----
-apiVersion: v1
 kind: Service
 metadata:
   name: tezos-rpc

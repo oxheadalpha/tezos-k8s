@@ -11,17 +11,29 @@ spec:
       - name: activate
         image: {docker_image}
         command: ["/usr/local/bin/tezos-client"]
-        args: ["-A", "tezos-rpc", "-P", "8732", "-d", "/var/tezos/client", "-l", "--block", "genesis", "activate", "protocol", "{protocol_hash}", "with", "fitness", "25", "and", "key", "genesis", "and", "parameters", "/etc/tezos/parameters.json"]
+        args: ["-A", "tezos-rpc", "-P", "8732", "-d", "/var/tezos/client", "-l", "--block", "genesis", "activate", "protocol", "{protocol_hash}", "with", "fitness", "25", "and", "key", "genesis", "and", "parameters", "/etc/tezos/parameters.json"
+]
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/tezos
+        - name: var-volume
+          mountPath: /var/tezos
       - name: bake
         image: {docker_image}
         command: ["/usr/local/bin/tezos-client"]
         args: ["-A", "tezos-rpc", "-P", "8732", "-d", "/var/tezos/client", "-l", "bake", "for", "baker", "--minimal-timestamp"]
+        volumeMounts:
+        - name: var-volume
+          mountPath: /var/tezos
       containers:
       - name: job-done
         image: busybox
         command: ['sh', '-c', 'echo "private chain activated']
       restartPolicy: Never
       volumes:
+      - name: config-volume
+        configMap:
+          name: tezos-config
       - name: var-volume
         persistentVolumeClaim:
           claimName: tezos-pv-claim
