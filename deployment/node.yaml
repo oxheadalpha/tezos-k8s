@@ -7,7 +7,7 @@ spec:
   ports:
   - port: 8732
   selector:
-    app: tezos-rpc
+    app: tezos-node
 ---
 apiVersion: v1
 kind: Service
@@ -16,9 +16,9 @@ metadata:
   namespace: "tqtezos"
 spec:
   ports:
-  - port: 8733
+  - port: 9732
   selector:
-    app: tezos-net
+    app: tezos-node
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -45,7 +45,7 @@ spec:
         ports:
         - containerPort: 8732
           name: tezos-rpc
-        - containerPort: 8733
+        - containerPort: 9732
           name: tezos-net
         volumeMounts:
         - name: config-volume

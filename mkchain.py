@@ -1,9 +1,11 @@
 import argparse
-import datetime
 import json
 import os
 import subprocess
 import sys
+
+from datetime import datetime
+from datetime import timezone
 from ipaddress import IPv4Address
 
 
@@ -15,9 +17,9 @@ def run_docker(entrypoint, mount, *args, image="tezos/tezos:v7-release"):
     )
 
 
-def gen_key(client_dir, key_name):
+def gen_key(key_dir, key_name):
     entrypoint = "/usr/local/bin/tezos-client"
-    mount = client_dir + ":/data"
+    mount = key_dir + ":/data"
     run_docker(
         entrypoint,
         mount,
@@ -32,8 +34,8 @@ def gen_key(client_dir, key_name):
     )
 
 
-def get_key(client_dir, name):
-    with open(os.path.join(client_dir, "public_keys"), "r") as keyfile:
+def get_key(key_dir, name):
+    with open(os.path.join(key_dir, "public_keys"), "r") as keyfile:
         keys = json.load(keyfile)
         offset = 0
         for key in keys:
@@ -44,23 +46,7 @@ def get_key(client_dir, name):
                 return value[offset:]
 
 
-def gen_id(node_dir):
-    entrypoint = "/usr/local/bin/tezos-node"
-    mount = node_dir + ":/data"
-    run_docker(
-        entrypoint,
-        mount,
-        "identity",
-        "generate",
-        "0",
-        "--data-dir",
-        "/data",
-        "--config-file",
-        "/data/config.json",
-    )
-
-
-# FIXME - this should probably be replaced with subprocess calls to tezos-node config
+# FIXME - this should probably be replaced with subprocess calls to tezos-node-config
 def generate_node_config(node_argv):
     parser = argparse.ArgumentParser(prog="nodeconfig")
     subparsers = parser.add_subparsers(help="sub-command help", dest="subparser_name")
@@ -69,11 +55,11 @@ def generate_node_config(node_argv):
     global_parser.add_argument("--data-dir", default="/var/tezos/node")
 
     rpc_parser = subparsers.add_parser("rpc")
-    rpc_parser.add_argument("--listen-addrs", action="append", default=[":8733"])
+    rpc_parser.add_argument("--listen-addrs", action="append", default=[":8732"])
 
     p2p_parser = subparsers.add_parser("p2p")
     p2p_parser.add_argument("--bootstrap-peers", action="append", default=[])
-    p2p_parser.add_argument("--listen-addr", default="[::]:8732")
+    p2p_parser.add_argument("--listen-addr", default="[::]:9732")
     p2p_parser.add_argument("--expected-proof-of-work", default=0, type=int)
 
     network_parser = subparsers.add_parser("network")
@@ -174,43 +160,7 @@ def generate_parameters_config(parameters_argv):
     return vars(namespace)
 
 
-def get_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("chain_name")
-
-    parser.add_argument("--tezos-dir", default=os.path.expanduser("~/.tq/"))
-
-    subparsers = parser.add_subparsers(help="targets")
-    create_parser = subparsers.add_parser("create", help="Create a private chain")
-    create_parser.set_defaults(create=True)
-
-    join_parser = subparsers.add_parser("join", help="Join a private chain")
-    join_parser.set_defaults(join=True)
-    join_parser.add_argument("bootstrap_peer", help="peer ip")
-    join_parser.add_argument("genesis_key", help="genesis public key for the chain")
-    join_parser.add_argument("timestamp", help="timestamp for the chain")
-
-    parser.add_argument("--stdout", action="store_true")
-    parser.add_argument(
-        "--protocol-hash", default="PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb"
-    )
-    parser.add_argument(
-        "--docker-image", default="tezos/tezos:v7.0-rc1_cde7fbbb_20200416150132"
-    )
-
-    parser_minikube = subparsers.add_parser(
-        "minikube", help="generate config for Minikube"
-    )
-    parser_minikube.set_defaults(minikube=True)
-
-    parser_eks = subparsers.add_parser("eks", help="generate config for EKS")
-    parser_eks.add_argument("gdb_volume_id")
-    parser_eks.add_argument("gdb_aws_region")
-
-    return parser.parse_args()
-
-
-def get_node_config(node_dir, chain_name, genesis_key, timestamp, bootstrap_peers):
+def get_node_config(chain_name, genesis_key, timestamp, bootstrap_peers):
 
     p2p = ["p2p"]
     for bootstrap_peer in bootstrap_peers:
@@ -229,34 +179,78 @@ def get_node_config(node_dir, chain_name, genesis_key, timestamp, bootstrap_peer
         "--genesis-pubkey",
         genesis_key,
     ]
-    print("node config args: %r" % node_config_args)
+
     return generate_node_config(node_config_args)
 
 
-def get_parameters_config(client_dir, bootstrap_accounts):
+def get_parameters_config(key_dir, bootstrap_accounts, bootstrap_mutez):
     parameter_config_argv = []
     for account in bootstrap_accounts:
         parameter_config_argv.extend(
-            ["--bootstrap-accounts", account, get_key(client_dir, account)]
+            ["--bootstrap-accounts", get_key(key_dir, account), bootstrap_mutez]
         )
     return generate_parameters_config(parameter_config_argv)
 
 
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("chain_name")
+
+    parser.add_argument("--tezos-dir", default=os.path.expanduser("~/.tq/"))
+    parser.add_argument("--init-node", action="store_true")
+    parser.add_argument("--bootstrap-mutez", default="4000000000000")
+
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--create", action="store_true", help="Create a private chain")
+    group.add_argument("--join", action="store_true", help="Join a private chain")
+
+    subparsers = parser.add_subparsers(help="clusters")
+
+    parser.add_argument("--bootstrap_peer", help="peer ip to join")
+    parser.add_argument(
+        "--genesis_key", help="genesis public key for the chain to join"
+    )
+    parser.add_argument("--timestamp", help="timestamp for the chain to join")
+
+    parser.add_argument("--stdout", action="store_true")
+    parser.add_argument(
+        "--protocol-hash", default="PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb"
+    )
+    parser.add_argument("--docker-image", default="tezos/tezos:v7-release")
+
+    # add a parser for each cluster type we want to support
+    parser_minikube = subparsers.add_parser(
+        "minikube", help="generate config for minikube"
+    )
+    parser_minikube.set_defaults(minikube=True)
+
+    parser_eks = subparsers.add_parser("eks", help="generate config for EKS")
+    parser_eks.set_defaults(eks=True)
+    parser_eks.add_argument("gdb_volume_id")
+    parser_eks.add_argument("gdb_aws_region")
+
+    parser_kind = subparsers.add_parser("kind", help="generate config for kind")
+    parser_kind.set_defaults(kind=True)
+
+    return parser.parse_args()
+
+
 def main():
     args = get_args()
+    tokens = {}
 
-    if "create" in args and os.path.exists(args.tezos_dir):
+    if args.create and os.path.exists(args.tezos_dir):
         raise Exception(
             "detected existing installation, please remove it first: %s"
             % (args.tezos_dir)
         )
-    node_dir = os.path.join(args.tezos_dir, "node")
-    client_dir = os.path.join(args.tezos_dir, "client")
-    os.makedirs(node_dir, exist_ok=True)
-    os.makedirs(client_dir, exist_ok=True)
+
+    key_dir = os.path.join(args.tezos_dir, "client")
+    os.makedirs(key_dir, exist_ok=True)
+    os.makedirs(os.path.join(args.tezos_dir, "node"), exist_ok=True)
 
     genesis_key = None
-    timestamp = None
+    timestamp = datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
     bootstrap_peers = []
     bootstrap_accounts = [
         "bootstrap_account_1",
@@ -265,43 +259,58 @@ def main():
     ]
     k8s_templates = ["deployment/common.yaml", "deployment/node.yaml"]
 
-    if "create" in args:
+    if args.init_node:
+        k8s_templates.append("deployment/identity.yaml")
+
+    if args.create:
         for account in bootstrap_accounts + ["genesis"]:
-            gen_key(client_dir, account)
-        genesis_key = get_key(client_dir, "genesis")
+            gen_key(key_dir, account)
+        genesis_key = get_key(key_dir, "genesis")
         bootstrap_peers = []
-        timestamp = (
-            datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat()
-        )
         k8s_templates.append("deployment/activate.yaml")
 
-    if "join" in args:
+    if args.join:
         genesis_key = args.genesis_key
         # validate peer ip
         bootstrap_peers = [str(IPv4Address(args.bootstrap_peer))]
         timestamp = args.timestamp
 
-    # generate the id for the node.
-    node_config = get_node_config(
-            node_dir, args.chain_name, genesis_key, timestamp, bootstrap_peers
-        )
-    if not os.path.isfile(os.path.join(node_dir, "identity.json")):
-        with open(os.path.join(node_dir, "config.json"), "w") as f:
-            json.dump(node_config, f)
-        gen_id(node_dir)
+    if genesis_key is None:
+        genesis_key = get_key(key_dir, "genesis")
 
-    # if args.get("minikube"):
-    #     try:
-    #         minikube_route = subprocess.check_output(
-    #             '''minikube ssh "route -n | grep ^0.0.0.0"''', shell=True
-    #         ).split()
-    #         minkube_gw, minicube_iface = minikube_route[0], minikube_route[7]
-    #         minikube_ip = subprocess.check_output(
-    #             '''minikube ssh "ip addr show eth0|awk /^[[:space:]]+inet/'{print \$2}'"''',
-    #             shell=True,
-    #         ).split(b"/")[0]
-    #     except subprocess.CalledProcessError as e:
-    #         print("failed to get minikube route %r" % e)
+    if "minikube" in args:
+
+
+        try:
+            # put this at the front to make sure minikube doesn't
+            # satisfy volume claim with hostpath-provisioner before we
+            # can tell it about nfs
+            k8s_templates.insert(0, "deployment/pv-minikube.yaml")
+            minikube_route = (
+                subprocess.check_output(
+                    '''minikube ssh "route -n | grep ^0.0.0.0"''', shell=True
+                )
+                .decode("utf-8")
+                .split()
+            )
+            minikube_gw, minikube_iface = minikube_route[1], minikube_route[7]
+            minikube_ip = (
+                subprocess.check_output(
+                    '''minikube ssh "ip addr show %s|awk /^[[:space:]]+inet/'{print \$2}'"'''
+                    % minikube_iface,
+                    shell=True,
+                )
+                .decode("utf-8")
+                .split("/")[0]
+            )
+            print("Add the following line to /etc/exports and reload nfsd.")
+            print(
+                '"%s" -alldirs -mapall=%s:%s %s'
+                % (args.tezos_dir, os.getuid(), os.getgid(), minikube_ip)
+            )
+            tokens["minikube_gw"] = minikube_gw
+        except subprocess.CalledProcessError as e:
+            print("failed to get minikube route %r" % e)
 
     if args.stdout:
         out = sys.stdout
@@ -309,13 +318,17 @@ def main():
         out = open("tq-{}.yaml".format(args.chain_name), "wb")
 
     with out as yaml_file:
-        args = vars(args)
-        args["config_json"] = json.dumps(node_config)
-        args["parameters_json"] = json.dumps(get_parameters_config(client_dir, bootstrap_accounts))
+        tokens.update(vars(args))
+        tokens["config_json"] = json.dumps(
+            get_node_config(args.chain_name, genesis_key, timestamp, bootstrap_peers)
+        )
+        tokens["parameters_json"] = json.dumps(
+            get_parameters_config(key_dir, bootstrap_accounts, args.bootstrap_mutez)
+        )
         for template in k8s_templates:
             with open(template) as template_file:
                 template = template_file.read()
-                out_yaml = template.format(**args)
+                out_yaml = template.format(**tokens)
             yaml_file.write(out_yaml.encode("utf-8"))
             yaml_file.write(b"\n---\n")
 

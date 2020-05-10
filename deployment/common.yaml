@@ -9,12 +9,12 @@ metadata:
   name: tezos-pv-claim
   namespace: "tqtezos"
 spec:
-  storageClassName: manual
+  storageClassName: standard
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
-      storage: 2Gi
+      storage: 15Gi
   selector:
     matchLabels:
       storage-type: var-files

@@ -5,12 +5,12 @@ metadata:
   labels:
     storage-type: var-files
 spec:
+  storageClassName: standard
   capacity:
     storage: 15Gi
   accessModes:
-  - ReadWriteOnce
+  - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
-  storageClassName: manual
   nfs:
     path: {tezos_dir}
-    server: {minikube_ip}
+    server: {minikube_gw}
