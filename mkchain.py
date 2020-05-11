@@ -253,9 +253,9 @@ def main():
     timestamp = datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
     bootstrap_peers = []
     bootstrap_accounts = [
+        "baker",
         "bootstrap_account_1",
         "bootstrap_account_2",
-        "bootstrap_account_3",
     ]
     k8s_templates = ["deployment/common.yaml", "deployment/node.yaml"]
 
