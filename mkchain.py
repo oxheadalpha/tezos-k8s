@@ -197,7 +197,7 @@ def get_args():
     parser.add_argument("chain_name")
 
     parser.add_argument("--tezos-dir", default=os.path.expanduser("~/.tq/"))
-    parser.add_argument("--init-node", action="store_true")
+    # parser.add_argument("--init-node", action="store_true")
     parser.add_argument("--bootstrap-mutez", default="4000000000000")
 
     group = parser.add_mutually_exclusive_group()
@@ -217,6 +217,7 @@ def get_args():
         "--protocol-hash", default="PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb"
     )
     parser.add_argument("--docker-image", default="tezos/tezos:v7-release")
+    parser.add_argument("--baker-command", default="tezos-baker-006-PsCARTHA")
 
     # add a parser for each cluster type we want to support
     parser_minikube = subparsers.add_parser(
@@ -231,6 +232,9 @@ def get_args():
 
     parser_kind = subparsers.add_parser("kind", help="generate config for kind")
     parser_kind.set_defaults(kind=True)
+
+    parser_docker_desktop = subparsers.add_parser("docker-desktop", help="generate config for docker-desktop")
+    parser_docker_desktop.set_defaults(docker_desktop=True)
 
     return parser.parse_args()
 
@@ -247,7 +251,9 @@ def main():
 
     key_dir = os.path.join(args.tezos_dir, "client")
     os.makedirs(key_dir, exist_ok=True)
-    os.makedirs(os.path.join(args.tezos_dir, "node"), exist_ok=True)
+    node_dir = os.path.join(args.tezos_dir, "node")
+    tokens["node_dir"] = node_dir
+    os.makedirs(node_dir, exist_ok=True)
 
     genesis_key = None
     timestamp = datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
@@ -259,15 +265,15 @@ def main():
     ]
     k8s_templates = ["deployment/common.yaml", "deployment/node.yaml"]
 
-    if args.init_node:
-        k8s_templates.append("deployment/identity.yaml")
+    # if args.init_node:
+    #     k8s_templates.append("deployment/identity.yaml")
 
     if args.create:
         for account in bootstrap_accounts + ["genesis"]:
             gen_key(key_dir, account)
         genesis_key = get_key(key_dir, "genesis")
         bootstrap_peers = []
-        k8s_templates.append("deployment/activate.yaml")
+        k8s_templates.extend(["deployment/activate.yaml", "deployment/baker.yaml"])
 
     if args.join:
         genesis_key = args.genesis_key
@@ -279,12 +285,7 @@ def main():
         genesis_key = get_key(key_dir, "genesis")
 
     if "minikube" in args:
-
-
         try:
-            # put this at the front to make sure minikube doesn't
-            # satisfy volume claim with hostpath-provisioner before we
-            # can tell it about nfs
             k8s_templates.insert(0, "deployment/pv-minikube.yaml")
             minikube_route = (
                 subprocess.check_output(
@@ -311,6 +312,9 @@ def main():
             tokens["minikube_gw"] = minikube_gw
         except subprocess.CalledProcessError as e:
             print("failed to get minikube route %r" % e)
+
+    if "docker_desktop" in args:
+        k8s_templates.insert(0, "deployment/pv-hostpath.yaml")
 
     if args.stdout:
         out = sys.stdout

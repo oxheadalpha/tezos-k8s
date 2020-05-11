@@ -36,12 +36,29 @@ spec:
       labels:
         app: tezos-node
     spec:
+      initContainers:
+      - name: identity-job
+        image: {docker_image}
+        command: ["/usr/local/bin/tezos-node"]
+        args: ["identity", "generate", "0", "--data-dir", "/var/tezos/node", "--config-file", "/etc/tezos/config.json"
+]
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/tezos
+        - name: var-volume
+          mountPath: /var/tezos
       containers:
       - image: {docker_image}
         imagePullPolicy: Always
         name: tezos-node
         command: ["/usr/local/bin/tezos-node"]
         args: ["run", "--config-file",  "/etc/tezos/config.json"]
+        readinessProbe:
+          exec:
+            command: ["nc", "-z", "127.0.0.1", "8732"]
+          initialDelaySeconds: 2
+          periodSeconds: 2
+          timeoutSeconds: 1
         ports:
         - containerPort: 8732
           name: tezos-rpc
