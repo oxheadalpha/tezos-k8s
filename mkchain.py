@@ -11,8 +11,8 @@ from ipaddress import IPv4Address
 
 def run_docker(entrypoint, mount, *args, image="tezos/tezos:v7-release"):
     subprocess.check_output(
-        "docker run --entrypoint %s -u %s --rm -v %s %s %s"
-        % (entrypoint, os.getuid(), mount, image, " ".join(args)),
+        "docker run --entrypoint %s -u %s:%s --rm -v %s %s %s"
+        % (entrypoint, os.getuid(), os.getgid(), mount, image, " ".join(args)),
         shell=True,
     )
 
@@ -289,12 +289,12 @@ def main():
             k8s_templates.insert(0, "deployment/pv-minikube.yaml")
             minikube_route = (
                 subprocess.check_output(
-                    '''minikube ssh "route -n | grep ^0.0.0.0"''', shell=True
+                    '''minikube ssh "ip route show default"''', shell=True
                 )
                 .decode("utf-8")
                 .split()
             )
-            minikube_gw, minikube_iface = minikube_route[1], minikube_route[7]
+            minikube_gw, minikube_iface = minikube_route[2], minikube_route[4]
             minikube_ip = (
                 subprocess.check_output(
                     '''minikube ssh "ip addr show %s|awk /^[[:space:]]+inet/'{print \$2}'"'''
