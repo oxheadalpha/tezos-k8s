@@ -9,9 +9,9 @@ metadata:
   name: tezos-pv-claim
   namespace: "tqtezos"
 spec:
-  storageClassName: standard
+  storageClassName: manual
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   resources:
     requests:
       storage: 15Gi
@@ -24,8 +24,70 @@ kind: ConfigMap
 metadata:
   name: tezos-config
   namespace: "tqtezos"
-data:
-  parameters.json: |
-    {parameters_json}
-  config.json: |
-    {config_json}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tezos-rpc
+  namespace: "tqtezos"
+spec:
+  ports:
+  - port: 8732
+  selector:
+    app: tezos-node
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tezos-net
+  namespace: "tqtezos"
+spec:
+  ports:
+  - port: 9732
+  selector:
+    app: tezos-node
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tezos-node
+  namespace: "tqtezos"
+spec:
+  selector:
+    matchLabels:
+      app: tezos-node
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: tezos-node
+    spec:
+      containers:
+      - imagePullPolicy: Always
+        name: tezos-node
+        command: ["/usr/local/bin/tezos-node"]
+        args: ["run", "--config-file",  "/etc/tezos/config.json"]
+        readinessProbe:
+          exec:
+            command: ["nc", "-z", "127.0.0.1", "8732"]
+          initialDelaySeconds: 2
+          periodSeconds: 2
+          timeoutSeconds: 1
+        ports:
+        - containerPort: 8732
+          name: tezos-rpc
+        - containerPort: 9732
+          name: tezos-net
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/tezos
+        - name: var-volume
+          mountPath: /var/tezos
+      volumes:
+      - name: config-volume
+        configMap:
+          name: tezos-config
+      - name: var-volume
+        persistentVolumeClaim:
+          claimName: tezos-pv-claim

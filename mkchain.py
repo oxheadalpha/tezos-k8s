@@ -3,10 +3,23 @@ import json
 import os
 import subprocess
 import sys
+import yaml
 
 from datetime import datetime
 from datetime import timezone
 from ipaddress import IPv4Address
+
+my_path = os.path.dirname(os.path.abspath(__file__))
+
+
+# https://stackoverflow.com/questions/25833613/python-safe-method-to-get-value-of-nested-dictionary/25833661
+def safeget(dct, *keys):
+    for key in keys:
+        try:
+            dct = dct[key]
+        except KeyError:
+            return None
+    return dct
 
 
 def run_docker(entrypoint, mount, *args, image="tezos/tezos:v7-release"):
@@ -44,6 +57,71 @@ def get_key(key_dir, name):
                 if value.startswith("unencrypted:"):
                     offset = len("unencrypted:")
                 return value[offset:]
+
+
+def get_identity_job(docker_image):
+    return [
+        {
+            "name": "identity-job",
+            "image": docker_image,
+            "command": ["/usr/local/bin/tezos-node"],
+            "args": [
+                "identity",
+                "generate",
+                "0",
+                "--data-dir",
+                "/var/tezos/node",
+                "--config-file",
+                "/etc/tezos/config.json",
+            ],
+            "volumeMounts": [
+                {"name": "config-volume", "mountPath": "/etc/tezos"},
+                {"name": "var-volume", "mountPath": "/var/tezos"},
+            ],
+        }
+    ]
+
+
+def get_baker(docker_image, baker_command):
+    return {
+        "name": "baker-job",
+        "image": docker_image,
+        "command": [baker_command],
+        "args": [
+            "-A",
+            "tezos-rpc",
+            "-P",
+            "8732",
+            "-d",
+            "/var/tezos/client",
+            "run",
+            "with",
+            "local",
+            "node",
+            "/var/tezos/node",
+            "baker",
+        ],
+        "volumeMounts": [{"name": "var-volume", "mountPath": "/var/tezos"}],
+    }
+
+
+def get_endorser(docker_image, endorser_command):
+    return {
+        "name": "endorser",
+        "image": docker_image,
+        "command": [endorser_command],
+        "args": [
+            "-A",
+            "tezos-rpc",
+            "-P",
+            "8732",
+            "-d",
+            "/var/tezos/client",
+            "run",
+            "baker",
+        ],
+        "volumeMounts": [{"name": "var-volume", "mountPath": "/var/tezos"}],
+    }
 
 
 # FIXME - this should probably be replaced with subprocess calls to tezos-node-config
@@ -197,7 +275,8 @@ def get_args():
     parser.add_argument("chain_name")
 
     parser.add_argument("--tezos-dir", default=os.path.expanduser("~/.tq/"))
-    # parser.add_argument("--init-node", action="store_true")
+    parser.add_argument("--baker", action="store_true")
+    parser.add_argument("--docker-image", default="tezos/tezos:v7-release")
     parser.add_argument("--bootstrap-mutez", default="4000000000000")
 
     group = parser.add_mutually_exclusive_group()
@@ -216,7 +295,6 @@ def get_args():
     parser.add_argument(
         "--protocol-hash", default="PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb"
     )
-    parser.add_argument("--docker-image", default="tezos/tezos:v7-release")
     parser.add_argument("--baker-command", default="tezos-baker-006-PsCARTHA")
 
     # add a parser for each cluster type we want to support
@@ -233,7 +311,9 @@ def get_args():
     parser_kind = subparsers.add_parser("kind", help="generate config for kind")
     parser_kind.set_defaults(kind=True)
 
-    parser_docker_desktop = subparsers.add_parser("docker-desktop", help="generate config for docker-desktop")
+    parser_docker_desktop = subparsers.add_parser(
+        "docker-desktop", help="generate config for docker-desktop"
+    )
     parser_docker_desktop.set_defaults(docker_desktop=True)
 
     return parser.parse_args()
@@ -242,12 +322,6 @@ def get_args():
 def main():
     args = get_args()
     tokens = {}
-
-    if args.create and os.path.exists(args.tezos_dir):
-        raise Exception(
-            "detected existing installation, please remove it first: %s"
-            % (args.tezos_dir)
-        )
 
     key_dir = os.path.join(args.tezos_dir, "client")
     os.makedirs(key_dir, exist_ok=True)
@@ -258,22 +332,15 @@ def main():
     genesis_key = None
     timestamp = datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
     bootstrap_peers = []
-    bootstrap_accounts = [
-        "baker",
-        "bootstrap_account_1",
-        "bootstrap_account_2",
-    ]
-    k8s_templates = ["deployment/common.yaml", "deployment/node.yaml"]
-
-    # if args.init_node:
-    #     k8s_templates.append("deployment/identity.yaml")
+    bootstrap_accounts = ["baker", "bootstrap_account_1", "bootstrap_account_2"]
+    k8s_templates = ["common.yaml", "pv.yaml"]
 
     if args.create:
+        k8s_templates.append("activate.yaml")
         for account in bootstrap_accounts + ["genesis"]:
             gen_key(key_dir, account)
         genesis_key = get_key(key_dir, "genesis")
         bootstrap_peers = []
-        k8s_templates.extend(["deployment/activate.yaml", "deployment/baker.yaml"])
 
     if args.join:
         genesis_key = args.genesis_key
@@ -284,9 +351,9 @@ def main():
     if genesis_key is None:
         genesis_key = get_key(key_dir, "genesis")
 
+    minikube_gw = None
     if "minikube" in args:
         try:
-            k8s_templates.insert(0, "deployment/pv-minikube.yaml")
             minikube_route = (
                 subprocess.check_output(
                     '''minikube ssh "ip route show default"''', shell=True
@@ -309,32 +376,98 @@ def main():
                 '"%s" -alldirs -mapall=%s:%s %s'
                 % (args.tezos_dir, os.getuid(), os.getgid(), minikube_ip)
             )
-            tokens["minikube_gw"] = minikube_gw
         except subprocess.CalledProcessError as e:
             print("failed to get minikube route %r" % e)
 
-    if "docker_desktop" in args:
-        k8s_templates.insert(0, "deployment/pv-hostpath.yaml")
+    k8s_objects = []
+    for template in k8s_templates:
+        with open(os.path.join(my_path, "deployment", template), "r") as yaml_template:
+
+            k8s_resources = yaml.load_all(yaml_template, Loader=yaml.FullLoader)
+            for k in k8s_resources:
+                if (
+                    safeget(k, "kind") == "PersistentVolume"
+                    and safeget(k, "metadata", "name") == "tezos-var-volume"
+                ):
+                    if "docker_desktop" in args:
+                        k["spec"]["hostPath"] = {"path": args.tezos_dir}
+                    elif "minikube" in args:
+                        k["spec"]["nfs"] = {
+                            "path": args.tezos_dir,
+                            "server": minikube_gw,
+                        }
+
+                if safeget(k, "metadata", "name") == "tezos-config":
+                    k["data"] = {
+                        "parameters.json": json.dumps(
+                            get_parameters_config(
+                                key_dir, bootstrap_accounts, args.bootstrap_mutez
+                            )
+                        ),
+                        "config.json": json.dumps(
+                            get_node_config(
+                                args.chain_name, genesis_key, timestamp, bootstrap_peers
+                            )
+                        ),
+                    }
+
+                if safeget(k, "metadata", "name") == "tezos-node":
+                    # set the docker image for the node
+                    k["spec"]["template"]["spec"]["containers"][0][
+                        "image"
+                    ] = args.docker_image
+
+                    if not os.path.isfile(
+                        os.path.join(args.tezos_dir, "node", "identity.json")
+                    ):
+                        # add the identity job
+                        k["spec"]["template"]["spec"][
+                            "initContainers"
+                        ] = get_identity_job(args.docker_image)
+                    if args.baker:
+                        k["spec"]["template"]["spec"]["containers"].append(
+                            get_baker(args.docker_image, args.baker_command)
+                        )
+
+                if safeget(k, "metadata", "name") == "activate-job":
+                    k["spec"]["template"]["spec"]["initContainers"][1][
+                        "image"
+                    ] = args.docker_image
+                    k["spec"]["template"]["spec"]["initContainers"][1]["args"] = [
+                        "-A",
+                        "tezos-rpc",
+                        "-P",
+                        "8732",
+                        "-d",
+                        "/var/tezos/client",
+                        "-l",
+                        "--block",
+                        "genesis",
+                        "activate",
+                        "protocol",
+                        args.protocol_hash,
+                        "with",
+                        "fitness",
+                        "0",
+                        "and",
+                        "key",
+                        "genesis",
+                        "and",
+                        "parameters",
+                        "/etc/tezos/parameters.json",
+                    ]
+                    k["spec"]["template"]["spec"]["initContainers"][2][
+                        "image"
+                    ] = args.docker_image
+
+                k8s_objects.append(k)
 
     if args.stdout:
         out = sys.stdout
     else:
-        out = open("tq-{}.yaml".format(args.chain_name), "wb")
+        out = open(f"tq-{args.chain_name}.yaml", "w")
 
-    with out as yaml_file:
-        tokens.update(vars(args))
-        tokens["config_json"] = json.dumps(
-            get_node_config(args.chain_name, genesis_key, timestamp, bootstrap_peers)
-        )
-        tokens["parameters_json"] = json.dumps(
-            get_parameters_config(key_dir, bootstrap_accounts, args.bootstrap_mutez)
-        )
-        for template in k8s_templates:
-            with open(template) as template_file:
-                template = template_file.read()
-                out_yaml = template.format(**tokens)
-            yaml_file.write(out_yaml.encode("utf-8"))
-            yaml_file.write(b"\n---\n")
+    yaml.dump_all(k8s_objects, out)
 
 
 if __name__ == "__main__":

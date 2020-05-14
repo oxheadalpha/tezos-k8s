@@ -5,11 +5,9 @@ metadata:
   labels:
     storage-type: var-files
 spec:
-  storageClassName: standard
+  storageClassName: manual
   capacity:
     storage: 15Gi
   accessModes:
-  - ReadWriteMany
+  - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
-  hostPath:
-    path: {tezos_dir}
