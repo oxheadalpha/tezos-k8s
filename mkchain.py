@@ -23,7 +23,7 @@ def safeget(dct, *keys):
 
 
 def run_docker(entrypoint, mount, *args, image="tezos/tezos:v7-release"):
-    subprocess.check_output(
+    return subprocess.check_output(
         "docker run --entrypoint %s -u %s:%s --rm -v %s %s %s"
         % (entrypoint, os.getuid(), os.getgid(), mount, image, " ".join(args)),
         shell=True,
@@ -47,16 +47,32 @@ def gen_key(key_dir, key_name):
     )
 
 
-def get_key(key_dir, name):
-    with open(os.path.join(key_dir, "public_keys"), "r") as keyfile:
-        keys = json.load(keyfile)
-        offset = 0
-        for key in keys:
-            if key["name"] == name:
-                value = key["value"]
-                if value.startswith("unencrypted:"):
-                    offset = len("unencrypted:")
-                return value[offset:]
+def get_key(key_dir, key_name):
+    entrypoint = "/usr/local/bin/tezos-client"
+    mount = key_dir + ":/data"
+    return run_docker(
+        entrypoint,
+        mount,
+        "-d",
+        "/data",
+        "--protocol",
+        "PsCARTHAGazK",
+        "show",
+        "address",
+        key_name,
+    ).split(b"\n")[1].split(b":")[1].strip().decode("utf-8")
+
+
+# def get_key(key_dir, name):
+#     with open(os.path.join(key_dir, "public_keys"), "r") as keyfile:
+#         keys = json.load(keyfile)
+#         offset = 0
+#         for key in keys:
+#             if key["name"] == name:
+#                 value = key["value"]
+#                 if value.startswith("unencrypted:"):
+#                     offset = len("unencrypted:")
+#                 return value[offset:]
 
 
 def get_identity_job(docker_image):
@@ -448,7 +464,7 @@ def main():
                         args.protocol_hash,
                         "with",
                         "fitness",
-                        "0",
+                        "-1",
                         "and",
                         "key",
                         "genesis",
@@ -465,7 +481,7 @@ def main():
     if args.stdout:
         out = sys.stdout
     else:
-        out = open(f"tq-{args.chain_name}.yaml", "w")
+        out = open(f"{args.chain_name}.yaml", "w")
 
     yaml.dump_all(k8s_objects, out)
 
