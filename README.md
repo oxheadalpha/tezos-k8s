@@ -1,11 +1,38 @@
 # tezos-k8s
-configuration files to deploy tezos on kubernetes
 
+helper program to deploy tezos on kubernetes
+
+## quickstart
+
+``` shell
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e ./
+```
 
-mkchain --create --stdout --baker $chain_name $cluster | kubectl apply -f -
+## private chain
 
-chain_name: is your private chain's name
-cluster: one of [minikube, docker-desktop]
+### create
+$CHAIN_NAME: is your private chain's name
+$CLUSTER: one of [minikube, docker-desktop]
+
+``` shell
+mkchain --create --stdout --baker $CHAIN_NAME $CLUSTER | kubectl apply -f -
+```
+
+### invite
+$CHAIN_NAME: is your private chain's name
+$IP is the ip address your node will serve rpc on.
+
+Output is suitable to copy/paste and share with joiners.
+
+``` shell
+mkchain --invite --bootstrap-peer $IP $CHAIN_NAME
+```
+
+### join
+You will typically receive this command from a private chain creator.
+
+``` shell
+mkchain --stdout --join --genesis-key edpku1b5LnogwYES9feYeiz68Snyzbx1vX96nvz3y6PVwP4LAHr1Rd --timestamp 2020-05-19T01:16:13.192419+00:00 --bootstrap-peer 192.168.10.8 PRIVATE_CHAIN | kubectl apply -f -
+```
