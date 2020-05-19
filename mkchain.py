@@ -29,6 +29,7 @@ def run_docker(image, entrypoint, mount, *args):
     return subprocess.check_output(
         "docker run --entrypoint %s -u %s:%s --rm -v %s %s %s"
         % (entrypoint, os.getuid(), os.getgid(), mount, image, " ".join(args)),
+        stderr=subprocess.STDOUT,
         shell=True,
     )
 
@@ -54,24 +55,27 @@ def gen_key(image, key_dir, key_name):
 def get_key(image, key_dir, key_name):
     entrypoint = "/usr/local/bin/tezos-client"
     mount = key_dir + ":/data"
-    return (
-        run_docker(
-            image,
-            entrypoint,
-            mount,
-            "-d",
-            "/data",
-            "--protocol",
-            "PsCARTHAGazK",
-            "show",
-            "address",
-            key_name,
+    try:
+        return (
+            run_docker(
+                image,
+                entrypoint,
+                mount,
+                "-d",
+                "/data",
+                "--protocol",
+                "PsCARTHAGazK",
+                "show",
+                "address",
+                key_name,
+            )
+            .split(b"\n")[1]
+            .split(b":")[1]
+            .strip()
+            .decode("utf-8")
         )
-        .split(b"\n")[1]
-        .split(b":")[1]
-        .strip()
-        .decode("utf-8")
-    )
+    except subprocess.CalledProcessError:
+        return None
 
 
 def get_identity_job(docker_image):
