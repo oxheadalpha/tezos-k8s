@@ -235,7 +235,7 @@ def generate_parameters_config(parameters_argv):
     parser.add_argument("--endorsers-per-block", type=int, default=32)
     parser.add_argument("--hard-gas-limit-per-operation", default="800000")
     parser.add_argument("--hard-gas-limit-per-block", default="8000000")
-    parser.add_argument("--proof-of-work-threshold", default="0")
+    parser.add_argument("--proof-of-work-threshold", default="-1")
     parser.add_argument("--tokens-per-roll", default="8000000000")
     parser.add_argument("--michelson-maximum-type-size", type=int, default=1000)
     parser.add_argument("--seed-nonce-revelation-tip", default="125000")
