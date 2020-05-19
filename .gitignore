@@ -1,2 +1,6 @@
-work/
-/tq-*.yaml
+*~
+.cache
+dist
+*.pyc
+*.egg-info
+.venv*

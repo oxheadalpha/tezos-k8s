@@ -8,6 +8,9 @@ import yaml
 from datetime import datetime
 from datetime import timezone
 from ipaddress import IPv4Address
+from kubernetes import client as k8s_client
+from kubernetes import config as k8s_config
+
 
 my_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -22,7 +25,7 @@ def safeget(dct, *keys):
     return dct
 
 
-def run_docker(entrypoint, mount, *args, image="tezos/tezos:v7-release"):
+def run_docker(image, entrypoint, mount, *args):
     return subprocess.check_output(
         "docker run --entrypoint %s -u %s:%s --rm -v %s %s %s"
         % (entrypoint, os.getuid(), os.getgid(), mount, image, " ".join(args)),
@@ -30,49 +33,45 @@ def run_docker(entrypoint, mount, *args, image="tezos/tezos:v7-release"):
     )
 
 
-def gen_key(key_dir, key_name):
+def gen_key(image, key_dir, key_name):
     entrypoint = "/usr/local/bin/tezos-client"
     mount = key_dir + ":/data"
-    run_docker(
-        entrypoint,
-        mount,
-        "-d",
-        "/data",
-        "--protocol",
-        "PsCARTHAGazK",
-        "gen",
-        "keys",
-        key_name,
-        "--force",
+    if get_key(image, key_dir, key_name) is None:
+        run_docker(
+            image,
+            entrypoint,
+            mount,
+            "-d",
+            "/data",
+            "--protocol",
+            "PsCARTHAGazK",
+            "gen",
+            "keys",
+            key_name,
+        )
+
+
+def get_key(image, key_dir, key_name):
+    entrypoint = "/usr/local/bin/tezos-client"
+    mount = key_dir + ":/data"
+    return (
+        run_docker(
+            image,
+            entrypoint,
+            mount,
+            "-d",
+            "/data",
+            "--protocol",
+            "PsCARTHAGazK",
+            "show",
+            "address",
+            key_name,
+        )
+        .split(b"\n")[1]
+        .split(b":")[1]
+        .strip()
+        .decode("utf-8")
     )
-
-
-def get_key(key_dir, key_name):
-    entrypoint = "/usr/local/bin/tezos-client"
-    mount = key_dir + ":/data"
-    return run_docker(
-        entrypoint,
-        mount,
-        "-d",
-        "/data",
-        "--protocol",
-        "PsCARTHAGazK",
-        "show",
-        "address",
-        key_name,
-    ).split(b"\n")[1].split(b":")[1].strip().decode("utf-8")
-
-
-# def get_key(key_dir, name):
-#     with open(os.path.join(key_dir, "public_keys"), "r") as keyfile:
-#         keys = json.load(keyfile)
-#         offset = 0
-#         for key in keys:
-#             if key["name"] == name:
-#                 value = key["value"]
-#                 if value.startswith("unencrypted:"):
-#                     offset = len("unencrypted:")
-#                 return value[offset:]
 
 
 def get_identity_job(docker_image):
@@ -277,11 +276,15 @@ def get_node_config(chain_name, genesis_key, timestamp, bootstrap_peers):
     return generate_node_config(node_config_args)
 
 
-def get_parameters_config(key_dir, bootstrap_accounts, bootstrap_mutez):
+def get_parameters_config(docker_image, key_dir, bootstrap_accounts, bootstrap_mutez):
     parameter_config_argv = []
     for account in bootstrap_accounts:
         parameter_config_argv.extend(
-            ["--bootstrap-accounts", get_key(key_dir, account), bootstrap_mutez]
+            [
+                "--bootstrap-accounts",
+                get_key(docker_image, key_dir, account),
+                bootstrap_mutez,
+            ]
         )
     return generate_parameters_config(parameter_config_argv)
 
@@ -298,12 +301,15 @@ def get_args():
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--create", action="store_true", help="Create a private chain")
     group.add_argument("--join", action="store_true", help="Join a private chain")
+    group.add_argument(
+        "--invite", action="store_true", help="Invite someone to join a private chain"
+    )
 
     subparsers = parser.add_subparsers(help="clusters")
 
-    parser.add_argument("--bootstrap_peer", help="peer ip to join")
+    parser.add_argument("--bootstrap-peer", help="peer ip to join")
     parser.add_argument(
-        "--genesis_key", help="genesis public key for the chain to join"
+        "--genesis-key", help="genesis public key for the chain to join"
     )
     parser.add_argument("--timestamp", help="timestamp for the chain to join")
 
@@ -337,35 +343,68 @@ def get_args():
 
 def main():
     args = get_args()
-    tokens = {}
 
     key_dir = os.path.join(args.tezos_dir, "client")
     os.makedirs(key_dir, exist_ok=True)
     node_dir = os.path.join(args.tezos_dir, "node")
-    tokens["node_dir"] = node_dir
     os.makedirs(node_dir, exist_ok=True)
 
-    genesis_key = None
     timestamp = datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
     bootstrap_peers = []
     bootstrap_accounts = ["baker", "bootstrap_account_1", "bootstrap_account_2"]
     k8s_templates = ["common.yaml", "pv.yaml"]
 
+    genesis_key = None
+    try:
+        genesis_key = get_key(args.docker_image, key_dir, "genesis")
+    except:
+        pass
+
     if args.create:
         k8s_templates.append("activate.yaml")
-        for account in bootstrap_accounts + ["genesis"]:
-            gen_key(key_dir, account)
-        genesis_key = get_key(key_dir, "genesis")
+        if genesis_key is None:
+            bootstrap_accounts.append("genesis")
+        for account in bootstrap_accounts:
+            gen_key(args.docker_image, key_dir, account)
+        genesis_key = get_key(args.docker_image, key_dir, "genesis")
         bootstrap_peers = []
 
+    if args.invite:
+        k8s_config.load_kube_config()
+        v1 = k8s_client.CoreV1Api()
+        try:
+            tezos_config = json.loads(
+                v1.read_namespaced_config_map("tezos-config", "tqtezos").data[
+                    "config.json"
+                ]
+            )
+        except:
+            raise
+
+        l = [
+            "mkchain",
+            "--stdout",
+            "--join",
+            "--genesis-key",
+            tezos_config["network"]["genesis_parameters"]["values"]["genesis_pubkey"],
+            "--timestamp",
+            tezos_config["network"]["genesis"]["timestamp"],
+            "--bootstrap-peer",
+            args.bootstrap_peer,
+            tezos_config["network"]["chain_name"],
+        ]
+        print(" ".join(l))
+
     if args.join:
+        """
+        1. Join as a read-only node
+        2. Join as a node with a key that has enough tez to conduct transactions
+        3. Join as a node with enought tez to bake + start the baker
+        """
         genesis_key = args.genesis_key
         # validate peer ip
         bootstrap_peers = [str(IPv4Address(args.bootstrap_peer))]
         timestamp = args.timestamp
-
-    if genesis_key is None:
-        genesis_key = get_key(key_dir, "genesis")
 
     minikube_gw = None
     if "minikube" in args:
@@ -387,10 +426,14 @@ def main():
                 .decode("utf-8")
                 .split("/")[0]
             )
-            print("Add the following line to /etc/exports and reload nfsd.")
+            print(
+                "Add the following line to /etc/exports and restart nfsd.",
+                file=sys.stderr,
+            )
             print(
                 '"%s" -alldirs -mapall=%s:%s %s'
-                % (args.tezos_dir, os.getuid(), os.getgid(), minikube_ip)
+                % (args.tezos_dir, os.getuid(), os.getgid(), minikube_ip),
+                file=sys.stderr,
             )
         except subprocess.CalledProcessError as e:
             print("failed to get minikube route %r" % e)
@@ -417,7 +460,10 @@ def main():
                     k["data"] = {
                         "parameters.json": json.dumps(
                             get_parameters_config(
-                                key_dir, bootstrap_accounts, args.bootstrap_mutez
+                                args.docker_image,
+                                key_dir,
+                                bootstrap_accounts,
+                                args.bootstrap_mutez,
                             )
                         ),
                         "config.json": json.dumps(
