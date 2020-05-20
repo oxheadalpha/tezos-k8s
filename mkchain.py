@@ -1,6 +1,8 @@
 import argparse
 import json
 import os
+import random
+import string
 import subprocess
 import sys
 import yaml
@@ -257,11 +259,37 @@ def generate_parameters_config(parameters_argv):
     return vars(namespace)
 
 
+def get_genesis_vanity_chain_id(seed_len=16):
+    seed = "".join(
+        random.choice(string.ascii_uppercase + string.digits) for _ in range(seed_len)
+    )
+
+    FLEXTESA = "registry.gitlab.com/tezos/flextesa:01e3f596-run"
+    return (
+        run_docker(
+            FLEXTESA,
+            "flextesa",
+            "/tmp:/tmp",
+            "vani",
+            '""',
+            "--seed",
+            seed,
+            "--first",
+            "--machine-readable",
+            "csv",
+        )
+        .decode("utf-8")
+        .split(",")[1]
+    )
+
+
 def get_node_config(chain_name, genesis_key, timestamp, bootstrap_peers):
 
     p2p = ["p2p"]
     for bootstrap_peer in bootstrap_peers:
         p2p.extend(["--bootstrap-peers", bootstrap_peer])
+
+    block = get_genesis_vanity_chain_id()
 
     node_config_args = p2p + [
         "global",
@@ -272,6 +300,8 @@ def get_node_config(chain_name, genesis_key, timestamp, bootstrap_peers):
         "genesis",
         "--timestamp",
         timestamp,
+        "--block",
+        block,
         "genesis_parameters",
         "--genesis-pubkey",
         genesis_key,
