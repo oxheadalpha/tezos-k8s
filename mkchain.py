@@ -5,6 +5,7 @@ import random
 import string
 import subprocess
 import sys
+import uuid
 import yaml
 
 from datetime import datetime
@@ -110,7 +111,7 @@ def get_baker(docker_image, baker_command):
         "command": [baker_command],
         "args": [
             "-A",
-            "tezos-rpc",
+            "localhost",
             "-P",
             "8732",
             "-d",
@@ -133,7 +134,7 @@ def get_endorser(docker_image, endorser_command):
         "command": [endorser_command],
         "args": [
             "-A",
-            "tezos-rpc",
+            "localhost",
             "-P",
             "8732",
             "-d",
@@ -332,6 +333,9 @@ def get_args():
     parser.add_argument("--docker-image", default="tezos/tezos:v7-release")
     parser.add_argument("--bootstrap-mutez", default="4000000000000")
 
+    parser.add_argument("--zerotier-network")
+    parser.add_argument("--zerotier-token")
+
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--create", action="store_true", help="Create a private chain")
     group.add_argument("--join", action="store_true", help="Join a private chain")
@@ -414,18 +418,24 @@ def main():
                 ]
             )
             service = v1.read_namespaced_service("tezos-net", "tqtezos")
-            node_port = json.loads(
-                service.metadata.annotations[
-                    "kubectl.kubernetes.io/last-applied-configuration"
-                ]
-            )["spec"]["ports"][0]["nodePort"]
+            node_port = (
+                v1.read_namespaced_service("tezos-net", "tqtezos")
+                .spec.ports[0]
+                .node_port
+            )
             bootstrap_peer = f"{bootstrap_peer}:{node_port}"
         except:
             raise
 
-        l = [
-            "mkchain",
-            "--stdout",
+        l = ["mkchain", "--stdout"]
+        if args.zerotier_network:
+            l.extend([
+                "--zerotier-network",
+                args.zerotier_network,
+                "--zerotier-token",
+                args.zerotier_token
+            ])
+        l.extend([
             "--join",
             "--genesis-key",
             tezos_config["network"]["genesis_parameters"]["values"]["genesis_pubkey"],
@@ -434,7 +444,7 @@ def main():
             "--bootstrap-peer",
             bootstrap_peer,
             tezos_config["network"]["chain_name"],
-        ]
+        ])
         print(" ".join(l))
 
     if args.join:
@@ -445,7 +455,8 @@ def main():
         """
         genesis_key = args.genesis_key
         # validate peer ip
-        bootstrap_peers = [str(IPv4Address(argss.bootstrap_peer.split(":")[0]))]
+        IPv4Address(args.bootstrap_peer.split(":")[0])
+        bootstrap_peers = [args.bootstrap_peer]
         timestamp = args.timestamp
 
     minikube_gw = None
@@ -480,16 +491,16 @@ def main():
         except subprocess.CalledProcessError as e:
             print("failed to get minikube route %r" % e)
 
+    if args.zerotier_network:
+        k8s_templates.append("zerotier.yaml")
+
     k8s_objects = []
     for template in k8s_templates:
         with open(os.path.join(my_path, "deployment", template), "r") as yaml_template:
 
             k8s_resources = yaml.load_all(yaml_template, Loader=yaml.FullLoader)
             for k in k8s_resources:
-                if (
-                    safeget(k, "kind") == "PersistentVolume"
-                    and safeget(k, "metadata", "name") == "tezos-var-volume"
-                ):
+                if safeget(k, "metadata", "name") == "tezos-var-volume":
                     if "docker_desktop" in args:
                         k["spec"]["hostPath"] = {"path": args.tezos_dir}
                     elif "minikube" in args:
@@ -530,7 +541,7 @@ def main():
                         new_node_args.extend(
                             ["--bootstrap-threshold", "0", "--connections", "1"]
                         )
-                        new_node_args.append(node_args[1:])
+                        new_node_args.extend(node_args[1:])
                         k["spec"]["template"]["spec"]["containers"][0][
                             "args"
                         ] = new_node_args
@@ -577,6 +588,13 @@ def main():
                     k["spec"]["template"]["spec"]["initContainers"][2][
                         "image"
                     ] = args.docker_image
+
+                if safeget(k, "metadata", "name") == "zerotier-config":
+                    k["data"]["NETWORK_IDS"] = args.zerotier_network
+                    k["data"]["ZTAUTHTOKEN"] = args.zerotier_token
+                    zt_hostname = str(uuid.uuid4())
+                    print(f"zt_hostname: {zt_hostname}", file=sys.stderr)
+                    k["data"]["ZTHOSTNAME"] = zt_hostname
 
                 k8s_objects.append(k)
 
