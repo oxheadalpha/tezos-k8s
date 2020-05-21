@@ -284,13 +284,14 @@ def get_genesis_vanity_chain_id(seed_len=16):
     )
 
 
-def get_node_config(chain_name, genesis_key, timestamp, bootstrap_peers):
+def get_node_config(chain_name, genesis_key, timestamp, bootstrap_peers, genesis_block=None):
 
     p2p = ["p2p"]
     for bootstrap_peer in bootstrap_peers:
         p2p.extend(["--bootstrap-peers", bootstrap_peer])
 
-    block = get_genesis_vanity_chain_id()
+    if genesis_block is None:
+        genesis_block = get_genesis_vanity_chain_id()
 
     node_config_args = p2p + [
         "global",
@@ -302,7 +303,7 @@ def get_node_config(chain_name, genesis_key, timestamp, bootstrap_peers):
         "--timestamp",
         timestamp,
         "--block",
-        block,
+        genesis_block,
         "genesis_parameters",
         "--genesis-pubkey",
         genesis_key,
@@ -348,6 +349,9 @@ def get_args():
     parser.add_argument("--bootstrap-peer", help="peer ip to join")
     parser.add_argument(
         "--genesis-key", help="genesis public key for the chain to join"
+    )
+    parser.add_argument(
+        "--genesis-block", help="hash of the genesis block"
     )
     parser.add_argument("--timestamp", help="timestamp for the chain to join")
 
@@ -439,6 +443,8 @@ def main():
             "--join",
             "--genesis-key",
             tezos_config["network"]["genesis_parameters"]["values"]["genesis_pubkey"],
+            "--genesis-block",
+            tezos_config["network"]["genesis"]["block"],
             "--timestamp",
             tezos_config["network"]["genesis"]["timestamp"],
             "--bootstrap-peer",
@@ -521,7 +527,7 @@ def main():
                         ),
                         "config.json": json.dumps(
                             get_node_config(
-                                args.chain_name, genesis_key, timestamp, bootstrap_peers
+                                args.chain_name, genesis_key, timestamp, bootstrap_peers, args.genesis_block
                             )
                         ),
                     }
