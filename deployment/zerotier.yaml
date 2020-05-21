@@ -4,10 +4,10 @@ metadata:
   name: zerotier-config
   namespace: "tqtezos"
 data:
-  NETWORK_IDS: "ZTNETWORK"
-  ZTAUTHTOKEN: "ZTTOKEN"
+  NETWORK_IDS: "17d709436c58c5a2"
+  ZTAUTHTOKEN: "mrdtYv0hXb42MldaZdoE5ZcnyFP6D0g2"
   AUTOJOIN: "true"
-  ZTHOSTNAME: "NODE-PEER-ID"
+  ZTHOSTNAME: "idtJTEwNtc1XMuUSdD6i4uamWuE5cB"
 ---
 apiVersion: apps/v1
 kind: DaemonSet

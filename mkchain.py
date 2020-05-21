@@ -545,7 +545,7 @@ def main():
                         ]
                         new_node_args = node_args[:1]
                         new_node_args.extend(
-                            ["--bootstrap-threshold", "0", "--connections", "1"]
+                            ["--bootstrap-threshold", "0"]
                         )
                         new_node_args.extend(node_args[1:])
                         k["spec"]["template"]["spec"]["containers"][0][
