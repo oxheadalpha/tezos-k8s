@@ -406,12 +406,20 @@ def main():
     if args.invite:
         k8s_config.load_kube_config()
         v1 = k8s_client.CoreV1Api()
+        bootstrap_peer = args.bootstrap_peer
         try:
             tezos_config = json.loads(
                 v1.read_namespaced_config_map("tezos-config", "tqtezos").data[
                     "config.json"
                 ]
             )
+            service = v1.read_namespaced_service("tezos-net", "tqtezos")
+            node_port = json.loads(
+                service.metadata.annotations[
+                    "kubectl.kubernetes.io/last-applied-configuration"
+                ]
+            )["spec"]["ports"][0]["nodePort"]
+            bootstrap_peer = f"{bootstrap_peer}:{node_port}"
         except:
             raise
 
@@ -424,7 +432,7 @@ def main():
             "--timestamp",
             tezos_config["network"]["genesis"]["timestamp"],
             "--bootstrap-peer",
-            args.bootstrap_peer,
+            bootstrap_peer,
             tezos_config["network"]["chain_name"],
         ]
         print(" ".join(l))
@@ -437,7 +445,7 @@ def main():
         """
         genesis_key = args.genesis_key
         # validate peer ip
-        bootstrap_peers = [str(IPv4Address(args.bootstrap_peer))]
+        bootstrap_peers = [str(IPv4Address(argss.bootstrap_peer.split(":")[0]))]
         timestamp = args.timestamp
 
     minikube_gw = None
@@ -512,6 +520,20 @@ def main():
                     k["spec"]["template"]["spec"]["containers"][0][
                         "image"
                     ] = args.docker_image
+
+                    # if you are the chain creator use a lower bootstrap threshold
+                    if args.create:
+                        node_args = k["spec"]["template"]["spec"]["containers"][0][
+                            "args"
+                        ]
+                        new_node_args = node_args[:1]
+                        new_node_args.extend(
+                            ["--bootstrap-threshold", "0", "--connections", "1"]
+                        )
+                        new_node_args.append(node_args[1:])
+                        k["spec"]["template"]["spec"]["containers"][0][
+                            "args"
+                        ] = new_node_args
 
                     if not os.path.isfile(
                         os.path.join(args.tezos_dir, "node", "identity.json")

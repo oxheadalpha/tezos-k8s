@@ -42,6 +42,7 @@ metadata:
   name: tezos-net
   namespace: "tqtezos"
 spec:
+  type: NodePort
   ports:
   - port: 9732
   selector:

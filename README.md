@@ -34,5 +34,5 @@ mkchain --invite --bootstrap-peer $IP $CHAIN_NAME
 You will typically receive this command from a private chain creator.
 
 ``` shell
-mkchain --stdout --join --genesis-key edpku1b5LnogwYES9feYeiz68Snyzbx1vX96nvz3y6PVwP4LAHr1Rd --timestamp 2020-05-19T01:16:13.192419+00:00 --bootstrap-peer 192.168.10.8 PRIVATE_CHAIN | kubectl apply -f -
+mkchain --stdout --join --genesis-key edpku1b5LnogwYES9feYeiz68Snyzbx1vX96nvz3y6PVwP4LAHr1Rd --timestamp 2020-05-19T01:16:13.192419+00:00 --bootstrap-peer 192.168.10.8:30873 PRIVATE_CHAIN | kubectl apply -f -
 ```
