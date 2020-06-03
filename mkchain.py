@@ -81,20 +81,32 @@ def get_key(image, key_dir, key_name):
         return None
 
 
+def get_ensure_node_dir_job():
+    return [
+        {
+            "name": "ensure-node-dir-job",
+            "image": "busybox",
+            "command": ["/bin/mkdir"],
+            "args": [
+                "-p",
+                "/var/tezos/node",
+            ],
+            "volumeMounts": [
+                {"name": "var-volume", "mountPath": "/var/tezos"},
+            ],
+        }
+    ]
+
+
 def get_identity_job(docker_image):
     return [
         {
             "name": "identity-job",
             "image": docker_image,
-            "command": ["/usr/local/bin/tezos-node"],
+            "command": ["/bin/sh"],
             "args": [
-                "identity",
-                "generate",
-                "0",
-                "--data-dir",
-                "/var/tezos/node",
-                "--config-file",
-                "/etc/tezos/config.json",
+                "-c",
+                "[ -f /var/tezos/node/identity.json ] || mkdir -p /var/tezos/node && /usr/local/bin/tezos-node identity generate 0 --data-dir /var/tezos/node --config-file /etc/tezos/config.json"
             ],
             "volumeMounts": [
                 {"name": "config-volume", "mountPath": "/etc/tezos"},
@@ -284,7 +296,9 @@ def get_genesis_vanity_chain_id(seed_len=16):
     )
 
 
-def get_node_config(chain_name, genesis_key, timestamp, bootstrap_peers, genesis_block=None):
+def get_node_config(
+    chain_name, genesis_key, timestamp, bootstrap_peers, genesis_block=None
+):
 
     p2p = ["p2p"]
     for bootstrap_peer in bootstrap_peers:
@@ -350,9 +364,7 @@ def get_args():
     parser.add_argument(
         "--genesis-key", help="genesis public key for the chain to join"
     )
-    parser.add_argument(
-        "--genesis-block", help="hash of the genesis block"
-    )
+    parser.add_argument("--genesis-block", help="hash of the genesis block")
     parser.add_argument("--timestamp", help="timestamp for the chain to join")
 
     parser.add_argument("--stdout", action="store_true")
@@ -369,8 +381,8 @@ def get_args():
 
     parser_eks = subparsers.add_parser("eks", help="generate config for EKS")
     parser_eks.set_defaults(eks=True)
-    parser_eks.add_argument("gdb_volume_id")
-    parser_eks.add_argument("gdb_aws_region")
+    # parser_eks.add_argument("gdb_volume_id")
+    # parser_eks.add_argument("gdb_aws_region")
 
     parser_kind = subparsers.add_parser("kind", help="generate config for kind")
     parser_kind.set_defaults(kind=True)
@@ -388,13 +400,11 @@ def main():
 
     key_dir = os.path.join(args.tezos_dir, "client")
     os.makedirs(key_dir, exist_ok=True)
-    node_dir = os.path.join(args.tezos_dir, "node")
-    os.makedirs(node_dir, exist_ok=True)
 
     timestamp = datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
     bootstrap_peers = []
     bootstrap_accounts = ["baker", "bootstrap_account_1", "bootstrap_account_2"]
-    k8s_templates = ["common.yaml", "pv.yaml"]
+    k8s_templates = ["common.yaml"]
 
     genesis_key = None
     try:
@@ -433,24 +443,30 @@ def main():
 
         l = ["mkchain", "--stdout"]
         if args.zerotier_network:
-            l.extend([
-                "--zerotier-network",
-                args.zerotier_network,
-                "--zerotier-token",
-                args.zerotier_token
-            ])
-        l.extend([
-            "--join",
-            "--genesis-key",
-            tezos_config["network"]["genesis_parameters"]["values"]["genesis_pubkey"],
-            "--genesis-block",
-            tezos_config["network"]["genesis"]["block"],
-            "--timestamp",
-            tezos_config["network"]["genesis"]["timestamp"],
-            "--bootstrap-peer",
-            bootstrap_peer,
-            tezos_config["network"]["chain_name"],
-        ])
+            l.extend(
+                [
+                    "--zerotier-network",
+                    args.zerotier_network,
+                    "--zerotier-token",
+                    args.zerotier_token,
+                ]
+            )
+        l.extend(
+            [
+                "--join",
+                "--genesis-key",
+                tezos_config["network"]["genesis_parameters"]["values"][
+                    "genesis_pubkey"
+                ],
+                "--genesis-block",
+                tezos_config["network"]["genesis"]["block"],
+                "--timestamp",
+                tezos_config["network"]["genesis"]["timestamp"],
+                "--bootstrap-peer",
+                bootstrap_peer,
+                tezos_config["network"]["chain_name"],
+            ]
+        )
         print(" ".join(l))
 
     if args.join:
@@ -497,6 +513,11 @@ def main():
         except subprocess.CalledProcessError as e:
             print("failed to get minikube route %r" % e)
 
+    if any(x in args for x in ["minikube", "docker-desktop"]):
+        k8s_templates.append("pv.yaml")
+    elif "eks" in args:
+        k8s_templates.append("eks.yaml")
+
     if args.zerotier_network:
         k8s_templates.append("zerotier.yaml")
 
@@ -515,6 +536,10 @@ def main():
                             "server": minikube_gw,
                         }
 
+                if safeget(k, "metadata", "name") == "tezos-pv-claim":
+                    if "eks" in args:
+                        k["spec"]["storageClassName"] = "ebs-sc"
+
                 if safeget(k, "metadata", "name") == "tezos-config":
                     k["data"] = {
                         "parameters.json": json.dumps(
@@ -527,7 +552,11 @@ def main():
                         ),
                         "config.json": json.dumps(
                             get_node_config(
-                                args.chain_name, genesis_key, timestamp, bootstrap_peers, args.genesis_block
+                                args.chain_name,
+                                genesis_key,
+                                timestamp,
+                                bootstrap_peers,
+                                args.genesis_block,
                             )
                         ),
                     }
@@ -544,21 +573,25 @@ def main():
                             "args"
                         ]
                         new_node_args = node_args[:1]
-                        new_node_args.extend(
-                            ["--bootstrap-threshold", "0"]
-                        )
+                        new_node_args.extend(["--bootstrap-threshold", "0"])
                         new_node_args.extend(node_args[1:])
                         k["spec"]["template"]["spec"]["containers"][0][
                             "args"
                         ] = new_node_args
 
-                    if not os.path.isfile(
-                        os.path.join(args.tezos_dir, "node", "identity.json")
-                    ):
-                        # add the identity job
-                        k["spec"]["template"]["spec"][
-                            "initContainers"
-                        ] = get_identity_job(args.docker_image)
+                    # if not os.path.isfile(
+                    #     os.path.join(args.tezos_dir, "node", "identity.json")
+                    # ):
+                    #     # add the identity job
+                    #     k["spec"]["template"]["spec"][
+                    #         "initContainers"
+                    #     ] = get_identity_job(args.docker_image)
+
+                    # add the identity job
+                    k["spec"]["template"]["spec"][
+                        "initContainers"
+                    ] = get_identity_job(args.docker_image)
+
                     if args.baker:
                         k["spec"]["template"]["spec"]["containers"].append(
                             get_baker(args.docker_image, args.baker_command)

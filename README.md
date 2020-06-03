@@ -44,3 +44,7 @@ $ZT_TOKEN is a zerotier api access token
 
 --zerotier-network $ZT_NETWORKID
 --zerotier-token $ZT_TOKEN
+
+
+## EKS
+https://aws.amazon.com/premiumsupport/knowledge-center/eks-persistent-storage/
