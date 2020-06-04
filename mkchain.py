@@ -106,7 +106,7 @@ def get_identity_job(docker_image):
             "command": ["/bin/sh"],
             "args": [
                 "-c",
-                "[ -f /var/tezos/node/identity.json ] || mkdir -p /var/tezos/node && /usr/local/bin/tezos-node identity generate 0 --data-dir /var/tezos/node --config-file /etc/tezos/config.json"
+                "[ -f /var/tezos/node/identity.json ] || (mkdir -p /var/tezos/node && /usr/local/bin/tezos-node identity generate 0 --data-dir /var/tezos/node --config-file /etc/tezos/config.json)"
             ],
             "volumeMounts": [
                 {"name": "config-volume", "mountPath": "/etc/tezos"},
