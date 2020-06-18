@@ -400,6 +400,11 @@ def main():
     zerotier_token = args.zerotier_token
 
     if args.create:
+        if args.cluster in ["minikube", "docker-desktop"]:
+            k8s_templates.append("pv.yaml")
+        elif args.cluster == "eks":
+            k8s_templates.append("eks.yaml")
+
         k8s_templates.append("activate.yaml")
         if genesis_key is None:
             bootstrap_accounts.append("genesis")
@@ -454,24 +459,20 @@ def main():
                 .decode("utf-8")
                 .split("/")[0]
             )
-            print(
-                "Add the following line to /etc/exports and restart nfsd.",
-                file=sys.stderr,
-            )
-            print(
-                '"%s" -alldirs -mapall=%s:%s %s'
-                % (args.tezos_dir, os.getuid(), os.getgid(), minikube_ip),
-                file=sys.stderr,
-            )
+            if args.create:
+                print(
+                    "Add the following line to /etc/exports and restart nfsd.",
+                    file=sys.stderr,
+                )
+                print(
+                    '"%s" -alldirs -mapall=%s:%s %s'
+                    % (args.tezos_dir, os.getuid(), os.getgid(), minikube_ip),
+                    file=sys.stderr,
+                )
         except subprocess.CalledProcessError as e:
             print("failed to get minikube route %r" % e)
 
-    if args.cluster in ["minikube", "docker-desktop"]:
-        k8s_templates.append("pv.yaml")
-    elif args.cluster == "eks":
-        k8s_templates.append("eks.yaml")
-
-    if args.zerotier_network:
+    if zerotier_network:
         k8s_templates.append("zerotier.yaml")
 
     k8s_objects = []

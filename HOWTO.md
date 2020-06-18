@@ -122,7 +122,46 @@ mkchain --invite --bootstrap-peer $IP $CHAIN_NAME > join-$CHAIN_NAME.yaml
 ```
 
 Share the resulting join-$CHAIN_NAME.yaml with your partner via a
-secure channel. Have them apply this file to their Minikube cluster:
+secure channel.
+
+
+### on the computer of the joining node
+
+Member clusters will also need to have storage allocated for their
+node. Assuming Minikube on MacOS the following commands will
+establish an NFS share and a k8s PersistentVolume to satisfy the claims of the node.
+
+``` shell
+sudo sh -c 'echo "/System/Volumes/Data/Users/ -alldirs -mapall=501:1000 $(minikube ip)" >> /etc/exports'
+sudo nfsd restart
+
+NODE_DIR=$HOME/.tq
+mkdir -p $NODE_DIR
+NFS_HOST=$(minikube ssh "ip route show default"|awk '{print $3}')
+```
+
+``` shell
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  labels:
+    storage-type: var-files
+  name: tezos-var-volume
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 15Gi
+  nfs:
+    path: $NODE_DIR
+    server: $NFS_HOST
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+EOF
+```
+
+The member can now apply the shared yaml to their Minikube cluster:
 
 ``` shell
 kubectl apply -f join-$CHAIN_NAME.yaml
