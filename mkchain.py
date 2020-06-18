@@ -389,6 +389,8 @@ def main():
     k8s_templates = ["common.yaml"]
 
     genesis_key = None
+    genesis_block = None
+
     try:
         genesis_key = get_key(args.docker_image, key_dir, "genesis")
     except:

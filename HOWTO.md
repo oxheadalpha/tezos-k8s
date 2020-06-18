@@ -8,6 +8,7 @@ MacOS.
 
 
 ## Prerequisites
+* docker
 * homebrew
 * minikube
 * python3
@@ -82,7 +83,7 @@ CHAIN_NAME=my_chain
 Run the following command to create the chain:
 
 ``` shell
-mkchain --create --baker --zerotier-network $ZT_NET
+mkchain --create --baker --zerotier-network $ZT_NET \
 --zerotier-token $ZT_TOKEN $CHAIN_NAME | kubectl apply -f -
 ```
 
