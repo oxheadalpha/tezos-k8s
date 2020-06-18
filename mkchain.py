@@ -373,24 +373,7 @@ def get_args():
     )
     parser.add_argument("--baker-command", default="tezos-baker-006-PsCARTHA")
 
-    # add a parser for each cluster type we want to support
-    parser_minikube = subparsers.add_parser(
-        "minikube", help="generate config for minikube"
-    )
-    parser_minikube.set_defaults(minikube=True)
-
-    parser_eks = subparsers.add_parser("eks", help="generate config for EKS")
-    parser_eks.set_defaults(eks=True)
-    # parser_eks.add_argument("gdb_volume_id")
-    # parser_eks.add_argument("gdb_aws_region")
-
-    parser_kind = subparsers.add_parser("kind", help="generate config for kind")
-    parser_kind.set_defaults(kind=True)
-
-    parser_docker_desktop = subparsers.add_parser(
-        "docker-desktop", help="generate config for docker-desktop"
-    )
-    parser_docker_desktop.set_defaults(docker_desktop=True)
+    parser.add_argument("--cluster", default="minikube")
 
     return parser.parse_args()
 
@@ -482,7 +465,7 @@ def main():
         timestamp = args.timestamp
 
     minikube_gw = None
-    if "minikube" in args:
+    if args.cluster == "minikube":
         try:
             minikube_route = (
                 subprocess.check_output(
@@ -513,9 +496,9 @@ def main():
         except subprocess.CalledProcessError as e:
             print("failed to get minikube route %r" % e)
 
-    if any(x in args for x in ["minikube", "docker-desktop"]):
+    if args.cluster in ["minikube", "docker-desktop"]:
         k8s_templates.append("pv.yaml")
-    elif "eks" in args:
+    elif args.cluster == "eks":
         k8s_templates.append("eks.yaml")
 
     if args.zerotier_network:
@@ -528,16 +511,16 @@ def main():
             k8s_resources = yaml.load_all(yaml_template, Loader=yaml.FullLoader)
             for k in k8s_resources:
                 if safeget(k, "metadata", "name") == "tezos-var-volume":
-                    if "docker_desktop" in args:
+                    if args.cluster == "docker_desktop":
                         k["spec"]["hostPath"] = {"path": args.tezos_dir}
-                    elif "minikube" in args:
+                    elif args.cluster == "minikube":
                         k["spec"]["nfs"] = {
                             "path": args.tezos_dir,
                             "server": minikube_gw,
                         }
 
                 if safeget(k, "metadata", "name") == "tezos-pv-claim":
-                    if "eks" in args:
+                    if args.cluster == "eks":
                         k["spec"]["storageClassName"] = "ebs-sc"
 
                 if safeget(k, "metadata", "name") == "tezos-config":
