@@ -1,9 +1,10 @@
-from setuptools import setup
+from distutils.core import setup
 
 setup(
     name="mkchain",
     version="0.1",
-    py_modules=['mkchain'],
+    packages=['tqchain'],
+    package_data={'tqchain': ['deployment/*']},
     install_requires=["pyyaml", "kubernetes"],
-    entry_points={"console_scripts": ["mkchain=mkchain:main"]},
+    entry_points={"console_scripts": ["mkchain=tqchain.mkchain:main"]},
 )
