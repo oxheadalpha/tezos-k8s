@@ -43,8 +43,8 @@ minikube start
 Install the mkchain program:
 
 ``` shell
-python3 -m venv .venv
-source .venv/bin/activate
+python3 -m venv .venv-tezos-k8s
+source .venv-tezos-k8s/bin/activate
 pip install https://github.com/tqtezos/tezos-k8s/archive/master.zip
 ```
 
