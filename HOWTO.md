@@ -103,7 +103,7 @@ kubectl -n tqtezos get pods
 
 You can view logs for your node using the following command:
 ``` shell
-kubectl -n tqtezos logs -l app=tezos-node -f
+kubectl -n tqtezos logs -l app=tezos-node -c tezos-node -f
 ```
 
 Congratulations! You now have an operational Tezos based permissioned
@@ -121,8 +121,8 @@ IP=$(kubectl -n tqtezos exec  daemonsets/zerotier-bridge -- zerotier-cli get $ZT
 mkchain --invite --bootstrap-peer $IP $CHAIN_NAME > join-$CHAIN_NAME.yaml
 ```
 
-Share the resulting join-$CHAIN_NAME.yaml with your partner. Have them
-apply this file to their Minikube cluster:
+Share the resulting join-$CHAIN_NAME.yaml with your partner via a
+secure channel. Have them apply this file to their Minikube cluster:
 
 ``` shell
 kubectl apply -f join-$CHAIN_NAME.yaml
