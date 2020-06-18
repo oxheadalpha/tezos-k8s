@@ -45,6 +45,7 @@ spec:
   type: NodePort
   ports:
   - port: 9732
+    nodePort: 30732
   selector:
     app: tezos-node
 ---

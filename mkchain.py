@@ -367,7 +367,6 @@ def get_args():
     parser.add_argument("--genesis-block", help="hash of the genesis block")
     parser.add_argument("--timestamp", help="timestamp for the chain to join")
 
-    parser.add_argument("--stdout", action="store_true")
     parser.add_argument(
         "--protocol-hash", default="PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb"
     )
@@ -395,6 +394,9 @@ def main():
     except:
         pass
 
+    zerotier_network = args.zerotier_network
+    zerotier_token = args.zerotier_token
+
     if args.create:
         k8s_templates.append("activate.yaml")
         if genesis_key is None:
@@ -408,61 +410,27 @@ def main():
         k8s_config.load_kube_config()
         v1 = k8s_client.CoreV1Api()
         bootstrap_peer = args.bootstrap_peer
-        try:
-            tezos_config = json.loads(
-                v1.read_namespaced_config_map("tezos-config", "tqtezos").data[
-                    "config.json"
-                ]
-            )
-            service = v1.read_namespaced_service("tezos-net", "tqtezos")
-            node_port = (
-                v1.read_namespaced_service("tezos-net", "tqtezos")
-                .spec.ports[0]
-                .node_port
-            )
-            bootstrap_peer = f"{bootstrap_peer}:{node_port}"
-        except:
-            raise
-
-        l = ["mkchain", "--stdout"]
-        if args.zerotier_network:
-            l.extend(
-                [
-                    "--zerotier-network",
-                    args.zerotier_network,
-                    "--zerotier-token",
-                    args.zerotier_token,
-                ]
-            )
-        l.extend(
-            [
-                "--join",
-                "--genesis-key",
-                tezos_config["network"]["genesis_parameters"]["values"][
-                    "genesis_pubkey"
-                ],
-                "--genesis-block",
-                tezos_config["network"]["genesis"]["block"],
-                "--timestamp",
-                tezos_config["network"]["genesis"]["timestamp"],
-                "--bootstrap-peer",
-                bootstrap_peer,
-                tezos_config["network"]["chain_name"],
+        tezos_config = json.loads(
+            v1.read_namespaced_config_map("tezos-config", "tqtezos").data[
+                "config.json"
             ]
         )
-        print(" ".join(l))
+        service = v1.read_namespaced_service("tezos-net", "tqtezos")
+        node_port = (
+            v1.read_namespaced_service("tezos-net", "tqtezos")
+            .spec.ports[0]
+            .node_port
+        )
+        bootstrap_peers = [f"{bootstrap_peer}:{node_port}"]
+        genesis_key = tezos_config["network"]["genesis_parameters"]["values"][
+                    "genesis_pubkey"
+                ]
+        genesis_block = tezos_config["network"]["genesis"]["block"]
+        timestamp = tezos_config["network"]["genesis"]["timestamp"]
 
-    if args.join:
-        """
-        1. Join as a read-only node
-        2. Join as a node with a key that has enough tez to conduct transactions
-        3. Join as a node with enought tez to bake + start the baker
-        """
-        genesis_key = args.genesis_key
-        # validate peer ip
-        IPv4Address(args.bootstrap_peer.split(":")[0])
-        bootstrap_peers = [args.bootstrap_peer]
-        timestamp = args.timestamp
+        zerotier_config = v1.read_namespaced_config_map('zerotier-config', 'tqtezos')
+        zerotier_network = zerotier_config.data['NETWORK_IDS']
+        zerotier_token = zerotier_config.data['ZTAUTHTOKEN']
 
     minikube_gw = None
     if args.cluster == "minikube":
@@ -539,7 +507,7 @@ def main():
                                 genesis_key,
                                 timestamp,
                                 bootstrap_peers,
-                                args.genesis_block,
+                                genesis_block,
                             )
                         ),
                     }
@@ -612,20 +580,15 @@ def main():
                     ] = args.docker_image
 
                 if safeget(k, "metadata", "name") == "zerotier-config":
-                    k["data"]["NETWORK_IDS"] = args.zerotier_network
-                    k["data"]["ZTAUTHTOKEN"] = args.zerotier_token
+                    k["data"]["NETWORK_IDS"] = zerotier_network
+                    k["data"]["ZTAUTHTOKEN"] = zerotier_token
                     zt_hostname = str(uuid.uuid4())
                     print(f"zt_hostname: {zt_hostname}", file=sys.stderr)
                     k["data"]["ZTHOSTNAME"] = zt_hostname
 
                 k8s_objects.append(k)
 
-    if args.stdout:
-        out = sys.stdout
-    else:
-        out = open(f"{args.chain_name}.yaml", "w")
-
-    yaml.dump_all(k8s_objects, out)
+    yaml.dump_all(k8s_objects, sys.stdout)
 
 
 if __name__ == "__main__":
