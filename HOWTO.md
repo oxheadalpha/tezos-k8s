@@ -184,3 +184,9 @@ done
 
 Congratulations! You now have a multi-node Tezos based permissioned
 chain.
+
+Check that the nodes have matching heads by comparing their hashes:
+
+``` shell
+kubectl -n tqtezos exec deployment/tezos-node -c tezos-node -- /usr/local/bin/tezos-client rpc get /chains/main/blocks/head/hash
+```
