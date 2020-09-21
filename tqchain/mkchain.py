@@ -7,6 +7,7 @@ import subprocess
 import sys
 import uuid
 import yaml
+import platform
 
 from datetime import datetime
 from datetime import timezone
@@ -464,11 +465,14 @@ def main():
                     "Add the following line to /etc/exports and restart nfsd.",
                     file=sys.stderr,
                 )
-                print(
-                    '"%s" -alldirs -mapall=%s:%s %s'
-                    % (args.tezos_dir, os.getuid(), os.getgid(), minikube_ip),
-                    file=sys.stderr,
-                )
+                if platform.system() == "Darwin":
+                    print(
+                        '"%s" -alldirs -mapall=%s:%s %s'
+                        % (args.tezos_dir, os.getuid(), os.getgid(), minikube_ip),
+                        file=sys.stderr,
+                    )
+                else:
+                    print(f"{args.tezos_dir} {minikube_ip}(rw,sync,no_subtree_check,all_squash,anonuid={os.getuid()},anongid={os.getgid()})")
         except subprocess.CalledProcessError as e:
             print("failed to get minikube route %r" % e)
 

@@ -8,14 +8,18 @@ MacOS.
 
 
 ## Prerequisites
+
 * docker
-* homebrew
 * minikube
 * python3
 * a ZeroTier network and api access token
 * jq
 
-## Installation
+## Installing prerequisites 
+
+This section varies depending on OS.
+
+### Mac w/ homebrew
 
 Make sure homebrew is installed:
 
@@ -23,21 +27,35 @@ Make sure homebrew is installed:
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 ```
 
-Install python3:
+Install prerequisites:
 
 ``` shell
 brew install python3
-```
-
-Install jq:
-``` shell
 brew install jq
+brew install minikube
 ```
 
-Ensure minikube is installed and running:
+### Arch Linux 
+
+```shell
+pacman -Syu && pacman -S python3 jq minikube kubectl kubectx linux
+```
+
+Ensure that the kernel used is compiled with the `nfs` module. The default arch 
+linux kernel should suffice.
+
+Enable and start the `rpcbind` and `nfs-server` systemd services:
+
+```shell
+sudo systemctl enable rpcbind && sudo systemctl start rpcbind
+sudo systemctl enable nfs-server && sudo systemctl enable nfs-server
+```
+
+## Setting up mkchain
+
+Ensure minikube is running:
 
 ``` shell
-brew install minikube
 minikube start
 ```
 
@@ -66,29 +84,61 @@ ZT_TOKEN=yEflQt726fjXuSUyQ73WqXvAFoijXkLt
 ZT_NET=1c33c1ced02a5eee
 ```
 
-Prepare your cluster storage for the node. On MacOS your storage
-directory needs to be exported to Minikube via NFS:
-
-``` shell
-sudo sh -c 'echo "/System/Volumes/Data/Users/ -alldirs -mapall=501:1000 $(minikube ip)" >> /etc/exports'
-sudo nfsd restart
-```
-
 Give your private chain a name:
 
 ``` shell
 CHAIN_NAME=my_chain
 ```
 
-Run the following command to create the chain:
+Set unbuffered IO for python:
+
+``` shell
+PYTHONUNBUFFERED=x
+```
+
+Run the following command to create the chain yaml:
 
 ``` shell
 mkchain --create --baker --zerotier-network $ZT_NET \
---zerotier-token $ZT_TOKEN $CHAIN_NAME | kubectl apply -f -
+--zerotier-token $ZT_TOKEN $CHAIN_NAME > output.yaml
+```
+
+Prepare your cluster storage for the node. On MacOS your storage
+directory needs to be exported to Minikube via NFS:
+
+For mac:
+
+``` shell
+sudo sh -c 'echo "/System/Volumes/Data/Users/ -alldirs -mapall=501:1000 $(minikube ip)" >> /etc/exports'
+sudo nfsd restart
+```
+
+For Linux:
+
+``` shell
+sudo sh -c 'echo "$HOME/.tq $(minikube ip)(rw,sync,no_subtree_check,all_squash,anonuid=$(id -u),anongid=$(id -g))" >> /etc/exports'
+sudo exportfs -arv
+```
+
+If you're on Linux, you may also need to ensure that your minikube virtual 
+machine has the appropriate NFS support:
+
+``` shell
+minikube ssh
+sudo -s
+apt update && apt install nfs-common
+echo -e "[ NFSMount_Global_Options ]\nDefaultvers=3" > /etc/nfsmount.conf
+```
+
+Feed the chain yaml file to kubernetes:
+
+``` shell
+kubectl apply -f output.yaml
 ```
 
 Your kubernetes cluster will now be running a series of jobs to
 perform the following tasks:
+
 * generate a node identity
 * generate a genesis block for your chain
 * activate the protocol
