@@ -472,7 +472,9 @@ def main():
                         file=sys.stderr,
                     )
                 else:
-                    print(f"{args.tezos_dir} {minikube_ip}(rw,sync,no_subtree_check,all_squash,anonuid={os.getuid()},anongid={os.getgid()})")
+                    print(f"{args.tezos_dir} {minikube_ip}(rw,sync,no_subtree_check,all_squash,anonuid={os.getuid()},anongid={os.getgid()})",
+                        file=sys.stderr,
+                    )
         except subprocess.CalledProcessError as e:
             print("failed to get minikube route %r" % e)
 
