@@ -37,7 +37,7 @@ def main():
 
 def get_bootstrap_account_pubkeys():
     with open("/var/tezos/client/public_keys", "r") as f:
-        tezos_pubkey_list = json.loads(f.read())
+        tezos_pubkey_list = json.load(f)
     pubkeys = {}
     for key in tezos_pubkey_list:
         pubkeys[key["name"]] = key["value"]["key"]
