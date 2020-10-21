@@ -41,16 +41,6 @@ brew install minikube
 pacman -Syu && pacman -S python3 jq minikube kubectl kubectx linux
 ```
 
-Ensure that the kernel used is compiled with the `nfs` module. The default arch 
-linux kernel should suffice.
-
-Enable and start the `rpcbind` and `nfs-server` systemd services:
-
-```shell
-sudo systemctl enable rpcbind && sudo systemctl start rpcbind
-sudo systemctl enable nfs-server && sudo systemctl enable nfs-server
-```
-
 ## Setting up mkchain
 
 Ensure minikube is running:
@@ -99,35 +89,9 @@ PYTHONUNBUFFERED=x
 Run the following command to create the chain yaml:
 
 ``` shell
+mkchain --generate-constants $CHAIN_NAME
 mkchain --create --baker --zerotier-network $ZT_NET \
 --zerotier-token $ZT_TOKEN $CHAIN_NAME > output.yaml
-```
-
-Prepare your cluster storage for the node. On MacOS your storage
-directory needs to be exported to Minikube via NFS:
-
-For mac:
-
-``` shell
-sudo sh -c 'echo "/System/Volumes/Data/Users/ -alldirs -mapall=501:1000 $(minikube ip)" >> /etc/exports'
-sudo nfsd restart
-```
-
-For Linux:
-
-``` shell
-sudo sh -c 'echo "$HOME/.tq $(minikube ip)(rw,sync,no_subtree_check,all_squash,anonuid=$(id -u),anongid=$(id -g))" >> /etc/exports'
-sudo exportfs -arv
-```
-
-If you're on Linux, you may also need to ensure that your minikube virtual 
-machine has the appropriate NFS support:
-
-``` shell
-minikube ssh
-sudo -s
-apt update && apt install nfs-common
-echo -e "[ NFSMount_Global_Options ]\nDefaultvers=3" > /etc/nfsmount.conf
 ```
 
 Feed the chain yaml file to kubernetes:
@@ -177,41 +141,7 @@ secure channel.
 
 ### on the computer of the joining node
 
-Member clusters will also need to have storage allocated for their
-node. Assuming Minikube on MacOS the following commands will
-establish an NFS share and a k8s PersistentVolume to satisfy the claims of the node.
-
-``` shell
-sudo sh -c 'echo "/System/Volumes/Data/Users/ -alldirs -mapall=501:1000 $(minikube ip)" >> /etc/exports'
-sudo nfsd restart
-
-NODE_DIR=$HOME/.tq
-mkdir -p $NODE_DIR
-NFS_HOST=$(minikube ssh "ip route show default"|awk '{print $3}')
-```
-
-``` shell
-cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  labels:
-    storage-type: var-files
-  name: tezos-var-volume
-spec:
-  accessModes:
-  - ReadWriteOnce
-  capacity:
-    storage: 15Gi
-  nfs:
-    path: $NODE_DIR
-    server: $NFS_HOST
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: manual
-EOF
-```
-
-The member can now apply the shared yaml to their Minikube cluster:
+The member can apply the shared yaml to their Minikube cluster:
 
 ``` shell
 kubectl apply -f join-$CHAIN_NAME.yaml

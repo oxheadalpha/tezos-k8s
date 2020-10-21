@@ -12,6 +12,18 @@ pip install -e ./
 
 ## private chain
 
+### Generate constants
+
+Your chain is uniquely defined by a set of values such as bootstrap account keys, chain id, timestamp...
+
+Create these values:
+
+``` shell
+mkchain --generate-constants $CHAIN_NAME
+```
+
+It will create two 2 yaml files, `<$CHAIN_NAME>_chain.yaml` and `<$CHAIN_NAME>_chain_invite.yaml`.
+
 ### create
 $CHAIN_NAME: is your private chain's name
 

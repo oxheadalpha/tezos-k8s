@@ -9,15 +9,23 @@ metadata:
   name: tezos-pv-claim
   namespace: "tqtezos"
 spec:
-  storageClassName: manual
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
       storage: 15Gi
-  selector:
-    matchLabels:
-      storage-type: var-files
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: tezos-secret
+  namespace: "tqtezos"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tqtezos-utils
+  namespace: "tqtezos"
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -31,8 +39,10 @@ metadata:
   name: tezos-rpc
   namespace: "tqtezos"
 spec:
+  type: NodePort
   ports:
   - port: 8732
+    nodePort: 31732
   selector:
     app: tezos-node
 ---
@@ -65,6 +75,23 @@ spec:
       labels:
         app: tezos-node
     spec:
+      securityContext:
+        fsGroup: 100
+      initContainers:
+      - imagePullPolicy: Always
+        name: tezos-config-generator
+        image: python:alpine
+        command: ["python", "/opt/tqtezos/generateTezosConfig.py"]
+        envFrom:
+        - configMapRef:
+            name: tezos-config
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/tezos
+        - name: tqtezos-utils
+          mountPath: /opt/tqtezos
+        - name: var-volume
+          mountPath: /var/tezos
       containers:
       - imagePullPolicy: Always
         name: tezos-node
@@ -88,8 +115,10 @@ spec:
           mountPath: /var/tezos
       volumes:
       - name: config-volume
+        emptyDir: {}
+      - name: tqtezos-utils
         configMap:
-          name: tezos-config
+          name: tqtezos-utils
       - name: var-volume
         persistentVolumeClaim:
           claimName: tezos-pv-claim
