@@ -192,6 +192,7 @@ def get_args():
 
     subparsers = parser.add_subparsers(help="clusters")
 
+    parser.add_argument("--number-of-nodes", help="number of peers in the cluster", default=1, type=int)
     parser.add_argument("--bootstrap-peer", help="peer ip to join")
     parser.add_argument(
         "--genesis-key", help="genesis public key for the chain to join"
@@ -218,6 +219,10 @@ def main():
 
     zerotier_network = args.zerotier_network
     zerotier_token = args.zerotier_token
+
+    if args.number_of_nodes < 1:
+        print(f"Invalid argument --number-of-nodes {arg.number_of_nodes}, must be 1 or more")
+        exit(1)
 
     if args.create or args.invite:
         if not os.path.isfile(f"{args.chain_name}_chain.yaml"):
@@ -255,15 +260,19 @@ def main():
         exit(0)
 
     if args.create:
-        k8s_templates.append("activate.yaml")
+        k8s_templates.append("progenitor.yaml")
         bootstrap_peers = []
+        if args.number_of_nodes > 1:
+            k8s_templates.append("node.yaml")
+            bootstrap_peers.append("tezos-bootstrap:9732")
 
     if args.invite:
+        k8s_templates.append("node.yaml")
         k8s_config.load_kube_config()
         v1 = k8s_client.CoreV1Api()
         bootstrap_peer = args.bootstrap_peer
         node_port = (
-            v1.read_namespaced_service("tezos-net", "tqtezos")
+            v1.read_namespaced_service("tezos-bootstrap", "tqtezos")
             .spec.ports[0]
             .node_port
         )
@@ -321,31 +330,11 @@ def main():
                         "generateTezosConfig.py": generate_tezos_config_script,
                     }
 
-                if safeget(k, "metadata", "name") == "tezos-node":
+                if safeget(k, "metadata", "name") == "tezos-progenitor":
                     # set the docker image for the node
                     k["spec"]["template"]["spec"]["containers"][0][
                         "image"
                     ] = args.docker_image
-
-                    # if you are the chain creator use a lower bootstrap threshold
-                    if args.create:
-                        node_args = k["spec"]["template"]["spec"]["containers"][0][
-                            "args"
-                        ]
-                        new_node_args = node_args[:1]
-                        new_node_args.extend(["--bootstrap-threshold", "0"])
-                        new_node_args.extend(node_args[1:])
-                        k["spec"]["template"]["spec"]["containers"][0][
-                            "args"
-                        ] = new_node_args
-
-                    # if not os.path.isfile(
-                    #     os.path.join(args.tezos_dir, "node", "identity.json")
-                    # ):
-                    #     # add the identity job
-                    #     k["spec"]["template"]["spec"][
-                    #         "initContainers"
-                    #     ] = get_identity_job(args.docker_image)
 
                     # add key import for bootstrap node
                     k["spec"]["template"]["spec"][
@@ -362,6 +351,25 @@ def main():
                             get_baker(args.docker_image, args.baker_command)
                         )
 
+                if safeget(k, "metadata", "name") == "tezos-node":
+                    # set the docker image for the node
+                    k["spec"]["template"]["spec"]["containers"][0][
+                        "image"
+                    ] = args.docker_image
+
+                    # add key import for bootstrap node
+                    k["spec"]["template"]["spec"][
+                        "initContainers"
+                    ].insert(0, get_import_key_job(args.docker_image))
+
+                    # add the identity job
+                    k["spec"]["template"]["spec"][
+                        "initContainers"
+                    ].append(get_identity_job(args.docker_image))
+
+                    # set replicas
+                    k["spec"]["replicas"] = args.number_of_nodes - ( 1 if args.create else 0 )
+
                 if safeget(k, "metadata", "name") == "activate-job":
                     k["spec"]["template"]["spec"]["initContainers"][0][
                         "image"
@@ -371,7 +379,7 @@ def main():
                     ] = args.docker_image
                     k["spec"]["template"]["spec"]["initContainers"][3]["args"] = [
                         "-A",
-                        "tezos-rpc",
+                        "tezos-progenitor-rpc",
                         "-P",
                         "8732",
                         "-d",
@@ -400,7 +408,7 @@ def main():
                         k["spec"]["template"]["spec"]["volumes"][1] = {
                            "name": "var-volume",
                            "persistentVolumeClaim": {
-                             "claimName": "tezos-pv-claim" } }
+                             "claimName": "tezos-progenitor-pv-claim" } }
 
                 if safeget(k, "metadata", "name") == "zerotier-config":
                     k["data"]["NETWORK_IDS"] = zerotier_network
