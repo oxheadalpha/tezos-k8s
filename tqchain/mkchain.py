@@ -260,7 +260,7 @@ def main():
         exit(0)
 
     if args.create:
-        k8s_templates.append("progenitor.yaml")
+        k8s_templates.append("bootstrap-node.yaml")
         bootstrap_peers = []
         if args.number_of_nodes > 1:
             k8s_templates.append("node.yaml")
@@ -330,7 +330,7 @@ def main():
                         "generateTezosConfig.py": generate_tezos_config_script,
                     }
 
-                if safeget(k, "metadata", "name") == "tezos-progenitor":
+                if safeget(k, "metadata", "name") == "tezos-bootstrap-node":
                     # set the docker image for the node
                     k["spec"]["template"]["spec"]["containers"][0][
                         "image"
@@ -379,7 +379,7 @@ def main():
                     ] = args.docker_image
                     k["spec"]["template"]["spec"]["initContainers"][3]["args"] = [
                         "-A",
-                        "tezos-progenitor-rpc",
+                        "tezos-bootstrap-node-rpc",
                         "-P",
                         "8732",
                         "-d",
@@ -408,7 +408,7 @@ def main():
                         k["spec"]["template"]["spec"]["volumes"][1] = {
                            "name": "var-volume",
                            "persistentVolumeClaim": {
-                             "claimName": "tezos-progenitor-pv-claim" } }
+                             "claimName": "tezos-bootstrap-node-pv-claim" } }
 
                 if safeget(k, "metadata", "name") == "zerotier-config":
                     k["data"]["NETWORK_IDS"] = zerotier_network

@@ -107,7 +107,7 @@ perform the following tasks:
 * generate a genesis block for your chain
 * activate the protocol
 * bake the first block
-* start the progenitor node and a baker to validate the chain
+* start the bootstrap-node node and a baker to validate the chain
 
 You can find your node in the tqtezos namespace using kubectl.
 
@@ -117,7 +117,7 @@ kubectl -n tqtezos get pods
 
 You can view logs for your node using the following command:
 ``` shell
-kubectl -n tqtezos logs -l app=tezos-progenitor -c tezos-node -f
+kubectl -n tqtezos logs -l app=tezos-bootstrap-node -c tezos-node -f
 ```
 
 Congratulations! You now have an operational Tezos based permissioned
