@@ -213,9 +213,8 @@ def get_args():
 def main():
     args = get_args()
 
-    bootstrap_peers = []
     bootstrap_accounts = ["baker", "bootstrap_account_1", "bootstrap_account_2", "genesis"]
-    k8s_templates = ["common.yaml"]
+    k8s_templates = ["common.yaml", "node.yaml"]
 
     zerotier_network = args.zerotier_network
     zerotier_token = args.zerotier_token
@@ -261,13 +260,9 @@ def main():
 
     if args.create:
         k8s_templates.append("bootstrap-node.yaml")
-        bootstrap_peers = []
-        if args.number_of_nodes > 1:
-            k8s_templates.append("node.yaml")
-            bootstrap_peers.append("tezos-bootstrap-node-p2p:9732")
+        bootstrap_peers = ["tezos-bootstrap-node-p2p:9732"]
 
     if args.invite:
-        k8s_templates.append("node.yaml")
         k8s_config.load_kube_config()
         v1 = k8s_client.CoreV1Api()
         bootstrap_peer = args.bootstrap_peer
