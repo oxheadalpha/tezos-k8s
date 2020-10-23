@@ -130,20 +130,22 @@ a number of nodes of your choice by passing the following argument to
 mkchain:
 
 ```
-mkchain --create --baker --number-of-nodes 3 <...> mychain
+mkchain --number-of-nodes 3 <...>
 ```
 
-The nodes will establish peer-to-peer connection in a full mesh topology.
+The nodes will establish peer-to-peer connections in a full mesh topology.
 
-If you previously spun un the chain with just one node, you may scale
+If you previously spun up the chain with just one node, you may scale
 up your setup to an arbitrary number of nodes by applying the resulting
 yaml on the cluster:
 
 ```
 # create
-mkchain --create --baker mychain | kubectl apply -f -
+mkchain --create --baker --zerotier-network $ZT_NET \
+--zerotier-token $ZT_TOKEN $CHAIN_NAME | kubectl apply -f -
 # scale up
-mkchain --create --baker --number-of-nodes 3 mychain | kubectl apply -f -
+mkchain --create --baker --number-of-nodes 3 --zerotier-network $ZT_NET \
+--zerotier-token $ZT_TOKEN $CHAIN_NAME | kubectl apply -f -
 ```
 
 ## Add external nodes to the cluster
