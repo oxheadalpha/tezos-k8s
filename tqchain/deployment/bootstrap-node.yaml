@@ -81,7 +81,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: tezos-bootstrap
+  name: tezos-bootstrap-node-p2p
   namespace: "tqtezos"
 spec:
   type: NodePort

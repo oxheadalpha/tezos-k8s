@@ -221,7 +221,7 @@ def main():
     zerotier_token = args.zerotier_token
 
     if args.number_of_nodes < 1:
-        print(f"Invalid argument --number-of-nodes {arg.number_of_nodes}, must be 1 or more")
+        print(f"Invalid argument --number-of-nodes {args.number_of_nodes}, must be 1 or more")
         exit(1)
 
     if args.create or args.invite:
@@ -264,7 +264,7 @@ def main():
         bootstrap_peers = []
         if args.number_of_nodes > 1:
             k8s_templates.append("node.yaml")
-            bootstrap_peers.append("tezos-bootstrap:9732")
+            bootstrap_peers.append("tezos-bootstrap-node-p2p:9732")
 
     if args.invite:
         k8s_templates.append("node.yaml")
@@ -272,7 +272,7 @@ def main():
         v1 = k8s_client.CoreV1Api()
         bootstrap_peer = args.bootstrap_peer
         node_port = (
-            v1.read_namespaced_service("tezos-bootstrap", "tqtezos")
+            v1.read_namespaced_service("tezos-bootstrap-node-p2p", "tqtezos")
             .spec.ports[0]
             .node_port
         )
@@ -357,7 +357,7 @@ def main():
                         "image"
                     ] = args.docker_image
 
-                    # add key import for bootstrap node
+                    # add key import for peer node
                     k["spec"]["template"]["spec"][
                         "initContainers"
                     ].insert(0, get_import_key_job(args.docker_image))
