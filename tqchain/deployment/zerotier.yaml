@@ -1,4 +1,16 @@
 apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: zerotier-pv-claim
+  namespace: "tqtezos"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
 kind: ConfigMap
 metadata:
   name: zerotier-config
@@ -63,4 +75,4 @@ spec:
           path: /dev/net/tun
       - name: ztdata
         persistentVolumeClaim:
-          claimName: tezos-pv-claim
+          claimName: zerotier-pv-claim
