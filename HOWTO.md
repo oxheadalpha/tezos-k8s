@@ -127,7 +127,7 @@ chain running one node.
 
 You can configure a self-contained testnet within your cluster with
 a number of nodes of your choice by passing the following argument to
-mkchain generate-constnats:
+mkchain generate-constants:
 
 ```
 mkchain generate-constants --number-of-nodes 3 <...> $CHAIN_NAME
