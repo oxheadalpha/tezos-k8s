@@ -37,8 +37,7 @@ def get_nonce(chain_id):
     #     return make_response("Missing tz1 address", 400)
 
     nonce = create_nonce()
-    # Set nonce with value for access count to 0
-    redis.set(nonce, 0, ex=3)
+    redis.set(nonce, "", ex=3)
     return nonce
 
 
@@ -56,21 +55,14 @@ def get_cluster_url():
     if not is_valid_nonce(nonce):
         return "Unauthorized", 401
 
-    # Set nonce's access count to 1 so that it cannot be replayed
+    # Immediately delete the nonce from redis so that it cannot be replayed.
     # (Will this actually prevent simultaneous requests with the same nonce??)
-    redis.set(nonce, 1, xx=True, keepttl=True)
+    redis.delete(nonce)
 
     is_valid_signature = verify_signature(pk, signature, nonce)
     if not is_valid_signature:
         return "Unauthorized", 401
     return "VERIFIED"
-
-
-def is_valid_nonce(nonce):
-    nonce_from_redis = redis.get(nonce)
-    if nonce_from_redis != None and int(nonce_from_redis) == 0:
-        return True
-    return False
 
 
 def verify_chain_id(chain_id):
@@ -90,6 +82,13 @@ def get_chain_id():
 
 def create_nonce():
     return str(uuid4().hex)
+
+
+def is_valid_nonce(nonce):
+    nonce_from_redis = redis.get(nonce)
+    if nonce_from_redis != None:
+        return True
+    return False
 
 
 def verify_signature(pk, signature, nonce):
