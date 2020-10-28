@@ -200,7 +200,6 @@ def get_args():
             if command != "generate-constants":
                 v.pop("default", None)
             subparser.add_argument(*["--" + k.replace("_", "-")], **v)
-    parser.add_argument("--cluster-type", default="minikube", help="kubernetes cluster type (minikube, eks...)")
 
     return parser.parse_args()
 
@@ -280,10 +279,6 @@ def main():
 
             k8s_resources = yaml.load_all(yaml_template, Loader=yaml.FullLoader)
             for k in k8s_resources:
-
-                if safeget(k, "metadata", "name") == "tezos-pv-claim":
-                    if args.cluster == "eks":
-                        k["spec"]["storageClassName"] = "gp2"
 
                 if safeget(k, "metadata", "name") == "tezos-secret":
                     data = { "BOOTSTRAP_ACCOUNTS" : " ".join(bootstrap_accounts) }
@@ -392,12 +387,6 @@ def main():
                     k["spec"]["template"]["spec"]["initContainers"][4][
                         "image"
                     ] = c["docker_image"]
-
-                    if args.cluster == "minikube":
-                        k["spec"]["template"]["spec"]["volumes"][1] = {
-                           "name": "var-volume",
-                           "persistentVolumeClaim": {
-                             "claimName": "tezos-bootstrap-node-pv-claim" } }
 
                 if safeget(k, "metadata", "name") == "zerotier-config":
                     k["data"]["NETWORK_IDS"] = c["zerotier_network"]
