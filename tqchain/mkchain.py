@@ -200,7 +200,7 @@ def get_args():
             if command != "generate-constants":
                 v.pop("default", None)
             subparser.add_argument(*["--" + k.replace("_", "-")], **v)
-    parser.add_argument("--cluster", default="minikube", help="kubernetes cluster type (minikube, eks...)")
+    parser.add_argument("--cluster-type", default="minikube", help="kubernetes cluster type (minikube, eks...)")
 
     return parser.parse_args()
 
