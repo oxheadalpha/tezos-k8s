@@ -62,7 +62,9 @@ def get_cluster_url():
     is_valid_signature = verify_signature(pk, signature, nonce)
     if not is_valid_signature:
         return "Unauthorized", 401
-    return "VERIFIED"
+
+    secret_url = generate_secret_url(pk)
+    return secret_url
 
 
 def verify_chain_id(chain_id):
@@ -101,5 +103,11 @@ def verify_signature(pk, signature, nonce):
         return False
 
 
+def generate_secret_url(pk):
+    access_token = str(uuid4())
+    redis.set(f"public_key:{pk}", access_token)
+    return f"http://{CLUSTER_IP}/tezos-node-rpc/{access_token}"
+
+
 if __name__ == '__main__':
-    app.run(host="localhost", port=8080, debug=True)
+    app.run(host="0.0.0.0", port=8080, debug=True)

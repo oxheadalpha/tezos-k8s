@@ -56,9 +56,9 @@ spec:
           livenessProbe:
             exec:
               command:
-              - sh
-              - -c
-              - "redis-cli -h $(hostname) ping"
+                - sh
+                - -c
+                - "redis-cli -h $(hostname) ping"
             initialDelaySeconds: 20
             periodSeconds: 3
           # resources:
@@ -84,7 +84,59 @@ spec:
   selector:
     app: rpc-auth
   ports:
-    - port: 80
+    - port: 8080
+      targetPort: 8080
+---
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: rpc-auth-config
+#   namespace: tqtezos1
+# ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rpc-auth
+  namespace: tqtezos1
+spec:
+  selector:
+    matchLabels:
+      app: rpc-auth
+  template:
+    metadata:
+      labels:
+        app: rpc-auth
+    spec:
+      containers:
+        - name: rpc-auth
+          image: python:3
+          ports:
+            - containerPort: 8080
+          command:
+            - sh
+          args:
+            - -c
+            - |
+              apt-get update
+              apt install -y libsodium-dev libsecp256k1-dev libgmp-dev
+              cd /var/rpc-auth
+              python3 -m venv venv
+              . venv/bin/activate
+              pip install wheel
+              pip install -r /var/rpc-auth/server/requirements.txt
+              python3 /var/rpc-auth/server/index.py
+          volumeMounts:
+            - mountPath: /var/rpc-auth/server
+              name: scripts-config-volume
+            - name: venv-volume
+              mountPath: /var/rpc-auth/venv
+      volumes:
+        - name: venv-volume
+          emptyDir: {}
+        - name: scripts-config-volume
+          configMap:
+            name: rpc-auth-config
+
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -98,18 +150,29 @@ spec:
   rules:
     - http:
         paths:
+          # Client provides chain id and gets back a nonce
           - path: /vending-machine/(.*)
             pathType: Exact
             backend:
               service:
-                name: rpc-auth
+                name: rpc-auth-service
                 port:
-                  number: 80
+                  number: 8080
+          # Client provides signed data and gets back a secret url
           - path: /vending-machine
             pathType: Exact
             backend:
               service:
-                name: rpc-auth
+                name: rpc-auth-service
                 port:
-                  number: 80
+                  number: 8080
+          # Client uses secret url to access the RPC endpoint
+          - path: /tezos-node-rpc/(.*)
+            pathType: Exact
+            backend:
+              service:
+                name: rpc-auth-service
+                port:
+                  number: 8080
 ---
+

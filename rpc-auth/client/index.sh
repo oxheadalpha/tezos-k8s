@@ -69,7 +69,7 @@ get_response_status() {
   printf '%q' $1 | sed -e 's/.*HTTPSTATUS://'
 }
 
-nonce_res=$(curl -s -X GET http://localhost:8080/vending-machine/$CHAIN_ID -w " HTTPSTATUS:%{http_code}")
+nonce_res=$(curl -s -X GET http://$CLUSTER_ADDRESS/vending-machine/$CHAIN_ID -w " HTTPSTATUS:%{http_code}")
 # nonce_res=$(curl -s -X GET http://$CLUSTER_ADDRESS/vending-machine/$CHAIN_ID -w " HTTPSTATUS:%{http_code}")
 NONCE=$(get_response_body "$nonce_res")
 nonce_res_status=$(get_response_status "$nonce_res")
@@ -88,12 +88,9 @@ PUBLIC_KEY=$(tezos-client show address ${TZ_ALIAS} 2>/dev/null | grep "Public Ke
 echo SIGNATURE: "$SIGNATURE"
 echo PUBLIC_KEY: "$PUBLIC_KEY"
 
-secret_url_res=$(curl -s -X GET -d "nonce=${NONCE}" -d "signature=${SIGNATURE}" -d "public_key=${PUBLIC_KEY}" http://localhost:8080/vending-machine -w " HTTPSTATUS:%{http_code}")
-# https:/$CLUSTER_ADDRESS/vending-machine)
+secret_url_res=$(curl -s -X GET -d "nonce=${NONCE}" -d "signature=${SIGNATURE}" -d "public_key=${PUBLIC_KEY}" http://$CLUSTER_ADDRESS/vending-machine -w " HTTPSTATUS:%{http_code}")
 SECRET_URL=$(get_response_body "$secret_url_res")
 secret_url_status=$(get_response_status "$secret_url_res")
-
-echo SECRET_URL_STATUS: "$secret_url_status"
 
 if [ "$secret_url_status" != "200" ]; then
   echo "Failed to get secret url. [HTTP status: $secret_url_status]"
