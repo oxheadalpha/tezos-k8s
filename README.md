@@ -33,7 +33,7 @@ You can modify these parameters by:
 * passing argument to `mkchain create` and `mkchain invite` commands, which will selectively override the yaml parameters
 
 | YAML Parameter | mkchain argument | Description | Default |
-| ----- | ----------- | ------ |
+| ----- | ----------- | ------ | ----- |
 | number_of_nodes | --number-of-nodes |  Number of peers in the cluster | 1 |
 | baker | --baker | Include a baking node in the cluster | True |
 | docker_image | --docker-image | Version of the Tezos docker image | tezos/tezos:v7-release |
