@@ -98,5 +98,5 @@ if [ "$secret_url_status" != "200" ]; then
   exit 1
 fi
 
-echo SECRET_URL: "$SECRET_URL"
+echo "Your secret url to access the tezos node RPC: $SECRET_URL"
 

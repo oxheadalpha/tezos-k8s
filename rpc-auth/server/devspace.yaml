@@ -1,0 +1,55 @@
+# version: v1beta9
+# images:
+#   app:
+#     image: devspace
+#     preferSyncOverRebuild: true
+#     injectRestartHelper: true
+#     appendDockerfileInstructions:
+#     - USER root
+#     build:
+#       docker:
+#         skipPush: true
+# deployments:
+# - name: server
+#   helm:
+#     componentChart: true
+#     values:
+#       containers:
+#       - image: devspace
+#       service:
+#         ports:
+#         - port: 8080
+# dev:
+#   ports:
+#   - imageName: app
+#     forward:
+#     - port: 8080
+#   sync:
+#   - imageName: app
+#     excludePaths:
+#     - .git/
+#     uploadExcludePaths:
+#     - devspace.yaml
+#     onUpload:
+#       restartContainer: true
+# profiles:
+# - name: production
+#   patches:
+#   - op: remove
+#     path: images.app.injectRestartHelper
+#   - op: remove
+#     path: images.app.appendDockerfileInstructions
+version: v1beta9
+deployments:
+  - name: backend
+    kubectl:
+      manifests:
+        - /Users/aryehharris/Desktop/tezos-k8s/rpc-auth/server/backend.yaml
+images:
+  server:
+    image: rpc-auth
+dev:
+  sync:
+    - imageName: server
+      labelSelector:
+        app: rpc-auth

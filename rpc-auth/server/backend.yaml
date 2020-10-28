@@ -87,12 +87,6 @@ spec:
     - port: 8080
       targetPort: 8080
 ---
-# apiVersion: v1
-# kind: ConfigMap
-# metadata:
-#   name: rpc-auth-config
-#   namespace: tqtezos1
-# ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -109,34 +103,10 @@ spec:
     spec:
       containers:
         - name: rpc-auth
-          image: python:3
+          image: rpc-auth
+          imagePullPolicy: Never
           ports:
             - containerPort: 8080
-          command:
-            - sh
-          args:
-            - -c
-            - |
-              apt-get update
-              apt install -y libsodium-dev libsecp256k1-dev libgmp-dev
-              cd /var/rpc-auth
-              python3 -m venv venv
-              . venv/bin/activate
-              pip install wheel
-              pip install -r /var/rpc-auth/server/requirements.txt
-              python3 /var/rpc-auth/server/index.py
-          volumeMounts:
-            - mountPath: /var/rpc-auth/server
-              name: scripts-config-volume
-            - name: venv-volume
-              mountPath: /var/rpc-auth/venv
-      volumes:
-        - name: venv-volume
-          emptyDir: {}
-        - name: scripts-config-volume
-          configMap:
-            name: rpc-auth-config
-
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress

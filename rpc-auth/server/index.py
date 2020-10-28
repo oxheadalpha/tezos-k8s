@@ -11,7 +11,6 @@ from uuid import uuid4
 import time
 
 from requests.models import HTTPError
-
 ## See if there is a better way to inject these variables
 CLUSTER_IP = "192.168.64.49"
 # CLUSTER_CHAIN_ID = "NetXHFw7TkU5hhs"
@@ -21,7 +20,7 @@ app = Flask(__name__)
 # redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
 redis = Redis(host=CLUSTER_IP, port=6379)
 
-
+## HANDLE EXCEPTIONS PROPERLY. DON'T RETURN PYTHON CODE FROM FLASK.
 @app.route("/vending-machine/<chain_id>")
 def get_nonce(chain_id):
     try:
