@@ -1,16 +1,13 @@
-from os import abort
 from flask import Flask
 from flask import request
 from flask.helpers import make_response
 from flask.wrappers import Response
-# from markupsafe import escape
+from os import abort
 from pytezos.crypto import Key
 from redis import Redis
-import requests
 from uuid import uuid4
-import time
+import requests
 
-from requests.models import HTTPError
 ## See if there is a better way to inject these variables
 CLUSTER_IP = "192.168.64.49"
 # CLUSTER_CHAIN_ID = "NetXHFw7TkU5hhs"
@@ -20,7 +17,8 @@ app = Flask(__name__)
 # redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
 redis = Redis(host=CLUSTER_IP, port=6379)
 
-## HANDLE EXCEPTIONS PROPERLY. DON'T RETURN PYTHON CODE FROM FLASK.
+## ROUTES
+
 @app.route("/vending-machine/<chain_id>")
 def get_nonce(chain_id):
     try:
@@ -43,7 +41,7 @@ def get_nonce(chain_id):
 @app.route("/vending-machine")
 def get_cluster_url():
     try:
-        nonce, signature, pk = [
+        nonce, signature, public_key = [
             request.values[k] for k in ("nonce", "signature", "public_key")
         ]
     except KeyError as e:
@@ -56,15 +54,28 @@ def get_cluster_url():
 
     # Immediately delete the nonce from redis so that it cannot be replayed.
     # (Will this actually prevent simultaneous requests with the same nonce??)
+    # (May need to run a get/set in a transaction)
     redis.delete(nonce)
 
-    is_valid_signature = verify_signature(pk, signature, nonce)
+    is_valid_signature = verify_signature(public_key, signature, nonce)
     if not is_valid_signature:
         return "Unauthorized", 401
 
-    secret_url = generate_secret_url(pk)
+    secret_url = generate_secret_url(public_key)
     return secret_url
 
+
+@app.route("/tezos-node-rpc/<access_token>/<path:rpc_endpoint>",
+           methods=["GET", "POST", "PATCH", "DELETE", "PUT"])
+def rpc_passthrough(access_token, rpc_endpoint):
+    if not is_valid_access_token(access_token):
+        return "Unauthorized", 401
+
+    request_method = getattr(requests, request.method.lower())
+    return request_method(f"http://{CLUSTER_IP}/{rpc_endpoint}").text
+
+
+## HELPER METHODS
 
 def verify_chain_id(chain_id):
     global CLUSTER_CHAIN_ID
@@ -86,27 +97,37 @@ def create_nonce():
 
 
 def is_valid_nonce(nonce):
-    nonce_from_redis = redis.get(nonce)
-    if nonce_from_redis != None:
+    if redis.get(nonce) != None:
         return True
     return False
 
 
-def verify_signature(pk, signature, nonce):
+def verify_signature(public_key, signature, nonce):
     try:
         bytes_prefix = "0x05"
-        Key.from_encoded_key(pk).verify(signature, bytes_prefix + nonce)
+        Key.from_encoded_key(public_key).verify(signature,
+                                                bytes_prefix + nonce)
         return True
     except ValueError as e:
         print("Error verifying signature:", e)
         return False
 
 
-def generate_secret_url(pk):
+def create_redis_access_token_key(access_token):
+    return f"access_token:{access_token}"
+
+
+def generate_secret_url(public_key):
     access_token = str(uuid4())
-    redis.set(f"public_key:{pk}", access_token)
+    redis.set(create_redis_access_token_key(access_token), public_key)
     return f"http://{CLUSTER_IP}/tezos-node-rpc/{access_token}"
 
 
+def is_valid_access_token(access_token):
+    if redis.get(create_redis_access_token_key(access_token)) != None:
+        return True
+    return False
+
+
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=8080, debug=True)
+    app.run(host="0.0.0.0", port=8080)

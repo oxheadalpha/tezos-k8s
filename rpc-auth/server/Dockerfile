@@ -1,5 +1,7 @@
 FROM python:3.8
 
+ARG FLASK_ENV=development
+
 # Creating Application Source Code Directory
 RUN mkdir -p /var/rpc-auth/
 
@@ -18,7 +20,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY index.py /var/rpc-auth/
 
 # Application Environment variables
-ENV FLASK_ENV=development
+ENV FLASK_ENV=$FLASK_ENV
+ENV PYTHONUNBUFFERED=x
 
 # Exposing Ports
 EXPOSE 8080
