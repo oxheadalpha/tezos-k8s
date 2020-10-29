@@ -20,6 +20,11 @@ def main():
     with open("/etc/tezos/parameters.json", "w") as json_file:
         print(parameters_json, file=json_file)
 
+    net_addr = None
+    if CHAIN_PARAMS['zerotier_in_use']:
+        with open("/var/tezos/zerotier_data.json", "r") as f:
+            net_addr = json.load(f)[0]["assignedAddresses"][0].split("/")[0]
+
     config_json = json.dumps(
         get_node_config(
             CHAIN_PARAMS['chain_name'],
@@ -27,6 +32,7 @@ def main():
             CHAIN_PARAMS['timestamp'],
             CHAIN_PARAMS['bootstrap_peers'],
             CHAIN_PARAMS['genesis_block'],
+            net_addr,
         ),
         indent = 2
     )
@@ -44,7 +50,7 @@ def get_bootstrap_account_pubkeys():
     return pubkeys
 
 def get_node_config(
-    chain_name, genesis_key, timestamp, bootstrap_peers, genesis_block=None
+    chain_name, genesis_key, timestamp, bootstrap_peers, genesis_block=None, net_addr=None
 ):
 
     p2p = ["p2p"]
@@ -66,6 +72,9 @@ def get_node_config(
         "--genesis-pubkey",
         genesis_key,
     ]
+
+    if net_addr:
+        node_config_args.extend([ "net_addr", "--net-addr", net_addr ])
 
     return generate_node_config(node_config_args)
 
@@ -103,6 +112,9 @@ def generate_node_config(node_argv):
 
     genesis_parameters_parser = subparsers.add_parser("genesis_parameters")
     genesis_parameters_parser.add_argument("--genesis-pubkey")
+
+    net_addr_parser = subparsers.add_parser("net_addr")
+    net_addr_parser.add_argument("--net-addr")
 
     namespaces = []
     while node_argv:

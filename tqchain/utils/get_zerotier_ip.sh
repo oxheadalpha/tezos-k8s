@@ -47,4 +47,5 @@ do
 
   echo "Waiting for a ZeroTier IP on $ZTDEV interface... Accept the new host on my.zerotier.com"
 done
-echo "================================================="
+
+zerotier-cli -D/var/tezos/zerotier -j listnetworks > /var/tezos/zerotier_data.json

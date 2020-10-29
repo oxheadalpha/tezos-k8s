@@ -335,6 +335,7 @@ def main():
                               "bootstrap_peers": bootstrap_peers,
                               "genesis_block": c["genesis_chain_id"],
                               "timestamp": c["bootstrap_timestamp"],
+                              "zerotier_in_use": c.get("zerotier_network") != None,
                             }
                         ),
                     }
@@ -393,7 +394,7 @@ def main():
                         # add the zerotier containers
                         k["spec"]["template"]["spec"][
                             "initContainers"
-                        ].append(get_zerotier_initcontainer())
+                        ].insert(0,get_zerotier_initcontainer())
 
                         # add the zerotier containers
                         k["spec"]["template"]["spec"][
