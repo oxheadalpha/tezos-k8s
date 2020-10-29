@@ -1,3 +1,17 @@
+version: v1beta9
+deployments:
+  - name: backend
+    kubectl:
+      manifests:
+        - ./backend.yaml
+images:
+  server:
+    image: rpc-auth
+dev:
+  sync:
+    - imageName: server
+      labelSelector:
+        app: rpc-auth
 # version: v1beta9
 # images:
 #   app:
@@ -39,17 +53,3 @@
 #     path: images.app.injectRestartHelper
 #   - op: remove
 #     path: images.app.appendDockerfileInstructions
-version: v1beta9
-deployments:
-  - name: backend
-    kubectl:
-      manifests:
-        - /Users/aryehharris/Desktop/tezos-k8s/rpc-auth/server/backend.yaml
-images:
-  server:
-    image: rpc-auth
-dev:
-  sync:
-    - imageName: server
-      labelSelector:
-        app: rpc-auth

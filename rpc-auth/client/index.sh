@@ -69,8 +69,8 @@ get_response_status() {
   printf '%q' $1 | sed -e 's/.*HTTPSTATUS://'
 }
 
+echo "Requesting data to sign..."
 nonce_res=$(curl -s -X GET http://$CLUSTER_ADDRESS/vending-machine/$CHAIN_ID -w " HTTPSTATUS:%{http_code}")
-# nonce_res=$(curl -s -X GET http://$CLUSTER_ADDRESS/vending-machine/$CHAIN_ID -w " HTTPSTATUS:%{http_code}")
 NONCE=$(get_response_body "$nonce_res")
 nonce_res_status=$(get_response_status "$nonce_res")
 
@@ -80,14 +80,16 @@ if [ "$nonce_res_status" != "200" ]; then
   exit 1
 fi
 
-echo NONCE: "$NONCE"
+# echo NONCE: "$NONCE"
 
+echo "Signing data..."
 SIGNATURE=$(tezos-client -p PsCARTHAGazK sign bytes 0x05${NONCE} for ${TZ_ALIAS} | cut -f 2 -d " ")
 PUBLIC_KEY=$(tezos-client show address ${TZ_ALIAS} 2>/dev/null | grep "Public Key: " | awk '{print $3}')
 
-echo SIGNATURE: "$SIGNATURE"
-echo PUBLIC_KEY: "$PUBLIC_KEY"
+# echo SIGNATURE: "$SIGNATURE"
+# echo PUBLIC_KEY: "$PUBLIC_KEY"
 
+echo "Sending request for RPC url..."
 secret_url_res=$(curl -s -X GET -d "nonce=${NONCE}" -d "signature=${SIGNATURE}" -d "public_key=${PUBLIC_KEY}" http://$CLUSTER_ADDRESS/vending-machine -w " HTTPSTATUS:%{http_code}")
 SECRET_URL=$(get_response_body "$secret_url_res")
 secret_url_status=$(get_response_status "$secret_url_res")
@@ -98,5 +100,5 @@ if [ "$secret_url_status" != "200" ]; then
   exit 1
 fi
 
-echo "Your secret url to access the tezos node RPC: $SECRET_URL"
+echo "Your secret tezos node RPC url: $SECRET_URL"
 
