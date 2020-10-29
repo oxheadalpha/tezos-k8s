@@ -56,6 +56,8 @@ def get_node_config(
     p2p = ["p2p"]
     for bootstrap_peer in bootstrap_peers:
         p2p.extend(["--bootstrap-peers", bootstrap_peer])
+    if net_addr:
+        p2p.extend(["--listen-addr", net_addr + ":9732" ])
 
     node_config_args = p2p + [
         "global",
@@ -72,9 +74,6 @@ def get_node_config(
         "--genesis-pubkey",
         genesis_key,
     ]
-
-    if net_addr:
-        node_config_args.extend([ "net_addr", "--net-addr", net_addr ])
 
     return generate_node_config(node_config_args)
 
@@ -112,9 +111,6 @@ def generate_node_config(node_argv):
 
     genesis_parameters_parser = subparsers.add_parser("genesis_parameters")
     genesis_parameters_parser.add_argument("--genesis-pubkey")
-
-    net_addr_parser = subparsers.add_parser("net_addr")
-    net_addr_parser.add_argument("--net-addr")
 
     namespaces = []
     while node_argv:
