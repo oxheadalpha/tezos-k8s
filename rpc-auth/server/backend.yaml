@@ -116,10 +116,6 @@ spec:
               value: tezos-rpc
             - name: TEZOS_RPC_PORT
               value: "8732"
-            - name: HOST_NODE_ADDRESS
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.hostIP
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress

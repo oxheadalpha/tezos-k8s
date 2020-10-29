@@ -2,13 +2,13 @@ from flask import Flask
 from flask import request
 from pytezos.crypto import Key
 from redis import StrictRedis
+from urllib.parse import urljoin
 from uuid import uuid4
 import os
 import requests
 
 TEZOS_CHAIN_ID = os.getenv("TEST_CHAIN_ID")
 TEZOS_RPC = f"{os.getenv('TEZOS_RPC')}:{os.getenv('TEZOS_RPC_PORT')}"
-HOST_NODE_ADDRESS = os.getenv("HOST_NODE_ADDRESS")
 
 app = Flask(__name__)
 redis = StrictRedis(host=os.getenv("REDIS_HOST"), port=os.getenv("REDIS_PORT"))
@@ -69,7 +69,7 @@ def rpc_passthrough(access_token, rpc_endpoint):
         return "Unauthorized", 401
 
     request_method = getattr(requests, request.method.lower())
-    return request_method(f"http://{TEZOS_RPC}/{rpc_endpoint}").text
+    return request_method(urljoin(f"http://{TEZOS_RPC}", rpc_endpoint)).text
 
 
 ## HELPER FUNCTIONS
@@ -86,7 +86,8 @@ def verify_chain_id(chain_id):
 
 
 def get_chain_id():
-    response = requests.get(f"http://{TEZOS_RPC}/chains/main/chain_id")
+    response = requests.get(
+        urljoin(f"http://{TEZOS_RPC}", "chains/main/chain_id"))
     return response.text.strip('\n\"')
 
 
@@ -118,7 +119,7 @@ def create_redis_access_token_key(access_token):
 def generate_secret_url(public_key):
     access_token = str(uuid4())
     redis.set(create_redis_access_token_key(access_token), public_key)
-    return f"http://{HOST_NODE_ADDRESS}/tezos-node-rpc/{access_token}"
+    return urljoin(request.url_root, f"tezos-node-rpc/{access_token}")
 
 
 def is_valid_access_token(access_token):
@@ -129,4 +130,6 @@ def is_valid_access_token(access_token):
 
 ## Need a proper server for production
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=8080)
+    app.run(host="0.0.0.0",
+            port=8080,
+            debug=(True if os.getenv("FLASK_ENV") == "development" else False))
