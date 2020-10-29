@@ -12,44 +12,12 @@ dev:
     - imageName: server
       labelSelector:
         app: rpc-auth
-# version: v1beta9
-# images:
-#   app:
-#     image: devspace
-#     preferSyncOverRebuild: true
-#     injectRestartHelper: true
-#     appendDockerfileInstructions:
-#     - USER root
-#     build:
-#       docker:
-#         skipPush: true
-# deployments:
-# - name: server
-#   helm:
-#     componentChart: true
-#     values:
-#       containers:
-#       - image: devspace
-#       service:
-#         ports:
-#         - port: 8080
-# dev:
-#   ports:
-#   - imageName: app
-#     forward:
-#     - port: 8080
-#   sync:
-#   - imageName: app
-#     excludePaths:
-#     - .git/
-#     uploadExcludePaths:
-#     - devspace.yaml
-#     onUpload:
-#       restartContainer: true
-# profiles:
-# - name: production
-#   patches:
-#   - op: remove
-#     path: images.app.injectRestartHelper
-#   - op: remove
-#     path: images.app.appendDockerfileInstructions
+hooks:
+  - command: minikube
+    args:
+      - addons
+      - enable
+      - ingress
+    when:
+      before:
+        deployments: all
