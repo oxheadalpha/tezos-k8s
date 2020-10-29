@@ -170,45 +170,38 @@ def get_genesis_vanity_chain_id(seed_len=16):
     )
 
 
-
+CHAIN_CONSTANTS = { "number_of_nodes": { "help": "number of peers in the cluster", "default":1, "type": int },
+        "baker": { "help": "Include a baking node in the cluster", "default": True, "action" : "store_true" },
+        "docker_image": { "help": "Version of the Tezos docker image", "default": "tezos/tezos:v7-release" },
+        "bootstrap_mutez": { "help": "Initial balance of the bootstrap accounts", "default": "4000000000000" },
+        "zerotier_network": {"help": "Zerotier network id for external chain access"},
+        "zerotier_token": {"help": "Zerotier token for external chain access"},
+        "bootstrap_peer": { "help": "peer ip to join" },
+        "genesis_key": { "help": "genesis public key for the chain to join" },
+        "genesis_block": { "help": "hash of the genesis block" },
+        "timestamp": { "help": "timestamp for the chain to join" },
+        "protocol_hash": { "help": "Desired Tezos protocol hash", "default": "PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb" },
+        "baker_command": { "help": "The baker command to use, including protocol", "default": "tezos-baker-006-PsCARTHA" } }
 
 def get_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("chain_name")
+    parser = argparse.ArgumentParser(description='Deploys a private Tezos chain on Kuberenetes')
+    subparsers = parser.add_subparsers(help='See contextual help with mkchain <action> -h', dest='action')
 
-    parser.add_argument("--baker", action="store_true")
-    parser.add_argument("--docker-image", default="tezos/tezos:v7-release")
-    parser.add_argument("--bootstrap-mutez", default="4000000000000")
+    subparser_instances = {
+        "generate-constants": 'Generate constants that uniquely define your chain',
+        "create": 'Create a chain based on constants file',
+        "invite": 'Generate yaml to invite someone to your chain',
+    }
 
-    parser.add_argument("--zerotier-network")
-    parser.add_argument("--zerotier-token")
-
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument("--generate-constants", action="store_true", help="Generate constants that uniquely define the private chain")
-    group.add_argument("--create", action="store_true", help="Create a private chain")
-    group.add_argument(
-        "--invite", action="store_true", help="Invite someone to join a private chain"
-    )
-
-    subparsers = parser.add_subparsers(help="clusters")
-
-    parser.add_argument("--number-of-nodes", help="number of peers in the cluster", default=1, type=int)
-    parser.add_argument("--bootstrap-peer", help="peer ip to join")
-    parser.add_argument(
-        "--genesis-key", help="genesis public key for the chain to join"
-    )
-    parser.add_argument("--genesis-block", help="hash of the genesis block")
-    parser.add_argument("--timestamp", help="timestamp for the chain to join")
-
-    parser.add_argument(
-        "--protocol-hash", default="PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb"
-    )
-    parser.add_argument("--baker-command", default="tezos-baker-006-PsCARTHA")
-
-    parser.add_argument("--cluster", default="minikube")
+    for command, help in subparser_instances.items():
+        subparser = subparsers.add_parser(command, description=help, help=help)
+        subparser.add_argument('chain_name', action='store', help='Name of your chain')
+        for k, v in CHAIN_CONSTANTS.items():
+            if command != "generate-constants":
+                v.pop("default", None)
+            subparser.add_argument(*["--" + k.replace("_", "-")], **v)
 
     return parser.parse_args()
-
 
 def main():
     args = get_args()
@@ -216,32 +209,28 @@ def main():
     bootstrap_accounts = ["baker", "bootstrap_account_1", "bootstrap_account_2", "genesis"]
     k8s_templates = ["common.yaml", "node.yaml"]
 
-    zerotier_network = args.zerotier_network
-    zerotier_token = args.zerotier_token
-
-    if args.number_of_nodes < 1:
-        print(f"Invalid argument --number-of-nodes {args.number_of_nodes}, must be 1 or more")
-        exit(1)
-
-    if args.create or args.invite:
+    if args.action in [ "create", "invite" ]:
         if not os.path.isfile(f"{args.chain_name}_chain.yaml"):
             print(f"Could not find the constants file {args.chain_name}_chain.yaml, did you run mkchain --generate-constants <chain_name> ?",
                     file=sys.stderr)
             exit(1)
 
-    if args.create:
+    if args.action == "create":
         with open(f"{args.chain_name}_chain.yaml", "r") as yaml_file:
-            constants = yaml.safe_load(yaml_file)
+            yaml_constants = yaml.safe_load(yaml_file)
 
-    if args.invite:
+    if args.action == "invite":
         with open(f"{args.chain_name}_chain_invite.yaml", "r") as yaml_file:
-            constants = yaml.safe_load(yaml_file)
+            yaml_constants = yaml.safe_load(yaml_file)
 
-    if args.generate_constants:
+    if args.action == "generate-constants":
         base_constants = {
             "genesis_chain_id": get_genesis_vanity_chain_id(),
             "bootstrap_timestamp": datetime.utcnow().replace(tzinfo=timezone.utc).isoformat(),
         }
+        for k in CHAIN_CONSTANTS.keys():
+            if vars(args)[k]:
+                base_constants[k] = vars(args)[k]
         secret_keys = {}
         public_keys = {}
         for account in bootstrap_accounts:
@@ -254,15 +243,23 @@ def main():
 
         with open(f"{args.chain_name}_chain.yaml", "w") as yaml_file:
             yaml.dump(creation_constants,yaml_file)
+            print(f"Wrote create constants in {args.chain_name}_chain.yaml")
         with open(f"{args.chain_name}_chain_invite.yaml", "w") as yaml_file:
+            print(f"Wrote invitation constants in {args.chain_name}_chain_invite.yaml")
             yaml.dump(invitation_constants,yaml_file)
         exit(0)
 
-    if args.create:
+    c = { k:(vars(args)[k] if k in vars(args) and vars(args)[k] else yaml_constants[k]) for k in yaml_constants.keys() }
+
+    if c["number_of_nodes"] < 1:
+        print(f"Invalid argument --number-of-nodes {c['number_of_nodes']}, must be 1 or more")
+        exit(1)
+
+    if args.action == "create":
         k8s_templates.append("bootstrap-node.yaml")
         bootstrap_peers = ["tezos-bootstrap-node-p2p:9732"]
 
-    if args.invite:
+    if args.action == "invite":
         k8s_config.load_kube_config()
         v1 = k8s_client.CoreV1Api()
         bootstrap_peer = args.bootstrap_peer
@@ -273,11 +270,7 @@ def main():
         )
         bootstrap_peers = [f"{bootstrap_peer}:{node_port}"]
 
-        zerotier_config = v1.read_namespaced_config_map('zerotier-config', 'tqtezos')
-        zerotier_network = zerotier_config.data['NETWORK_IDS']
-        zerotier_token = zerotier_config.data['ZTAUTHTOKEN']
-
-    if zerotier_network:
+    if "zerotier_network" in c:
         k8s_templates.append("zerotier.yaml")
 
     k8s_objects = []
@@ -287,30 +280,26 @@ def main():
             k8s_resources = yaml.load_all(yaml_template, Loader=yaml.FullLoader)
             for k in k8s_resources:
 
-                if safeget(k, "metadata", "name") == "tezos-pv-claim":
-                    if args.cluster == "eks":
-                        k["spec"]["storageClassName"] = "gp2"
-
                 if safeget(k, "metadata", "name") == "tezos-secret":
                     data = { "BOOTSTRAP_ACCOUNTS" : " ".join(bootstrap_accounts) }
-                    if args.create:
+                    if args.action == "create":
                         data["KEYS_TYPE"] = "secret"
                         for account in bootstrap_accounts + ["genesis"]:
-                            data[account + "_secret_key"] = constants[f"{account}_secret_key"]
-                    if args.invite:
+                            data[account + "_secret_key"] = c[f"{account}_secret_key"]
+                    if args.action == "invite":
                         data["KEYS_TYPE"] = "public"
                         for account in bootstrap_accounts + ["genesis"]:
-                            data[account + "_public_key"] = constants[f"{account}_public_key"]
+                            data[account + "_public_key"] = c[f"{account}_public_key"]
                     k["data"] = { k:base64.b64encode(v.encode("ascii")) for (k,v) in data.items() }
 
                 if safeget(k, "metadata", "name") == "tezos-config":
                     k["data"] = {
                         "CHAIN_PARAMS": json.dumps(
-                            { "bootstrap_mutez": args.bootstrap_mutez,
+                            { "bootstrap_mutez": c["bootstrap_mutez"],
                               "chain_name": args.chain_name,
                               "bootstrap_peers": bootstrap_peers,
-                              "genesis_block": constants["genesis_chain_id"],
-                              "timestamp": constants["bootstrap_timestamp"],
+                              "genesis_block": c["genesis_chain_id"],
+                              "timestamp": c["bootstrap_timestamp"],
                             }
                         ),
                     }
@@ -329,49 +318,49 @@ def main():
                     # set the docker image for the node
                     k["spec"]["template"]["spec"]["containers"][0][
                         "image"
-                    ] = args.docker_image
+                    ] = c["docker_image"]
 
                     # add key import for bootstrap node
                     k["spec"]["template"]["spec"][
                         "initContainers"
-                    ].insert(0, get_import_key_job(args.docker_image))
+                    ].insert(0, get_import_key_job(c["docker_image"]))
 
                     # add the identity job
                     k["spec"]["template"]["spec"][
                         "initContainers"
-                    ].append(get_identity_job(args.docker_image))
+                    ].append(get_identity_job(c["docker_image"]))
 
-                    if args.baker:
+                    if c["baker"]:
                         k["spec"]["template"]["spec"]["containers"].append(
-                            get_baker(args.docker_image, args.baker_command)
+                            get_baker(c["docker_image"], c["baker_command"])
                         )
 
                 if safeget(k, "metadata", "name") == "tezos-node":
                     # set the docker image for the node
                     k["spec"]["template"]["spec"]["containers"][0][
                         "image"
-                    ] = args.docker_image
+                    ] = c["docker_image"]
 
                     # add key import for peer node
                     k["spec"]["template"]["spec"][
                         "initContainers"
-                    ].insert(0, get_import_key_job(args.docker_image))
+                    ].insert(0, get_import_key_job(c["docker_image"]))
 
                     # add the identity job
                     k["spec"]["template"]["spec"][
                         "initContainers"
-                    ].append(get_identity_job(args.docker_image))
+                    ].append(get_identity_job(c["docker_image"]))
 
                     # set replicas
-                    k["spec"]["replicas"] = args.number_of_nodes - ( 1 if args.create else 0 )
+                    k["spec"]["replicas"] = c["number_of_nodes"] - ( 1 if args.action == "create" else 0 )
 
                 if safeget(k, "metadata", "name") == "activate-job":
                     k["spec"]["template"]["spec"]["initContainers"][0][
                         "image"
-                    ] = args.docker_image
+                    ] = c["docker_image"]
                     k["spec"]["template"]["spec"]["initContainers"][3][
                         "image"
-                    ] = args.docker_image
+                    ] = c["docker_image"]
                     k["spec"]["template"]["spec"]["initContainers"][3]["args"] = [
                         "-A",
                         "tezos-bootstrap-node-rpc",
@@ -384,7 +373,7 @@ def main():
                         "genesis",
                         "activate",
                         "protocol",
-                        args.protocol_hash,
+                        c["protocol_hash"],
                         "with",
                         "fitness",
                         "-1",
@@ -397,17 +386,11 @@ def main():
                     ]
                     k["spec"]["template"]["spec"]["initContainers"][4][
                         "image"
-                    ] = args.docker_image
-
-                    if args.cluster == "minikube":
-                        k["spec"]["template"]["spec"]["volumes"][1] = {
-                           "name": "var-volume",
-                           "persistentVolumeClaim": {
-                             "claimName": "tezos-bootstrap-node-pv-claim" } }
+                    ] = c["docker_image"]
 
                 if safeget(k, "metadata", "name") == "zerotier-config":
-                    k["data"]["NETWORK_IDS"] = zerotier_network
-                    k["data"]["ZTAUTHTOKEN"] = zerotier_token
+                    k["data"]["NETWORK_IDS"] = c["zerotier_network"]
+                    k["data"]["ZTAUTHTOKEN"] = c["zerotier_token"]
                     zt_hostname = str(uuid.uuid4())
                     print(f"zt_hostname: {zt_hostname}", file=sys.stderr)
                     k["data"]["ZTHOSTNAME"] = zt_hostname
