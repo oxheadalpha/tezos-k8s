@@ -1,23 +1,20 @@
 from flask import Flask
 from flask import request
-from flask.helpers import make_response
-from flask.wrappers import Response
-from os import abort
 from pytezos.crypto import Key
-from redis import Redis
+from redis import StrictRedis
 from uuid import uuid4
+import os
 import requests
 
-## See if there is a better way to inject these variables
-CLUSTER_IP = "192.168.64.49"
-# CLUSTER_CHAIN_ID = "NetXHFw7TkU5hhs"
-CLUSTER_CHAIN_ID = None
+TEZOS_CHAIN_ID = os.getenv("TEST_CHAIN_ID")
+TEZOS_RPC = f"{os.getenv('TEZOS_RPC')}:{os.getenv('TEZOS_RPC_PORT')}"
+HOST_NODE_IP = os.getenv("HOST_NODE_IP")
 
 app = Flask(__name__)
-# redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
-redis = Redis(host=CLUSTER_IP, port=6379)
+redis = StrictRedis(host=os.getenv("REDIS_HOST"), port=os.getenv("REDIS_PORT"))
 
 ## ROUTES
+
 
 @app.route("/vending-machine/<chain_id>")
 def get_nonce(chain_id):
@@ -39,7 +36,7 @@ def get_nonce(chain_id):
 
 
 @app.route("/vending-machine")
-def get_cluster_url():
+def get_tezos_rpc_url():
     try:
         nonce, signature, public_key = [
             request.values[k] for k in ("nonce", "signature", "public_key")
@@ -72,23 +69,24 @@ def rpc_passthrough(access_token, rpc_endpoint):
         return "Unauthorized", 401
 
     request_method = getattr(requests, request.method.lower())
-    return request_method(f"http://{CLUSTER_IP}/{rpc_endpoint}").text
+    return request_method(f"http://{TEZOS_RPC}/{rpc_endpoint}").text
 
 
-## HELPER METHODS
+## HELPER FUNCTIONS
+
 
 def verify_chain_id(chain_id):
-    global CLUSTER_CHAIN_ID
+    global TEZOS_CHAIN_ID
 
-    if not CLUSTER_CHAIN_ID:
-        CLUSTER_CHAIN_ID = get_chain_id()
-    if chain_id != CLUSTER_CHAIN_ID:
+    if not TEZOS_CHAIN_ID:
+        TEZOS_CHAIN_ID = get_chain_id()
+    if chain_id != TEZOS_CHAIN_ID:
         return False
     return True
 
 
 def get_chain_id():
-    response = requests.get(f"http://{CLUSTER_IP}/chains/main/chain_id")
+    response = requests.get(f"http://{TEZOS_RPC}/chains/main/chain_id")
     return response.text.strip('\n\"')
 
 
@@ -120,7 +118,7 @@ def create_redis_access_token_key(access_token):
 def generate_secret_url(public_key):
     access_token = str(uuid4())
     redis.set(create_redis_access_token_key(access_token), public_key)
-    return f"http://{CLUSTER_IP}/tezos-node-rpc/{access_token}"
+    return f"http://{HOST_NODE_IP}/tezos-node-rpc/{access_token}"
 
 
 def is_valid_access_token(access_token):
@@ -128,6 +126,6 @@ def is_valid_access_token(access_token):
         return True
     return False
 
-
+## Need a proper server for production
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=8080)
