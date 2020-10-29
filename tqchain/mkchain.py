@@ -170,7 +170,13 @@ def get_zerotier_container():
     return {
         "name": "zerotier",
         "image": "tqasmith/zerotier-k8s:latest",
-        "command": ["zerotier-one"],
+        "command": ["zerotier-one", "/var/tezos/zerotier/"],
+        "securityContext": {
+          "privileged": True,
+          "capabilities": {
+            "add": ["NET_ADMIN", "NET_RAW","SYS_ADMIN"],
+          }
+        },
         "volumeMounts": [
             {"name": "var-volume", "mountPath": "/var/tezos"},
         ],
