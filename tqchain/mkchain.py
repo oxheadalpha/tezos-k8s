@@ -292,7 +292,7 @@ def main():
 
     if args.action == "create":
         k8s_templates.append("bootstrap-node.yaml")
-        bootstrap_peers = ["tezos-bootstrap-node-p2p:9732"]
+        bootstrap_peers = ["192.168.192.246:9732"]
 
     if args.action == "invite":
         k8s_config.load_kube_config()
@@ -374,6 +374,16 @@ def main():
                             get_baker(c["docker_image"], c["baker_command"])
                         )
 
+                    if "zerotier_network" in c:
+                        # add the zerotier containers
+                        k["spec"]["template"]["spec"][
+                            "initContainers"
+                        ].insert(0,get_zerotier_initcontainer())
+
+                        k["spec"]["template"]["spec"][
+                            "containers"
+                        ].append(get_zerotier_container())
+
                 if safeget(k, "metadata", "name") == "tezos-node":
                     # set the docker image for the node
                     k["spec"]["template"]["spec"]["containers"][0][
@@ -396,7 +406,6 @@ def main():
                             "initContainers"
                         ].insert(0,get_zerotier_initcontainer())
 
-                        # add the zerotier containers
                         k["spec"]["template"]["spec"][
                             "containers"
                         ].append(get_zerotier_container())

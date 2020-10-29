@@ -146,6 +146,9 @@ spec:
         - name: var-volume
           mountPath: /var/tezos
       volumes:
+      - name: dev-net-tun
+        hostPath:
+          path: /dev/net/tun
       - name: config-volume
         emptyDir: {}
       - name: tqtezos-utils
