@@ -145,7 +145,36 @@ def get_endorser(docker_image, endorser_command):
         "volumeMounts": [{"name": "var-volume", "mountPath": "/var/tezos"}],
     }
 
+def get_zerotier_initcontainer():
+    return {
+        "name": "get-zerotier-ip",
+        "image": "tqasmith/zerotier-k8s:latest",
+        "command": ["sh", "/opt/tqtezos/get_zerotier_ip.sh"],
+        "envFrom": [
+            {"configMapRef": { "name": "zerotier-config" } },
+        ],
+        "securityContext": {
+          "privileged": True,
+          "capabilities": {
+            "add": ["NET_ADMIN", "NET_RAW","SYS_ADMIN"],
+          }
+        },
+        "volumeMounts": [
+            {"name": "tqtezos-utils", "mountPath": "/opt/tqtezos"},
+            {"name": "var-volume", "mountPath": "/var/tezos"},
+            {"name": "dev-net-tun", "mountPath": "/dev/net/tun"},
+        ],
+    }
 
+def get_zerotier_container():
+    return {
+        "name": "zerotier",
+        "image": "tqasmith/zerotier-k8s:latest",
+        "command": ["zerotier-one"],
+        "volumeMounts": [
+            {"name": "var-volume", "mountPath": "/var/tezos"},
+        ],
+    }
 
 def get_genesis_vanity_chain_id(seed_len=16):
     seed = "".join(
@@ -309,9 +338,12 @@ def main():
                         import_key_script = import_file.read()
                     with open(os.path.join(my_path, "utils/generateTezosConfig.py"), "r") as import_file:
                         generate_tezos_config_script = import_file.read()
+                    with open(os.path.join(my_path, "utils/get_zerotier_ip.sh"), "r") as import_file:
+                        get_zerotier_ip_script = import_file.read()
                     k["data"] = {
                         "import_keys.sh": import_key_script,
                         "generateTezosConfig.py": generate_tezos_config_script,
+                        "get_zerotier_ip.sh": get_zerotier_ip_script,
                     }
 
                 if safeget(k, "metadata", "name") == "tezos-bootstrap-node":
@@ -351,6 +383,17 @@ def main():
                         "initContainers"
                     ].append(get_identity_job(c["docker_image"]))
 
+                    if "zerotier_network" in c:
+                        # add the zerotier containers
+                        k["spec"]["template"]["spec"][
+                            "initContainers"
+                        ].append(get_zerotier_initcontainer())
+
+                        # add the zerotier containers
+                        k["spec"]["template"]["spec"][
+                            "containers"
+                        ].append(get_zerotier_container())
+
                     # set replicas
                     k["spec"]["replicas"] = c["number_of_nodes"] - ( 1 if args.action == "create" else 0 )
 
@@ -389,7 +432,7 @@ def main():
                     ] = c["docker_image"]
 
                 if safeget(k, "metadata", "name") == "zerotier-config":
-                    k["data"]["NETWORK_IDS"] = c["zerotier_network"]
+                    k["data"]["NETWORK_ID"] = c["zerotier_network"]
                     k["data"]["ZTAUTHTOKEN"] = c["zerotier_token"]
                     zt_hostname = str(uuid.uuid4())
                     print(f"zt_hostname: {zt_hostname}", file=sys.stderr)
