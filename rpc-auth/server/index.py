@@ -8,7 +8,7 @@ import requests
 
 TEZOS_CHAIN_ID = os.getenv("TEST_CHAIN_ID")
 TEZOS_RPC = f"{os.getenv('TEZOS_RPC')}:{os.getenv('TEZOS_RPC_PORT')}"
-HOST_NODE_IP = os.getenv("HOST_NODE_IP")
+HOST_NODE_ADDRESS = os.getenv("HOST_NODE_ADDRESS")
 
 app = Flask(__name__)
 redis = StrictRedis(host=os.getenv("REDIS_HOST"), port=os.getenv("REDIS_PORT"))
@@ -118,13 +118,14 @@ def create_redis_access_token_key(access_token):
 def generate_secret_url(public_key):
     access_token = str(uuid4())
     redis.set(create_redis_access_token_key(access_token), public_key)
-    return f"http://{HOST_NODE_IP}/tezos-node-rpc/{access_token}"
+    return f"http://{HOST_NODE_ADDRESS}/tezos-node-rpc/{access_token}"
 
 
 def is_valid_access_token(access_token):
     if redis.get(create_redis_access_token_key(access_token)) != None:
         return True
     return False
+
 
 ## Need a proper server for production
 if __name__ == '__main__':

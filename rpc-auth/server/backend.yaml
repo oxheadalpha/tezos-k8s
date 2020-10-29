@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: redis-service
-  namespace: tqtezos1
+  namespace: tqtezos
   labels:
     app: redis
 spec:
@@ -16,7 +16,7 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: redis-pv-claim
-  namespace: tqtezos1
+  namespace: tqtezos
   labels:
     app: redis
 spec:
@@ -30,7 +30,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: redis
-  namespace: tqtezos1
+  namespace: tqtezos
   labels:
     app: redis
 spec:
@@ -51,7 +51,7 @@ spec:
                 - sh
                 - -c
                 - "redis-cli -h $(hostname) ping"
-            initialDelaySeconds: 15
+            initialDelaySeconds: 5
             timeoutSeconds: 5
           livenessProbe:
             exec:
@@ -59,7 +59,7 @@ spec:
                 - sh
                 - -c
                 - "redis-cli -h $(hostname) ping"
-            initialDelaySeconds: 20
+            initialDelaySeconds: 5
             periodSeconds: 3
           # resources:
           #   requests:
@@ -79,7 +79,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: rpc-auth-service
-  namespace: tqtezos1
+  namespace: tqtezos
 spec:
   selector:
     app: rpc-auth
@@ -91,7 +91,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: rpc-auth
-  namespace: tqtezos1
+  namespace: tqtezos
 spec:
   selector:
     matchLabels:
@@ -116,7 +116,7 @@ spec:
               value: tezos-rpc
             - name: TEZOS_RPC_PORT
               value: "8732"
-            - name: HOST_NODE_IP
+            - name: HOST_NODE_ADDRESS
               valueFrom:
                 fieldRef:
                   fieldPath: status.hostIP
@@ -125,7 +125,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: rpc-auth-ingress
-  namespace: tqtezos1
+  namespace: tqtezos
   annotations:
     # nginx.ingress.kubernetes.io/rewrite-target: /
     nginx.ingress.kubernetes.io/use-regex: "true"

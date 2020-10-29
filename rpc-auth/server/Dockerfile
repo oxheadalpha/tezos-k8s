@@ -10,7 +10,7 @@ WORKDIR /var/rpc-auth/
 
 # Install dependencies for pytezos
 RUN apt-get update
-RUN apt install -y libsodium-dev libsecp256k1-dev libgmp-dev
+RUN apt-get install -y libsodium-dev libsecp256k1-dev libgmp-dev
 
 # Installing python dependencies
 COPY requirements.txt /var/rpc-auth/
