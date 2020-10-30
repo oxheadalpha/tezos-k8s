@@ -33,7 +33,8 @@ def get_nonce(chain_id):
     # if not tz1:
     #     return make_response("Missing tz1 address", 400)
 
-    nonce = create_nonce()
+    # Tezos client requires data to be signed in hex format
+    nonce = uuid4().hex
     redis.set(nonce, "", ex=3)
     return nonce
 
@@ -93,10 +94,6 @@ def verify_chain_id(chain_id):
 def get_chain_id():
     response = requests.get(urljoin(TEZOS_RPC_SERVICE_URL, "chains/main/chain_id"))
     return response.text.strip('\n"')
-
-
-def create_nonce():
-    return str(uuid4().hex)
 
 
 def is_valid_nonce(nonce):
