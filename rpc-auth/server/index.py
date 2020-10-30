@@ -38,8 +38,8 @@ def get_nonce(chain_id):
     return nonce
 
 
-@app.route("/vending-machine")
-def get_tezos_rpc_url():
+@app.route("/vending-machine", methods=["POST"])
+def generate_tezos_rpc_url():
     try:
         nonce, signature, public_key = [
             request.values[k] for k in ("nonce", "signature", "public_key")

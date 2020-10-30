@@ -90,7 +90,7 @@ PUBLIC_KEY=$(tezos-client show address ${TZ_ALIAS} 2>/dev/null | grep "Public Ke
 # echo PUBLIC_KEY: "$PUBLIC_KEY"
 
 echo "Sending request for RPC url..."
-secret_url_res=$(curl -s -X GET -d "nonce=${NONCE}" -d "signature=${SIGNATURE}" -d "public_key=${PUBLIC_KEY}" http://$CLUSTER_ADDRESS/vending-machine -w " HTTPSTATUS:%{http_code}")
+secret_url_res=$(curl -s -X POST -d "nonce=${NONCE}" -d "signature=${SIGNATURE}" -d "public_key=${PUBLIC_KEY}" http://$CLUSTER_ADDRESS/vending-machine -w " HTTPSTATUS:%{http_code}")
 SECRET_URL=$(get_response_body "$secret_url_res")
 secret_url_status=$(get_response_status "$secret_url_res")
 
