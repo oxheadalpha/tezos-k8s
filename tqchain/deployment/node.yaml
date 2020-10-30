@@ -50,7 +50,7 @@ spec:
       - imagePullPolicy: Always
         name: tezos-config-generator
         image: python:alpine
-        command: ["python", "/opt/tqtezos/generateTezosConfig.py"]
+        command: ["python", "/opt/tqtezos/generateTezosConfig.py", "--generate-config-json", "--generate-parameters-json"]
         envFrom:
         - configMapRef:
             name: tezos-config

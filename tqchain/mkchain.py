@@ -13,9 +13,6 @@ import platform
 from datetime import datetime
 from datetime import timezone
 from ipaddress import IPv4Address
-from kubernetes import client as k8s_client
-from kubernetes import config as k8s_config
-
 
 my_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -292,18 +289,10 @@ def main():
 
     if args.action == "create":
         k8s_templates.append("bootstrap-node.yaml")
-        bootstrap_peers = ["192.168.192.246:9732"]
+        bootstrap_peers = ["192.168.192.180:9732"]
 
     if args.action == "invite":
-        k8s_config.load_kube_config()
-        v1 = k8s_client.CoreV1Api()
-        bootstrap_peer = args.bootstrap_peer
-        node_port = (
-            v1.read_namespaced_service("tezos-bootstrap-node-p2p", "tqtezos")
-            .spec.ports[0]
-            .node_port
-        )
-        bootstrap_peers = [f"{bootstrap_peer}:{node_port}"]
+        bootstrap_peers = ["192.168.192.180:9732"]
 
     if "zerotier_network" in c:
         k8s_templates.append("zerotier.yaml")
