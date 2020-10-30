@@ -2,20 +2,19 @@ import argparse
 import base64
 import json
 import os
+import platform
 import random
 import string
 import subprocess
 import sys
 import uuid
-import yaml
-import platform
-
 from datetime import datetime
 from datetime import timezone
 from ipaddress import IPv4Address
+
+import yaml
 from kubernetes import client as k8s_client
 from kubernetes import config as k8s_config
-
 
 my_path = os.path.dirname(os.path.abspath(__file__))
 
