@@ -9,7 +9,9 @@ from pytezos.crypto import Key
 from redis import StrictRedis
 
 TEZOS_CHAIN_ID = os.getenv("TEST_CHAIN_ID")
-TEZOS_RPC = f"{os.getenv('TEZOS_RPC')}:{os.getenv('TEZOS_RPC_PORT')}"
+TEZOS_RPC_SERVICE_URL = (
+    f"http://{os.getenv('TEZOS_RPC_SERVICE')}:{os.getenv('TEZOS_RPC_SERVICE_PORT')}"
+)
 
 app = Flask(__name__)
 redis = StrictRedis(host=os.getenv("REDIS_HOST"), port=os.getenv("REDIS_PORT"))
@@ -72,7 +74,7 @@ def rpc_passthrough(access_token, rpc_endpoint):
         return "Unauthorized", 401
 
     request_method = getattr(requests, request.method.lower())
-    return request_method(urljoin(f"http://{TEZOS_RPC}", rpc_endpoint)).text
+    return request_method(urljoin(TEZOS_RPC_SERVICE_URL, rpc_endpoint)).text
 
 
 ## HELPER FUNCTIONS
@@ -89,7 +91,7 @@ def verify_chain_id(chain_id):
 
 
 def get_chain_id():
-    response = requests.get(urljoin(f"http://{TEZOS_RPC}", "chains/main/chain_id"))
+    response = requests.get(urljoin(TEZOS_RPC_SERVICE_URL, "chains/main/chain_id"))
     return response.text.strip('\n"')
 
 
