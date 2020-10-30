@@ -1,11 +1,12 @@
+import os
+from urllib.parse import urljoin
+from uuid import uuid4
+
+import requests
 from flask import Flask
 from flask import request
 from pytezos.crypto import Key
 from redis import StrictRedis
-from urllib.parse import urljoin
-from uuid import uuid4
-import os
-import requests
 
 TEZOS_CHAIN_ID = os.getenv("TEST_CHAIN_ID")
 TEZOS_RPC = f"{os.getenv('TEZOS_RPC')}:{os.getenv('TEZOS_RPC_PORT')}"
@@ -62,8 +63,10 @@ def get_tezos_rpc_url():
     return secret_url
 
 
-@app.route("/tezos-node-rpc/<access_token>/<path:rpc_endpoint>",
-           methods=["GET", "POST", "PATCH", "DELETE", "PUT"])
+@app.route(
+    "/tezos-node-rpc/<access_token>/<path:rpc_endpoint>",
+    methods=["GET", "POST", "PATCH", "DELETE", "PUT"],
+)
 def rpc_passthrough(access_token, rpc_endpoint):
     if not is_valid_access_token(access_token):
         return "Unauthorized", 401
@@ -86,9 +89,8 @@ def verify_chain_id(chain_id):
 
 
 def get_chain_id():
-    response = requests.get(
-        urljoin(f"http://{TEZOS_RPC}", "chains/main/chain_id"))
-    return response.text.strip('\n\"')
+    response = requests.get(urljoin(f"http://{TEZOS_RPC}", "chains/main/chain_id"))
+    return response.text.strip('\n"')
 
 
 def create_nonce():
@@ -104,8 +106,7 @@ def is_valid_nonce(nonce):
 def verify_signature(public_key, signature, nonce):
     try:
         bytes_prefix = "0x05"
-        Key.from_encoded_key(public_key).verify(signature,
-                                                bytes_prefix + nonce)
+        Key.from_encoded_key(public_key).verify(signature, bytes_prefix + nonce)
         return True
     except ValueError as e:
         print("Error verifying signature:", e)
@@ -129,7 +130,9 @@ def is_valid_access_token(access_token):
 
 
 ## Need a proper server for production
-if __name__ == '__main__':
-    app.run(host="0.0.0.0",
-            port=8080,
-            debug=(True if os.getenv("FLASK_ENV") == "development" else False))
+if __name__ == "__main__":
+    app.run(
+        host="0.0.0.0",
+        port=8080,
+        debug=(True if os.getenv("FLASK_ENV") == "development" else False),
+    )
