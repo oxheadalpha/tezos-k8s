@@ -1,4 +1,4 @@
-FROM python:3.8
+FROM python:3.8-slim as builder
 
 ARG FLASK_ENV=development
 
@@ -9,15 +9,45 @@ RUN mkdir -p /var/rpc-auth/
 WORKDIR /var/rpc-auth/
 
 # Install dependencies for pytezos
-RUN apt-get update
-RUN apt-get install -y libsodium-dev libsecp256k1-dev libgmp-dev
+RUN apt-get update -y \
+        && apt-get install --no-install-recommends -y \
+        automake \
+        build-essential \
+        libffi-dev \
+        libgmp-dev \
+        libsecp256k1-dev \
+        libsodium-dev \
+        libtool \
+        pkg-config \
+        && echo
+
+COPY requirements.txt /var/rpc-auth/
+RUN mkdir wheels \
+        && pip wheel -r requirements.txt \
+        --wheel-dir ./wheels --no-cache-dir
+
+FROM python:3.8-slim
+
+WORKDIR /var/rpc-auth/
+
+RUN apt-get update -y \
+        && apt-get install --no-install-recommends -y \
+        libffi-dev \
+        libgmp-dev \
+        libsecp256k1-dev \
+        libsodium-dev \
+        && apt-get clean \
+        && rm -rf /var/lib/apt/lists/*
 
 # Installing python dependencies
+COPY --from=builder /var/rpc-auth/wheels wheels
 COPY requirements.txt /var/rpc-auth/
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install -r requirements.txt \
+        --no-index --find-links ./wheels \
+        && rm -rf ./wheels
 
 # Copying src code to Container
-COPY index.py /var/rpc-auth/
+COPY index.py .
 
 # Application Environment variables
 ENV FLASK_ENV=$FLASK_ENV
