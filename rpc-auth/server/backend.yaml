@@ -113,7 +113,7 @@ spec:
             - name: REDIS_PORT
               value: "6379"
             - name: TEZOS_RPC_SERVICE
-              value: tezos-rpc
+              value: tezos-bootstrap-node-rpc
             - name: TEZOS_RPC_SERVICE_PORT
               value: "8732"
 ---
