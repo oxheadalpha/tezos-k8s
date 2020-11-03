@@ -146,7 +146,7 @@ def get_zerotier_initcontainer():
     return {
         "name": "get-zerotier-ip",
         "image": "tqasmith/zerotier-k8s:latest",
-        "command": ["sh", "/opt/tqtezos/get_zerotier_ip.sh"],
+        "command": ["sh", "/opt/tqtezos/entrypoint.sh"],
         "envFrom": [
             {"configMapRef": { "name": "zerotier-config" } },
         ],
@@ -334,12 +334,9 @@ def main():
                         import_key_script = import_file.read()
                     with open(os.path.join(my_path, "utils/generateTezosConfig.py"), "r") as import_file:
                         generate_tezos_config_script = import_file.read()
-                    with open(os.path.join(my_path, "utils/get_zerotier_ip.sh"), "r") as import_file:
-                        get_zerotier_ip_script = import_file.read()
                     k["data"] = {
                         "import_keys.sh": import_key_script,
                         "generateTezosConfig.py": generate_tezos_config_script,
-                        "get_zerotier_ip.sh": get_zerotier_ip_script,
                     }
 
                 if safeget(k, "metadata", "name") == "tezos-bootstrap-node":

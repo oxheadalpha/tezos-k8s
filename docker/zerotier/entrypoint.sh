@@ -1,14 +1,10 @@
 #!/bin/bash
+
+# This entrypoint gets an ip from zerotier, writes it in a json file, then exits.
+# The IP is meant to be passed to the tezos container.
+# Then, this container should be restarted with a different command: `zerotier-one/var/tezos/zerotier`
 set -x
 
-#zerotier-one
-cat <<EOF > /etc/supervisor/supervisord.conf
-[supervisord]
-[program:zerotier]
-command=zerotier-one /var/tezos/zerotier
-redirect_stdout=false
-redirect_stderr=false
-EOF
 supervisord -c /etc/supervisor/supervisord.conf
 
 [ ! -z $NETWORK_ID ] && { sleep 5; zerotier-cli -D/var/tezos/zerotier join $NETWORK_ID || exit 1; }
