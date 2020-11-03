@@ -66,16 +66,29 @@ def generate_tezos_rpc_url():
     return secret_url
 
 
-@app.route(
-    "/tezos-node-rpc/<access_token>/<path:rpc_endpoint>",
-    methods=["GET", "POST", "PATCH", "DELETE", "PUT"],
-)
-def rpc_passthrough(access_token, rpc_endpoint):
+@app.route("/auth")
+def rpc_auth():
+    access_token = request.headers.get("Access-Token")
+    if access_token == None:
+      return "No Access-Token header provided.", 401
     if not is_valid_access_token(access_token):
         return "Unauthorized", 401
+    return "OK", 200
 
-    request_method = getattr(requests, request.method.lower())
-    return request_method(urljoin(TEZOS_RPC_SERVICE_URL, rpc_endpoint)).text
+    # request_method = getattr(requests, request.method.lower())
+    # return request_method(urljoin(TEZOS_RPC_SERVICE_URL, rpc_endpoint)).text
+
+
+# @app.route(
+#     "/tezos-node-rpc/<access_token>/<path:rpc_endpoint>",
+#     methods=["GET", "POST", "PATCH", "DELETE", "PUT"],
+# )
+# def rpc_passthrough(access_token, rpc_endpoint):
+#     if not is_valid_access_token(access_token):
+#         return "Unauthorized", 401
+
+#     request_method = getattr(requests, request.method.lower())
+#     return request_method(urljoin(TEZOS_RPC_SERVICE_URL, rpc_endpoint)).text
 
 
 ## HELPER FUNCTIONS

@@ -120,7 +120,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: rpc-auth-ingress
+  name: rpc-vending-machine-ingress
   namespace: tqtezos
   annotations:
     # nginx.ingress.kubernetes.io/rewrite-target: /
@@ -145,13 +145,87 @@ spec:
                 name: rpc-auth-service
                 port:
                   number: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tezos-rpc-ingress
+  namespace: tqtezos
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/auth-url: http://$service_name.$namespace.svc.cluster.local:8080/auth
+    nginx.ingress.kubernetes.io/auth-snippet: |
+      set $service_name "rpc-auth-service";
+      # proxy_set_header X-Access-Token "$request_body";
+
+    # nginx.ingress.kubernetes.io/configuration-snippet: |
+    #   set $service_name "rpc-auth-service";
+    #   set $service_port "8080";
+    #   proxy_set_header X-Access-Token "HELLO";
+      # auth_request /auth;
+      # proxy_method GET;
+      # proxy_set_header        Content-Length "";
+      # proxy_set_header X-Original-URI $request_uri;
+      # proxy_pass_request_body on;
+    # nginx.ingress.kubernetes.io/server-snippet: |
+    #   set $service_name "rpc-auth-service";
+    #   set $service_port "8080";
+    #   proxy_set_header X-Access-Token "HELLO";
+      # proxy_set_header X-HELLO HELLO;
+      # location = /auth {
+      #   internal;
+      #   proxy_method GET;
+      #   # proxy_pass http://127.0.0.1/auth;
+      #   # proxy_pass_request_body on;
+      #   # proxy_pass_request_body off;
+      #   # proxy_set_header        Content-Length "";
+      #   # proxy_set_header X-Original-URI $request_uri;
+      #   # proxy_set_header Access-Token "HELLELRLERLELREL";
+      #   # return 200;
+      #   # auth_request_set $auth_status $upstream_status;
+
+      # }
+spec:
+  rules:
+    -  http:
+        paths:
           # Client uses secret url to access the RPC endpoint
           - path: /tezos-node-rpc/(.*)
             pathType: Exact
             backend:
               service:
-                name: rpc-auth-service
+                name: tezos-bootstrap-node-rpc
                 port:
-                  number: 8080
+                  number: 8732
+          # - path: /auth
+          #   pathType: Exact
+          #   # pathType: Prefix
+          #   backend:
+          #     service:
+          #       name: rpc-auth-service
+          #       port:
+          #         number: 8080
 ---
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: rpc-auth-ingress
+#   namespace: tqtezos
+#   annotations:
+#     nginx.ingress.kubernetes.io/use-regex: "true"
+# spec:
+#   rules:
+#     - http:
+#         paths:
+#           - path: /auth
+#           # - path: /auth/(.*)
+#             # pathType: Exact
+#             pathType: Prefix
+#             backend:
+#               service:
+#                 name: rpc-auth-service
+#                 port:
+#                   number: 8080
+# ---
 
