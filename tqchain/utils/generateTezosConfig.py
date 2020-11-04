@@ -3,7 +3,8 @@ import argparse
 import json
 import os
 
-CHAIN_PARAMS = json.loads(os.environ['CHAIN_PARAMS'])
+CHAIN_PARAMS = json.loads(os.environ["CHAIN_PARAMS"])
+
 
 def main():
     print("Starting tezos config file generation")
@@ -11,9 +12,9 @@ def main():
     parameters_json = json.dumps(
         get_parameters_config(
             [*bootstrap_accounts.values()],
-            CHAIN_PARAMS['bootstrap_mutez'],
+            CHAIN_PARAMS["bootstrap_mutez"],
         ),
-        indent = 2
+        indent=2,
     )
     print("Generated parameters.json :")
     print(parameters_json)
@@ -22,18 +23,19 @@ def main():
 
     config_json = json.dumps(
         get_node_config(
-            CHAIN_PARAMS['chain_name'],
-            bootstrap_accounts['genesis'],
-            CHAIN_PARAMS['timestamp'],
-            CHAIN_PARAMS['bootstrap_peers'],
-            CHAIN_PARAMS['genesis_block'],
+            CHAIN_PARAMS["chain_name"],
+            bootstrap_accounts["genesis"],
+            CHAIN_PARAMS["timestamp"],
+            CHAIN_PARAMS["bootstrap_peers"],
+            CHAIN_PARAMS["genesis_block"],
         ),
-        indent = 2
+        indent=2,
     )
     print("Generated config.json :")
     print(config_json)
     with open("/etc/tezos/config.json", "w") as json_file:
         print(config_json, file=json_file)
+
 
 def get_bootstrap_account_pubkeys():
     with open("/var/tezos/client/public_keys", "r") as f:
@@ -42,6 +44,7 @@ def get_bootstrap_account_pubkeys():
     for key in tezos_pubkey_list:
         pubkeys[key["name"]] = key["value"]["key"]
     return pubkeys
+
 
 def get_node_config(
     chain_name, genesis_key, timestamp, bootstrap_peers, genesis_block=None
@@ -68,6 +71,7 @@ def get_node_config(
     ]
 
     return generate_node_config(node_config_args)
+
 
 # FIXME - this should probably be replaced with subprocess calls to tezos-node-config
 def generate_node_config(node_argv):
@@ -146,13 +150,13 @@ def generate_node_config(node_argv):
 def get_parameters_config(bootstrap_accounts, bootstrap_mutez):
     parameter_config_argv = []
     for bootstrap_account in bootstrap_accounts:
-            parameter_config_argv.extend(
-                [
-                    "--bootstrap-accounts",
-                    bootstrap_account,
-                    bootstrap_mutez,
-                ]
-            )
+        parameter_config_argv.extend(
+            [
+                "--bootstrap-accounts",
+                bootstrap_account,
+                bootstrap_mutez,
+            ]
+        )
     return generate_parameters_config(parameter_config_argv)
 
 
