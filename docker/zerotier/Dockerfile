@@ -33,8 +33,8 @@ RUN set -eux; \
     echo "tun" >> /etc/modules
 
 
-COPY files/supervisor-zerotier.conf /etc/supervisor/supervisord.conf
-COPY files/entrypoint.sh /entrypoint.sh
+COPY supervisor-zerotier.conf /etc/supervisor/supervisord.conf
+COPY entrypoint.sh /entrypoint.sh
 
 RUN chmod 755 /entrypoint.sh
 

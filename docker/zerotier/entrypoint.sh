@@ -5,7 +5,7 @@
 # Then, this container should be restarted with a different command: `zerotier-one/var/tezos/zerotier`
 set -x
 
-supervisord -c /etc/supervisor/supervisord.conf
+supervisord -c /etc/supervisor/supervisor-zerotier.conf
 
 [ ! -z $NETWORK_ID ] && { sleep 5; zerotier-cli -D/var/tezos/zerotier join $NETWORK_ID || exit 1; }
 

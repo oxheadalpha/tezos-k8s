@@ -1,0 +1,25 @@
+version: v1beta9
+deployments:
+  - name: chain
+    namespace: tqtezos
+    kubectl:
+      manifests:
+        - ./mkchain-devspace.yaml
+images:
+  zerotier:
+    image: devspace-zerotier
+    dockerfile: ./docker/zerotier/Dockerfile
+    context: ./docker/zerotier
+dev:
+  sync:
+    - imageName: devspace-zerotier
+      labelSelector:
+        app: tezos-bootstrap-node
+hooks:
+  - command: sh
+    args:
+      - -c
+      - "mkchain create devspace > mkchain-devspace.yaml"
+    when:
+      before:
+        deployments: all
