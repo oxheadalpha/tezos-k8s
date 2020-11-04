@@ -1,4 +1,5 @@
 import os
+from functools import cache
 from urllib.parse import urljoin
 from uuid import uuid4
 
@@ -8,7 +9,6 @@ from flask import request
 from pytezos.crypto import Key
 from redis import StrictRedis
 
-TEZOS_CHAIN_ID = os.getenv("TEST_CHAIN_ID")
 TEZOS_RPC_SERVICE_URL = (
     f"http://{os.getenv('TEZOS_RPC_SERVICE')}:{os.getenv('TEZOS_RPC_SERVICE_PORT')}"
 )
@@ -77,18 +77,18 @@ def rpc_auth(access_token):
 
 
 def verify_chain_id(chain_id):
-    global TEZOS_CHAIN_ID
-
-    if not TEZOS_CHAIN_ID:
-        TEZOS_CHAIN_ID = get_chain_id()
-    if chain_id != TEZOS_CHAIN_ID:
+    if chain_id != get_tezos_chain_id():
         return False
     return True
 
 
-def get_chain_id():
-    response = requests.get(urljoin(TEZOS_RPC_SERVICE_URL, "chains/main/chain_id"))
-    return response.text.strip('\n"')
+@cache
+def get_tezos_chain_id():
+    tezos_chain_id = os.getenv("TEZOS_CHAIN_ID")
+    if tezos_chain_id:
+        return tezos_chain_id
+    chain_id_response = requests.get(urljoin(TEZOS_RPC_SERVICE_URL, "chains/main/chain_id"))
+    return chain_id_response.text.strip('\n"')
 
 
 def is_valid_nonce(nonce):
