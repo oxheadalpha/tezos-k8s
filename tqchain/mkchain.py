@@ -1,35 +1,29 @@
+from __future__ import annotations
+
 import argparse
 import base64
-import json
 import os
-import platform
 import random
+import shutil
 import string
 import subprocess
 import sys
 import uuid
-from datetime import datetime
-from datetime import timezone
-from ipaddress import IPv4Address
 
+import dhall  # type: ignore
 import yaml
+
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Union
+
 from kubernetes import client as k8s_client
 from kubernetes import config as k8s_config
 
 my_path = os.path.dirname(os.path.abspath(__file__))
 
 
-# https://stackoverflow.com/questions/25833613/python-safe-method-to-get-value-of-nested-dictionary/25833661
-def safeget(dct, *keys):
-    for key in keys:
-        try:
-            dct = dct[key]
-        except KeyError:
-            return None
-    return dct
-
-
-def run_docker(image, entrypoint, *args):
+def run_docker(image: str, entrypoint: str, *args: str) -> bytes:
     return subprocess.check_output(
         "docker run --entrypoint %s --rm %s %s" % (entrypoint, image, " ".join(args)),
         stderr=subprocess.STDOUT,
@@ -37,110 +31,23 @@ def run_docker(image, entrypoint, *args):
     )
 
 
-def gen_key(image):
+def gen_key(image: str) -> dict[str, str]:
     keys = run_docker(
         image,
         "sh",
         "-c",
         "'/usr/local/bin/tezos-client --protocol PsCARTHAGazK gen keys mykey && /usr/local/bin/tezos-client --protocol PsCARTHAGazK show address mykey -S'",
     ).split(b"\n")
-    return {
-        "public_key": keys[1].split(b":")[1].strip().decode("utf-8"),
-        "secret_key": keys[2].split(b":")[2].strip().decode("utf-8"),
-    }
+
+    def extract_key(index: int) -> str:
+        return base64.b64encode(
+            keys[index].split(b":")[index].strip().decode("utf-8").encode("ascii")
+        ).decode()
+
+    return {"public_key": extract_key(1), "secret_key": extract_key(2)}
 
 
-def get_ensure_node_dir_job():
-    return [
-        {
-            "name": "ensure-node-dir-job",
-            "image": "busybox",
-            "command": ["/bin/mkdir"],
-            "args": [
-                "-p",
-                "/var/tezos/node",
-            ],
-            "volumeMounts": [
-                {"name": "var-volume", "mountPath": "/var/tezos"},
-            ],
-        }
-    ]
-
-
-def get_identity_job(docker_image):
-    return {
-        "name": "identity-job",
-        "image": docker_image,
-        "command": ["/bin/sh"],
-        "args": [
-            "-c",
-            "[ -f /var/tezos/node/identity.json ] || (mkdir -p /var/tezos/node && /usr/local/bin/tezos-node identity generate 0 --data-dir /var/tezos/node --config-file /etc/tezos/config.json)",
-        ],
-        "volumeMounts": [
-            {"name": "config-volume", "mountPath": "/etc/tezos"},
-            {"name": "var-volume", "mountPath": "/var/tezos"},
-        ],
-    }
-
-
-def get_import_key_job(docker_image):
-    return {
-        "name": "import-keys",
-        "image": docker_image,
-        "command": ["sh", "/opt/tqtezos/import_keys.sh"],
-        "envFrom": [
-            {"secretRef": {"name": "tezos-secret"}},
-        ],
-        "volumeMounts": [
-            {"name": "tqtezos-utils", "mountPath": "/opt/tqtezos"},
-            {"name": "var-volume", "mountPath": "/var/tezos"},
-        ],
-    }
-
-
-def get_baker(docker_image, baker_command):
-    return {
-        "name": "baker-job",
-        "image": docker_image,
-        "command": [baker_command],
-        "args": [
-            "-A",
-            "localhost",
-            "-P",
-            "8732",
-            "-d",
-            "/var/tezos/client",
-            "run",
-            "with",
-            "local",
-            "node",
-            "/var/tezos/node",
-            "baker",
-        ],
-        "volumeMounts": [{"name": "var-volume", "mountPath": "/var/tezos"}],
-    }
-
-
-def get_endorser(docker_image, endorser_command):
-    return {
-        "name": "endorser",
-        "image": docker_image,
-        "command": [endorser_command],
-        "args": [
-            "-A",
-            "localhost",
-            "-P",
-            "8732",
-            "-d",
-            "/var/tezos/client",
-            "run",
-            "baker",
-        ],
-        "volumeMounts": [{"name": "var-volume", "mountPath": "/var/tezos"}],
-    }
-
-
-def get_genesis_vanity_chain_id(seed_len=16):
+def get_genesis_vanity_chain_id(seed_len: int = 16) -> str:
     seed = "".join(
         random.choice(string.ascii_uppercase + string.digits) for _ in range(seed_len)
     )
@@ -164,9 +71,9 @@ def get_genesis_vanity_chain_id(seed_len=16):
 
 
 CHAIN_CONSTANTS = {
-    "number_of_nodes": {
+    "additional_nodes": {
         "help": "number of peers in the cluster",
-        "default": 1,
+        "default": 0,
         "type": int,
     },
     "baker": {
@@ -180,7 +87,7 @@ CHAIN_CONSTANTS = {
     },
     "bootstrap_mutez": {
         "help": "Initial balance of the bootstrap accounts",
-        "default": "4000000000000",
+        "default": 4000000000000,
     },
     "zerotier_network": {"help": "Zerotier network id for external chain access"},
     "zerotier_token": {"help": "Zerotier token for external chain access"},
@@ -199,7 +106,7 @@ CHAIN_CONSTANTS = {
 }
 
 
-def get_args():
+def get_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Deploys a private Tezos chain on Kuberenetes"
     )
@@ -220,47 +127,81 @@ def get_args():
             if command != "generate-constants":
                 v.pop("default", None)
             subparser.add_argument(*["--" + k.replace("_", "-")], **v)
+    parser.add_argument(
+        "--cluster",
+        default="minikube",
+        help="kubernetes cluster type (minikube, eks...)",
+    )
 
     return parser.parse_args()
 
 
-def main():
-    args = get_args()
+def toMap(obj: dict[Any, Any]) -> list[dict[Any, Any]]:
+    """
+    Python dict to dhall heterogeneous map
+    """
+    return [{"mapKey": k, "mapValue": v} for k, v in obj.items()]
 
+
+def remove_nones(xs: Union[list[Any], dict[Any, Any], Any]) -> Any:
+    """
+    Recursively removes none values from lists and dicts
+    """
+    if isinstance(xs, dict):
+        return {k: remove_nones(v) for k, v in xs.items() if v is not None}
+    elif isinstance(xs, list):
+        return [remove_nones(x) for x in xs if x is not None]
+    else:
+        return xs
+
+
+dhall_query = """
+let mkchain = {script_path}/dhall/mkchain.dhall
+
+in  mkchain.{action} ({dhall_config_file} // {overrides})
+"""
+
+
+def main() -> None:
+    args = get_args()
     bootstrap_accounts = [
         "baker",
         "bootstrap_account_1",
         "bootstrap_account_2",
         "genesis",
     ]
-    k8s_templates = ["common.yaml", "node.yaml"]
-
-    if args.action in ["create", "invite"]:
-        if not os.path.isfile(f"{args.chain_name}_chain.yaml"):
-            print(
-                f"Could not find the constants file {args.chain_name}_chain.yaml, did you run mkchain --generate-constants <chain_name> ?",
-                file=sys.stderr,
-            )
-            exit(1)
-
-    if args.action == "create":
-        with open(f"{args.chain_name}_chain.yaml", "r") as yaml_file:
-            yaml_constants = yaml.safe_load(yaml_file)
-
-    if args.action == "invite":
-        with open(f"{args.chain_name}_chain_invite.yaml", "r") as yaml_file:
-            yaml_constants = yaml.safe_load(yaml_file)
 
     if args.action == "generate-constants":
+        zt_hostname = str(uuid.uuid4())
+        print(f"zt_hostname: {zt_hostname}", file=sys.stderr)
+        zerotier_enabled = bool(args.zerotier_network and args.zerotier_token)
+
         base_constants = {
             "genesis_chain_id": get_genesis_vanity_chain_id(),
             "bootstrap_timestamp": datetime.utcnow()
             .replace(tzinfo=timezone.utc)
             .isoformat(),
+            "bootstrap_peer": "tezos-bootstrap-node-p2p:9732",
+            "chain_name": args.chain_name,
+            "bootstrap_accounts": base64.b64encode(
+                " ".join(bootstrap_accounts).encode("ascii")
+            ).decode(),
+            "zerotier_enabled": zerotier_enabled,
+            "zerotier_data": toMap({"ZTHOSTNAME": zt_hostname}),
         }
+
         for k in CHAIN_CONSTANTS.keys():
-            if vars(args)[k]:
+            if (not k.startswith("zerotier")) and vars(args)[k] is not None:
                 base_constants[k] = vars(args)[k]
+
+        if zerotier_enabled:
+            base_constants["zerotier_data"] += toMap(
+                {
+                    "NETWORK_IDS": args.zerotier_network,
+                    "ZTAUTHTOKEN": args.zerotier_token,
+                }
+            )
+
         secret_keys = {}
         public_keys = {}
         for account in bootstrap_accounts:
@@ -268,182 +209,72 @@ def main():
             secret_keys[f"{account}_secret_key"] = keys["secret_key"]
             public_keys[f"{account}_public_key"] = keys["public_key"]
 
-        creation_constants = {**base_constants, **secret_keys}
-        invitation_constants = {**base_constants, **public_keys}
+        creation_constants = {**base_constants, "keys": toMap(secret_keys)}
+        invitation_constants = {**base_constants, "keys": toMap(public_keys)}
 
-        with open(f"{args.chain_name}_chain.yaml", "w") as yaml_file:
-            yaml.dump(creation_constants, yaml_file)
-            print(f"Wrote create constants in {args.chain_name}_chain.yaml")
-        with open(f"{args.chain_name}_chain_invite.yaml", "w") as yaml_file:
-            print(f"Wrote invitation constants in {args.chain_name}_chain_invite.yaml")
-            yaml.dump(invitation_constants, yaml_file)
+        with open(f"{args.chain_name}_chain.dhall", "w") as dhall_file:
+            dhall.dump(creation_constants, dhall_file)
+            print(f"Wrote create constants in {args.chain_name}_chain.dhall")
+        with open(f"{args.chain_name}_chain_invite.dhall", "w") as dhall_file:
+            print(f"Wrote invitation constants in {args.chain_name}_chain_invite.dhall")
+            dhall.dump(invitation_constants, dhall_file)
         exit(0)
 
-    c = {
-        k: (vars(args)[k] if k in vars(args) and vars(args)[k] else yaml_constants[k])
-        for k in yaml_constants.keys()
-    }
+    overrides = {k: v for k, v in vars(args).items() if k in CHAIN_CONSTANTS and v}
 
-    if c["number_of_nodes"] < 1:
+    if args.action == "create":
+        config_file = Path(f"{args.chain_name}_chain.dhall")
+    elif args.action == "invite":
+        config_file = Path(f"{args.chain_name}_chain_invite.dhall")
+        try:
+            k8s_config.load_kube_config()
+            v1 = k8s_client.CoreV1Api()
+        except TypeError:
+            print(
+                "It looks like you don't have any reachable kubernetes instances.\nInvitation can only be generated with a running k8s chain.",
+                file=sys.stderr,
+            )
+            exit(1)
+        bootstrap_peer = args.bootstrap_peer
+        if not bootstrap_peer:
+            print(f"--bootstrap-peer argument is required for invite", file=sys.stderr)
+            exit(1)
+        node_port = (
+            v1.read_namespaced_service("tezos-bootstrap-node-p2p", "tqtezos")
+            .spec.ports[0]  # type: ignore
+            .node_port
+        )
+        overrides["bootstrap_peer"] = f"{bootstrap_peer}:{node_port}"
+    else:
+        exit(1)
+
+    if not config_file.exists():
         print(
-            f"Invalid argument --number-of-nodes {c['number_of_nodes']}, must be 1 or more"
+            f"Could not find the constants file {config_file}, did you run mkchain generate-constants <chain_name> ?",
+            file=sys.stderr,
         )
         exit(1)
 
-    if args.action == "create":
-        k8s_templates.append("bootstrap-node.yaml")
-        bootstrap_peers = ["tezos-bootstrap-node-p2p:9732"]
+    query = dhall_query.format(
+        action=args.action,
+        dhall_config_file=str(config_file.absolute()),
+        overrides=dhall.dumps(overrides),
+        script_path=my_path,
+    )
 
-    if args.action == "invite":
-        k8s_config.load_kube_config()
-        v1 = k8s_client.CoreV1Api()
-        bootstrap_peer = args.bootstrap_peer
-        node_port = (
-            v1.read_namespaced_service("tezos-bootstrap-node-p2p", "tqtezos")
-            .spec.ports[0]
-            .node_port
+    # the binary is a lot more performant so use it when available
+    dhall_bin = shutil.which("dhall-to-yaml")
+    if False:
+        dhall_run = subprocess.run(
+            [dhall_bin, "--documents"], input=query.encode(), capture_output=True
         )
-        bootstrap_peers = [f"{bootstrap_peer}:{node_port}"]
-
-    if "zerotier_network" in c:
-        k8s_templates.append("zerotier.yaml")
-
-    k8s_objects = []
-    for template in k8s_templates:
-        with open(os.path.join(my_path, "deployment", template), "r") as yaml_template:
-
-            k8s_resources = yaml.load_all(yaml_template, Loader=yaml.FullLoader)
-            for k in k8s_resources:
-
-                if safeget(k, "metadata", "name") == "tezos-secret":
-                    data = {"BOOTSTRAP_ACCOUNTS": " ".join(bootstrap_accounts)}
-                    if args.action == "create":
-                        data["KEYS_TYPE"] = "secret"
-                        for account in bootstrap_accounts + ["genesis"]:
-                            data[account + "_secret_key"] = c[f"{account}_secret_key"]
-                    if args.action == "invite":
-                        data["KEYS_TYPE"] = "public"
-                        for account in bootstrap_accounts + ["genesis"]:
-                            data[account + "_public_key"] = c[f"{account}_public_key"]
-                    k["data"] = {
-                        k: base64.b64encode(v.encode("ascii"))
-                        for (k, v) in data.items()
-                    }
-
-                if safeget(k, "metadata", "name") == "tezos-config":
-                    k["data"] = {
-                        "CHAIN_PARAMS": json.dumps(
-                            {
-                                "bootstrap_mutez": c["bootstrap_mutez"],
-                                "chain_name": args.chain_name,
-                                "bootstrap_peers": bootstrap_peers,
-                                "genesis_block": c["genesis_chain_id"],
-                                "timestamp": c["bootstrap_timestamp"],
-                            }
-                        ),
-                    }
-
-                if safeget(k, "metadata", "name") == "tqtezos-utils":
-                    with open(
-                        os.path.join(my_path, "utils/import_keys.sh"), "r"
-                    ) as import_file:
-                        import_key_script = import_file.read()
-                    with open(
-                        os.path.join(my_path, "utils/generateTezosConfig.py"), "r"
-                    ) as import_file:
-                        generate_tezos_config_script = import_file.read()
-                    k["data"] = {
-                        "import_keys.sh": import_key_script,
-                        "generateTezosConfig.py": generate_tezos_config_script,
-                    }
-
-                if safeget(k, "metadata", "name") == "tezos-bootstrap-node":
-                    # set the docker image for the node
-                    k["spec"]["template"]["spec"]["containers"][0]["image"] = c[
-                        "docker_image"
-                    ]
-
-                    # add key import for bootstrap node
-                    k["spec"]["template"]["spec"]["initContainers"].insert(
-                        0, get_import_key_job(c["docker_image"])
-                    )
-
-                    # add the identity job
-                    k["spec"]["template"]["spec"]["initContainers"].append(
-                        get_identity_job(c["docker_image"])
-                    )
-
-                    if c["baker"]:
-                        k["spec"]["template"]["spec"]["containers"].append(
-                            get_baker(c["docker_image"], c["baker_command"])
-                        )
-
-                if safeget(k, "metadata", "name") == "tezos-node":
-                    # set the docker image for the node
-                    k["spec"]["template"]["spec"]["containers"][0]["image"] = c[
-                        "docker_image"
-                    ]
-
-                    # add key import for peer node
-                    k["spec"]["template"]["spec"]["initContainers"].insert(
-                        0, get_import_key_job(c["docker_image"])
-                    )
-
-                    # add the identity job
-                    k["spec"]["template"]["spec"]["initContainers"].append(
-                        get_identity_job(c["docker_image"])
-                    )
-
-                    # set replicas
-                    k["spec"]["replicas"] = c["number_of_nodes"] - (
-                        1 if args.action == "create" else 0
-                    )
-
-                if safeget(k, "metadata", "name") == "activate-job":
-                    k["spec"]["template"]["spec"]["initContainers"][0]["image"] = c[
-                        "docker_image"
-                    ]
-                    k["spec"]["template"]["spec"]["initContainers"][3]["image"] = c[
-                        "docker_image"
-                    ]
-                    k["spec"]["template"]["spec"]["initContainers"][3]["args"] = [
-                        "-A",
-                        "tezos-bootstrap-node-rpc",
-                        "-P",
-                        "8732",
-                        "-d",
-                        "/var/tezos/client",
-                        "-l",
-                        "--block",
-                        "genesis",
-                        "activate",
-                        "protocol",
-                        c["protocol_hash"],
-                        "with",
-                        "fitness",
-                        "-1",
-                        "and",
-                        "key",
-                        "genesis",
-                        "and",
-                        "parameters",
-                        "/etc/tezos/parameters.json",
-                    ]
-                    k["spec"]["template"]["spec"]["initContainers"][4]["image"] = c[
-                        "docker_image"
-                    ]
-
-                if safeget(k, "metadata", "name") == "zerotier-config":
-                    k["data"]["NETWORK_IDS"] = c["zerotier_network"]
-                    k["data"]["ZTAUTHTOKEN"] = c["zerotier_token"]
-                    zt_hostname = str(uuid.uuid4())
-                    print(f"zt_hostname: {zt_hostname}", file=sys.stderr)
-                    k["data"]["ZTHOSTNAME"] = zt_hostname
-
-                k8s_objects.append(k)
-
-    yaml.dump_all(k8s_objects, sys.stdout)
-
-
-if __name__ == "__main__":
-    main()
+        print(dhall_run.stderr.decode(), file=sys.stderr)
+        print(dhall_run.stdout.decode(), file=sys.stdout)
+        exit(dhall_run.returncode)
+    else:
+        print(
+            "It looks like you don't have a `dhall-to-yaml` binary in your $PATH.\nConsider installing dhall for faster mkchain runs: https://github.com/dhall-lang/dhall-lang",
+            file=sys.stderr,
+        )
+        output = dhall.loads(query)
+        yaml.dump_all(remove_nones(output), sys.stdout)  # type: ignore

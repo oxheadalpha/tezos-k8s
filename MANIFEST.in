@@ -1,2 +1,3 @@
-include tqchain/deployment/*
-include tqchain/utils/*
+include tqchain/dhall/*
+include tqchain/dhall/tezos/*
+include tqchain/dhall/tezos/utils/*

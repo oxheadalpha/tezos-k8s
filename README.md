@@ -34,7 +34,7 @@ You can modify these parameters by:
 
 | YAML Parameter | mkchain argument | Description | Default |
 | ----- | ----------- | ------ | ----- |
-| number_of_nodes | --number-of-nodes |  Number of peers in the cluster | 1 |
+| additional_nodes | --additional-nodes |  Number of peers in the cluster excluding the bootstrap node | 0 |
 | baker | --baker | Include a baking node in the cluster | True |
 | docker_image | --docker-image | Version of the Tezos docker image | tezos/tezos:v7-release |
 | bootstrap_mutez | --bootstrap-mutez | Initial balance of the bootstrap accounts | 4000000000000 |
@@ -68,6 +68,61 @@ mkchain invite --bootstrap-peer $IP $CHAIN_NAME > join-$CHAIN_NAME.yaml
 ### join
 You will typically receive a yaml file from a private chain creator.
 
+## Development
+
+The main specification of the kubernetes deployments are written in 
+[Dhall](https://dhall-lang.org/), a programmable and safe configuration language 
+with functions and types. While no Dhall installation is required to run 
+`mkchain`, having `dhall` and `dhall-to-yaml` on your system is useful during 
+development due to better error messages and linting/normalization features.
+
+To type check the main mkchain configuration and get useful error messages, simply run:
+
+```sh
+$ dhall --explain <<< ./tqchain/dhall/mkchain.dhall
+```
+
+You can also type and error-check each individual dhall file too, e.g.
+
+```sh
+$ dhall --explain <<< ./tqchain/dhall/tezos/makeNode.dhall
+```
+
+Dhall prints out normalized versions of any config file (removes all 
+abstractions). While the normalized versions of kubernetes configs will be full 
+of nil Optional fields, it's still a good exercise for debugging:
+
+```sh
+$ dhall <<< ./tqchain/dhall/tezos/makeNode.dhall > normalizedMakeNode.dhall
+$ cat normalizedMakeNode.dhall
+λ ( opts
+  : { additional_nodes : Natural
+    , baker : Bool
+    , baker_command : Text
+    , bootstrap_accounts : Text
+    , bootstrap_mutez : Natural
+    , bootstrap_peer : Text
+    , bootstrap_timestamp : Text
+    , chain_name : Text
+    , docker_image : Text
+    , genesis_chain_id : Text
+    , keys : List { mapKey : Text, mapValue : Text }
+    , protocol_hash : Text
+    , zerotier_data : List { mapKey : Text, mapValue : Text }
+    , zerotier_enabled : Bool
+    }
+  ) →
+  { apiVersion = "apps/v1"
+  , kind = "StatefulSet"
+  , metadata =
+    { annotations = None (List { mapKey : Text, mapValue : Text })
+    , clusterName = None Text
+    ...
+    }
+  ...
+  }
+```
 
 ## EKS
 https://aws.amazon.com/premiumsupport/knowledge-center/eks-persistent-storage/
+

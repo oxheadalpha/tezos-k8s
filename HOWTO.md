@@ -14,6 +14,7 @@ MacOS.
 * python3
 * a ZeroTier network and api access token
 * jq
+* Optional: [dhall-yaml](https://github.com/dhall-lang/dhall-lang/)
 
 ## Installing prerequisites 
 
@@ -33,12 +34,13 @@ Install prerequisites:
 brew install python3
 brew install jq
 brew install minikube
+brew install dhall-yaml
 ```
 
 ### Arch Linux 
 
 ```shell
-pacman -Syu && pacman -S python3 jq minikube kubectl kubectx linux
+pacman -Syu && pacman -S python3 jq minikube kubectl kubectx linux dhall-yaml
 ```
 
 ## Setting up mkchain
@@ -130,20 +132,21 @@ a number of nodes of your choice by passing the following argument to
 mkchain generate-constants:
 
 ```
-mkchain generate-constants --number-of-nodes 3 <...> $CHAIN_NAME
+mkchain generate-constants --additional-nodes 2 <...> $CHAIN_NAME
 ```
 
 The nodes will establish peer-to-peer connections in a full mesh topology.
 
 If you previously spun up the chain with just one node, you may scale
-up your setup to an arbitrary number of nodes by overriding the --number-of-nodes
+up your setup to an arbitrary number of nodes by overriding the 
+--additional-nodes
 parameter in the `create` command:
 
 ```
 # create
 mkchain create $CHAIN_NAME | kubectl apply -f -
 # scale up
-mkchain create --number-of-nodes 3 $CHAIN_NAME | kubectl apply -f -
+mkchain create --additional-nodes 2 $CHAIN_NAME | kubectl apply -f -
 ```
 
 ## Add external nodes to the cluster
