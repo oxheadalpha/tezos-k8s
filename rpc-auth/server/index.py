@@ -112,7 +112,7 @@ def create_redis_access_token_key(access_token):
 
 
 def generate_secret_url(public_key):
-    access_token = str(uuid4())
+    access_token = uuid4().hex
     redis.set(create_redis_access_token_key(access_token), public_key)
     return urljoin(request.url_root, f"tezos-node-rpc/{access_token}")
 
