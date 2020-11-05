@@ -445,9 +445,7 @@ def main():
                 if safeget(k, "metadata", "name") == "zerotier-config":
                     k["data"]["NETWORK_ID"] = c["zerotier_network"]
                     k["data"]["ZTAUTHTOKEN"] = c["zerotier_token"]
-                    zt_hostname = str(uuid.uuid4())
-                    print(f"zt_hostname: {zt_hostname}", file=sys.stderr)
-                    k["data"]["ZTHOSTNAME"] = zt_hostname
+                    k["data"]["CHAIN_NAME"] = args.chain_name
 
                 k8s_objects.append(k)
 

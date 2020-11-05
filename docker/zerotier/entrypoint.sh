@@ -20,26 +20,23 @@ do
 
   echo $IP_OK
 
-  # # Auto accept the new client
-  if [ $AUTOJOIN == "true"  ]
-  then
-    echo "Auto accept the new client"
-    HOST_ID="$(zerotier-cli -D/var/tezos/zerotier info | awk '{print $3}')"
-    curl -s -XPOST \
-      -H "Authorization: Bearer $ZTAUTHTOKEN" \
-      -d '{"hidden":"false","config":{"authorized":true}}' \
-      "https://my.zerotier.com/api/network/$NETWORK_ID/member/$HOST_ID"
+  echo "Auto accept the new client"
+  HOST_ID="$(zerotier-cli -D/var/tezos/zerotier info | awk '{print $3}')"
+  curl -s -XPOST \
+    -H "Authorization: Bearer $ZTAUTHTOKEN" \
+    -d '{"hidden":"false","config":{"authorized":true}}' \
+    "https://my.zerotier.com/api/network/$NETWORK_ID/member/$HOST_ID"
 
-#    # # If hostname is provided will be set
-#    if [ ! -z $HOSTNAME ]
-#    then
-#      echo "Set hostname"
-#      curl -s -XPOST \
-#        -H "Authorization: Bearer $ZTAUTHTOKEN" \
-#        -d "{\"name\":\"$ZTHOSTNAME\"}" \
-#        "https://my.zerotier.com/api/network/$NETWORK_ID/member/$HOST_ID"
-#    fi
+  echo "Set zerotier name"
+  if [[ $(hostname) == *"bootstrap-node"* ]]; then
+      zerotier_name="${CHAIN_NAME}_bootstrap"
+  else
+      zerotier_name="${CHAIN_NAME}_node" 
   fi
+  curl -s -XPOST \
+    -H "Authorization: Bearer $ZTAUTHTOKEN" \
+    -d "{\"name\":\"${zerotier_name}\"}" \
+    "https://my.zerotier.com/api/network/$NETWORK_ID/member/$HOST_ID"
 
   echo "Waiting for a ZeroTier IP on $ZTDEV interface... Accept the new host on my.zerotier.com"
 done

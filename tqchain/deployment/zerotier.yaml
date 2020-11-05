@@ -3,8 +3,5 @@ kind: ConfigMap
 metadata:
   name: zerotier-config
   namespace: "tqtezos"
-data:
-  NETWORK_ID: "17d709436c58c5a2"
-  ZTAUTHTOKEN: "mrdtYv0hXb42MldaZdoE5ZcnyFP6D0g2"
-  AUTOJOIN: "true"
-  ZTHOSTNAME: "idtJTEwNtc1XMuUSdD6i4uamWuE5cB"
+data: {}
+
