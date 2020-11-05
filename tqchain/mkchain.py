@@ -2,15 +2,12 @@ import argparse
 import base64
 import json
 import os
-import platform
 import random
 import string
 import subprocess
 import sys
 import uuid
-from datetime import datetime
-from datetime import timezone
-from ipaddress import IPv4Address
+from datetime import datetime, timezone
 
 import yaml
 from kubernetes import client as k8s_client
