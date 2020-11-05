@@ -3,7 +3,8 @@ import argparse
 import json
 import os
 
-CHAIN_PARAMS = json.loads(os.environ['CHAIN_PARAMS'])
+CHAIN_PARAMS = json.loads(os.environ["CHAIN_PARAMS"])
+
 
 def main():
     print("Starting tezos config file generation")
@@ -48,6 +49,7 @@ def main():
         with open("/etc/tezos/config.json", "w") as json_file:
             print(config_json, file=json_file)
 
+
 def get_bootstrap_account_pubkeys():
     with open("/var/tezos/client/public_keys", "r") as f:
         tezos_pubkey_list = json.load(f)
@@ -55,6 +57,7 @@ def get_bootstrap_account_pubkeys():
     for key in tezos_pubkey_list:
         pubkeys[key["name"]] = key["value"]["key"]
     return pubkeys
+
 
 def get_node_config(
     chain_name, genesis_key, timestamp, bootstrap_peers, genesis_block=None, net_addr=None
@@ -83,6 +86,7 @@ def get_node_config(
     ]
 
     return generate_node_config(node_config_args)
+
 
 # FIXME - this should probably be replaced with subprocess calls to tezos-node-config
 def generate_node_config(node_argv):
@@ -161,13 +165,13 @@ def generate_node_config(node_argv):
 def get_parameters_config(bootstrap_accounts, bootstrap_mutez):
     parameter_config_argv = []
     for bootstrap_account in bootstrap_accounts:
-            parameter_config_argv.extend(
-                [
-                    "--bootstrap-accounts",
-                    bootstrap_account,
-                    bootstrap_mutez,
-                ]
-            )
+        parameter_config_argv.extend(
+            [
+                "--bootstrap-accounts",
+                bootstrap_account,
+                bootstrap_mutez,
+            ]
+        )
     return generate_parameters_config(parameter_config_argv)
 
 
