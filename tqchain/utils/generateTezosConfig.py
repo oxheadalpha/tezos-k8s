@@ -2,40 +2,61 @@
 import argparse
 import json
 import os
+import socket
 
 CHAIN_PARAMS = json.loads(os.environ["CHAIN_PARAMS"])
 
 
 def main():
     print("Starting tezos config file generation")
-    bootstrap_accounts = get_bootstrap_account_pubkeys()
-    parameters_json = json.dumps(
-        get_parameters_config(
-            [*bootstrap_accounts.values()],
-            CHAIN_PARAMS["bootstrap_mutez"],
-        ),
-        indent=2,
-    )
-    print("Generated parameters.json :")
-    print(parameters_json)
-    with open("/etc/tezos/parameters.json", "w") as json_file:
-        print(parameters_json, file=json_file)
+    main_parser = argparse.ArgumentParser()
+    main_parser.add_argument('--generate-parameters-json', action='store_true', help='generate parameters.json')
+    main_parser.add_argument('--generate-config-json', action='store_true', help='generate config.json')
+    main_args = main_parser.parse_args()
 
-    config_json = json.dumps(
-        get_node_config(
-            CHAIN_PARAMS["chain_name"],
-            bootstrap_accounts["genesis"],
-            CHAIN_PARAMS["timestamp"],
-            CHAIN_PARAMS["bootstrap_peers"],
-            CHAIN_PARAMS["genesis_block"],
-        ),
-        indent=2,
-    )
-    print("Generated config.json :")
-    print(config_json)
-    with open("/etc/tezos/config.json", "w") as json_file:
-        print(config_json, file=json_file)
+    if main_args.generate_parameters_json:
+        bootstrap_accounts = get_bootstrap_account_pubkeys()
+        parameters_json = json.dumps(
+            get_parameters_config(
+                [*bootstrap_accounts.values()],
+                CHAIN_PARAMS['bootstrap_mutez'],
+            ),
+            indent = 2
+        )
+        print("Generated parameters.json :")
+        print(parameters_json)
+        with open("/etc/tezos/parameters.json", "w") as json_file:
+            print(parameters_json, file=json_file)
 
+    if main_args.generate_config_json:
+        net_addr = None
+        bootstrap_peers = CHAIN_PARAMS['bootstrap_peers']
+        if CHAIN_PARAMS['zerotier_in_use']:
+            with open("/var/tezos/zerotier_data.json", "r") as f:
+                net_addr = json.load(f)[0]["assignedAddresses"][0].split("/")[0]
+            if bootstrap_peers == [] and "bootstrap" not in socket.gethostname():
+                bootstrap_peers.extend(get_zerotier_bootstrap_peer_ips())
+
+        config_json = json.dumps(
+            get_node_config(
+                CHAIN_PARAMS['chain_name'],
+                bootstrap_accounts['genesis'],
+                CHAIN_PARAMS['timestamp'],
+                bootstrap_peers,
+                CHAIN_PARAMS['genesis_block'],
+                net_addr,
+            ),
+            indent = 2
+        )
+        print("Generated config.json :")
+        print(config_json)
+        with open("/etc/tezos/config.json", "w") as json_file:
+            print(config_json, file=json_file)
+
+def get_zerotier_bootstrap_peer_ips():
+    with open("/var/tezos/zerotier_network_members.json", "r") as f:
+        network_members = json.load(f)
+    return [ n["config"]["ipAssignments"][0] for n in network_members if "ipAssignments" in n["config"] and n["name"] == f"{CHAIN_PARAMS['chain_name']}_bootstrap" ]
 
 def get_bootstrap_account_pubkeys():
     with open("/var/tezos/client/public_keys", "r") as f:
@@ -47,12 +68,14 @@ def get_bootstrap_account_pubkeys():
 
 
 def get_node_config(
-    chain_name, genesis_key, timestamp, bootstrap_peers, genesis_block=None
+    chain_name, genesis_key, timestamp, bootstrap_peers, genesis_block=None, net_addr=None
 ):
 
     p2p = ["p2p"]
     for bootstrap_peer in bootstrap_peers:
         p2p.extend(["--bootstrap-peers", bootstrap_peer])
+    if net_addr:
+        p2p.extend(["--listen-addr", net_addr + ":9732" ])
 
     node_config_args = p2p + [
         "global",
