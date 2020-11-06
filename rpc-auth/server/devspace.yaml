@@ -8,12 +8,19 @@ deployments:
 images:
   server:
     image: rpc-auth
+    dockerfile: ./Dockerfile
+    context: ./
 dev:
   sync:
     - imageName: server
       namespace: tqtezos
       labelSelector:
         app: rpc-auth
+  autoReload:
+    images:
+      - server
+    deployments:
+      - backend
 hooks:
   - command: minikube
     args:
