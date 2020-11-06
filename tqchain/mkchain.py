@@ -12,6 +12,7 @@ import yaml
 from datetime import datetime
 from datetime import timezone
 from ipaddress import IPv4Address
+
 my_path = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -135,18 +136,19 @@ def get_endorser(docker_image, endorser_command):
         "volumeMounts": [{"name": "var-volume", "mountPath": "/var/tezos"}],
     }
 
+
 def get_zerotier_initcontainer():
     return {
         "name": "get-zerotier-ip",
         "image": "tezos-zerotier",
         "envFrom": [
-            {"configMapRef": { "name": "zerotier-config" } },
+            {"configMapRef": {"name": "zerotier-config"}},
         ],
         "securityContext": {
-          "privileged": True,
-          "capabilities": {
-            "add": ["NET_ADMIN", "NET_RAW","SYS_ADMIN"],
-          }
+            "privileged": True,
+            "capabilities": {
+                "add": ["NET_ADMIN", "NET_RAW", "SYS_ADMIN"],
+            },
         },
         "volumeMounts": [
             {"name": "tqtezos-utils", "mountPath": "/opt/tqtezos"},
@@ -154,6 +156,7 @@ def get_zerotier_initcontainer():
             {"name": "dev-net-tun", "mountPath": "/dev/net/tun"},
         ],
     }
+
 
 def get_zerotier_container():
     return {
@@ -171,15 +174,16 @@ def get_zerotier_container():
             "baker",
         ],
         "securityContext": {
-          "privileged": True,
-          "capabilities": {
-            "add": ["NET_ADMIN", "NET_RAW","SYS_ADMIN"],
-          }
+            "privileged": True,
+            "capabilities": {
+                "add": ["NET_ADMIN", "NET_RAW", "SYS_ADMIN"],
+            },
         },
         "volumeMounts": [
             {"name": "var-volume", "mountPath": "/var/tezos"},
         ],
     }
+
 
 def get_genesis_vanity_chain_id(seed_len=16):
     seed = "".join(
@@ -331,7 +335,7 @@ def main():
         )
         exit(1)
 
-    bootstrap_peers = [ c["bootstrap_peer"] ] if c.get("bootstrap_peer") else []
+    bootstrap_peers = [c["bootstrap_peer"]] if c.get("bootstrap_peer") else []
     if args.action == "create":
         k8s_templates.append("bootstrap-node.yaml")
         bootstrap_peers.append("tezos-bootstrap-node-p2p:9732")
@@ -412,13 +416,13 @@ def main():
 
                     if "zerotier_network" in c:
                         # add the zerotier containers
-                        k["spec"]["template"]["spec"][
-                            "initContainers"
-                        ].insert(0,get_zerotier_initcontainer())
+                        k["spec"]["template"]["spec"]["initContainers"].insert(
+                            0, get_zerotier_initcontainer()
+                        )
 
-                        k["spec"]["template"]["spec"][
-                            "containers"
-                        ].append(get_zerotier_container())
+                        k["spec"]["template"]["spec"]["containers"].append(
+                            get_zerotier_container()
+                        )
 
                 if safeget(k, "metadata", "name") == "tezos-node":
                     # set the docker image for the node
@@ -438,13 +442,13 @@ def main():
 
                     if "zerotier_network" in c:
                         # add the zerotier containers
-                        k["spec"]["template"]["spec"][
-                            "initContainers"
-                        ].insert(0,get_zerotier_initcontainer())
+                        k["spec"]["template"]["spec"]["initContainers"].insert(
+                            0, get_zerotier_initcontainer()
+                        )
 
-                        k["spec"]["template"]["spec"][
-                            "containers"
-                        ].append(get_zerotier_container())
+                        k["spec"]["template"]["spec"]["containers"].append(
+                            get_zerotier_container()
+                        )
 
                     # set replicas
                     k["spec"]["replicas"] = c["number_of_nodes"] - (
