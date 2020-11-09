@@ -2,9 +2,8 @@
 
 This tutorial will walk you through setting up a Tezos based
 permissioned blockchain. Upon successful completion of this tutorial
-you will have a permissioned chain running with three nodes in a
-peer-to-peer network. This tutorial assumes the use of Minikube on
-MacOS.
+you will have a permissioned chain running with six nodes in 2 clusters in a
+peer-to-peer network. This tutorial assumes the use of Minikube.
 
 
 ## Prerequisites
@@ -14,6 +13,7 @@ MacOS.
 * python3
 * a ZeroTier network and api access token
 * jq
+* devspace
 
 ## Installing prerequisites 
 
@@ -41,11 +41,11 @@ brew install minikube
 pacman -Syu && pacman -S python3 jq minikube kubectl kubectx linux
 ```
 
-## Install devspace
+## Set up minikube and install custom containers
 
-[Follow instructions](https://devspace.sh/cli/docs/introduction)
+Devspace is needed for now to build private containers. In the future, pre-built containers will be publicly available.
 
-## Setting up mkchain
+[Follow installation instructions](https://devspace.sh/cli/docs/introduction).
 
 Ensure minikube is running:
 
@@ -53,12 +53,20 @@ Ensure minikube is running:
 minikube start
 ```
 
+The zerotier container is customized, so it needs to be built locally. For a Minikube deployment, do:
+
+``` shell
+devspace build --skip-push --tag=dev
+```
+
+## Setting up mkchain
+
 Install the mkchain program:
 
 ``` shell
-python3 -m venv .venv-tezos-k8s
-source .venv-tezos-k8s/bin/activate
-pip install https://github.com/tqtezos/tezos-k8s/archive/master.zip
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ./
 ```
 
 Create a ZeroTier network:
@@ -90,17 +98,12 @@ Set unbuffered IO for python:
 PYTHONUNBUFFERED=x
 ```
 
-Run the following command to create the chain yaml:
+Run the following command to create the chain yaml and feed it to Kubernetes:
 
 ``` shell
 mkchain generate-constants --zerotier-network $ZT_NET \
 --zerotier-token $ZT_TOKEN $CHAIN_NAME
-```
-
-Build containers and start the chain with devspace:
-
-``` shell
-devspace dev -n tqtezos --var=CHAIN_NAME=$CHAIN_NAME
+mkchain create $CHAIN_NAME | kubectl apply -f -
 ```
 
 Your kubernetes cluster will now be running a series of jobs to
@@ -130,12 +133,8 @@ chain running one node.
 ## Add nodes within the cluster
 
 You can configure a self-contained testnet within your cluster with
-a number of nodes of your choice by passing the following argument to
-mkchain generate-constants:
-
-```
-mkchain generate-constants --number-of-nodes 3 <...> $CHAIN_NAME
-```
+a number of nodes of your choice by passing `--number-f-nodes` to
+mkchain generate-constants.
 
 The nodes will establish peer-to-peer connections in a full mesh topology.
 
@@ -144,9 +143,7 @@ up your setup to an arbitrary number of nodes by overriding the --number-of-node
 parameter in the `create` command:
 
 ```
-# create
-mkchain create $CHAIN_NAME | kubectl apply -f -
-# scale up
+# scale up previously create cluster
 mkchain create --number-of-nodes 3 $CHAIN_NAME | kubectl apply -f -
 ```
 
@@ -161,10 +158,10 @@ Send this file to the recipients you want to invite.
 
 ### on the computer of the joining node
 
-The member needs to follow the installation instructions, put the invite file in the mkchain directory, then run:
+The member needs to follow the installation instructions, build the private zerotier container, put the invite file in the mkchain directory, then run:
 
 ``` shell
-devspace dev -n tqtezos --var=CHAIN_NAME=$CHAIN_NAME --var=ACTION=invite
+mkchain invite $CHAIN_NAME | kubectl apply -f -
 ```
 
 At this point additional nodes will be added in a full mesh

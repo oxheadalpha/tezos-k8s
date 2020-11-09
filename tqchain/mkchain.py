@@ -140,7 +140,8 @@ def get_endorser(docker_image, endorser_command):
 def get_zerotier_initcontainer():
     return {
         "name": "get-zerotier-ip",
-        "image": "tezos-zerotier",
+        "image": "tezos-zerotier:dev",
+        "imagePullPolicy": "IfNotPresent",
         "envFrom": [
             {"configMapRef": {"name": "zerotier-config"}},
         ],
@@ -161,7 +162,8 @@ def get_zerotier_initcontainer():
 def get_zerotier_container():
     return {
         "name": "zerotier",
-        "image": "tezos-zerotier",
+        "image": "tezos-zerotier:dev",
+        "imagePullPolicy": "IfNotPresent",
         "command": ["sh"],
         "args": [
             "-c",
