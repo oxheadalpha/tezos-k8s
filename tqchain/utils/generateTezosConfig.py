@@ -20,8 +20,8 @@ def main():
     )
     main_args = main_parser.parse_args()
 
+    bootstrap_accounts = get_bootstrap_account_pubkeys()
     if main_args.generate_parameters_json:
-        bootstrap_accounts = get_bootstrap_account_pubkeys()
         parameters_json = json.dumps(
             get_parameters_config(
                 [*bootstrap_accounts.values()],
