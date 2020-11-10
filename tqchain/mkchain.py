@@ -6,8 +6,9 @@ import random
 import string
 import subprocess
 import sys
-import yaml
 from datetime import datetime, timezone
+
+import yaml
 
 my_path = os.path.dirname(os.path.abspath(__file__))
 
