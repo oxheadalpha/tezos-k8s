@@ -2,16 +2,13 @@ import argparse
 import base64
 import json
 import os
-import platform
 import random
 import string
 import subprocess
 import sys
 import uuid
 import yaml
-from datetime import datetime
-from datetime import timezone
-from ipaddress import IPv4Address
+from datetime import datetime, timezone
 
 my_path = os.path.dirname(os.path.abspath(__file__))
 
