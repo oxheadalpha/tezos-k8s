@@ -6,7 +6,6 @@ import random
 import string
 import subprocess
 import sys
-import uuid
 import yaml
 from datetime import datetime, timezone
 
