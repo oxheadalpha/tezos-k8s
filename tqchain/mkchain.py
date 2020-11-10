@@ -340,7 +340,8 @@ def main():
     bootstrap_peers = [c["bootstrap_peer"]] if c.get("bootstrap_peer") else []
     if args.action == "create":
         k8s_templates.append("bootstrap-node.yaml")
-        bootstrap_peers.append("tezos-bootstrap-node-p2p:9732")
+        if "zerotier_network" not in c:
+            bootstrap_peers.append("tezos-bootstrap-node-p2p:9732")
 
     if "zerotier_network" in c:
         k8s_templates.append("zerotier.yaml")
