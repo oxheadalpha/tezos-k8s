@@ -37,4 +37,4 @@ hooks:
 vars:
   - name: PYTHON_ENV
     question: Server environment to run in.
-    default: "development"
+    default: "dev"

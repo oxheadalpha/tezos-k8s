@@ -1,4 +1,5 @@
-FROM python:3.9 AS base
+FROM python:3.9-slim as builder
+
 
 # Creating Application Source Code Directory
 RUN mkdir -p /var/rpc-auth/
@@ -7,12 +8,42 @@ RUN mkdir -p /var/rpc-auth/
 WORKDIR /var/rpc-auth/
 
 # Install dependencies for pytezos
-RUN apt-get update
-RUN apt-get install -y libsodium-dev libsecp256k1-dev libgmp-dev
+RUN apt-get update -y \
+  && apt-get install --no-install-recommends -y \
+  automake \
+  build-essential \
+  libffi-dev \
+  libgmp-dev \
+  libsecp256k1-dev \
+  libsodium-dev \
+  libtool \
+  pkg-config \
+  && echo
+
+COPY requirements.txt .
+RUN mkdir wheels \
+  && pip wheel -r requirements.txt \
+  --wheel-dir ./wheels --no-cache-dir
+
+FROM python:3.9-slim AS src
+
+WORKDIR /var/rpc-auth/
+
+RUN apt-get update -y \
+  && apt-get install --no-install-recommends -y \
+  libffi-dev \
+  libgmp-dev \
+  libsecp256k1-dev \
+  libsodium-dev \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 
 # Installing python dependencies
+COPY --from=builder /var/rpc-auth/wheels wheels
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install -r requirements.txt \
+  --no-index --find-links ./wheels \
+  && rm -rf ./wheels
 
 # Copying src code to Container
 COPY index.py .
@@ -23,11 +54,11 @@ ENV PYTHONUNBUFFERED=x
 # Exposing Ports
 EXPOSE 8080
 
-FROM base AS dev
+FROM src AS dev
 ENV FLASK_ENV=development
 CMD ["python3", "index.py"]
 
-FROM base AS prod
+FROM src AS prod
 ENV FLASK_ENV=production
 CMD ["uwsgi", \
   "--http-socket", "0.0.0.0:8080", \
