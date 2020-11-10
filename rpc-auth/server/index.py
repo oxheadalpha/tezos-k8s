@@ -87,7 +87,9 @@ def get_tezos_chain_id():
     tezos_chain_id = os.getenv("TEZOS_CHAIN_ID")
     if tezos_chain_id:
         return tezos_chain_id
-    chain_id_response = requests.get(urljoin(TEZOS_RPC_SERVICE_URL, "chains/main/chain_id"))
+    chain_id_response = requests.get(
+        urljoin(TEZOS_RPC_SERVICE_URL, "chains/main/chain_id")
+    )
     return chain_id_response.text.strip('\n"')
 
 
@@ -123,7 +125,6 @@ def is_valid_access_token(access_token):
     return False
 
 
-## Need a proper server for production
 if __name__ == "__main__":
     app.run(
         host="0.0.0.0",
