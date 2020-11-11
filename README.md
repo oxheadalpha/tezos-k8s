@@ -10,9 +10,7 @@ source .venv/bin/activate
 pip install -e ./
 ```
 
-## private chain
-
-### Generate constants
+## Generate constants
 
 Your chain is uniquely defined by a set of values such as bootstrap account keys, chain id, timestamp...
 
@@ -24,7 +22,7 @@ mkchain generate-constants $CHAIN_NAME
 
 It will create two 2 yaml files, `<$CHAIN_NAME>_chain.yaml` and `<$CHAIN_NAME>_chain_invite.yaml`.
 
-#### Chain parameters
+### Chain parameters
 
 You can modify these parameters by:
 
@@ -47,27 +45,16 @@ You can modify these parameters by:
 | protocol_hash | --protocol-hash | Desired Tezos protocol hash | PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb |
 | baker_command | --baker-command | The baker command to use, including protocol | tezos-baker-006-PsCARTHA |
 
-### create
+## private chain
+
+### create a self-contained chain
 $CHAIN_NAME: is your private chain's name
 
 ``` shell
+mkchain generate-constants $CHAIN_NAME
 mkchain create $CHAIN_NAME | kubectl apply -f -
 ```
 
-### invite
-$CHAIN_NAME: is your private chain's name
-$IP is the ip address your node will serve rpc on.
+## multi-cluster chain
 
-Output is suitable to copy/paste and share with joiners.
-
-``` shell
-IP=$(kubectl -n tqtezos exec  daemonsets/zerotier-bridge -- zerotier-cli get $ZT_NET ip)
-mkchain invite --bootstrap-peer $IP $CHAIN_NAME > join-$CHAIN_NAME.yaml
-```
-
-### join
-You will typically receive a yaml file from a private chain creator.
-
-
-## EKS
-https://aws.amazon.com/premiumsupport/knowledge-center/eks-persistent-storage/
+See the [multicluster howto](MULTICLUSTER.md).

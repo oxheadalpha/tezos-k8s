@@ -6,12 +6,9 @@ import random
 import string
 import subprocess
 import sys
-import uuid
 from datetime import datetime, timezone
 
 import yaml
-from kubernetes import client as k8s_client
-from kubernetes import config as k8s_config
 
 my_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -134,6 +131,56 @@ def get_endorser(docker_image, endorser_command):
             "baker",
         ],
         "volumeMounts": [{"name": "var-volume", "mountPath": "/var/tezos"}],
+    }
+
+
+def get_zerotier_initcontainer():
+    return {
+        "name": "get-zerotier-ip",
+        "image": "tezos-zerotier:dev",
+        "imagePullPolicy": "IfNotPresent",
+        "envFrom": [
+            {"configMapRef": {"name": "zerotier-config"}},
+        ],
+        "securityContext": {
+            "privileged": True,
+            "capabilities": {
+                "add": ["NET_ADMIN", "NET_RAW", "SYS_ADMIN"],
+            },
+        },
+        "volumeMounts": [
+            {"name": "tqtezos-utils", "mountPath": "/opt/tqtezos"},
+            {"name": "var-volume", "mountPath": "/var/tezos"},
+            {"name": "dev-net-tun", "mountPath": "/dev/net/tun"},
+        ],
+    }
+
+
+def get_zerotier_container():
+    return {
+        "name": "zerotier",
+        "image": "tezos-zerotier:dev",
+        "imagePullPolicy": "IfNotPresent",
+        "command": ["sh"],
+        "args": [
+            "-c",
+            "echo 'starting zerotier' && zerotier-one /var/tezos/zerotier",
+            "-P",
+            "8732",
+            "-d",
+            "/var/tezos/client",
+            "run",
+            "baker",
+        ],
+        "securityContext": {
+            "privileged": True,
+            "capabilities": {
+                "add": ["NET_ADMIN", "NET_RAW", "SYS_ADMIN"],
+            },
+        },
+        "volumeMounts": [
+            {"name": "var-volume", "mountPath": "/var/tezos"},
+        ],
     }
 
 
@@ -287,20 +334,11 @@ def main():
         )
         exit(1)
 
+    bootstrap_peers = [c["bootstrap_peer"]] if c.get("bootstrap_peer") else []
     if args.action == "create":
         k8s_templates.append("bootstrap-node.yaml")
-        bootstrap_peers = ["tezos-bootstrap-node-p2p:9732"]
-
-    if args.action == "invite":
-        k8s_config.load_kube_config()
-        v1 = k8s_client.CoreV1Api()
-        bootstrap_peer = args.bootstrap_peer
-        node_port = (
-            v1.read_namespaced_service("tezos-bootstrap-node-p2p", "tqtezos")
-            .spec.ports[0]
-            .node_port
-        )
-        bootstrap_peers = [f"{bootstrap_peer}:{node_port}"]
+        if "zerotier_network" not in c:
+            bootstrap_peers.append("tezos-bootstrap-node-p2p:9732")
 
     if "zerotier_network" in c:
         k8s_templates.append("zerotier.yaml")
@@ -336,6 +374,7 @@ def main():
                                 "bootstrap_peers": bootstrap_peers,
                                 "genesis_block": c["genesis_chain_id"],
                                 "timestamp": c["bootstrap_timestamp"],
+                                "zerotier_in_use": c.get("zerotier_network") != None,
                             }
                         ),
                     }
@@ -375,6 +414,16 @@ def main():
                             get_baker(c["docker_image"], c["baker_command"])
                         )
 
+                    if "zerotier_network" in c:
+                        # add the zerotier containers
+                        k["spec"]["template"]["spec"]["initContainers"].insert(
+                            0, get_zerotier_initcontainer()
+                        )
+
+                        k["spec"]["template"]["spec"]["containers"].append(
+                            get_zerotier_container()
+                        )
+
                 if safeget(k, "metadata", "name") == "tezos-node":
                     # set the docker image for the node
                     k["spec"]["template"]["spec"]["containers"][0]["image"] = c[
@@ -390,6 +439,16 @@ def main():
                     k["spec"]["template"]["spec"]["initContainers"].append(
                         get_identity_job(c["docker_image"])
                     )
+
+                    if "zerotier_network" in c:
+                        # add the zerotier containers
+                        k["spec"]["template"]["spec"]["initContainers"].insert(
+                            0, get_zerotier_initcontainer()
+                        )
+
+                        k["spec"]["template"]["spec"]["containers"].append(
+                            get_zerotier_container()
+                        )
 
                     # set replicas
                     k["spec"]["replicas"] = c["number_of_nodes"] - (
@@ -431,11 +490,9 @@ def main():
                     ]
 
                 if safeget(k, "metadata", "name") == "zerotier-config":
-                    k["data"]["NETWORK_IDS"] = c["zerotier_network"]
+                    k["data"]["NETWORK_ID"] = c["zerotier_network"]
                     k["data"]["ZTAUTHTOKEN"] = c["zerotier_token"]
-                    zt_hostname = str(uuid.uuid4())
-                    print(f"zt_hostname: {zt_hostname}", file=sys.stderr)
-                    k["data"]["ZTHOSTNAME"] = zt_hostname
+                    k["data"]["CHAIN_NAME"] = args.chain_name
 
                 k8s_objects.append(k)
 

@@ -13,7 +13,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/tqtezos/tezos-k8s",
     include_package_data=True,
-    install_requires=["pyyaml", "kubernetes"],
+    install_requires=["pyyaml"],
     setup_requires=["wheel"],
     extras_require={"dev": ["pytest", "autoflake", "isort", "black"]},
     entry_points={"console_scripts": ["mkchain=tqchain.mkchain:main"]},
