@@ -10,10 +10,6 @@ images:
     image: rpc-auth
     dockerfile: ./Dockerfile
     context: ./
-    build:
-      docker:
-        options:
-          target: ${PYTHON_ENV}
 dev:
   sync:
     - imageName: server
@@ -34,7 +30,3 @@ hooks:
     when:
       before:
         deployments: all
-vars:
-  - name: PYTHON_ENV
-    question: Server environment to run in.
-    default: "dev"

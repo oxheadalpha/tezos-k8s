@@ -1,13 +1,11 @@
+ARG FLASK_ENV=development
+
 FROM python:3.9-slim as builder
 
-
-# Creating Application Source Code Directory
 RUN mkdir -p /var/rpc-auth/
 
-# Setting Home Directory for containers
 WORKDIR /var/rpc-auth/
 
-# Install dependencies for pytezos
 RUN apt-get update -y \
   && apt-get install --no-install-recommends -y \
   automake \
@@ -43,28 +41,27 @@ COPY --from=builder /var/rpc-auth/wheels wheels
 COPY requirements.txt .
 RUN pip install -r requirements.txt \
   --no-index --find-links ./wheels \
-  && rm -rf ./wheels
+  && rm -rf ./wheels ./requirements.txt
 
 # Copying src code to Container
 COPY index.py .
 
 # Application Environment variables
+ENV FLASK_ENV=$FLASK_ENV
 ENV PYTHONUNBUFFERED=x
 
-# Exposing Ports
 EXPOSE 8080
 
-FROM src AS dev
-ENV FLASK_ENV=development
-CMD ["python3", "index.py"]
+RUN groupadd -g 999 appuser && \
+  useradd -r -u 999 -g appuser appuser
+USER appuser
 
-FROM src AS prod
-ENV FLASK_ENV=production
 CMD ["uwsgi", \
   "--http-socket", "0.0.0.0:8080", \
   "--callable", "app", \
   "--threads", "100", \
   "--processes", "1", \
   "--wsgi-file", "/var/rpc-auth/index.py", \
+  # Should be no reload in prod
   "--py-autoreload", "3", \
   "--worker-reload-mercy", "0"]
