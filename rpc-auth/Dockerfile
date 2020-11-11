@@ -6,6 +6,7 @@ RUN mkdir -p /var/rpc-auth/
 
 WORKDIR /var/rpc-auth/
 
+# Installing pytezos deps
 RUN apt-get update -y \
   && apt-get install --no-install-recommends -y \
   automake \
@@ -27,6 +28,7 @@ FROM python:3.9-slim AS src
 
 WORKDIR /var/rpc-auth/
 
+# Installing pytezos deps
 RUN apt-get update -y \
   && apt-get install --no-install-recommends -y \
   libffi-dev \
@@ -43,17 +45,16 @@ RUN pip install -r requirements.txt \
   --no-index --find-links ./wheels \
   && rm -rf ./wheels ./requirements.txt
 
-# Copying src code to Container
-COPY index.py .
+RUN groupadd -g 999 appuser && \
+  useradd -r -u 999 -g appuser appuser
 
-# Application Environment variables
+COPY --chown=appuser:appuser ./server/index.py .
+
 ENV FLASK_ENV=$FLASK_ENV
 ENV PYTHONUNBUFFERED=x
 
 EXPOSE 8080
 
-RUN groupadd -g 999 appuser && \
-  useradd -r -u 999 -g appuser appuser
 USER appuser
 
 CMD ["uwsgi", \
@@ -61,7 +62,7 @@ CMD ["uwsgi", \
   "--callable", "app", \
   "--threads", "100", \
   "--processes", "1", \
-  "--wsgi-file", "/var/rpc-auth/index.py", \
+  "--wsgi-file", "index.py", \
   # Should be no reload in prod
   "--py-autoreload", "3", \
   "--worker-reload-mercy", "0"]

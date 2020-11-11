@@ -16,6 +16,7 @@ dev:
       namespace: tqtezos
       labelSelector:
         app: rpc-auth
+      localSubPath: ./server
   autoReload:
     images:
       - server
