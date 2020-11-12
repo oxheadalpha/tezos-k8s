@@ -1,5 +1,3 @@
-ARG FLASK_ENV=development
-
 FROM python:3.9-slim as builder
 
 RUN mkdir -p /var/rpc-auth/
@@ -50,6 +48,7 @@ RUN groupadd -g 999 appuser && \
 
 COPY --chown=appuser:appuser ./server/index.py .
 
+ARG FLASK_ENV=development
 ENV FLASK_ENV=$FLASK_ENV
 ENV PYTHONUNBUFFERED=x
 
