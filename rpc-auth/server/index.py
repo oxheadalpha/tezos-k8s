@@ -1,9 +1,11 @@
 import os
+import time
 from functools import cache
 from urllib.parse import urljoin
 from uuid import uuid4
 
 import requests
+
 from flask import Flask
 from flask import abort
 from flask import request
@@ -30,7 +32,7 @@ def get_nonce(chain_id):
         print("Failed to verify chain id.", e)
         abort(500)
 
-    # Tezos client requires data to be signed in hex format
+    # Tezos client requires the data to be signed in hex format
     nonce = uuid4().hex
     redis.set(nonce, "", ex=3)
     return nonce
@@ -61,7 +63,7 @@ def generate_tezos_rpc_url():
 
     access_token = uuid4().hex
     secret_url = create_secret_url(access_token)
-    redis.set(create_redis_access_token_key(access_token), key_object.public_key_hash())
+    save_access_token(key_object.public_key_hash(), access_token)
     return secret_url
 
 
@@ -116,16 +118,28 @@ def is_valid_signature(key_object, signature, nonce):
         return False
 
 
-def create_redis_access_token_key(access_token):
-    return f"access_token:{access_token}"
-
-
 def create_secret_url(access_token):
     return urljoin(request.url_root, f"tezos-node-rpc/{access_token}")
 
 
+def create_redis_access_token_key(access_token, hash=False):
+    return f"access_token{':hash' if hash else ''}:{access_token}"
+
+
+def save_access_token(tz_address, access_token):
+    access_token_key = create_redis_access_token_key(access_token)
+    with redis.pipeline() as pipeline:
+        # Create redis hash of access token with timestamp and tz address
+        pipeline.hset(
+            access_token_key, mapping={"timestamp": time.time(), "address": tz_address}
+        )
+        # Add access token to list of this tz address's tokens
+        pipeline.sadd(tz_address, access_token_key)
+        pipeline.execute()
+
+
 def is_valid_access_token(access_token):
-    if redis.get(create_redis_access_token_key(access_token)) != None:
+    if redis.exists(create_redis_access_token_key(access_token)) == 1:
         return True
     return False
 
