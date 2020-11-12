@@ -5,6 +5,7 @@ from uuid import uuid4
 
 import requests
 from flask import Flask
+from flask import abort
 from flask import request
 from pytezos.crypto import Key
 from redis import StrictRedis
@@ -24,14 +25,10 @@ def get_nonce(chain_id):
     try:
         is_correct_chain_id = verify_chain_id(chain_id)
         if not is_correct_chain_id:
-            return "Unauthorized", 401
+            abort(401)
     except requests.exceptions.RequestException as e:
         print("Failed to verify chain id.", e)
-        return "Internal server error", 500
-
-    # tz1 = request.values.get("tz1")
-    # if not tz1:
-    #     return make_response("Missing tz1 address", 400)
+        abort(500)
 
     # Tezos client requires data to be signed in hex format
     nonce = uuid4().hex
@@ -48,28 +45,30 @@ def generate_tezos_rpc_url():
     except KeyError as e:
         print("Request data:", request.values)
         print(e)
-        return "Bad Request", 400
+        abort(400)
 
     if not is_valid_nonce(nonce):
-        return "Unauthorized", 401
+        abort(401)
 
     # Immediately delete the nonce from redis so that it cannot be replayed.
     # (Will this actually prevent simultaneous requests with the same nonce??)
     # (May need to run a get/set in a transaction)
     redis.delete(nonce)
 
-    is_valid_signature = verify_signature(public_key, signature, nonce)
-    if not is_valid_signature:
-        return "Unauthorized", 401
+    key_object = get_key_object(public_key)
+    if not is_valid_signature(key_object, signature, nonce):
+        abort(401)
 
-    secret_url = generate_secret_url(public_key)
+    access_token = uuid4().hex
+    secret_url = create_secret_url(access_token)
+    redis.set(create_redis_access_token_key(access_token), key_object.public_key_hash())
     return secret_url
 
 
 @app.route("/auth/<access_token>")
 def rpc_auth(access_token):
     if not is_valid_access_token(access_token):
-        return "Unauthorized", 401
+        abort(401)
     return "OK", 200
 
 
@@ -99,10 +98,18 @@ def is_valid_nonce(nonce):
     return False
 
 
-def verify_signature(public_key, signature, nonce):
+def get_key_object(public_key):
+    try:
+        return Key.from_encoded_key(public_key)
+    except ValueError as e:
+        print("Something is wrong with the public_key provided:", e)
+        abort(401)
+
+
+def is_valid_signature(key_object, signature, nonce):
     try:
         bytes_prefix = "0x05"
-        Key.from_encoded_key(public_key).verify(signature, bytes_prefix + nonce)
+        key_object.verify(signature, bytes_prefix + nonce)
         return True
     except ValueError as e:
         print("Error verifying signature:", e)
@@ -113,9 +120,7 @@ def create_redis_access_token_key(access_token):
     return f"access_token:{access_token}"
 
 
-def generate_secret_url(public_key):
-    access_token = uuid4().hex
-    redis.set(create_redis_access_token_key(access_token), public_key)
+def create_secret_url(access_token):
     return urljoin(request.url_root, f"tezos-node-rpc/{access_token}")
 
 
