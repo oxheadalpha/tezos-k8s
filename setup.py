@@ -1,11 +1,14 @@
 import setuptools
 
+import versioneer
+
 with open("README.md", "r") as readme:
     long_description = readme.read()
 
 setuptools.setup(
     name="mkchain",
-    version="0.1",
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
     packages=["tqchain"],
     author="TQ Tezos",
     description="A utility to generate k8s configs for a Tezos blockchain",

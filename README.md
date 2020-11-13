@@ -58,3 +58,7 @@ mkchain create $CHAIN_NAME | kubectl apply -f -
 ## multi-cluster chain
 
 See the [multicluster howto](MULTICLUSTER.md).
+
+## development
+
+See [development](DEVELOPMENT.md).

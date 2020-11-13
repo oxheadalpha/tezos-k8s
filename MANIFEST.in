@@ -1,2 +1,4 @@
 include tqchain/deployment/*
 include tqchain/utils/*
+include versioneer.py
+include tqchain/_version.py

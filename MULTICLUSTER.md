@@ -13,7 +13,6 @@ peer-to-peer network. This tutorial assumes the use of Minikube.
 * python3
 * a ZeroTier network and api access token
 * jq
-* devspace
 
 ## Installing prerequisites 
 
@@ -41,22 +40,10 @@ brew install minikube
 pacman -Syu && pacman -S python3 jq minikube kubectl kubectx linux
 ```
 
-## Set up minikube and install custom containers
-
-Devspace is needed for now to build private containers. In the future, pre-built containers will be publicly available.
-
-[Follow installation instructions](https://devspace.sh/cli/docs/introduction).
-
-Ensure minikube is running:
+## Ensure minikube is running
 
 ``` shell
 minikube start
-```
-
-The zerotier container is customized, so it needs to be built locally. For a Minikube deployment, do:
-
-``` shell
-devspace build --skip-push --tag=dev
 ```
 
 ## Setting up mkchain
@@ -66,7 +53,7 @@ Install the mkchain program:
 ``` shell
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -e ./
+pip install tezos-k8s
 ```
 
 Create a ZeroTier network:
