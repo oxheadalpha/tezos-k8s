@@ -1,0 +1,35 @@
+version: v1beta9
+deployments:
+  - name: chain
+    namespace: tqtezos
+    kubectl:
+      manifests:
+        - ./mkchain-devspace.yaml
+images:
+  zerotier:
+    image: tezos-zerotier
+    dockerfile: ./docker/zerotier/Dockerfile
+    context: ./docker/zerotier
+dev:
+  sync:
+    - imageName: zerotier
+      namespace: tqtezos
+      labelSelector:
+        app: tezos-bootstrap-node
+hooks:
+  - command: sh
+    args:
+      - -c
+      - "mkchain ${ACTION} ${CHAIN_NAME} > mkchain-devspace.yaml"
+    when:
+      before:
+        deployments: all
+vars:
+- name: CHAIN_NAME
+  question: Name of the chain as passed to generate-constants
+  default: "devspace"
+  source: env
+- name: ACTION
+  question: Mkchain action (create or invite)
+  default: "create"
+  source: env
