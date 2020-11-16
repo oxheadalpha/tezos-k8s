@@ -9,7 +9,7 @@ import sys
 from datetime import datetime, timezone
 
 sys.path.insert(0, "tqchain")
-from _version import get_versions
+from ._version import get_versions
 
 __version__ = get_versions()["version"]
 
