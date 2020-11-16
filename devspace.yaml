@@ -5,17 +5,39 @@ deployments:
     kubectl:
       manifests:
         - ./mkchain-devspace.yaml
+  - name: rpc-auth
+    namespace: tqtezos
+    kubectl:
+      manifests:
+        - ./tqchain/deployment/rpc-auth.yaml
 images:
   zerotier:
     image: tezos-zerotier
     dockerfile: ./docker/zerotier/Dockerfile
     context: ./docker/zerotier
+  rpc-auth:
+    image: rpc-auth
+    dockerfile: ./docker/rpc-auth/Dockerfile
+    context: ./docker/rpc-auth
 dev:
+  logs:
+    images:
+      - rpc-auth
   sync:
-    - imageName: zerotier
+    - imageName: rpc-auth
       namespace: tqtezos
       labelSelector:
-        app: tezos-bootstrap-node
+        app: rpc-auth
+      localSubPath: ./docker/rpc-auth/server
+  autoReload:
+    images:
+      - rpc-auth
+      - zerotier
+    deployments:
+      - rpc-auth
+      - chain
+    paths:
+      - ./tqchain/deployment/*
 hooks:
   - command: sh
     args:
@@ -24,6 +46,14 @@ hooks:
     when:
       before:
         deployments: all
+  - command: minikube
+    args:
+      - addons
+      - enable
+      - ingress
+    when:
+      before:
+        deployments: rpc-auth
 vars:
 - name: CHAIN_NAME
   question: Name of the chain as passed to generate-constants

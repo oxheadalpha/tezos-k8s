@@ -6,3 +6,5 @@ dist
 .venv*
 .DS_Store
 build
+.devspace/
+mkchain-devspace.yaml
