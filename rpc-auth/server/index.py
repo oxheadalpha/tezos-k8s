@@ -11,6 +11,7 @@ from flask import abort
 from flask import request
 from pytezos.crypto import Key
 from redis import StrictRedis
+from redis import WatchError
 
 TEZOS_RPC_SERVICE_URL = (
     f"http://{os.getenv('TEZOS_RPC_SERVICE')}:{os.getenv('TEZOS_RPC_SERVICE_PORT')}"
@@ -52,18 +53,13 @@ def generate_tezos_rpc_url():
     if not is_valid_nonce(nonce):
         abort(401)
 
-    # Immediately delete the nonce from redis so that it cannot be replayed.
-    # (Will this actually prevent simultaneous requests with the same nonce??)
-    # (May need to run a get/set in a transaction)
-    redis.delete(nonce)
-
-    key_object = get_key_object(public_key)
-    if not is_valid_signature(key_object, signature, nonce):
+    tezos_key_object = get_tezos_key_object(public_key)
+    if not is_valid_signature(tezos_key_object, signature, nonce):
         abort(401)
 
     access_token = uuid4().hex
     secret_url = create_secret_url(access_token)
-    save_access_token(key_object.public_key_hash(), access_token)
+    save_access_token(tezos_key_object.public_key_hash(), access_token)
     return secret_url
 
 
@@ -95,12 +91,22 @@ def get_tezos_chain_id():
 
 
 def is_valid_nonce(nonce):
-    if redis.get(nonce) != None:
-        return True
-    return False
+    with redis.pipeline() as pipeline:
+        try:
+            pipeline.watch(nonce)
+            redis_nonce = pipeline.get(nonce)
+            pipeline.multi()
+            pipeline.delete(nonce)
+            pipeline.execute()
+            if redis_nonce != None:
+                return True
+        except WatchError:
+            print("Nonce was already validated.")
+
+        return False
 
 
-def get_key_object(public_key):
+def get_tezos_key_object(public_key):
     try:
         return Key.from_encoded_key(public_key)
     except ValueError as e:
