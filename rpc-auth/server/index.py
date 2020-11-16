@@ -1,4 +1,5 @@
 import os
+import re
 import time
 from functools import cache
 from urllib.parse import urljoin
@@ -63,8 +64,9 @@ def generate_tezos_rpc_url():
     return secret_url
 
 
-@app.route("/auth/<access_token>")
-def rpc_auth(access_token):
+@app.route("/auth")
+def rpc_auth():
+    access_token = extract_access_token(request.headers)
     if not is_valid_access_token(access_token):
         abort(401)
     return "OK", 200
@@ -144,8 +146,19 @@ def save_access_token(tz_address, access_token):
         pipeline.execute()
 
 
+def extract_access_token(headers):
+    original_url = headers.get("X-Original-Url")
+    regex_obj = re.search(r"tezos-node-rpc/(.*?)/", original_url)
+    if regex_obj:
+        return regex_obj.group(1)
+
+
 def is_valid_access_token(access_token):
-    if redis.exists(create_redis_access_token_key(access_token)) == 1:
+    if (
+        access_token
+        and len(access_token) == 32  # Should be 32 char hex string
+        and redis.exists(create_redis_access_token_key(access_token)) == 1
+    ):
         return True
     return False
 

@@ -154,15 +154,12 @@ metadata:
     nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/rewrite-target: /$2
     # https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md#external-authentication
-    nginx.ingress.kubernetes.io/auth-url: http://$service_name.$namespace.svc.cluster.local:8080/auth/$access_token
+    nginx.ingress.kubernetes.io/auth-url: http://$service_name.$namespace.svc.cluster.local:8080/auth
     nginx.ingress.kubernetes.io/auth-snippet: |
       # Bug with nginx setting auth-url annotation port with a variable.
       # Service name and namespace variables work.
       # https://github.com/kubernetes/ingress-nginx/issues/6427
       set $service_name "rpc-auth-service";
-      if ($request_uri ~ ^/tezos-node-rpc/(.*?)/) {
-        set $access_token $1;
-      }
 spec:
   rules:
     -  http:
