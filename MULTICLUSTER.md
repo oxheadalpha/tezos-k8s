@@ -173,5 +173,5 @@ chain.
 Check that the nodes have matching heads by comparing their hashes:
 
 ``` shell
-kubectl -n tqtezos exec deployment/tezos-node -c tezos-node -- /usr/local/bin/tezos-client rpc get /chains/main/blocks/head/hash
+kubectl get pod -n tqtezos -l appType=tezos -o name | while read line; do kubectl -n tqtezos exec $line -c tezos-node -- /usr/local/bin/tezos-client rpc get /chains/main/blocks/head/hash; done
 ```
