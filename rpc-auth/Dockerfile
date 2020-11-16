@@ -62,6 +62,5 @@ CMD ["uwsgi", \
   "--threads", "100", \
   "--processes", "1", \
   "--wsgi-file", "index.py", \
-  # Should be no reload in prod
-  "--py-autoreload", "3", \
+  "--touch-reload", "index.py", \
   "--worker-reload-mercy", "0"]
