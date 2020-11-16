@@ -145,7 +145,7 @@ def get_zerotier_initcontainer():
         "image": (
             "tezos-zerotier:dev"
             if "-" in __version__ or "+" in __version__
-            else "tqtezos/tezos-k8s-zerotier:%s" % __version
+            else "tqtezos/tezos-k8s-zerotier:%s" % __version__
         ),
         "imagePullPolicy": "IfNotPresent",
         "envFrom": [
@@ -171,7 +171,7 @@ def get_zerotier_container():
         "image": (
             "tezos-zerotier:dev"
             if "-" in __version__ or "+" in __version__
-            else "tqtezos/tezos-k8s-zerotier:%s" % __version
+            else "tqtezos/tezos-k8s-zerotier:%s" % __version__
         ),
         "imagePullPolicy": "IfNotPresent",
         "command": ["sh"],
