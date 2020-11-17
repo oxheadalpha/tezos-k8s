@@ -8,3 +8,5 @@ dist
 build
 .devspace/
 mkchain-devspace.yaml
+/*_chain.yaml
+/*_chain_invite.yaml
