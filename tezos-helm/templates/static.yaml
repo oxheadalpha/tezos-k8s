@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tqtezos
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tezos-bootstrap-node-rpc
+  namespace: tqtezos
+spec:
+  ports:
+    - nodePort: 31732
+      port: 8732
+  selector:
+    app: tezos-bootstrap-node
+  type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tezos-bootstrap-node-p2p
+  namespace: tqtezos
+spec:
+  ports:
+    - nodePort: 30732
+      port: 9732
+  selector:
+    app: tezos-bootstrap-node
+  type: NodePort
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: tezos-bootstrap-node-pv-claim
+  namespace: tqtezos
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: "15Gi"

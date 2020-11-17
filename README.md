@@ -1,13 +1,15 @@
 # tezos-k8s
 
-helper program to deploy tezos on kubernetes
+Helper program to configure the tezos-chain helm chart
 
 ## quickstart
 
 ``` shell
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -e ./
+pip install mkchain
+mkchain my-chain
+helm install my-chain tezos-helm/ -f my-chain_values.yaml
 ```
 
 ## Generate constants
@@ -17,10 +19,10 @@ Your chain is uniquely defined by a set of values such as bootstrap account keys
 Create these values:
 
 ``` shell
-mkchain generate-constants $CHAIN_NAME
+mkchain $CHAIN_NAME
 ```
 
-It will create two 2 yaml files, `<$CHAIN_NAME>_chain.yaml` and `<$CHAIN_NAME>_chain_invite.yaml`.
+It will create two 2 yaml files, `<$CHAIN_NAME>_values.yaml` and `<$CHAIN_NAME>_invite_values.yaml`.
 
 ### Chain parameters
 
@@ -32,16 +34,14 @@ You can modify these parameters by:
 
 | YAML Parameter | mkchain argument | Description | Default |
 | ----- | ----------- | ------ | ----- |
-| number_of_nodes | --number-of-nodes |  Number of peers in the cluster | 1 |
+| additional_nodes | --additional-nodes |  Number of non-bootstrap nodes in the cluster | 0 |
 | baker | --baker | Include a baking node in the cluster | True |
 | docker_image | --docker-image | Version of the Tezos docker image | tezos/tezos:v7-release |
 | bootstrap_mutez | --bootstrap-mutez | Initial balance of the bootstrap accounts | 4000000000000 |
 | zerotier_network | --zerotier-network | Zerotier network id for external chain access | |
 | zerotier_token | --zerotier-token | Zerotier token for external chain access | |
+| zerotier_docker_image | --zerotier-docker-image | Docker image for zerotier connection | |
 | bootstrap_peer | --bootstrap-peer | peer ip to join | |
-| genesis_key | --genesis-key | genesis public key for the chain to join | |
-| genesis_block | --genesis-block | hash of the genesis block | |
-| timestamp | --timestamp | timestamp for the chain to join | |
 | protocol_hash | --protocol-hash | Desired Tezos protocol hash | PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb |
 | baker_command | --baker-command | The baker command to use, including protocol | tezos-baker-006-PsCARTHA |
 
@@ -51,8 +51,8 @@ You can modify these parameters by:
 $CHAIN_NAME: is your private chain's name
 
 ``` shell
-mkchain generate-constants $CHAIN_NAME
-mkchain create $CHAIN_NAME | kubectl apply -f -
+mkchain $CHAIN_NAME
+helm install $CHAIN_NAME tezos-helm/ -f ${CHAIN_NAME}_values.yaml
 ```
 
 ## multi-cluster chain

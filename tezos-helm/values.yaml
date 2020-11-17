@@ -1,0 +1,11 @@
+additional_nodes: 0
+baker: true
+baker_command: tezos-baker-006-PsCARTHA
+bootstrap_mutez: "4000000000000"
+bootstrap_peers: ["tezos-bootstrap-node-p2p:9732"]
+bootstrap_timestamp: "2020-11-04T16:03:52.484949+00:00"
+docker_image: tezos/tezos:v7-release
+is_invitation: false
+protocol_hash: PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb
+zerotier_docker_image: "tqtezos/tezos-k8s-zerotier:1.0b1"
+zerotier_in_use: false
