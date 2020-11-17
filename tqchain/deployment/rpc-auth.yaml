@@ -172,4 +172,3 @@ spec:
                 name: tezos-bootstrap-node-rpc
                 port:
                   number: 8732
----

@@ -44,6 +44,7 @@ You can modify these parameters by:
 | timestamp | --timestamp | timestamp for the chain to join | |
 | protocol_hash | --protocol-hash | Desired Tezos protocol hash | PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb |
 | baker_command | --baker-command | The baker command to use, including protocol | tezos-baker-006-PsCARTHA |
+| rpc_auth | --rpc-auth | Include an RPC authentication server | |
 
 ## private chain
 

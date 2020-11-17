@@ -14,7 +14,7 @@ peer-to-peer network. This tutorial assumes the use of Minikube.
 * a ZeroTier network and api access token
 * jq
 
-## Installing prerequisites 
+## Installing prerequisites
 
 This section varies depending on OS.
 
@@ -34,7 +34,7 @@ brew install jq
 brew install minikube
 ```
 
-### Arch Linux 
+### Arch Linux
 
 ```shell
 pacman -Syu && pacman -S python3 jq minikube kubectl kubectx linux
@@ -162,3 +162,21 @@ Check that the nodes have matching heads by comparing their hashes:
 ``` shell
 kubectl -n tqtezos exec deployment/tezos-node -c tezos-node -- /usr/local/bin/tezos-client rpc get /chains/main/blocks/head/hash
 ```
+
+## RPC Authentication
+You can optionally spin up an RPC authentication server allowing clients with your given permission to make RPC calls:
+
+```shell
+mkchain create $CHAIN_NAME --rpc-auth ...
+```
+
+### Current authentication flow
+The client authenticates themselves and will receive a secret url that allows them to make RPC calls.
+- You provide a trusted client with your cluster ip/address and your private tezos chain id.
+- client runs: `scripts/rpc-auth-client.sh --cluster-address $CLUSTER_IP --tz-alias $TZ_ALIAS --chain-id $CHAIN_ID`
+- TZ_ALIAS is the alias of a client's tz address secret key. The client's secret key is used to sign some data for the server to then verify.
+- If the client is authenticated, the response should contain a secret url such as `http://192.168.64.51/tezos-node-rpc/ffff3eb3d7dd4f6bbff3f2fd096722ae/`
+- Client can then make RPC requests:
+  - `curl http://192.168.64.51/tezos-node-rpc/ffff3eb3d7dd4f6bbff3f2fd096722ae/chains/main/chain_id`
+  - Bug in tezos client v8, so as of version `tezos/tezos:master_08d3405e_20201113152010`:
+    - `tezos-client --endpoint http://192.168.64.51/tezos-node-rpc/ffff3eb3d7dd4f6bbff3f2fd096722ae/ rpc get chains/main/chain_id`

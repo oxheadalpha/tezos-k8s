@@ -253,6 +253,11 @@ CHAIN_CONSTANTS = {
         "help": "The baker command to use, including protocol",
         "default": "tezos-baker-006-PsCARTHA",
     },
+    "rpc_auth": {
+        "help": "Should spin up an RPC authentication server",
+        "action": "store_true",
+        "default": False,
+    },
 }
 
 
@@ -319,6 +324,7 @@ def main():
             "bootstrap_timestamp": datetime.utcnow()
             .replace(tzinfo=timezone.utc)
             .isoformat(),
+            "rpc_auth": False,
         }
         for k in CHAIN_CONSTANTS.keys():
             if vars(args)[k]:
@@ -331,7 +337,7 @@ def main():
             public_keys[f"{account}_public_key"] = keys["public_key"]
 
         creation_constants = {**base_constants, **secret_keys}
-        invitation_constants = {**base_constants, **public_keys}
+        invitation_constants = {**base_constants, "rpc_auth": False, **public_keys}
 
         with open(f"{args.chain_name}_chain.yaml", "w") as yaml_file:
             yaml.dump(creation_constants, yaml_file)
@@ -345,6 +351,9 @@ def main():
         k: (vars(args)[k] if k in vars(args) and vars(args)[k] else yaml_constants[k])
         for k in yaml_constants.keys()
     }
+
+    if c.get("rpc_auth"):
+        k8s_templates.append("rpc-auth.yaml")
 
     if c["number_of_nodes"] < 1:
         print(
