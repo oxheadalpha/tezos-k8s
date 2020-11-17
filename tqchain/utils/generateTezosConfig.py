@@ -126,7 +126,7 @@ def generate_node_config(node_argv):
     rpc_parser.add_argument(
         "--listen-addrs",
         action="append",
-        default=[f"{os.getenv('MY_POD_IP')}:8732", "localhost:8732"],
+        default=[f"{os.getenv('MY_POD_IP')}:8732", "127.0.0.1:8732"],
     )
 
     p2p_parser = subparsers.add_parser("p2p")
