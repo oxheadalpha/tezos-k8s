@@ -54,6 +54,11 @@ spec:
         envFrom:
         - configMapRef:
             name: tezos-config
+        env:
+          - name: MY_POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
         volumeMounts:
         - name: config-volume
           mountPath: /etc/tezos
