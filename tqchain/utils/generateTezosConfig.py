@@ -123,7 +123,11 @@ def generate_node_config(node_argv):
     global_parser.add_argument("--data-dir", default="/var/tezos/node")
 
     rpc_parser = subparsers.add_parser("rpc")
-    rpc_parser.add_argument("--listen-addrs", action="append", default=[f"{os.getenv('MY_POD_IP')}:8732", "localhost:8732"])
+    rpc_parser.add_argument(
+        "--listen-addrs",
+        action="append",
+        default=[f"{os.getenv('MY_POD_IP')}:8732", "localhost:8732"],
+    )
 
     p2p_parser = subparsers.add_parser("p2p")
     p2p_parser.add_argument("--bootstrap-peers", action="append", default=[])

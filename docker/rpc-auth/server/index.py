@@ -6,13 +6,9 @@ from urllib.parse import urljoin
 from uuid import uuid4
 
 import requests
-
-from flask import Flask
-from flask import abort
-from flask import request
+from flask import Flask, abort, request
 from pytezos.crypto import Key
-from redis import StrictRedis
-from redis import WatchError
+from redis import StrictRedis, WatchError
 
 TEZOS_RPC_SERVICE_URL = (
     f"http://{os.getenv('TEZOS_RPC_SERVICE')}:{os.getenv('TEZOS_RPC_SERVICE_PORT')}"
