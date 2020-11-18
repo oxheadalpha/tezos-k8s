@@ -19,6 +19,11 @@ images:
     image: rpc-auth
     dockerfile: ./docker/rpc-auth/Dockerfile
     context: ./docker/rpc-auth
+    build:
+      docker:
+        options:
+          buildArgs:
+            FLASK_ENV: ${FLASK_ENV}
 dev:
   logs:
     images:

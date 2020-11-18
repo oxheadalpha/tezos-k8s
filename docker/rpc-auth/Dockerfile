@@ -56,11 +56,11 @@ EXPOSE 8080
 
 USER appuser
 
-CMD ["uwsgi", \
-  "--http-socket", "0.0.0.0:8080", \
-  "--callable", "app", \
-  "--threads", "100", \
-  "--processes", "1", \
-  "--wsgi-file", "index.py", \
-  "--touch-reload", "index.py", \
-  "--worker-reload-mercy", "0"]
+CMD uwsgi \
+  --http-socket 0.0.0.0:8080 \
+  --callable app \
+  --threads 100 \
+  --processes 1 \
+  --wsgi-file index.py \
+  --worker-reload-mercy 0 \
+  $(if [ "${FLASK_ENV}" = "development" ] ; then echo "--touch-reload index.py" ; else : ; fi)

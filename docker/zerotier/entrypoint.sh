@@ -12,7 +12,7 @@ if [[ $(hostname) == *"bootstrap-node"* ]]; then
     zerotier_name="${CHAIN_NAME}_bootstrap"
     zerotier_description="Bootstrap node for chain ${CHAIN_NAME}"
 else
-    zerotier_name="${CHAIN_NAME}_node" 
+    zerotier_name="${CHAIN_NAME}_node"
     zerotier_description="P2p node of chain ${CHAIN_NAME}"
 fi
 
@@ -45,7 +45,7 @@ if [[ $(hostname) == *"bootstrap-node"* ]]; then
     zerotier_name="${CHAIN_NAME}_bootstrap"
     zerotier_description="Bootstrap node for chain ${CHAIN_NAME}"
 else
-    zerotier_name="${CHAIN_NAME}_node" 
+    zerotier_name="${CHAIN_NAME}_node"
     zerotier_description="P2p node of chain ${CHAIN_NAME}"
 fi
 curl -s -XPOST \
