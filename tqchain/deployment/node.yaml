@@ -25,7 +25,7 @@ spec:
           command:
             - /usr/local/bin/tezos-node
           image: tezos/tezos:v7-release
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           name: tezos-node
           ports:
             - containerPort: 8732
@@ -48,9 +48,9 @@ spec:
             - mountPath: /var/tezos
               name: var-volume
       initContainers:
-      - imagePullPolicy: Always
-        name: tezos-config-generator
+      - name: tezos-config-generator
         image: python:alpine
+        imagePullPolicy: IfNotPresent
         command: ["python", "/opt/tqtezos/generateTezosConfig.py", "--generate-config-json"]
         envFrom:
         - configMapRef:
