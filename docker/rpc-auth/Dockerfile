@@ -48,7 +48,7 @@ RUN groupadd -g 999 appuser && \
 
 COPY --chown=appuser:appuser ./server/index.py .
 
-ARG FLASK_ENV=development
+ARG FLASK_ENV=production
 ENV FLASK_ENV=$FLASK_ENV
 ENV PYTHONUNBUFFERED=x
 
