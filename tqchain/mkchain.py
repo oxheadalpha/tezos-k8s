@@ -197,6 +197,25 @@ def get_zerotier_container():
     }
 
 
+def get_rpc_auth_container():
+    return {
+        "name": "rpc-auth",
+        "image": (
+            "tezos-rpc-auth:dev"
+            if "-" in __version__ or "+" in __version__
+            else "tqtezos/tezos-k8s-rpc-auth:%s" % __version__
+        ),
+        "imagePullPolicy": "IfNotPresent",
+        "ports": [{"containerPort": 8080}],
+        "env": [
+            {"name": "TEZOS_RPC_SERVICE", "value": "tezos-bootstrap-node-rpc"},
+            {"name": "TEZOS_RPC_SERVICE_PORT", "value": "8732"},
+            {"name": "REDIS_HOST", "value": "redis-service"},
+            {"name": "REDIS_PORT", "value": "6379"},
+        ],
+    }
+
+
 def get_genesis_vanity_chain_id(seed_len=16):
     seed = "".join(
         random.choice(string.ascii_uppercase + string.digits) for _ in range(seed_len)
@@ -520,6 +539,11 @@ def main():
                     k["data"]["NETWORK_ID"] = c["zerotier_network"]
                     k["data"]["ZTAUTHTOKEN"] = c["zerotier_token"]
                     k["data"]["CHAIN_NAME"] = args.chain_name
+
+                if safeget(k, "metadata", "name") == "rpc-auth":
+                    k["spec"]["template"]["spec"]["containers"].append(
+                        get_rpc_auth_container()
+                    )
 
                 k8s_objects.append(k)
 

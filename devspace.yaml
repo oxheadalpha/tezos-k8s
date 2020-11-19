@@ -16,7 +16,7 @@ images:
     dockerfile: ./docker/zerotier/Dockerfile
     context: ./docker/zerotier
   rpc-auth:
-    image: rpc-auth
+    image: tezos-rpc-auth
     dockerfile: ./docker/rpc-auth/Dockerfile
     context: ./docker/rpc-auth
     build:
