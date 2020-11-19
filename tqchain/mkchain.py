@@ -54,6 +54,7 @@ def get_ensure_node_dir_job():
         {
             "name": "ensure-node-dir-job",
             "image": "busybox",
+            "imagePullPolicy": "IfNotPresent",
             "command": ["/bin/mkdir"],
             "args": [
                 "-p",
@@ -70,6 +71,7 @@ def get_identity_job(docker_image):
     return {
         "name": "identity-job",
         "image": docker_image,
+        "imagePullPolicy": "IfNotPresent",
         "command": ["/bin/sh"],
         "args": [
             "-c",
@@ -86,6 +88,7 @@ def get_import_key_job(docker_image):
     return {
         "name": "import-keys",
         "image": docker_image,
+        "imagePullPolicy": "IfNotPresent",
         "command": ["sh", "/opt/tqtezos/import_keys.sh"],
         "envFrom": [
             {"secretRef": {"name": "tezos-secret"}},
@@ -101,6 +104,7 @@ def get_baker(docker_image, baker_command):
     return {
         "name": "baker-job",
         "image": docker_image,
+        "imagePullPolicy": "IfNotPresent",
         "command": [baker_command],
         "args": [
             "-A",
@@ -124,6 +128,7 @@ def get_endorser(docker_image, endorser_command):
     return {
         "name": "endorser",
         "image": docker_image,
+        "imagePullPolicy": "IfNotPresent",
         "command": [endorser_command],
         "args": [
             "-A",
