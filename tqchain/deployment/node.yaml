@@ -13,6 +13,7 @@ spec:
     metadata:
       labels:
         app: tezos-node
+        appType: tezos
     spec:
       securityContext:
         fsGroup: 100
