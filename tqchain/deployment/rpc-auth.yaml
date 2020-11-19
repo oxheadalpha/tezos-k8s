@@ -26,6 +26,16 @@ spec:
     requests:
       storage: 5Gi
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-config
+  namespace: tqtezos
+data:
+  redis.conf: |
+    appendonly yes
+    appendfsync always
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -45,6 +55,9 @@ spec:
       containers:
         - name: master
           image: redis
+          command:
+            - redis-server
+            - "/redis/redis.conf"
           readinessProbe:
             exec:
               command:
@@ -70,10 +83,16 @@ spec:
           volumeMounts:
             - mountPath: /data
               name: redis-data
+            - mountPath: /redis
+              name: redis-config
+
       volumes:
         - name: redis-data
           persistentVolumeClaim:
             claimName: redis-pv-claim
+        - name: redis-config
+          configMap:
+            name: redis-config
 ---
 apiVersion: v1
 kind: Service
@@ -101,21 +120,7 @@ spec:
       labels:
         app: rpc-auth
     spec:
-      containers:
-        - name: rpc-auth
-          image: rpc-auth
-          imagePullPolicy: Never
-          ports:
-            - containerPort: 8080
-          env:
-            - name: REDIS_HOST
-              value: redis-service
-            - name: REDIS_PORT
-              value: "6379"
-            - name: TEZOS_RPC_SERVICE
-              value: tezos-bootstrap-node-rpc
-            - name: TEZOS_RPC_SERVICE_PORT
-              value: "8732"
+      containers: []
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -162,7 +167,7 @@ metadata:
       set $service_name "rpc-auth-service";
 spec:
   rules:
-    -  http:
+    - http:
         paths:
           # Client uses secret url to access the RPC endpoint
           - path: /tezos-node-rpc/(.*?)/(.*)
