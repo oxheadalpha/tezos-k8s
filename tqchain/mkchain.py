@@ -541,9 +541,9 @@ def main():
                     k["data"]["CHAIN_NAME"] = args.chain_name
 
                 if safeget(k, "metadata", "name") == "rpc-auth":
-                    k["spec"]["template"]["spec"]["containers"].append(
-                        get_rpc_auth_container()
-                    )
+                    k["spec"]["template"]["spec"]["containers"][
+                        0
+                    ] = get_rpc_auth_container()
 
                 k8s_objects.append(k)
 
