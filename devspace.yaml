@@ -5,41 +5,17 @@ deployments:
     kubectl:
       manifests:
         - ./mkchain-devspace.yaml
-  - name: rpc-auth
-    namespace: tqtezos
-    kubectl:
-      manifests:
-        - ./tqchain/deployment/rpc-auth.yaml
 images:
   zerotier:
     image: tezos-zerotier
     dockerfile: ./docker/zerotier/Dockerfile
     context: ./docker/zerotier
-  rpc-auth:
-    image: tezos-rpc-auth
-    dockerfile: ./docker/rpc-auth/Dockerfile
-    context: ./docker/rpc-auth
-    build:
-      docker:
-        options:
-          buildArgs:
-            FLASK_ENV: ${FLASK_ENV}
+
 dev:
-  logs:
-    images:
-      - rpc-auth
-  sync:
-    - imageName: rpc-auth
-      namespace: tqtezos
-      labelSelector:
-        app: rpc-auth
-      localSubPath: ./docker/rpc-auth/server
   autoReload:
     images:
-      - rpc-auth
       - zerotier
     deployments:
-      - rpc-auth
       - chain
     paths:
       - ./tqchain/deployment/*
@@ -51,20 +27,21 @@ hooks:
     when:
       before:
         deployments: all
-  - command: minikube
-    args:
-      - addons
-      - enable
-      - ingress
-    when:
-      before:
-        deployments: rpc-auth
 vars:
-- name: CHAIN_NAME
-  question: Name of the chain as passed to generate-constants
-  default: "devspace"
-  source: env
-- name: ACTION
-  question: Mkchain action (create or invite)
-  default: "create"
-  source: env
+  - name: CHAIN_NAME
+    question: Name of the chain as passed to generate-constants
+    default: "devspace"
+    source: env
+  - name: ACTION
+    question: Mkchain action (create or invite)
+    default: "create"
+    source: env
+
+profiles:
+  - name: rpc-auth
+    replace:
+      dependencies:
+        - name: rpc-auth
+          source:
+            path: "./docker/rpc-auth"
+          profile: rpc-auth

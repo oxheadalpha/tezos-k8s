@@ -120,7 +120,21 @@ spec:
       labels:
         app: rpc-auth
     spec:
-      containers: []
+      containers:
+        - name: rpc-auth
+          image: tezos-rpc-auth
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          env:
+            - name: REDIS_HOST
+              value: redis-service
+            - name: REDIS_PORT
+              value: "6379"
+            - name: TEZOS_RPC_SERVICE
+              value: tezos-bootstrap-node-rpc
+            - name: TEZOS_RPC_SERVICE_PORT
+              value: "8732"
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
