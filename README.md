@@ -42,8 +42,8 @@ You can modify these parameters by:
 | genesis_key | --genesis-key | genesis public key for the chain to join | |
 | genesis_block | --genesis-block | hash of the genesis block | |
 | timestamp | --timestamp | timestamp for the chain to join | |
-| protocol_hash | --protocol-hash | Desired Tezos protocol hash | PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb |
-| baker_command | --baker-command | The baker command to use, including protocol | tezos-baker-006-PsCARTHA |
+| protocol_hash | --protocol-hash | Desired Tezos protocol hash | PsDELPH1Kxsxt8f9eWbxQeRxkjfbxoqM52jvs5Y5fBxWWh4ifpo |
+| baker_command | --baker-command | The baker command to use, including protocol | tezos-baker-007-PsDELPH1 |
 
 ## private chain
 
