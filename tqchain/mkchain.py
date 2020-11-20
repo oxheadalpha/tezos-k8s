@@ -540,7 +540,8 @@ def main():
                     k["data"]["ZTAUTHTOKEN"] = c["zerotier_token"]
                     k["data"]["CHAIN_NAME"] = args.chain_name
 
-                if safeget(k, "metadata", "name") == "rpc-auth":
+                if safeget(k, "metadata", "name") == "rpc-auth" and safeget("kind") == "Deployment":
+                    print(k)
                     k["spec"]["template"]["spec"]["containers"][
                         0
                     ] = get_rpc_auth_container()

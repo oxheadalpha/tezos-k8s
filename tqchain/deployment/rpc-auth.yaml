@@ -97,7 +97,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: rpc-auth-service
+  name: rpc-auth
   namespace: tqtezos
 spec:
   selector:
@@ -152,7 +152,7 @@ spec:
             pathType: Exact
             backend:
               service:
-                name: rpc-auth-service
+                name: rpc-auth
                 port:
                   number: 8080
           # Client provides signed data and gets back a secret url
@@ -160,7 +160,7 @@ spec:
             pathType: Exact
             backend:
               service:
-                name: rpc-auth-service
+                name: rpc-auth
                 port:
                   number: 8080
 ---
@@ -178,7 +178,7 @@ metadata:
       # Bug with nginx setting auth-url annotation port with a variable.
       # Service name and namespace variables work.
       # https://github.com/kubernetes/ingress-nginx/issues/6427
-      set $service_name "rpc-auth-service";
+      set $service_name "rpc-auth";
 spec:
   rules:
     - http:
