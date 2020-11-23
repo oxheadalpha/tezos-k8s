@@ -5,6 +5,7 @@ deployments:
     kubectl:
       manifests:
         - ../../tqchain/deployment/rpc-auth.yaml
+
 images:
   rpc-auth:
     image: tezos-rpc-auth
@@ -30,16 +31,8 @@ dev:
       - rpc-auth
     deployments:
       - rpc-auth
-    # paths:
-    #   - ./tqchain/deployment/*
+
 hooks:
-  # - command: sh
-  #   args:
-  #     - -c
-  #     - "mkchain ${ACTION} ${CHAIN_NAME} > ../mkchain-devspace.yaml"
-    # when:
-    #   before:
-    #     deployments: rpc-auth
   - command: minikube
     args:
       - addons
@@ -48,15 +41,14 @@ hooks:
     when:
       before:
         deployments: rpc-auth
+
 vars:
-  - name: CHAIN_NAME
-    question: Name of the chain as passed to generate-constants
-    default: "devspace"
-    source: env
-  - name: ACTION
-    question: Mkchain action (create or invite)
-    default: "create"
+  - name: FLASK_ENV # development | production
+    question: Deployment env to run RPC authentication
+    default: development
     source: env
 
-# profiles:
-#   - name: rpc-auth
+dependencies:
+  - name: chain
+    source:
+      path: ../../

@@ -343,10 +343,9 @@ def main():
             "bootstrap_timestamp": datetime.utcnow()
             .replace(tzinfo=timezone.utc)
             .isoformat(),
-            "rpc_auth": False,
         }
         for k in CHAIN_CONSTANTS.keys():
-            if vars(args)[k]:
+            if vars(args)[k] is not None:
                 base_constants[k] = vars(args)[k]
         secret_keys = {}
         public_keys = {}
@@ -540,10 +539,14 @@ def main():
                     k["data"]["ZTAUTHTOKEN"] = c["zerotier_token"]
                     k["data"]["CHAIN_NAME"] = args.chain_name
 
-                if safeget(k, "metadata", "name") == "rpc-auth":
-                    k["spec"]["template"]["spec"]["containers"].append(
-                        get_rpc_auth_container()
-                    )
+                if (
+                    safeget(k, "metadata", "name") == "rpc-auth"
+                    and safeget("kind") == "Deployment"
+                ):
+                    print(k)
+                    k["spec"]["template"]["spec"]["containers"][
+                        0
+                    ] = get_rpc_auth_container()
 
                 k8s_objects.append(k)
 
