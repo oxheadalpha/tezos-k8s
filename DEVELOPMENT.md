@@ -38,5 +38,6 @@ I've experimented with the idea of giving each service its own devspace.yaml. In
 - `devspace dev --var=CHAIN_NAME="$CHAIN_NAME"`
 
 ## Misc
+- Devspace runs a hook to increase `fs.inotify.max_user_watches` to 1048576 in minikube. This is to avoid a "no space left on device" error. See [here](https://serverfault.com/questions/963529/minikube-k8s-kubectl-failed-to-watch-file-no-space-left-on-device) for more.
 - If you would like to avoid passing `--var=CHAIN_NAME="$CHAIN_NAME"` to devspace, you can execute in your shell `export CHAIN_NAME=my_chain`.
 - You can pass mkchain args like so: `devspace dev --var=CHAIN_NAME="$CHAIN_NAME" --var=MKCHAIN_ARGS="--number-of-nodes 2"`

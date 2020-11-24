@@ -19,6 +19,13 @@ hooks:
   - command: sh
     args:
       - -c
+      -  minikube ssh "sudo sysctl fs.inotify.max_user_watches=1048576"
+    when:
+      before:
+        deployments: all
+  - command: sh
+    args:
+      - -c
       - "mkchain ${ACTION} ${CHAIN_NAME} ${CHAIN_ARGS} > mkchain-devspace.yaml"
     when:
       before:
