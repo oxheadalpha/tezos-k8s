@@ -16,6 +16,7 @@ spec:
             - "echo \"private chain activated\""
           image: busybox
           name: job-done
+          imagePullPolicy: IfNotPresent
       initContainers:
         - command:
             - sh
@@ -25,6 +26,7 @@ spec:
                 name: tezos-secret
           image: "{{ .Values.docker_image }}"
           name: import-keys
+          imagePullPolicy: IfNotPresent
           volumeMounts:
             - mountPath: /opt/tqtezos
               name: tqtezos-utils
@@ -38,7 +40,7 @@ spec:
             - configMapRef:
                 name: tezos-config
           image: python:alpine
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           name: tezos-config-generator
           volumeMounts:
             - mountPath: /etc/tezos
@@ -53,6 +55,7 @@ spec:
             - "until nslookup tezos-bootstrap-node-rpc; do echo waiting for tezos-bootstrap-node-rpc; sleep 2; done;"
           image: busybox
           name: wait-for-node
+          imagePullPolicy: IfNotPresent
         - args:
             - "-A"
             - tezos-bootstrap-node-rpc
@@ -144,7 +147,7 @@ spec:
           command:
             - /usr/local/bin/tezos-node
           image: "{{ .Values.docker_image }}"
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           name: tezos-node
           ports:
             - containerPort: 8732
@@ -183,6 +186,7 @@ spec:
             - "{{ .Values.baker_command }}"
           image: "{{ .Values.docker_image }}"
           name: baker-job
+          imagePullPolicy: IfNotPresent
           volumeMounts:
             - mountPath: /var/tezos
               name: var-volume
@@ -257,7 +261,7 @@ spec:
             - configMapRef:
                 name: tezos-config
           image: python:alpine
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           name: tezos-config-generator
           volumeMounts:
             - mountPath: /etc/tezos
@@ -273,6 +277,7 @@ spec:
             - /bin/sh
           image: "{{ .Values.docker_image }}"
           name: identity-job
+          imagePullPolicy: IfNotPresent
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume

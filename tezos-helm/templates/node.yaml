@@ -24,7 +24,7 @@ spec:
           command:
             - /usr/local/bin/tezos-node
           image: "{{ .Values.docker_image }}"
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           name: tezos-node
           ports:
             - containerPort: 8732
@@ -103,6 +103,7 @@ spec:
                 name: tezos-secret
           image: "{{ .Values.docker_image }}"
           name: import-keys
+          imagePullPolicy: IfNotPresent
           volumeMounts:
             - mountPath: /opt/tqtezos
               name: tqtezos-utils
@@ -116,7 +117,7 @@ spec:
             - configMapRef:
                 name: tezos-config
           image: python:alpine
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           name: tezos-config-generator
           volumeMounts:
             - mountPath: /etc/tezos
@@ -132,6 +133,7 @@ spec:
             - /bin/sh
           image: "{{ .Values.docker_image }}"
           name: identity-job
+          imagePullPolicy: IfNotPresent
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
