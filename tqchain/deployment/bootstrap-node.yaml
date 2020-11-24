@@ -19,9 +19,9 @@ spec:
           mountPath: /opt/tqtezos
         - name: var-volume
           mountPath: /var/tezos
-      - imagePullPolicy: Always
-        name: tezos-config-generator
+      - name: tezos-config-generator
         image: python:alpine
+        imagePullPolicy: IfNotPresent
         command: ["python", "/opt/tqtezos/generateTezosConfig.py", "--generate-parameters-json"]
         envFrom:
         - configMapRef:
@@ -35,6 +35,7 @@ spec:
           mountPath: /var/tezos
       - name: wait-for-node
         image: busybox
+        imagePullPolicy: IfNotPresent
         command: ['sh', '-c', 'until nslookup tezos-bootstrap-node-rpc; do echo waiting for tezos-bootstrap-node-rpc; sleep 2; done;']
       - name: activate
         command: ["/usr/local/bin/tezos-client"]
@@ -54,6 +55,7 @@ spec:
       containers:
       - name: job-done
         image: busybox
+        imagePullPolicy: IfNotPresent
         command: ['sh', '-c', 'echo "private chain activated"']
       restartPolicy: Never
       volumes:
@@ -111,9 +113,9 @@ spec:
       securityContext:
         fsGroup: 100
       initContainers:
-      - imagePullPolicy: Always
-        name: tezos-config-generator
+      - name: tezos-config-generator
         image: python:alpine
+        imagePullPolicy: IfNotPresent
         command: ["python", "/opt/tqtezos/generateTezosConfig.py", "--generate-config-json", "--generate-parameters-json"]
         envFrom:
         - configMapRef:
@@ -131,7 +133,7 @@ spec:
         - name: var-volume
           mountPath: /var/tezos
       containers:
-      - imagePullPolicy: Always
+      - imagePullPolicy: IfNotPresent
         name: tezos-node
         command: ["/usr/local/bin/tezos-node"]
         args: ["run", "--bootstrap-threshold", "0", "--config-file",  "/etc/tezos/config.json"]
