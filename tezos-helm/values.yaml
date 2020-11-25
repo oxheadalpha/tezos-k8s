@@ -5,12 +5,14 @@ bootstrap_peers:
 - tezos-bootstrap-node-p2p:9732
 chain_name: YOUR_CHAIN_NAME_HERE
 is_invitation: false
+rpc_auth: false
 zerotier_in_use: false
 zerotier_config:
   zerotier_network: YOUR_NETWORK_ID_HERE
   zerotier_token: YOUR_ZEROTIER_TOKEN_HERE
 container_images:
   zerotier_docker_image: "tqtezos/tezos-k8s-zerotier:1.0b1"
+  rpc_auth_image: "tqtezos/tezos-k8s-rpc-auth:1.0b1"
   tezos_docker_image: tezos/tezos:v7-release
 protocol:
   bootstrap_mutez: '4000000000000'

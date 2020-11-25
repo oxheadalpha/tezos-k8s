@@ -32,7 +32,7 @@ def gen_key(image):
         image,
         "sh",
         "-c",
-        "'/usr/local/bin/tezos-client --protocol PsCARTHAGazK gen keys mykey && /usr/local/bin/tezos-client --protocol PsCARTHAGazK show address mykey -S'",
+        "'/usr/local/bin/tezos-client --protocol PsDELPH1Kxsx gen keys mykey && /usr/local/bin/tezos-client --protocol PsDELPH1Kxsx show address mykey -S'",
     ).split(b"\n")
 
     def extract_key(index: int) -> bytes:
@@ -41,6 +41,25 @@ def gen_key(image):
         )
 
     return {"public_key": extract_key(1), "secret_key": extract_key(2)}
+
+
+def get_rpc_auth_container():
+    return {
+        "name": "rpc-auth",
+        "image": (
+            "tezos-rpc-auth:dev"
+            if "-" in __version__ or "+" in __version__
+            else "tqtezos/tezos-k8s-rpc-auth:%s" % __version__
+        ),
+        "imagePullPolicy": "IfNotPresent",
+        "ports": [{"containerPort": 8080}],
+        "env": [
+            {"name": "TEZOS_RPC_SERVICE", "value": "tezos-bootstrap-node-rpc"},
+            {"name": "TEZOS_RPC_SERVICE_PORT", "value": "8732"},
+            {"name": "REDIS_HOST", "value": "redis-service"},
+            {"name": "REDIS_PORT", "value": "6379"},
+        ],
+    }
 
 
 def get_genesis_vanity_chain_id(seed_len=16):
@@ -73,6 +92,11 @@ CHAIN_CONSTANTS = {
     "docker_image": {
         "help": "Version of the Tezos docker image",
         "default": "tezos/tezos:v7-release",
+    },
+    "rpc_auth": {
+        "help": "Should spin up an RPC authentication server",
+        "action": "store_true",
+        "default": False,
     },
 }
 
@@ -111,11 +135,18 @@ def main():
         else "tqtezos/tezos-k8s-zerotier:%s" % __version__
     )
 
+    rpc_auth_image = (
+        "tezos-rpc-auth:dev"
+        if "-" in __version__ or "+" in __version__
+        else "tqtezos/tezos-k8s-rpc-auth:%s" % __version__
+    )
+
     base_constants = {
         "chain_name": args.chain_name,
         "container_images": {
             "zerotier_docker_image": zerotier_image,
-            "tezos_docker_image": args.docker_image
+            "rpc_auth_image": rpc_auth_image,
+            "tezos_docker_image": args.docker_image,
         },
         "genesis": {
             "genesis_chain_id": get_genesis_vanity_chain_id(),
@@ -124,24 +155,27 @@ def main():
             .isoformat(),
         },
         "zerotier_in_use": bool(args.zerotier_network),
+        "rpc_auth": args.rpc_auth,
         "zerotier_config": {
             "zerotier_network": args.zerotier_network,
             "zerotier_token": args.zerotier_token,
         },
-        "nodes": [{}, {"bake_for": "baker"}]
+        "nodes": [{}, {"bake_for": "baker"}],
     }
 
     accounts = {"secret_key": [], "public_key": []}
     for account in bootstrap_accounts:
         keys = gen_key(args.docker_image)
         for key_type in keys:
-            accounts[key_type].append({
-                "name": account,
-                "key": keys[key_type],
-                "private": True,
-                "bootstrap": True,
-                "baker": True
-            })
+            accounts[key_type].append(
+                {
+                    "name": account,
+                    "key": keys[key_type],
+                    "private": True,
+                    "bootstrap": True,
+                    "baker": True,
+                }
+            )
 
     bootstrap_peers = [args.bootstrap_peer] if args.bootstrap_peer else []
 
