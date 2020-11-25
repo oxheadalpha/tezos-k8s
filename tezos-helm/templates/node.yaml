@@ -23,7 +23,7 @@ spec:
             - /etc/tezos/config.json
           command:
             - /usr/local/bin/tezos-node
-          image: "{{ .Values.docker_image }}"
+          image: "{{ .Values.container_images.tezos_docker_image }}"
           imagePullPolicy: IfNotPresent
           name: tezos-node
           ports:
@@ -58,7 +58,7 @@ spec:
             - baker
           command:
             - sh
-          image: "{{ .Values.zerotier_docker_image }}"
+          image: "{{ .Values.container_images.zerotier_docker_image }}"
           imagePullPolicy: IfNotPresent
           name: zerotier
           securityContext:
@@ -77,7 +77,7 @@ spec:
         - envFrom:
             - configMapRef:
                 name: zerotier-config
-          image: "{{ .Values.zerotier_docker_image }}"
+          image: "{{ .Values.container_images.zerotier_docker_image }}"
           imagePullPolicy: IfNotPresent
           name: get-zerotier-ip
           securityContext:
@@ -101,7 +101,7 @@ spec:
           envFrom:
             - secretRef:
                 name: tezos-secret
-          image: "{{ .Values.docker_image }}"
+          image: "{{ .Values.container_images.docker_image }}"
           name: import-keys
           imagePullPolicy: IfNotPresent
           volumeMounts:
@@ -131,7 +131,7 @@ spec:
             - "[ -f /var/tezos/node/identity.json ] || (mkdir -p /var/tezos/node && /usr/local/bin/tezos-node identity generate 0 --data-dir /var/tezos/node --config-file /etc/tezos/config.json)"
           command:
             - /bin/sh
-          image: "{{ .Values.docker_image }}"
+          image: "{{ .Values.container_images.docker_image }}"
           name: identity-job
           imagePullPolicy: IfNotPresent
           volumeMounts:

@@ -88,8 +88,7 @@ PYTHONUNBUFFERED=x
 Run the following command to create the helm configuration and feed it to helm:
 
 ``` shell
-mkchain -constants --zerotier-network $ZT_NET \
---zerotier-token $ZT_TOKEN $CHAIN_NAME
+mkchain --zerotier-network $ZT_NET --zerotier-token $ZT_TOKEN $CHAIN_NAME
 helm install $CHAIN_NAME tezos-helm/ -f ${CHAIN_NAME}_values.yaml
 ```
 

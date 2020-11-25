@@ -34,16 +34,11 @@ You can modify these parameters by:
 
 | YAML Parameter | mkchain argument | Description | Default |
 | ----- | ----------- | ------ | ----- |
-| additional_nodes | --additional-nodes |  Number of non-bootstrap nodes in the cluster | 0 |
-| baker | --baker | Include a baking node in the cluster | True |
 | docker_image | --docker-image | Version of the Tezos docker image | tezos/tezos:v7-release |
-| bootstrap_mutez | --bootstrap-mutez | Initial balance of the bootstrap accounts | 4000000000000 |
 | zerotier_network | --zerotier-network | Zerotier network id for external chain access | |
 | zerotier_token | --zerotier-token | Zerotier token for external chain access | |
 | zerotier_docker_image | --zerotier-docker-image | Docker image for zerotier connection | |
 | bootstrap_peer | --bootstrap-peer | peer ip to join | |
-| protocol_hash | --protocol-hash | Desired Tezos protocol hash | PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb |
-| baker_command | --baker-command | The baker command to use, including protocol | tezos-baker-006-PsCARTHA |
 
 ## private chain
 

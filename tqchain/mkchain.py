@@ -67,35 +67,12 @@ def get_genesis_vanity_chain_id(seed_len=16):
 
 
 CHAIN_CONSTANTS = {
-    "additional_nodes": {
-        "help": "number of peers in the cluster",
-        "default": 0,
-        "type": int,
-    },
-    "baker": {
-        "help": "Include a baking node in the cluster",
-        "default": True,
-        "action": "store_true",
-    },
+    "zerotier_network": {"help": "Zerotier network id for external chain access"},
+    "zerotier_token": {"help": "Zerotier token for external chain access"},
+    "bootstrap_peer": {"help": "peer ip to join"},
     "docker_image": {
         "help": "Version of the Tezos docker image",
         "default": "tezos/tezos:v7-release",
-    },
-    "bootstrap_mutez": {
-        "help": "Initial balance of the bootstrap accounts",
-        "default": "4000000000000",
-    },
-    "zerotier_network": {"help": "Zerotier network id for external chain access"},
-    "zerotier_token": {"help": "Zerotier token for external chain access"},
-    "zerotier_docker_image": {"help": "Docker image for zerotier connection"},
-    "bootstrap_peer": {"help": "peer ip to join"},
-    "protocol_hash": {
-        "help": "Desired Tezos protocol hash",
-        "default": "PsCARTHAGazKbHtnKfLzQg3kms52kSRpgnDY982a9oYsSXRLQEb",
-    },
-    "baker_command": {
-        "help": "The baker command to use, including protocol",
-        "default": "tezos-baker-006-PsCARTHA",
     },
 }
 
@@ -136,35 +113,47 @@ def main():
 
     base_constants = {
         "chain_name": args.chain_name,
-        "genesis_chain_id": get_genesis_vanity_chain_id(),
-        "bootstrap_timestamp": datetime.utcnow()
-        .replace(tzinfo=timezone.utc)
-        .isoformat(),
-        "zerotier_docker_image": zerotier_image,
+        "container_images": {
+            "zerotier_docker_image": zerotier_image,
+            "tezos_docker_image": args.docker_image
+        },
+        "genesis": {
+            "genesis_chain_id": get_genesis_vanity_chain_id(),
+            "bootstrap_timestamp": datetime.utcnow()
+            .replace(tzinfo=timezone.utc)
+            .isoformat(),
+        },
         "zerotier_in_use": bool(args.zerotier_network),
+        "zerotier_config": {
+            "zerotier_network": args.zerotier_network,
+            "zerotier_token": args.zerotier_token,
+        },
+        "nodes": [{}, {"bake_for": "baker"}]
     }
-    for k in CHAIN_CONSTANTS.keys():
-        if vars(args)[k] is not None:
-            base_constants[k] = vars(args)[k]
-    bootstraps = base64.b64encode(" ".join(bootstrap_accounts).encode("ascii"))
-    secret_keys = {"BOOTSTRAP_ACCOUNTS": bootstraps}
-    public_keys = {"BOOTSTRAP_ACCOUNTS": bootstraps}
+
+    accounts = {"secret_key": [], "public_key": []}
     for account in bootstrap_accounts:
         keys = gen_key(args.docker_image)
-        secret_keys[f"{account}_secret_key"] = keys["secret_key"]
-        public_keys[f"{account}_public_key"] = keys["public_key"]
+        for key_type in keys:
+            accounts[key_type].append({
+                "name": account,
+                "key": keys[key_type],
+                "private": True,
+                "bootstrap": True,
+                "baker": True
+            })
 
     bootstrap_peers = [args.bootstrap_peer] if args.bootstrap_peer else []
 
     creation_constants = {
         **base_constants,
-        "keys": secret_keys,
+        "accounts": accounts["public_key"],
         "is_invitation": False,
         "bootstrap_peers": bootstrap_peers + ["tezos-bootstrap-node-p2p:9732"],
     }
     invitation_constants = {
         **base_constants,
-        "keys": public_keys,
+        "accounts": accounts["secret_key"],
         "is_invitation": True,
         "bootstrap_peers": bootstrap_peers,
     }
