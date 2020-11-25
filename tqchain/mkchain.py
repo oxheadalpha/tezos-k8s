@@ -202,6 +202,25 @@ def get_zerotier_container():
     }
 
 
+def get_rpc_auth_container():
+    return {
+        "name": "rpc-auth",
+        "image": (
+            "tezos-rpc-auth:dev"
+            if "-" in __version__ or "+" in __version__
+            else "tqtezos/tezos-k8s-rpc-auth:%s" % __version__
+        ),
+        "imagePullPolicy": "IfNotPresent",
+        "ports": [{"containerPort": 8080}],
+        "env": [
+            {"name": "TEZOS_RPC_SERVICE", "value": "tezos-bootstrap-node-rpc"},
+            {"name": "TEZOS_RPC_SERVICE_PORT", "value": "8732"},
+            {"name": "REDIS_HOST", "value": "redis-service"},
+            {"name": "REDIS_PORT", "value": "6379"},
+        ],
+    }
+
+
 def get_genesis_vanity_chain_id(seed_len=16):
     seed = "".join(
         random.choice(string.ascii_uppercase + string.digits) for _ in range(seed_len)
@@ -257,6 +276,11 @@ CHAIN_CONSTANTS = {
     "baker_command": {
         "help": "The baker command to use, including protocol",
         "default": "tezos-baker-007-PsDELPH1",
+    },
+    "rpc_auth": {
+        "help": "Should spin up an RPC authentication server",
+        "action": "store_true",
+        "default": False,
     },
 }
 
@@ -326,7 +350,7 @@ def main():
             .isoformat(),
         }
         for k in CHAIN_CONSTANTS.keys():
-            if vars(args)[k]:
+            if vars(args)[k] is not None:
                 base_constants[k] = vars(args)[k]
         secret_keys = {}
         public_keys = {}
@@ -336,7 +360,7 @@ def main():
             public_keys[f"{account}_public_key"] = keys["public_key"]
 
         creation_constants = {**base_constants, **secret_keys}
-        invitation_constants = {**base_constants, **public_keys}
+        invitation_constants = {**base_constants, "rpc_auth": False, **public_keys}
 
         with open(f"{args.chain_name}_chain.yaml", "w") as yaml_file:
             yaml.dump(creation_constants, yaml_file)
@@ -350,6 +374,9 @@ def main():
         k: (vars(args)[k] if k in vars(args) and vars(args)[k] else yaml_constants[k])
         for k in yaml_constants.keys()
     }
+
+    if c.get("rpc_auth"):
+        k8s_templates.append("rpc-auth.yaml")
 
     if c["number_of_nodes"] < 1:
         print(
@@ -516,6 +543,15 @@ def main():
                     k["data"]["NETWORK_ID"] = c["zerotier_network"]
                     k["data"]["ZTAUTHTOKEN"] = c["zerotier_token"]
                     k["data"]["CHAIN_NAME"] = args.chain_name
+
+                if (
+                    safeget(k, "metadata", "name") == "rpc-auth"
+                    and safeget("kind") == "Deployment"
+                ):
+                    print(k)
+                    k["spec"]["template"]["spec"]["containers"][
+                        0
+                    ] = get_rpc_auth_container()
 
                 k8s_objects.append(k)
 
