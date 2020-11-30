@@ -171,7 +171,7 @@ def main():
                 {
                     "name": account,
                     "key": keys[key_type],
-                    "private": True,
+                    "private": key_type == "secret_key",
                     "bootstrap": True,
                     "baker": True,
                 }
@@ -181,13 +181,13 @@ def main():
 
     creation_constants = {
         **base_constants,
-        "accounts": accounts["public_key"],
+        "accounts": accounts["secret_key"],
         "is_invitation": False,
         "bootstrap_peers": bootstrap_peers + ["tezos-bootstrap-node-p2p:9732"],
     }
     invitation_constants = {
         **base_constants,
-        "accounts": accounts["secret_key"],
+        "accounts": accounts["public_key"],
         "is_invitation": True,
         "bootstrap_peers": bootstrap_peers,
     }
