@@ -1,13 +1,8 @@
 apiVersion: v1
-kind: Namespace
-metadata:
-  name: tqtezos
----
-apiVersion: v1
 kind: Service
 metadata:
   name: tezos-bootstrap-node-rpc
-  namespace: tqtezos
+  namespace: {{ .Release.Namespace }}
 spec:
   ports:
     - nodePort: 31732
@@ -20,7 +15,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: tezos-bootstrap-node-p2p
-  namespace: tqtezos
+  namespace: {{ .Release.Namespace }}
 spec:
   ports:
     - nodePort: 30732
@@ -33,7 +28,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: tezos-bootstrap-node-pv-claim
-  namespace: tqtezos
+  namespace: {{ .Release.Namespace }}
 spec:
   accessModes:
     - ReadWriteOnce

@@ -89,7 +89,7 @@ Run the following command to create the helm configuration and feed it to helm:
 
 ``` shell
 mkchain --zerotier-network $ZT_NET --zerotier-token $ZT_TOKEN $CHAIN_NAME
-helm install $CHAIN_NAME tezos-helm/ -f ${CHAIN_NAME}_values.yaml
+helm install $CHAIN_NAME tezos-helm/ -f ${CHAIN_NAME}_values.yaml --namespace tqtezos --create-namespace
 ```
 
 Your kubernetes cluster will now be running a series of jobs to
@@ -125,7 +125,7 @@ mkchain generate-constants.
 The nodes will establish peer-to-peer connections in a full mesh topology.
 
 If you previously spun up the chain with just one node, you may scale
-up your setup to an arbitrary number of nodes by overriding the 
+up your setup to an arbitrary number of nodes by overriding the
 --additional-nodes parameter in the values yaml:
 
 ```
