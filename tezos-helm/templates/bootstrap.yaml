@@ -3,7 +3,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: activate-job
-  namespace: tqtezos
+  namespace: {{ .Release.Namespace }}
 spec:
   template:
     metadata:
@@ -123,7 +123,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: tezos-bootstrap-node
-  namespace: tqtezos
+  namespace: {{ .Release.Namespace }}
 spec:
   selector:
     matchLabels:

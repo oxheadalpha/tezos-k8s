@@ -12,7 +12,7 @@ data:
 kind: ConfigMap
 metadata:
   name: tezos-config
-  namespace: tqtezos
+  namespace: {{ .Release.Namespace }}
 ---
 apiVersion: v1
 data:
@@ -22,7 +22,7 @@ data:
 kind: ConfigMap
 metadata:
   name: zerotier-config
-  namespace: tqtezos
+  namespace: {{ .Release.Namespace }}
 ---
 {{- /*
 
@@ -84,4 +84,4 @@ data:
 kind: Secret
 metadata:
   name: tezos-secret
-  namespace: tqtezos
+  namespace: {{ .Release.Namespace }}
