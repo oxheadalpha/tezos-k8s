@@ -60,19 +60,24 @@ value:
 
 apiVersion: v1
 data:
-  BOOTSTRAP_ACCOUNTS: {{ include "bootstrapAccounts" . | fromYaml | values | join " " | b64enc | quote }}
+  BOOTSTRAP_ACCOUNTS: !!binary |
+{{ include "bootstrapAccounts" . | fromYaml | values | join " " | b64enc | b64enc | indent 4 }}
 {{- if .Values.is_invitation }}
-  KEYS_TYPE: {{ "public" | b64enc | quote }}
+  KEYS_TYPE: !!binary |
+{{ "public" | b64enc | b64enc | indent 4 }}
   {{- range $account := $.Values.accounts }}
     {{- if not $account.private }}
-{{ $account.name | indent 2 }}_public_key: {{ $account.key | b64enc | quote }}
+{{ $account.name | indent 2 }}_public_key: !!binary |
+{{ $account.key | b64enc | indent 4 }}
     {{- end }}
   {{- end }}
 {{- else }}
-  KEYS_TYPE: {{ "secret" | b64enc | quote }}
+  KEYS_TYPE: !!binary |
+{{ "secret" | b64enc | b64enc | indent 4 }}
   {{- range $account := $.Values.accounts }}
     {{- if $account.private }}
-{{ $account.name | indent 2 }}_secret_key: {{ $account.key | b64enc | quote }}
+{{ $account.name | indent 2 }}_secret_key: !!binary |
+{{ $account.key | b64enc | indent 4 }}
     {{- end }}
   {{- end }}
 {{- end }}

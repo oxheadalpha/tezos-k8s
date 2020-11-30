@@ -23,7 +23,7 @@ spec:
             - /etc/tezos/config.json
           command:
             - /usr/local/bin/tezos-node
-          image: "{{ .Values.container_images.tezos_docker_image }}"
+          image: {{ .Values.container_images.tezos_docker_image | quote }}
           imagePullPolicy: IfNotPresent
           name: tezos-node
           ports:
@@ -101,7 +101,7 @@ spec:
           envFrom:
             - secretRef:
                 name: tezos-secret
-          image: "{{ .Values.container_images.docker_image }}"
+          image: {{ .Values.container_images.tezos_docker_image | quote }}
           name: import-keys
           imagePullPolicy: IfNotPresent
           volumeMounts:
@@ -136,7 +136,7 @@ spec:
             - "[ -f /var/tezos/node/identity.json ] || (mkdir -p /var/tezos/node && /usr/local/bin/tezos-node identity generate 0 --data-dir /var/tezos/node --config-file /etc/tezos/config.json)"
           command:
             - /bin/sh
-          image: "{{ .Values.container_images.docker_image }}"
+          image: {{ .Values.container_images.tezos_docker_image | quote }}
           name: identity-job
           imagePullPolicy: IfNotPresent
           volumeMounts:
