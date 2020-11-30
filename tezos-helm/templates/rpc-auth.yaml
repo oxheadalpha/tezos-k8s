@@ -124,7 +124,7 @@ spec:
     spec:
       containers:
         - name: rpc-auth
-          image: .Values.container_images.rpc_auth_image
+          image: {{ .Values.container_images.rpc_auth_image | quote }}
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
