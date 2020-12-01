@@ -37,8 +37,8 @@ You can modify these parameters by:
 | docker_image | --docker-image | Version of the Tezos docker image | tezos/tezos:v7-release |
 | zerotier_network | --zerotier-network | Zerotier network id for external chain access | |
 | zerotier_token | --zerotier-token | Zerotier token for external chain access | |
-| zerotier_docker_image | --zerotier-docker-image | Docker image for zerotier connection | |
 | bootstrap_peer | --bootstrap-peer | peer ip to join | |
+| rpc_autch | --rpc-auth | whether or not an RPC auth server will be spun up | False |
 
 ## private chain
 
