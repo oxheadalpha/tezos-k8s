@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: tezos-node
-  namespace: tqtezos
+  namespace: {{ .Release.Namespace }}
 spec:
   podManagementPolicy: Parallel
   replicas: {{ .Values.additional_nodes }}
@@ -158,7 +158,7 @@ spec:
   volumeClaimTemplates:
     - metadata:
         name: var-volume
-        namespace: tqtezos
+        namespace: {{ .Release.Namespace }}
       spec:
         accessModes:
           - ReadWriteOnce

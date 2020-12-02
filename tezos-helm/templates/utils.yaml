@@ -4,4 +4,4 @@ data:
 kind: ConfigMap
 metadata:
   name: tqtezos-utils
-  namespace: tqtezos
+  namespace: {{ .Release.Namespace }}
