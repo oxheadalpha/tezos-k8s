@@ -1,6 +1,6 @@
 apiVersion: v2
 name: tezos-chain
-description: A Helm chart for Kubernetes
+description: A Helm chart for Tezos nodes on Kubernetes
 type: application
 version: 0.0.1
 appVersion: 1.0b1

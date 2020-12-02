@@ -103,7 +103,7 @@ CHAIN_CONSTANTS = {
 
 def get_args():
     parser = argparse.ArgumentParser(
-        description="Deploys a private Tezos chain on Kuberenetes"
+        description="Generate helm values for use with the tezos-chain helm chart"
     )
     parser.add_argument(
         "--version",
