@@ -3,10 +3,12 @@
 dist
 *.pyc
 *.egg-info
+*.eggs
 .venv*
 .DS_Store
+.vscode
+
 build
 .devspace/
+mkchain/generated-values
 mkchain-devspace.yaml
-/*_chain.yaml
-/*_chain_invite.yaml
