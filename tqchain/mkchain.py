@@ -86,6 +86,11 @@ def get_genesis_vanity_chain_id(seed_len=16):
 
 
 CHAIN_CONSTANTS = {
+    "number_of_nodes": {
+        "help": "number of peers in the cluster",
+        "default": 1,
+        "type": int,
+    },
     "zerotier_network": {"help": "Zerotier network id for external chain access"},
     "zerotier_token": {"help": "Zerotier token for external chain access"},
     "bootstrap_peer": {"help": "peer ip to join"},
@@ -121,6 +126,12 @@ def get_args():
 
 def main():
     args = get_args()
+
+    if args.number_of_nodes < 1:
+        print(
+            f"Invalid argument --number-of-nodes {args.number_of_nodes}, must be 1 or more"
+        )
+        exit(1)
 
     bootstrap_accounts = [
         "baker",
@@ -160,7 +171,7 @@ def main():
             "zerotier_network": args.zerotier_network,
             "zerotier_token": args.zerotier_token,
         },
-        "nodes": [{}, {"bake_for": "baker"}],
+        "nodes": [{"bake_for": "baker"}] + [{}] * (args.number_of_nodes - 1),
     }
 
     accounts = {"secret_key": [], "public_key": []}

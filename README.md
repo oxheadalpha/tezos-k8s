@@ -9,8 +9,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install mkchain
 mkchain my-chain
-helm install my-chain tezos-helm/ -f my-chain_values.yaml --namespace tqtezos 
---create-namespace
+helm install my-chain tezos-helm/ -f my-chain_values.yaml --namespace tqtezos --create-namespace
 ```
 
 ## Generate constants
@@ -35,11 +34,13 @@ You can modify these parameters by:
 
 | YAML Parameter | mkchain argument | Description | Default |
 | ----- | ----------- | ------ | ----- |
+| number_of_nodes | --number-of-nodes | Number of peers in the cluster | 1 |
 | docker_image | --docker-image | Version of the Tezos docker image | tezos/tezos:v7-release |
 | zerotier_network | --zerotier-network | Zerotier network id for external chain access | |
 | zerotier_token | --zerotier-token | Zerotier token for external chain access | |
 | bootstrap_peer | --bootstrap-peer | peer ip to join | |
-| rpc_autch | --rpc-auth | whether or not an RPC auth server will be spun up | False |
+| rpc_auth | --rpc-auth | whether or not an RPC auth server will be spun up | False |
+
 
 ## private chain
 
@@ -48,7 +49,7 @@ $CHAIN_NAME: is your private chain's name
 
 ``` shell
 mkchain $CHAIN_NAME
-helm install $CHAIN_NAME tezos-helm/ -f ${CHAIN_NAME}_values.yaml
+helm install $CHAIN_NAME tezos-helm/ -f ${CHAIN_NAME}_values.yaml --namespace tqtezos --create-namespace
 ```
 
 ## multi-cluster chain
