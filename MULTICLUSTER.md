@@ -119,19 +119,22 @@ chain running one node.
 ## Add nodes within the cluster
 
 You can configure a self-contained testnet within your cluster with
-a number of nodes of your choice by passing `--additional-nodes` to
-mkchain generate-constants.
+a number of nodes of your choice by passing `--number-of-nodes` to
+mkchain.
 
 The nodes will establish peer-to-peer connections in a full mesh topology.
 
 If you previously spun up the chain with just one node, you may scale
-up your setup to an arbitrary number of nodes by overriding the
---additional-nodes parameter in the values yaml:
+up your setup to an arbitrary number of nodes by adding more nodes to the node 
+list in the values yaml:
 
 ```
 # ${CHAIN_NAME}_values.yaml
-additional_nodes: 3
-baker: true
+...
+nodes:
+  - bake_for: baker
+  - {} # second non-baking node
+  - {} # third non-baking node
 ...
 ```
 
