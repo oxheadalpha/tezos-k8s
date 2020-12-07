@@ -1,0 +1,10 @@
+apiVersion: v2
+name: authenticated-rpc-tezos-chain
+description: A Helm chart for Tezos RPC authentication for a private chain
+type: application
+version: 0.1.0
+appVersion: 1.0b1
+keywords:
+  - tezos
+  - blockchain
+home: https://github.com/tqtezos/tezos-k8s

@@ -10,6 +10,6 @@ keywords:
 home: https://github.com/tqtezos/tezos-k8s
 dependencies:
   - name: authenticated-rpc-tezos-chain
-    repository: file://../rpc-auth-helm
+    repository: file://../rpc-auth-chart
     version: 0.1.0
     condition: rpc_auth
