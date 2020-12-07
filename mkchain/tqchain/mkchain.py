@@ -183,7 +183,7 @@ def main():
         **base_constants,
         "accounts": accounts["secret_key"],
         "is_invitation": False,
-        "bootstrap_peers": bootstrap_peers + ["tezos-bootstrap-node-p2p:9732"],
+        "bootstrap_peers": bootstrap_peers,
     }
     invitation_constants = {
         **base_constants,

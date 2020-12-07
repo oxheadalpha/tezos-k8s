@@ -1,8 +1,6 @@
 additional_nodes: 0
 baker: true
 baker_command: tezos-baker-007-PsDELPH1
-bootstrap_peers:
-- tezos-bootstrap-node-p2p:9732
 chain_name: YOUR_CHAIN_NAME_HERE
 is_invitation: false
 rpc_auth: false
@@ -15,11 +13,11 @@ container_images:
   rpc_auth_image: "tqtezos/tezos-k8s-rpc-auth:1.0b1"
   tezos_docker_image: tezos/tezos:v7-release
 protocol:
-  bootstrap_mutez: '4000000000000'
+  bootstrap_mutez: "4000000000000"
   hash: PsDELPH1Kxsxt8f9eWbxQeRxkjfbxoqM52jvs5Y5fBxWWh4ifpo
 genesis:
   genesis_chain_id: "YOUR_GENESIS_CHAIN_ID_HERE"
-  bootstrap_timestamp: 'YOUR_BOOTSTRAP_TIMESTAMP_HERE'
+  bootstrap_timestamp: "YOUR_BOOTSTRAP_TIMESTAMP_HERE"
 accounts:
   - name: sample1
     key: !!binary |

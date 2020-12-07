@@ -36,12 +36,14 @@ def main():
 
     if main_args.generate_config_json:
         net_addr = None
-        bootstrap_peers = CHAIN_PARAMS["bootstrap_peers"]
+        bootstrap_peers = getattr(CHAIN_PARAMS, "bootstrap_peers", [])
         if CHAIN_PARAMS["zerotier_in_use"]:
             with open("/var/tezos/zerotier_data.json", "r") as f:
                 net_addr = json.load(f)[0]["assignedAddresses"][0].split("/")[0]
             if bootstrap_peers == [] and "bootstrap" not in socket.gethostname():
                 bootstrap_peers.extend(get_zerotier_bootstrap_peer_ips())
+        else:
+            bootstrap_peers.extend("tezos-bootstrap-node-p2p:9732")
 
         config_json = json.dumps(
             get_node_config(
@@ -63,12 +65,18 @@ def main():
 def get_zerotier_bootstrap_peer_ips():
     with open("/var/tezos/zerotier_network_members.json", "r") as f:
         network_members = json.load(f)
-    return [
-        n["config"]["ipAssignments"][0]
-        for n in network_members
-        if "ipAssignments" in n["config"]
-        and n["name"] == f"{CHAIN_PARAMS['chain_name']}_bootstrap"
-    ]
+
+    bootstrap_peers = []
+    for n in network_members:
+        ip_assignments = (
+            n["config"]["ipAssignments"] if "ipAssignments" in n["config"] else []
+        )
+        if (
+            len(ip_assignments)
+            and n["name"] == f"{CHAIN_PARAMS['chain_name']}_bootstrap"
+        ):
+            bootstrap_peers.append(ip_assignments[0])
+    return bootstrap_peers
 
 
 def get_bootstrap_account_pubkeys():
