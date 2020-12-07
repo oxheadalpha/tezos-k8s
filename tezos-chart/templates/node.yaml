@@ -1,3 +1,11 @@
+{{- /* Function to get number of non bakers */}}
+{{- define "nonBakers" }}
+  {{- range $i, $node := $.Values.nodes }}
+    {{- if (not (hasKey $node "bake_for")) }}
+{{ $i }}: true
+    {{- end }}
+  {{- end }}
+{{- end -}}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -5,7 +13,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   podManagementPolicy: Parallel
-  replicas: {{ .Values.additional_nodes }}
+  replicas: {{ include "nonBakers" . | fromYaml | values | len }}
   selector:
     matchLabels:
       app: tezos-node
