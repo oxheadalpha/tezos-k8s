@@ -43,7 +43,7 @@ def main():
             if bootstrap_peers == [] and "bootstrap" not in socket.gethostname():
                 bootstrap_peers.extend(get_zerotier_bootstrap_peer_ips())
         else:
-            bootstrap_peers.extend("tezos-bootstrap-node-p2p:9732")
+            bootstrap_peers.append("tezos-bootstrap-node-p2p:9732")
 
         config_json = json.dumps(
             get_node_config(
