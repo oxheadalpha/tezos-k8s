@@ -8,7 +8,8 @@ dist
 .DS_Store
 .vscode
 
-build
 .devspace/
-mkchain/generated-values
+build
 mkchain-devspace.yaml
+mkchain/generated-values
+tezos-chart/charts
