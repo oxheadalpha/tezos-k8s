@@ -191,6 +191,7 @@ def main():
         "is_invitation": True,
         "bootstrap_peers": bootstrap_peers,
     }
+    invitation_constants.pop("rpc_auth")
 
     generate_values_dir = f"{pathlib.Path(__file__).parent.absolute()}/../generated-values/"
     pathlib.Path(generate_values_dir).mkdir(exist_ok=True)
