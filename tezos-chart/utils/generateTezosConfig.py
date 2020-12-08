@@ -65,18 +65,12 @@ def main():
 def get_zerotier_bootstrap_peer_ips():
     with open("/var/tezos/zerotier_network_members.json", "r") as f:
         network_members = json.load(f)
-
-    bootstrap_peers = []
-    for n in network_members:
-        ip_assignments = (
-            n["config"]["ipAssignments"] if "ipAssignments" in n["config"] else []
-        )
-        if (
-            len(ip_assignments)
-            and n["name"] == f"{CHAIN_PARAMS['chain_name']}_bootstrap"
-        ):
-            bootstrap_peers.append(ip_assignments[0])
-    return bootstrap_peers
+    return [
+        n["config"]["ipAssignments"][0]
+        for n in network_members
+        if "ipAssignments" in n["config"]
+        and n["name"] == f"{CHAIN_PARAMS['chain_name']}_bootstrap"
+    ]
 
 
 def get_bootstrap_account_pubkeys():
