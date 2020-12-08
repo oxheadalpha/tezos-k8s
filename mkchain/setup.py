@@ -1,5 +1,4 @@
 import setuptools
-
 import versioneer
 
 with open("README.md", "r") as readme:

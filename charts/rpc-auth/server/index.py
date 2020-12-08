@@ -7,7 +7,6 @@ from uuid import uuid4
 
 import requests
 from flask import Flask, abort, request
-
 from pytezos.crypto import Key
 from redis import StrictRedis, WatchError
 
