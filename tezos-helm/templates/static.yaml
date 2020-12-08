@@ -11,6 +11,7 @@ spec:
     app: tezos-bootstrap-node
   type: NodePort
 ---
+{{- if not .Values.zerotier_in_use }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -24,6 +25,7 @@ spec:
     app: tezos-bootstrap-node
   type: NodePort
 ---
+{{ end }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
