@@ -1,7 +1,7 @@
 import argparse
 import base64
 import os
-import pathlib
+from pathlib import Path
 import random
 import string
 import subprocess
@@ -18,6 +18,7 @@ __version__ = get_versions()["version"]
 
 
 my_path = os.path.dirname(os.path.abspath(__file__))
+
 
 def run_docker(image, entrypoint, *args):
     return subprocess.check_output(
@@ -204,13 +205,14 @@ def main():
     }
     invitation_constants.pop("rpc_auth")
 
-    generate_values_dir = f"{pathlib.Path(__file__).parent.absolute()}/../generated-values/"
-    pathlib.Path(generate_values_dir).mkdir(exist_ok=True)
-    with open(f"{generate_values_dir}{args.chain_name}_values.yaml", "w") as yaml_file:
+    generate_values_dir = f"{Path(__file__).parent.parent.absolute()}/generated-values/"
+    Path(generate_values_dir).mkdir(exist_ok=True)
+    values_file_prefix = Path(generate_values_dir).joinpath(args.chain_name)
+    with open(f"{values_file_prefix}_values.yaml", "w") as yaml_file:
         yaml.dump(creation_constants, yaml_file)
-        print(f"Wrote create constants in {args.chain_name}_values.yaml")
-    with open(f"{generate_values_dir}{args.chain_name}_invite_values.yaml", "w") as yaml_file:
-        print(f"Wrote invitation constants in {args.chain_name}_invite_values.yaml")
+        print(f"Wrote create constants in {values_file_prefix}_values.yaml")
+    with open(f"{values_file_prefix}_invite_values.yaml", "w") as yaml_file:
+        print(f"Wrote invitation constants in {values_file_prefix}_invite_values.yaml")
         yaml.dump(invitation_constants, yaml_file)
 
 
