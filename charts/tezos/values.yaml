@@ -1,4 +1,3 @@
-additional_nodes: 0
 baker: true
 baker_command: tezos-baker-007-PsDELPH1
 chain_name: YOUR_CHAIN_NAME_HERE
@@ -32,7 +31,6 @@ accounts:
     private: true
     bootstrap: true
 nodes:
-  - {}
   - bake_for: baker
 # TODO
 # archive nodes, node with open rpc
