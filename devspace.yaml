@@ -1,0 +1,82 @@
+version: v1beta9
+deployments:
+  - name: chain
+    helm:
+      chart:
+        name: ./charts/tezos
+      valuesFiles:
+        - ./mkchain/generated-values/${CHAIN_NAME}_values.yaml
+  - name: rpc-auth
+    helm:
+      chart:
+        name: ./charts/rpc-auth
+
+images:
+  rpc-auth:
+    image: tezos-rpc-auth
+    dockerfile: ./src/rpc-auth/Dockerfile
+    context: ./src/rpc-auth
+    build:
+      docker:
+        options:
+          buildArgs:
+            FLASK_ENV: ${FLASK_ENV}
+
+dev:
+  logs:
+    images:
+      - rpc-auth
+  sync:
+    - imageName: rpc-auth
+      labelSelector:
+        app: rpc-auth
+      containerName: rpc-auth
+      localSubPath: ./src/rpc-auth/server
+  autoReload:
+    deployments:
+      - chain
+      - rpc-auth
+    paths:
+      - ./src/rpc-auth/Dockerfile
+      - ./src/rpc-auth/server/requirements.txt
+
+hooks:
+  - command: minikube
+    args:
+      - addons
+      - enable
+      - ingress
+    when:
+      before:
+        pullSecrets: all
+  - command: sh
+    args:
+      - -c
+      - minikube ssh "sudo sysctl fs.inotify.max_user_watches=1048576"
+    when:
+      before:
+        pullSecrets: all
+
+vars:
+  - name: CHAIN_NAME
+    question: Name of the chain as passed to generate-constants
+    default: "devspace"
+    source: env
+  - name: FLASK_ENV # development | production
+    question: Deployment env to run RPC authentication
+    default: development
+    source: env
+
+profiles:
+  - name: zerotier
+    strategicMerge:
+      images:
+        zerotier:
+          image: tezos-zerotier
+          dockerfile: ./src/zerotier/Dockerfile
+          context: ./src/zerotier
+    patches:
+      - op: add
+        path: dev.autoReload.paths
+        value: ./src/zerotier/*
+
