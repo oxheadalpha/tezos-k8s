@@ -6,39 +6,19 @@ deployments:
         name: ./charts/tezos
       valuesFiles:
         - ./mkchain/generated-values/${CHAIN_NAME}_values.yaml
-  - name: rpc-auth
-    helm:
-      chart:
-        name: ./charts/rpc-auth
 
 images:
-  rpc-auth:
-    image: tezos-rpc-auth
-    dockerfile: ./src/rpc-auth/Dockerfile
-    context: ./src/rpc-auth
-    build:
-      docker:
-        options:
-          buildArgs:
-            FLASK_ENV: ${FLASK_ENV}
+  zerotier:
+    image: tezos-zerotier
+    dockerfile: ./src/zerotier/Dockerfile
+    context: ./src/zerotier
 
 dev:
-  logs:
-    images:
-      - rpc-auth
-  sync:
-    - imageName: rpc-auth
-      labelSelector:
-        app: rpc-auth
-      containerName: rpc-auth
-      localSubPath: ./src/rpc-auth/server
   autoReload:
     deployments:
       - chain
-      - rpc-auth
     paths:
-      - ./src/rpc-auth/Dockerfile
-      - ./src/rpc-auth/server/requirements.txt
+      - ./src/zerotier/*
 
 hooks:
   - command: minikube
@@ -68,15 +48,42 @@ vars:
     source: env
 
 profiles:
-  - name: zerotier
+  - name: rpc-auth
     strategicMerge:
       images:
-        zerotier:
-          image: tezos-zerotier
-          dockerfile: ./src/zerotier/Dockerfile
-          context: ./src/zerotier
+        rpc-auth:
+          image: tezos-rpc-auth
+          dockerfile: ./src/rpc-auth/Dockerfile
+          context: ./src/rpc-auth
+          build:
+            docker:
+              options:
+                buildArgs:
+                  FLASK_ENV: ${FLASK_ENV}
+      dev:
+        logs:
+          images:
+            - rpc-auth
+        sync:
+          - imageName: rpc-auth
+            labelSelector:
+              app: rpc-auth
+            containerName: rpc-auth
+            localSubPath: ./src/rpc-auth/server
     patches:
       - op: add
+        path: deployments
+        value:
+          name: rpc-auth
+          helm:
+            chart:
+              name: ./charts/rpc-auth
+      - op: add
+        path: dev.autoReload.deployments
+        value: rpc-auth
+      - op: add
         path: dev.autoReload.paths
-        value: ./src/zerotier/*
-
+        value: ./src/rpc-auth/Dockerfile
+      - op: add
+        path: dev.autoReload.paths
+        value: ./src/rpc-auth/server/requirements.txt
