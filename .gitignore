@@ -10,6 +10,5 @@ dist
 
 .devspace/
 build
-mkchain-devspace.yaml
 mkchain/generated-values
 charts/tezos/charts
