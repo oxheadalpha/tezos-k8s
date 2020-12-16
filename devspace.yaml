@@ -52,6 +52,13 @@ vars:
 profiles:
   - name: rpc-auth
     strategicMerge:
+      deployments:
+        - name: chain
+          helm:
+            values:
+              # This is to ensure rpc-auth manifest is not applied twice if
+              # mkchain set rpc-auth to true.
+              rpc_auth: false
       images:
         rpc-auth:
           image: tezos-rpc-auth
