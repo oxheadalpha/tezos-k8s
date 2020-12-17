@@ -36,7 +36,7 @@ def main():
 
     if main_args.generate_config_json:
         net_addr = None
-        bootstrap_peers = getattr(CHAIN_PARAMS, "bootstrap_peers", [])
+        bootstrap_peers = CHAIN_PARAMS.get("bootstrap_peers", [])
         if CHAIN_PARAMS["zerotier_in_use"]:
             with open("/var/tezos/zerotier_data.json", "r") as f:
                 net_addr = json.load(f)[0]["assignedAddresses"][0].split("/")[0]
