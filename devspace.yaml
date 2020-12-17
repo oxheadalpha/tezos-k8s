@@ -10,8 +10,8 @@ deployments:
 images:
   zerotier:
     image: tezos-zerotier
-    dockerfile: ./src/zerotier/Dockerfile
-    context: ./src/zerotier
+    dockerfile: ./zerotier/Dockerfile
+    context: ./zerotier
 
 dev:
   logs:
@@ -20,7 +20,7 @@ dev:
     deployments:
       - chain
     paths:
-      - ./src/zerotier/*
+      - ./zerotier/*
 
 hooks:
   - command: minikube
@@ -62,8 +62,8 @@ profiles:
       images:
         rpc-auth:
           image: tezos-rpc-auth
-          dockerfile: ./src/rpc-auth/Dockerfile
-          context: ./src/rpc-auth
+          dockerfile: ./rpc-auth/Dockerfile
+          context: ./rpc-auth
           build:
             docker:
               options:
@@ -76,7 +76,7 @@ profiles:
             - rpc-auth
         sync:
           - imageName: rpc-auth
-            localSubPath: ./src/rpc-auth/server
+            localSubPath: ./rpc-auth/server
     patches:
       - op: add
         path: deployments
@@ -90,7 +90,7 @@ profiles:
         value: rpc-auth
       - op: add
         path: dev.autoReload.paths
-        value: ./src/rpc-auth/Dockerfile
+        value: ./rpc-auth/Dockerfile
       - op: add
         path: dev.autoReload.paths
-        value: ./src/rpc-auth/server/requirements.txt
+        value: ./rpc-auth/server/requirements.txt
