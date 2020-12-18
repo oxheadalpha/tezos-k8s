@@ -1,37 +1,32 @@
 # Multicluster Permissioned Chain
 
 This tutorial will walk you through setting up a Tezos based
-permissioned blockchain. Upon successful completion of this tutorial
-you will have a permissioned chain running with six nodes in 2 clusters in a
-peer-to-peer network. This tutorial assumes the use of Minikube.
-
+permissioned blockchain. You will spin up one bootstrap peer node. You are also able to spin up additional peer nodes if you wish. These nodes will be running in a Kubernetes cluster in a peer-to-peer network.
 
 ## Prerequisites
 
-* docker
-* minikube
-* helm
-* python3
-* a ZeroTier network and api access token
+- python3
+- [kubectl](https://kubernetes.io/docs/reference/kubectl/kubectl/)
+- [minikube](https://minikube.sigs.k8s.io/docs/)
+- [helm](https://helm.sh/)
+- A [ZeroTier](https://www.zerotier.com/) network with api access token
 
 ## Installing prerequisites
 
 This section varies depending on OS.
 
-### Mac w/ homebrew
+### Mac with homebrew
 
-Make sure homebrew is installed:
+Make sure [homebrew](https://brew.sh/) is installed:
 
-``` shell
+```shell
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
 ```
 
 Install prerequisites:
 
-``` shell
-brew install python3
-brew install minikube
-brew install helm
+```shell
+brew install python3 kubectl minikube helm
 ```
 
 ### Arch Linux
@@ -40,96 +35,103 @@ brew install helm
 pacman -Syu && pacman -S python3 minikube kubectl kubectx helm
 ```
 
-## Ensure minikube is running
-
-``` shell
-minikube start
-```
-
-## Setting up mkchain
-
-Install the mkchain program:
-
-``` shell
-python3 -m venv .venv
-source .venv/bin/activate
-pip install mkchain
-```
+## Zerotier
 
 Create a ZeroTier network:
 
-* Go to https://my.zerotier.com
-* Login with google credentials or create a new account
-* Create a new API access token by clicking on the "Generate New
-Token" button. Save the generated access token. e.g. "yEflQt726fjXuSUyQ73WqXvAFoijXkLt"
-* Go to https://my.zerotier.com/network
-* Create a new network by clicking on the "Create a Network"
-button. Save the 16 character generated network
-id. e.g. "1c33c1ced02a5eee"
+- Go to https://my.zerotier.com
+- Login with google credentials or create a new account
+- Create a new API access token by clicking on the "Generate New
+  Token" button. Save the generated access token. e.g. "yEflQt726fjXuSUyQ73WqXvAFoijXkLt"
+- Go to https://my.zerotier.com/network
+- Create a new network by clicking on the "Create a Network"
+  button. Save the 16 character generated network
+  id. e.g. "1c33c1ced02a5eee"
 
 Set environment variables so we can access these values with later commands:
-``` shell
+
+```shell
 ZT_TOKEN=yEflQt726fjXuSUyQ73WqXvAFoijXkLt
 ZT_NET=1c33c1ced02a5eee
 ```
 
 Give your private chain a name:
 
-``` shell
+```shell
 CHAIN_NAME=my_chain
 ```
 
 Set unbuffered IO for python:
 
-``` shell
+```shell
 PYTHONUNBUFFERED=x
 ```
 
+## Ensure minikube is running
+
+```shell
+minikube start
+```
+
+Configure shell environment to use minikube’s Docker daemon:
+
+```shell
+eval $(minikube docker-env)
+```
+
+## mkchain
+
+Follow the [Install mkchain](./mkchain/README.md#install-mkchain) step in `mkchain/README.md`. See there for more info on how you can customize your chain.
+
+## Start your chain
+
 Run the following command to create the helm configuration and feed it to helm:
 
-``` shell
-mkchain --zerotier-network $ZT_NET --zerotier-token $ZT_TOKEN $CHAIN_NAME
-helm install $CHAIN_NAME tezos-helm/ -f ${CHAIN_NAME}_values.yaml --namespace tqtezos --create-namespace
+```shell
+mkchain $CHAIN_NAME --zerotier-network $ZT_NET --zerotier-token $ZT_TOKEN
+
+helm install $CHAIN_NAME charts/tezos \
+--values mkchain/generated-values/${CHAIN_NAME}_values.yaml \
+--namespace tqtezos --create-namespace
 ```
 
 Your kubernetes cluster will now be running a series of jobs to
 perform the following tasks:
 
-* get a zerotier ip
-* generate a node identity
-* generate a genesis block for your chain
-* activate the protocol
-* bake the first block
-* start the bootstrap-node node and a baker to validate the chain
+- get a zerotier ip
+- generate a node identity
+- generate a genesis block for your chain
+- activate the protocol
+- bake the first block
+- start the bootstrap-node node and a baker to validate the chain
 
 You can find your node in the tqtezos namespace using kubectl.
 
-``` shell
+```shell
 kubectl -n tqtezos get pods
 ```
 
 You can view logs for your node using the following command:
-``` shell
+
+```shell
 kubectl -n tqtezos logs -l appType=tezos -c tezos-node -f
 ```
 
 Congratulations! You now have an operational Tezos based permissioned
 chain running one node.
 
-## Add nodes within the cluster
+## Adding nodes within the cluster
 
 You can configure a self-contained testnet within your cluster with
-a number of nodes of your choice by passing `--number-of-nodes` to
-mkchain.
+a number of nodes of your choice by passing `--number-of-nodes N` to
+`mkchain`. You can use this to scale up and down.
+
+Or if you previously spun up the chain using `mkchain`, you may scale up/down your setup to an arbitrary number of nodes by adding or removing nodes in the `nodes` list in the values yaml file:
 
 The nodes will establish peer-to-peer connections in a full mesh topology.
 
-If you previously spun up the chain with just one node, you may scale
-up your setup to an arbitrary number of nodes by adding more nodes to the node 
-list in the values yaml:
-
 ```
-# ${CHAIN_NAME}_values.yaml
+# mkchain/generated-values/${CHAIN_NAME}_values.yaml
 ...
 nodes:
   - bake_for: baker
@@ -138,21 +140,29 @@ nodes:
 ...
 ```
 
-## Add external nodes to the cluster
+## Adding external nodes to the cluster
 
-Additional nodes can be added to your network by sharing a yaml file
-generated by the mkchain command.
+External nodes to your local cluster can be added to your network by sharing a yaml file
+generated by the `mkchain` command.
 
-The name of this file is: `${CHAIN_NAME}_invite_values.yaml`
+The file is located at: `mkchain/generated-values/${CHAIN_NAME}_invite_values.yaml`
 
 Send this file to the recipients you want to invite.
 
-### on the computer of the joining node
+### On the computer of the joining node
 
-The member needs to follow the installation instructions, build the private zerotier container, put the invite file in the mkchain directory, then run:
+The member needs to:
 
-``` shell
-helm install $CHAIN_NAME tezos-helm/ -f ${CHAIN_NAME}_invite_values.yaml
+1. Follow the [prerequisite installation instructions](#installing-prerequisites)
+2. [Setup minikube](#ensure-minikube-is-running)
+3. [Install mkchain](./mkchain/README.md#install-mkchain)
+
+Then run:
+
+```shell
+helm install $CHAIN_NAME charts/tezos \
+--values <INVITEES_PATH_TO>/${CHAIN_NAME}_invite_values.yaml \
+--namespace tqtezos --create-namespace
 ```
 
 At this point additional nodes will be added in a full mesh
@@ -161,13 +171,17 @@ topology.
 Congratulations! You now have a multi-cluster Tezos based permissioned
 chain.
 
-Check that the nodes have matching heads by comparing their hashes:
+Check that the nodes have matching heads by comparing their hashes (it may take a minute for the nodes to sync up):
 
-``` shell
-kubectl get pod -n tqtezos -l appType=tezos -o name | while read line; do kubectl -n tqtezos exec $line -c tezos-node -- /usr/local/bin/tezos-client rpc get /chains/main/blocks/head/hash; done
+```shell
+kubectl get pod -n tqtezos -l appType=tezos -o name |
+while read line;
+  do kubectl -n tqtezos exec $line -c tezos-node -- /usr/local/bin/tezos-client rpc get /chains/main/blocks/head/hash;
+done
 ```
 
 ## RPC Authentication
+
 You can optionally spin up an RPC authentication server allowing clients with your given permission to make RPC calls:
 
 ```shell
@@ -175,7 +189,9 @@ mkchain create $CHAIN_NAME --rpc-auth ...
 ```
 
 ### Current authentication flow
+
 The client authenticates themselves and will receive a secret url that allows them to make RPC calls.
+
 - You provide a trusted client with your cluster ip/address and your private tezos chain id.
 - To see your chain id:
   ```shell
