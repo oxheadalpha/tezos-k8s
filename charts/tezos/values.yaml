@@ -19,14 +19,14 @@ genesis:
   bootstrap_timestamp: "YOUR_BOOTSTRAP_TIMESTAMP_HERE"
 accounts:
   - name: sample1
-    key: !!binary |
+    key: |
       WldSd2EzWk1jR1psUVZNNU5EUmpSRGRXT0hVelRFaHdVR0oxVVZaUlVYVjRZVzFOYmxGR1dubG5T
       RkZhZFZKUmVHSklPVFU0
     private: true
     bootstrap: true
     baker: true
   - name: sample2
-    key: !!binary |
+    key: |
       SAMPLE==
     private: true
     bootstrap: true

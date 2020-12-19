@@ -37,9 +37,7 @@ def gen_key(image):
     ).split(b"\n")
 
     def extract_key(index: int) -> bytes:
-        return base64.b64encode(
-            keys[index].split(b":")[index].strip().decode("utf-8").encode("ascii")
-        )
+        return keys[index].split(b":")[index].strip().decode("utf-8")
 
     return {"public_key": extract_key(1), "secret_key": extract_key(2)}
 
