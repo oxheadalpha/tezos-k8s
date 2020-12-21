@@ -84,10 +84,13 @@ PYTHONUNBUFFERED=x
 
 ## Start your chain
 
-Run the following command to create the helm configuration and feed it to helm:
+Run the following command to create the Helm configuration and feed it to Helm:
 
 ```shell
 mkchain $CHAIN_NAME --zerotier-network $ZT_NET --zerotier-token $ZT_TOKEN
+
+# Install Tezos's Helm chart's dependencies
+helm dependency update charts/tezos
 
 helm install $CHAIN_NAME charts/tezos \
 --values mkchain/generated-values/${CHAIN_NAME}_values.yaml \

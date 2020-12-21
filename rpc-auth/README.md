@@ -2,7 +2,6 @@
 
 `rpc-auth` provides a mechanism where a user authenticates themselves and will receive a secret url that they then use to make RPC calls.
 
-
 ## Deploy RPC Auth Backend
 
 This assumes that you have followed the steps [here](../README.md) necessary to deploy a Tezos private chain.
@@ -15,7 +14,14 @@ To deploy an RPC Authentication backend for your private chain:
   mkchain $CHAIN_NAME ... --rpc-auth
   ```
 
-- Or manually add the field `rpc_auth: true` in your generated Helm values file `mkchain/generated-values/${CHAIN_NAME}_values.yaml`.
+- Or:
+  - manually add the field `rpc_auth: true` in your generated Helm values file `mkchain/generated-values/${CHAIN_NAME}_values.yaml`.
+  - Run:
+    ```shell
+    helm upgrade $CHAIN_NAME charts/tezos \
+    --values mkchain/generated-values/${CHAIN_NAME}_values.yaml \
+    --namespace tqtezos
+    ```
 
 ## Client Authentication
 
