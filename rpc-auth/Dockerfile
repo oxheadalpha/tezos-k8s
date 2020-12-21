@@ -17,7 +17,7 @@ RUN apt-get update -y \
   pkg-config \
   && echo
 
-COPY ./server/requirements.txt .
+COPY ./requirements.txt .
 RUN mkdir wheels \
   && pip wheel -r requirements.txt \
   --wheel-dir ./wheels --no-cache-dir
@@ -38,7 +38,7 @@ RUN apt-get update -y \
 
 # Installing python dependencies
 COPY --from=builder /var/rpc-auth/wheels wheels
-COPY ./server/requirements.txt .
+COPY ./requirements.txt .
 RUN pip install -r requirements.txt \
   --no-index --find-links ./wheels \
   && rm -rf ./wheels ./requirements.txt
