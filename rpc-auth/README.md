@@ -33,7 +33,7 @@ To deploy an RPC Authentication backend for your private chain:
      ```
    - Use Lens to view the logs of the Tezos node
    - Manually run the logs command `kubectl logs -n tqtezos deployment/tezos-bootstrap-node -c tezos-node`. The top of the logs should look similar to:
-     ```shell
+     ```
      Dec 21 19:42:08 - node.main: starting the Tezos node (chain = my-chain)
      Dec 21 19:42:08 - node.main: disabled local peer discovery
      Dec 21 19:42:08 - node.main: read identity file (peer_id = idsbTksk6cHggEndHLQBAJvxaViUnz)
