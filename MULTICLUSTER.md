@@ -1,7 +1,6 @@
-# Multicluster Permissioned Chain
+# Tezos k8s Private Chain
 
-This tutorial will walk you through setting up a Tezos based
-permissioned blockchain. You will spin up one bootstrap peer node. You are also able to spin up additional peer nodes if you wish. These nodes will be running in a Kubernetes cluster in a peer-to-peer network.
+This README will walk you through setting up a Tezos based private blockchain where you will spin up one bootstrap peer node as well as additional peer nodes if you'd like. These nodes will be running in a peer-to-peer network inside of a Kubernetes cluster using `minikube`.
 
 ## Prerequisites
 
@@ -48,32 +47,20 @@ Create a ZeroTier network:
   button. Save the 16 character generated network
   id. e.g. "1c33c1ced02a5eee"
 
-Set environment variables so we can access these values with later commands:
+Set Zerotier environment variables in order to access these values with later commands:
 
 ```shell
 ZT_TOKEN=yEflQt726fjXuSUyQ73WqXvAFoijXkLt
 ZT_NET=1c33c1ced02a5eee
 ```
 
-Give your private chain a name:
-
-```shell
-CHAIN_NAME=my_chain
-```
-
-Set unbuffered IO for python:
-
-```shell
-PYTHONUNBUFFERED=x
-```
-
-## Ensure minikube is running
+## Start Minikube
 
 ```shell
 minikube start
 ```
 
-Configure shell environment to use minikube’s Docker daemon:
+If you don't have docker installed, or you do but don't want to use your local install, configure your shell environment to use minikube’s Docker daemon:
 
 ```shell
 eval $(minikube docker-env)
@@ -82,6 +69,18 @@ eval $(minikube docker-env)
 ## mkchain
 
 Follow the [Install mkchain](./mkchain/README.md#install-mkchain) step in `mkchain/README.md`. See there for more info on how you can customize your chain.
+
+Set as an environment variable the name you would like to give to your chain:
+
+```shell
+CHAIN_NAME=my_chain
+```
+
+Set [unbuffered IO](https://docs.python.org/3.6/using/cmdline.html#envvar-PYTHONUNBUFFERED) for python:
+
+```shell
+PYTHONUNBUFFERED=x
+```
 
 ## Start your chain
 
@@ -154,7 +153,7 @@ Send this file to the recipients you want to invite.
 The member needs to:
 
 1. Follow the [prerequisite installation instructions](#installing-prerequisites)
-2. [Setup minikube](#ensure-minikube-is-running)
+2. [Start minikube](#start-minikube)
 3. [Install mkchain](./mkchain/README.md#install-mkchain)
 
 Then run:
@@ -182,11 +181,16 @@ done
 
 ## RPC Authentication
 
-You can optionally spin up an RPC authentication server allowing clients with your given permission to make RPC calls:
+You can optionally spin up an RPC authentication backend allowing trusted clients to make RPC requests to your cluster.
+
+Either:
+
+- Run your original `mkchain` command with the flags you used, adding in the `--rpc-auth` flag:
 
 ```shell
-mkchain create $CHAIN_NAME --rpc-auth ...
+mkchain $CHAIN_NAME ... --rpc-auth
 ```
+- Or add the field `rpc_auth: true` in your generated Helm values file `mkchain/generated-values/${CHAIN_NAME}_values.yaml`.
 
 ### Current authentication flow
 

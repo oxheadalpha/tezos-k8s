@@ -4,7 +4,10 @@ Helper program to generate values for the Tezos chain Helm chart
 
 ## Quickstart
 
-This assumes you have `docker`, `minikube`, `helm`, and `python3` installed.
+This assumes you have `minikube`, `helm`, and `python3` installed. If you don't have docker installed, or you do but don't want to use your local install, configure your shell environment to use minikube’s Docker daemon:
+```shell
+eval $(minikube docker-env)
+```
 
 ### Install mkchain
 
@@ -13,6 +16,12 @@ mkdir mkchain && cd mkchain
 python3 -m venv .venv
 source .venv/bin/activate
 pip install mkchain
+```
+
+Set [unbuffered IO](https://docs.python.org/3.6/using/cmdline.html#envvar-PYTHONUNBUFFERED) for python:
+
+```shell
+PYTHONUNBUFFERED=x
 ```
 
 ### Create Tezos Chain
