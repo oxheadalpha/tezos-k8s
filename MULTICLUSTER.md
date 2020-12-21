@@ -181,31 +181,6 @@ done
 
 ## RPC Authentication
 
-You can optionally spin up an RPC authentication backend allowing trusted clients to make RPC requests to your cluster.
+You can optionally spin up an RPC authentication backend allowing trusted users to make RPC requests to your cluster.
 
-Either:
-
-- Run your original `mkchain` command with the flags you used, adding in the `--rpc-auth` flag:
-
-```shell
-mkchain $CHAIN_NAME ... --rpc-auth
-```
-- Or add the field `rpc_auth: true` in your generated Helm values file `mkchain/generated-values/${CHAIN_NAME}_values.yaml`.
-
-### Current authentication flow
-
-The client authenticates themselves and will receive a secret url that allows them to make RPC calls.
-
-- You provide a trusted client with your cluster ip/address and your private tezos chain id.
-- To see your chain id:
-  ```shell
-  kubectl exec -it -n tqtezos deployment/tezos-bootstrap-node -c tezos-node -- tezos-client rpc get /chains/main/chain_id
-  ```
-  Or use a tool like like [Lens](https://k8slens.dev/) or run `kubectl logs -n tqtezos deployment/tezos-bootstrap-node -c tezos-node` to see the tezos node logs at the top.
-- client runs: `scripts/rpc-auth-client.sh --cluster-address $CLUSTER_IP --tz-alias $TZ_ALIAS --chain-id $CHAIN_ID`
-- TZ_ALIAS is the alias of a client's tz address secret key. The client's secret key is used to sign some data for the server to then verify.
-- If the client is authenticated, the response should contain a secret url such as `http://192.168.64.51/tezos-node-rpc/ffff3eb3d7dd4f6bbff3f2fd096722ae/`
-- Client can then make RPC requests:
-  - `curl http://192.168.64.51/tezos-node-rpc/ffff3eb3d7dd4f6bbff3f2fd096722ae/chains/main/chain_id`
-  - Bug in tezos client v8, so as of version `tezos/tezos:master_08d3405e_20201113152010`:
-    - `tezos-client --endpoint http://192.168.64.51/tezos-node-rpc/ffff3eb3d7dd4f6bbff3f2fd096722ae/ rpc get chains/main/chain_id`
+Follow the steps [here](./rpc-auth/README.md).
