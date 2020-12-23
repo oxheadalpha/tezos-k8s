@@ -119,7 +119,7 @@ jobs:
 
       - id: gen-containers-matrix
         run: |
-          container_list=$(jq -c -n --arg cont "$(find docker  -mindepth 1 -type d -exec basename {} \;)" '{ container: $cont | split("\n")}')
+          container_list=$(jq -c -n --arg cont "$(find -name 'Dockerfile' -printf '%h\n' | sort -u | sed 's/.\///')" '{ container: $cont | split("\n")}')
           echo "Dynamically generated container list based on subdirectories of the docker directory. The following list will be passed to next build step:"
           echo $container_list
           echo "::set-output name=matrix::$container_list"
@@ -143,7 +143,7 @@ jobs:
         uses: docker/setup-buildx-action@v1
 
       - name: Login to DockerHub
-        uses: docker/login-action@v1 
+        uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
@@ -158,7 +158,7 @@ jobs:
 
           curl -s -H "Authorization: JWT ${TOKEN}" "https://hub.docker.com/v2/repositories/" \
           --data 'description="tezos-k8s ${{ matrix.container }}"' \
-          --data 'full_description="The container for https://github.com/tqtezos/tezos-k8s/tree/master/docker/${{ matrix.container }}' \
+          --data 'full_description="The container for https://github.com/tqtezos/tezos-k8s/tree/master/${{ matrix.container }}' \
           --data 'is_private=false' \
           --data 'name=tezos-k8s-${{ matrix.container }}' \
           --data "namespace=tqtezos" || true
@@ -173,8 +173,8 @@ jobs:
       - name: Publish ${{ matrix.container }} container to Docker Hub
         uses: docker/build-push-action@v2
         with:
-          context: docker/${{ matrix.container }}/.
-          file: docker/${{ matrix.container }}/Dockerfile
+          context: ${{ matrix.container }}/.
+          file: ${{ matrix.container }}/Dockerfile
           push: true
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
