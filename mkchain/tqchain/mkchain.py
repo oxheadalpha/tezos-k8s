@@ -17,9 +17,6 @@ sys.path.insert(0, "tqchain")
 __version__ = get_versions()["version"]
 
 
-my_path = os.path.dirname(os.path.abspath(__file__))
-
-
 def run_docker(image, entrypoint, *args):
     return subprocess.check_output(
         "docker run --entrypoint %s --rm %s %s" % (entrypoint, image, " ".join(args)),
