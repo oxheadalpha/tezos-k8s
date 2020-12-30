@@ -5,7 +5,7 @@ deployments:
       chart:
         name: ./charts/tezos
       valuesFiles:
-        - ./mkchain/generated-values/${CHAIN_NAME}_values.yaml
+        - ./${CHAIN_NAME}_values.yaml
 
 images:
   zerotier:
