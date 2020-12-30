@@ -10,5 +10,8 @@ dist
 
 .devspace/
 build
-mkchain/generated-values
+
+# Ignore mkchain generated files
+*_values.yaml
+
 charts/tezos/charts
