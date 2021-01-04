@@ -9,7 +9,7 @@ deployments:
 
 images:
   zerotier:
-    image: tezos-zerotier
+    image: tqtezos/tezos-k8s-zerotier
     dockerfile: ./zerotier/Dockerfile
     context: ./zerotier
 
@@ -61,7 +61,7 @@ profiles:
               rpc_auth: false
       images:
         rpc-auth:
-          image: tezos-rpc-auth
+          image: tqtezos/tezos-k8s-rpc-auth
           dockerfile: ./rpc-auth/Dockerfile
           context: ./rpc-auth
           build:
