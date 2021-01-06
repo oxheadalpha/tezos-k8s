@@ -18,6 +18,12 @@ images:
     context: ./zerotier
 
 dev:
+  ports:
+    - labelSelector:
+        app: tezos-bootstrap-node
+      forward:
+        - port: 8732
+          remotePort: 8732
   logs:
     disabled: true
   autoReload:
@@ -91,3 +97,11 @@ profiles:
       - op: add
         path: dev.autoReload.paths
         value: ./rpc-auth/server/requirements.txt
+      - op: add
+        path: dev.ports
+        value:
+          labelSelector:
+            app: rpc-auth
+          forward:
+            - port: 8080
+              remotePort: 8080
