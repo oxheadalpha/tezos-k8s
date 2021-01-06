@@ -32,7 +32,7 @@ CHAIN_NAME=my-chain
 mkchain $CHAIN_NAME
 
 helm install $CHAIN_NAME charts/tezos \
---values mkchain/generated-values/${CHAIN_NAME}_values.yaml \
+--values <CURRENT WORKING DIRECTORY>/${CHAIN_NAME}_values.yaml \
 --namespace tqtezos --create-namespace
 ```
 
@@ -46,7 +46,7 @@ Create these values:
 mkchain $CHAIN_NAME
 ```
 
-This command will generate two 2 yaml files in the `mkchain/generated-values/` directory. `<$CHAIN_NAME>_values.yaml` and `<$CHAIN_NAME>_invite_values.yaml`.
+This command will generate two 2 yaml files in your current working directory. `<$CHAIN_NAME>_values.yaml` and `<$CHAIN_NAME>_invite_values.yaml`.
 
 ### mkchain parameters
 
