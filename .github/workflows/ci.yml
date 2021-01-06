@@ -229,21 +229,25 @@ jobs:
 
       - name: Get Release Version
         id: get_release_version
-        run: echo "::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}"
+        run: echo "::set-output name=RELEASE_VERSION::${GITHUB_REF/refs\/tags\//}"
 
       - name: Set Helm Chart and Image Versions
         run: |
+          RELEASE_VERSION=${{ steps.get_release_version.outputs.RELEASE_VERSION }}
+
           for chart in charts/*; do
             [[ ! -d "$chart" ]] && continue
             echo $chart
 
-            VERSION=${{ steps.get_release_version.outputs.VERSION }}
-            yq e ".version = \"$VERSION\"" -i "$chart/Chart.yaml"
-            tq_images=$(yq e '(.containers[] | select(. == "tqtezos/tezos-k8s*")) | path | .[-1]' "$chart/values.yaml")
+            # Update Chart.yaml with release version
+            yq e ".version = \"$RELEASE_VERSION\"" -i "$chart/Chart.yaml"
 
+            # Get tqtezos/tezos-k8s images specified in values.yaml
+            tq_images=$(yq e '(.containers[] | select(. == "tqtezos/tezos-k8s*")) | path | .[-1]' "$chart/values.yaml")
+            # Update the release version of each of tqtezos/tezos-k8s images
             for image in $tq_images; do
               image_name=$(yq e ".containers.$image" $chart/values.yaml | sed -E "s/.*k8s-(.*):.*/\1/")
-              yq e ".containers.$image = \"tqtezos/tezos-k8s-$image_name:$VERSION\"" -i $chart/values.yaml
+              yq e ".containers.$image = \"tqtezos/tezos-k8s-$image_name:$RELEASE_VERSION\"" -i $chart/values.yaml
             done
 
             # Get any dependencies of the chart and generate Chart.lock
@@ -260,7 +264,7 @@ jobs:
 
       - name: Commit Chart Changes to Branch
         run: |
-          git commit --all -m "Update Helm Chart Versions to ${{ steps.get_release_version.outputs.VERSION }}"
+          git commit --all -m "Update Helm Chart Versions to ${{ steps.get_release_version.outputs.RELEASE_VERSION }}"
           git push origin "HEAD:${{ steps.get_branch_name.outputs.BRANCH }}"
 
       - name: Publish Helm charts
