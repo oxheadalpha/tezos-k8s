@@ -32,7 +32,7 @@ jobs:
           autoflake . -r --remove-all-unused-imports -c
 
       - name: Sort imports
-        run: isort . --check --diff -rc
+        run: isort && isort . --check --diff
 
       - name: black
         run: black . --check
