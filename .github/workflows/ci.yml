@@ -9,6 +9,9 @@ on:
 jobs:
   check-lint-and-format:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./mkchain
     steps:
       - uses: actions/checkout@v2
 
@@ -37,6 +40,9 @@ jobs:
   test:
     runs-on: ${{ matrix.os }}
     needs: check-lint-and-format
+    defaults:
+      run:
+        working-directory: ./mkchain
     strategy:
       fail-fast: false
       matrix:
@@ -65,6 +71,9 @@ jobs:
   publish:
     needs: test
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: ./mkchain
     strategy:
       fail-fast: false
       # after we test that the module works on all systems we only need to build one since this is a pure python module
