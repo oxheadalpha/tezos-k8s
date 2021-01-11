@@ -118,16 +118,9 @@ def main():
         "genesis",
     ]
 
-    zerotier_image = (
-        "tqtezos/tezos-k8s-zerotier"
-        if "-" in __version__ or "+" in __version__
-        else "tqtezos/tezos-k8s-zerotier:%s" % __version__
-    )
-
     base_constants = {
         "chain_name": args.chain_name,
         "images": {
-            "zerotier": zerotier_image,
             "tezos": args.docker_image,
         },
         "genesis": {
