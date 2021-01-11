@@ -21,7 +21,7 @@ metadata:
     app: redis
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   resources:
     requests:
       storage: 5Gi
@@ -103,7 +103,8 @@ spec:
   selector:
     app: rpc-auth
   ports:
-    - port: 8080
+    - name: rpc-auth
+      port: 8080
       targetPort: 8080
 ---
 apiVersion: apps/v1
@@ -137,7 +138,7 @@ spec:
             - name: TEZOS_RPC_SERVICE_PORT
               value: "8732"
 ---
-apiVersion: networking.k8s.io/v1
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: rpc-vending-machine-ingress
@@ -152,20 +153,16 @@ spec:
           - path: /vending-machine/(.*)
             pathType: Exact
             backend:
-              service:
-                name: rpc-auth
-                port:
-                  number: 8080
+              serviceName: rpc-auth
+              servicePort: 8080
           # Client provides signed data and gets back a secret url
           - path: /vending-machine
             pathType: Exact
             backend:
-              service:
-                name: rpc-auth
-                port:
-                  number: 8080
+              serviceName: rpc-auth
+              servicePort: 8080
 ---
-apiVersion: networking.k8s.io/v1
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: tezos-rpc-ingress
@@ -188,7 +185,5 @@ spec:
           - path: /tezos-node-rpc/(.*?)/(.*)
             pathType: Exact
             backend:
-              service:
-                name: tezos-bootstrap-node-rpc
-                port:
-                  number: 8732
+              serviceName: tezos-bootstrap-node-rpc
+              servicePort: 8732

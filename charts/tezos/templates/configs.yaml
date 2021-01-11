@@ -16,6 +16,14 @@ metadata:
 ---
 apiVersion: v1
 data:
+  PROTOCOL_HASH: {{ .Values.protocol.hash }}
+kind: ConfigMap
+metadata:
+  name: tezos-chain-initiator
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: v1
+data:
   CHAIN_NAME: "{{ .Values.chain_name }}"
   NETWORK_ID: "{{ .Values.zerotier_config.zerotier_network }}"
   ZTAUTHTOKEN: "{{ .Values.zerotier_config.zerotier_token }}"

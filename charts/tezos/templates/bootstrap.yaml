@@ -48,65 +48,17 @@ spec:
               name: tqtezos-utils
             - mountPath: /var/tezos
               name: var-volume
-        - command:
-            - sh
-            - "-c"
-            - "until nslookup tezos-bootstrap-node-rpc; do echo waiting for tezos-bootstrap-node-rpc; sleep 2; done;"
-          image: busybox
-          name: wait-for-node
+        - image: "{{ .Values.images.tezos_chain_initiator }}"
           imagePullPolicy: IfNotPresent
-        - args:
-            - "-A"
-            - tezos-bootstrap-node-rpc
-            - "-P"
-            - '8732'
-            - "-d"
-            - /var/tezos/client
-            - "-l"
-            - "--block"
-            - genesis
-            - activate
-            - protocol
-            - "{{ .Values.protocol.hash }}"
-            - with
-            - fitness
-            - '-1'
-            - and
-            - key
-            - genesis
-            - and
-            - parameters
-            - /etc/tezos/parameters.json
-          command:
-            - /usr/local/bin/tezos-client
-          image: "{{ .Values.images.tezos }}"
-          name: activate
+          name: tezos-chain-initiator
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
               name: var-volume
-        - args:
-            - "-A"
-            - tezos-bootstrap-node-rpc
-            - "-P"
-            - '8732'
-            - "-d"
-            - /var/tezos/client
-            - "-l"
-            - bake
-            - for
-            - baker
-            - "--minimal-timestamp"
-          command:
-            - /usr/local/bin/tezos-client
-          image: "{{ .Values.images.tezos }}"
-          name: bake-once
-          volumeMounts:
-            - mountPath: /etc/tezos
-              name: config-volume
-            - mountPath: /var/tezos
-              name: var-volume
+          envFrom:
+            - configMapRef:
+                name: tezos-chain-initiator
       restartPolicy: Never
       volumes:
         - emptyDir: {}

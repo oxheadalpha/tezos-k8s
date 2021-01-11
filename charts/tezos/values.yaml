@@ -9,7 +9,8 @@ zerotier_config:
   zerotier_token: YOUR_ZEROTIER_TOKEN_HERE
 images:
   zerotier: tezos-k8s-zerotier:dev
-  tezos: tezos/tezos:v7-release
+  tezos: tezos/tezos:v8-release
+  tezos-chain-initiator: tezos-chain-initiator:dev
 protocol:
   bootstrap_mutez: "4000000000000"
   hash: PsDELPH1Kxsxt8f9eWbxQeRxkjfbxoqM52jvs5Y5fBxWWh4ifpo

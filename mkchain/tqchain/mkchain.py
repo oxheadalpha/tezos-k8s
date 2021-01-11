@@ -72,7 +72,7 @@ CHAIN_CONSTANTS = {
     "bootstrap_peer": {"help": "peer ip to join"},
     "docker_image": {
         "help": "Version of the Tezos docker image",
-        "default": "tezos/tezos:v7-release",
+        "default": "tezos/tezos:v8-release",
     },
     "rpc_auth": {
         "help": "Should spin up an RPC authentication server",
@@ -120,6 +120,7 @@ def main():
         "chain_name": args.chain_name,
         "images": {
             "tezos": args.docker_image,
+            "tezos_chain_initiator": "tezos-chain-initiator:dev",
         },
         "genesis": {
             "genesis_chain_id": get_genesis_vanity_chain_id(),
