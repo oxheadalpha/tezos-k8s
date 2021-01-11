@@ -13,7 +13,7 @@ deployments:
 
 images:
   zerotier:
-    image: tqtezos/tezos-k8s-zerotier
+    image: tezos-k8s-zerotier
     dockerfile: ./zerotier/Dockerfile
     context: ./zerotier
 
@@ -64,7 +64,7 @@ profiles:
     strategicMerge:
       images:
         rpc-auth:
-          image: tqtezos/tezos-k8s-rpc-auth
+          image: tezos-k8s-rpc-auth
           dockerfile: ./rpc-auth/Dockerfile
           context: ./rpc-auth
           build:
