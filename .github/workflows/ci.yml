@@ -212,18 +212,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-
-      - name: Configure Git
-        run: |
-          git config user.name "$GITHUB_ACTOR"
-          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-
-      - name: Install Helm
-        uses: azure/setup-helm@v1
-        with:
-          version: v3.4.2
 
       - name: Install yq
         run: |
@@ -246,33 +234,19 @@ jobs:
             yq e ".version = \"$RELEASE_VERSION\"" -i "$chart/Chart.yaml"
 
             # Get tqtezos/tezos-k8s images specified in values.yaml
-            tq_images=$(yq e '(.containers[] | select(. == "tqtezos/tezos-k8s*")) | path | .[-1]' "$chart/values.yaml")
-            # Update the release version of each of tqtezos/tezos-k8s images
+            tq_images=$(yq e '(.images[] | select(. == "tezos-k8s*")) | path | .[-1]' "$chart/values.yaml")
+            # Update the release version of each of tezos-k8s images
             for image in $tq_images; do
-              image_name=$(yq e ".containers.$image" $chart/values.yaml | sed -E "s/.*k8s-(.*):.*/\1/")
-              yq e ".containers.$image = \"tqtezos/tezos-k8s-$image_name:$RELEASE_VERSION\"" -i $chart/values.yaml
+              image_name=$(yq e ".images.$image" $chart/values.yaml | sed -E "s/tezos-k8s-(.*):.*/\1/")
+              yq e ".images.$image = \"tqtezos/tezos-k8s-$image_name:$RELEASE_VERSION\"" -i $chart/values.yaml
             done
-
-            # Get any dependencies of the chart and generate Chart.lock
-            helm dependency update $chart
           done
-
-      - name: Get Release Branch Name
-        id: get_branch_name
-        run: |
-          raw=$(git branch -r --contains ${GITHUB_REF})
-          branch=${raw##*origin\/}
-          echo "Branch: $branch"
-          echo "::set-output name=BRANCH::$branch"
-
-      - name: Commit Chart Changes to Branch
-        run: |
-          git commit --all -m "Update Helm Chart Versions to ${{ steps.get_release_version.outputs.RELEASE_VERSION }}"
-          git push origin "HEAD:${{ steps.get_branch_name.outputs.BRANCH }}"
 
       - name: Publish Helm charts
         uses: stefanprodan/helm-gh-pages@master
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          # We already linted in a job before
-          linting: off
+          linting: off # We already linted in a job before
+          token: ${{ secrets.CI_GITHUB_TOKEN }}
+          branch: main
+          owner: ${{ github.repository_owner }}
+          repository: tezos-helm-charts
