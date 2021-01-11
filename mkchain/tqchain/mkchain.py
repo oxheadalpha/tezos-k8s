@@ -6,7 +6,6 @@ import string
 import subprocess
 import sys
 from datetime import datetime, timezone
-from pathlib import Path
 
 import yaml
 
@@ -118,24 +117,10 @@ def main():
         "genesis",
     ]
 
-    zerotier_image = (
-        "tezos-zerotier:dev"
-        if "-" in __version__ or "+" in __version__
-        else "tqtezos/tezos-k8s-zerotier:%s" % __version__
-    )
-
-    rpc_auth_image = (
-        "tezos-rpc-auth:dev"
-        if "-" in __version__ or "+" in __version__
-        else "tqtezos/tezos-k8s-rpc-auth:%s" % __version__
-    )
-
     base_constants = {
         "chain_name": args.chain_name,
-        "container_images": {
-            "zerotier_docker_image": zerotier_image,
-            "rpc_auth_image": rpc_auth_image,
-            "tezos_docker_image": args.docker_image,
+        "images": {
+            "tezos": args.docker_image,
         },
         "genesis": {
             "genesis_chain_id": get_genesis_vanity_chain_id(),
