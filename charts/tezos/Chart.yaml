@@ -2,8 +2,7 @@ apiVersion: v2
 name: tezos-chain
 description: A Helm chart for Tezos nodes on Kubernetes
 type: application
-version: 0.0.1
-appVersion: 1.0b1
+version: 0.0.0
 keywords:
   - tezos
   - blockchain
@@ -11,5 +10,4 @@ home: https://github.com/tqtezos/tezos-k8s
 dependencies:
   - name: authenticated-rpc-tezos-chain
     repository: file://../rpc-auth
-    version: 0.1.0
     condition: rpc_auth

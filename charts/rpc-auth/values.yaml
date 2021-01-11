@@ -3,7 +3,7 @@
 # # Declare variables to be passed into your templates.
 
 images:
-  rpc_auth: "tqtezos/tezos-k8s-rpc-auth:1.0b1"
+  rpc_auth: tezos-k8s-rpc-auth:dev
 
 redis:
   host: redis-service

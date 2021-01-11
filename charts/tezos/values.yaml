@@ -8,7 +8,7 @@ zerotier_config:
   zerotier_network: YOUR_NETWORK_ID_HERE
   zerotier_token: YOUR_ZEROTIER_TOKEN_HERE
 images:
-  zerotier: "tqtezos/tezos-k8s-zerotier:1.0b1"
+  zerotier: tezos-k8s-zerotier:dev
   tezos: tezos/tezos:v7-release
 protocol:
   bootstrap_mutez: "4000000000000"
