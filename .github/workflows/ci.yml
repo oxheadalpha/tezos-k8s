@@ -2,8 +2,11 @@ name: CI
 
 on:
   push:
+    # Trigger CI on all branch pushes but...
     branches:
       - "**"
+    # don't double trigger on new tag push when creating release. Should only
+    # trigger once for the release.
     tags-ignore:
       - "*.*.*"
   pull_request:
