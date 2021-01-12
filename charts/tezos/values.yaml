@@ -18,19 +18,16 @@ genesis:
   bootstrap_timestamp: "YOUR_BOOTSTRAP_TIMESTAMP_HERE"
 accounts:
   - name: sample1
-    key: !!binary |
-      WldSd2EzWk1jR1psUVZNNU5EUmpSRGRXT0hVelRFaHdVR0oxVVZaUlVYVjRZVzFOYmxGR1dubG5T
-      RkZhZFZKUmVHSklPVFU0
+    key: edsk...
     private: true
     bootstrap: true
     baker: true
   - name: sample2
-    key: !!binary |
-      SAMPLE==
+    key: edsk...
     private: true
     bootstrap: true
 nodes:
-  - bake_for: baker
+  - bake_for: sample2
 # TODO
 # archive nodes, node with open rpc
 # take into account fundraisers accounts that people need to activate
