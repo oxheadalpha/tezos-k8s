@@ -120,7 +120,6 @@ def main():
         "chain_name": args.chain_name,
         "images": {
             "tezos": args.docker_image,
-            "tezos_chain_initiator": "tezos-chain-initiator:dev",
         },
         "genesis": {
             "genesis_chain_id": get_genesis_vanity_chain_id(),
