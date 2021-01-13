@@ -89,11 +89,10 @@ Run the following command to create the Helm configuration and feed it to Helm:
 ```shell
 mkchain $CHAIN_NAME --zerotier-network $ZT_NET --zerotier-token $ZT_TOKEN
 
-# Install Tezos's Helm chart's dependencies
-helm dependency update charts/tezos
+helm repo add tqtezos https://tqtezos.github.io/tezos-helm-charts
 
-helm install $CHAIN_NAME charts/tezos \
---values <CURRENT WORKING DIRECTORY>/${CHAIN_NAME}_values.yaml \
+helm install $CHAIN_NAME tqtezos/tezos-chain \
+--values ./${CHAIN_NAME}_values.yaml \
 --namespace tqtezos --create-namespace
 ```
 
@@ -130,8 +129,6 @@ a number of nodes of your choice by passing `--number-of-nodes N` to
 
 Or if you previously spun up the chain using `mkchain`, you may scale up/down your setup to an arbitrary number of nodes by adding or removing nodes in the `nodes` list in the values yaml file:
 
-The nodes will establish peer-to-peer connections in a full mesh topology.
-
 ```
 # <CURRENT WORKING DIRECTORY>/${CHAIN_NAME}_values.yaml
 ...
@@ -141,6 +138,15 @@ nodes:
   - {} # third non-baking node
 ...
 ```
+
+To upgrade your Helm release run:
+```shell
+helm upgrade $CHAIN_NAME tqtezos/tezos-chain \
+--values ./${CHAIN_NAME}_values.yaml \
+--namespace tqtezos
+```
+
+The nodes will establish peer-to-peer connections in a full mesh topology.
 
 ## Adding external nodes to the cluster
 
@@ -162,7 +168,9 @@ The member needs to:
 Then run:
 
 ```shell
-helm install $CHAIN_NAME charts/tezos \
+helm repo add tqtezos https://tqtezos.github.io/tezos-helm-charts
+
+helm install $CHAIN_NAME tqtezos/tezos-chain \
 --values <LOCATION OF ${CHAIN_NAME}_invite_values.yaml> \
 --namespace tqtezos --create-namespace
 ```
