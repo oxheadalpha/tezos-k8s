@@ -4,7 +4,7 @@ Helper program to generate values for the Tezos chain Helm chart
 
 ## Quickstart
 
-This assumes you have [minikube](https://minikube.sigs.k8s.io/docs/), [helm](https://helm.sh/), `python3`, and `git` installed. If you don't have docker installed, or you do but don't want to use your local install, configure your shell environment to use minikube’s Docker daemon:
+This assumes you have [minikube](https://minikube.sigs.k8s.io/docs/), [helm](https://helm.sh/), and `python3` installed. If you don't have docker installed, or you do but don't want to use your local install, configure your shell environment to use minikube’s Docker daemon:
 
 ```shell
 eval $(minikube docker-env)
