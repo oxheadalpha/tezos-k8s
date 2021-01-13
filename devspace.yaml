@@ -16,6 +16,10 @@ images:
     image: tezos-k8s-zerotier
     dockerfile: ./zerotier/Dockerfile
     context: ./zerotier
+  chain-initiator:
+    image: tezos-k8s-chain-initiator
+    dockerfile: ./chain-initiator/Dockerfile
+    context: ./chain-initiator
 
 dev:
   ports:

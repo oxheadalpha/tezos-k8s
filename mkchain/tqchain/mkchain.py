@@ -72,7 +72,7 @@ CHAIN_CONSTANTS = {
     "bootstrap_peer": {"help": "peer ip to join"},
     "docker_image": {
         "help": "Version of the Tezos docker image",
-        "default": "tezos/tezos:v7-release",
+        "default": "tezos/tezos:v8-release",
     },
     "rpc_auth": {
         "help": "Should spin up an RPC authentication server",
