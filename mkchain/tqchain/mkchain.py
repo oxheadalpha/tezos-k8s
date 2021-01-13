@@ -1,5 +1,4 @@
 import argparse
-import base64
 import os
 import random
 import string
@@ -24,6 +23,10 @@ def run_docker(image, entrypoint, *args):
     )
 
 
+def extract_key(keys, index: int) -> bytes:
+    return keys[index].split(b":")[index].strip().decode("ascii")
+
+
 def gen_key(image):
     keys = run_docker(
         image,
@@ -32,12 +35,7 @@ def gen_key(image):
         "'/usr/local/bin/tezos-client --protocol PsDELPH1Kxsx gen keys mykey && /usr/local/bin/tezos-client --protocol PsDELPH1Kxsx show address mykey -S'",
     ).split(b"\n")
 
-    def extract_key(index: int) -> bytes:
-        return base64.b64encode(
-            keys[index].split(b":")[index].strip().decode("utf-8").encode("ascii")
-        )
-
-    return {"public_key": extract_key(1), "secret_key": extract_key(2)}
+    return {"public_key": extract_key(keys, 1), "secret_key": extract_key(keys, 2)}
 
 
 def get_genesis_vanity_chain_id(seed_len=16):
