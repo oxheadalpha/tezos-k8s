@@ -58,7 +58,7 @@ spec:
               name: var-volume
           envFrom:
             - configMapRef:
-                name: tezos-chain-initiator
+                name: tezos-config
       restartPolicy: Never
       volumes:
         - emptyDir: {}

@@ -7,19 +7,12 @@ data:
       "chain_name": "{{ .Values.chain_name }}",
       "genesis_block": "{{ .Values.genesis.genesis_chain_id }}",
       "timestamp": "{{ .Values.genesis.bootstrap_timestamp }}",
-      "zerotier_in_use": {{ .Values.zerotier_in_use }}
+      "zerotier_in_use": {{ .Values.zerotier_in_use }},
+      "protocol_hash": "{{ .Values.protocol.hash }}"
     }
 kind: ConfigMap
 metadata:
   name: tezos-config
-  namespace: {{ .Release.Namespace }}
----
-apiVersion: v1
-data:
-  PROTOCOL_HASH: {{ .Values.protocol.hash }}
-kind: ConfigMap
-metadata:
-  name: tezos-chain-initiator
   namespace: {{ .Release.Namespace }}
 ---
 apiVersion: v1
