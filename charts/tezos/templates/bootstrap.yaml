@@ -48,9 +48,9 @@ spec:
               name: tqtezos-utils
             - mountPath: /var/tezos
               name: var-volume
-        - image: "{{ .Values.images.tezos_chain_initiator }}"
+        - image: "{{ .Values.images.tezos_k8s_chain_initiator }}"
           imagePullPolicy: IfNotPresent
-          name: tezos-chain-initiator
+          name: chain-initiator
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
