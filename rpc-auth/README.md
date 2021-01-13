@@ -14,7 +14,7 @@ To deploy an RPC Authentication backend for your private chain, do either:
   mkchain $CHAIN_NAME ... --rpc-auth
   ```
 
-- Or manually add the field `rpc_auth: true` in your generated Helm values file `<CURRENT WORKING DIRECTORY>/${CHAIN_NAME}_values.yaml`.
+- Or manually add the field `rpc_auth: true` in your generated Helm values file `./${CHAIN_NAME}_values.yaml`.
 
 Make sure you have the Tezos Helm chart repo:
 
@@ -26,7 +26,7 @@ If you don't currently have a chain running, run the following command to start 
 
 ```shell
 helm install $CHAIN_NAME tqtezos/tezos-chain \
---values <CURRENT WORKING DIRECTORY>/${CHAIN_NAME}_values.yaml \
+--values ./${CHAIN_NAME}_values.yaml \
 --namespace tqtezos --create-namespace
 ```
 
@@ -34,7 +34,7 @@ If you already have a chain running, you need to use Helm's `upgrade` cmd instea
 
 ```shell
 helm upgrade $CHAIN_NAME tqtezos/tezos-chain \
---values <CURRENT WORKING DIRECTORY>/${CHAIN_NAME}_values.yaml \
+--values ./${CHAIN_NAME}_values.yaml \
 --namespace tqtezos
 ```
 

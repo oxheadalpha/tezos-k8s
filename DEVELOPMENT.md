@@ -9,6 +9,7 @@
   ```shell
   minikube start
   ```
+
 - Configure your shell to use minikube's docker daemon:
 
   ```shell
@@ -45,6 +46,11 @@ Devspace will now do a few things:
   - Port-forwarding allows you to directly communicate with containers, allowing for easy bootstrap node RPC calls, as well as requests to the `rpc-auth` server instead of having to go through the NGINX ingress. Example: `curl localhost:8732/chains/main/chain_id`
 - Will automatically redeploy Helm charts and rebuild docker images depending upon the files you modify.
 
+## Notes
 
-# Notes
 - Due to a current limitation of devspace, multiple profiles cannot be used at one time. Therefore, devspace will watch `zerotier` files even if tezos nodes are not configured to use it via `mkchain`. Preferably `zerotier` would also be a profile in addition to `rpc-auth` being one.
+
+# Releases
+The way releases currently work is that upon release, every component of the tezos-k8s repo will be bumped to that version. This is regardless if there were changes or not to that particular component. This is because tezos-k8s is a monorepo and we'd like to keep the versions consistent across the different components.
+
+...
