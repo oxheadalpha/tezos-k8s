@@ -73,7 +73,7 @@ Follow the [Install mkchain](./mkchain/README.md#install-mkchain) step in `mkcha
 Set as an environment variable the name you would like to give to your chain:
 
 ```shell
-CHAIN_NAME=my_chain
+CHAIN_NAME=my-chain
 ```
 
 Set [unbuffered IO](https://docs.python.org/3.6/using/cmdline.html#envvar-PYTHONUNBUFFERED) for python:
@@ -124,8 +124,7 @@ chain running one node.
 ## Adding nodes within the cluster
 
 You can configure a self-contained testnet within your cluster with
-a number of nodes of your choice by passing `--number-of-nodes N` to
-`mkchain`. You can use this to scale up and down.
+a number of nodes of your choice by passing `--number-of-nodes N` to `mkchain`. Pass this along with your previously used flags (`--zerotier-network` and `--zerotier-token`). You can use this to scale up and down.
 
 Or if you previously spun up the chain using `mkchain`, you may scale up/down your setup to an arbitrary number of nodes by adding or removing nodes in the `nodes` list in the values yaml file:
 
@@ -140,13 +139,16 @@ nodes:
 ```
 
 To upgrade your Helm release run:
+
 ```shell
 helm upgrade $CHAIN_NAME tqtezos/tezos-chain \
 --values ./${CHAIN_NAME}_values.yaml \
 --namespace tqtezos
 ```
 
-The nodes will establish peer-to-peer connections in a full mesh topology.
+The nodes will start up and establish peer-to-peer connections in a full mesh topology.
+
+List all of your running nodes: `kubectl -n tqtezos get pods -l appType=tezos`
 
 ## Adding external nodes to the cluster
 
@@ -180,7 +182,7 @@ topology.
 
 Congratulations! You now have a multi-node Tezos based permissioned chain.
 
-Check that the nodes have matching heads by comparing their hashes (it may take a minute for the nodes to sync up):
+On each computer, run this command to check that the nodes have matching heads by comparing their hashes (it may take a minute for the nodes to sync up):
 
 ```shell
 kubectl get pod -n tqtezos -l appType=tezos -o name |
@@ -194,3 +196,7 @@ done
 You can optionally spin up an RPC authentication backend allowing trusted users to make RPC requests to your cluster.
 
 Follow the steps [here](./rpc-auth/README.md).
+
+# Notes
+
+We recommend using a very nice GUI for your k8s Tezos chain infrastructure called [Lens](https://k8slens.dev/). This allows you to easily see all of the k8s resources that have been spun up as well as to view the logs for your Tezos nodes.
