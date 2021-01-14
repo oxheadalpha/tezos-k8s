@@ -48,7 +48,7 @@ spec:
               name: tqtezos-utils
             - mountPath: /var/tezos
               name: var-volume
-        - image: "{{ .Values.images.chain_initiator }}"
+        - image: "{{ .Values.tezos_k8s_images.chain_initiator }}"
           imagePullPolicy: IfNotPresent
           name: chain-initiator
           volumeMounts:
@@ -153,7 +153,7 @@ spec:
             - baker
           command:
             - sh
-          image: "{{ .Values.images.zerotier }}"
+          image: "{{ .Values.tezos_k8s_images.zerotier }}"
           imagePullPolicy: IfNotPresent
           name: zerotier
           securityContext:
@@ -172,7 +172,7 @@ spec:
         - envFrom:
             - configMapRef:
                 name: zerotier-config
-          image: "{{ .Values.images.zerotier }}"
+          image: "{{ .Values.tezos_k8s_images.zerotier }}"
           imagePullPolicy: IfNotPresent
           name: get-zerotier-ip
           securityContext:
