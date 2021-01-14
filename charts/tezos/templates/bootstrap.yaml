@@ -18,34 +18,26 @@ spec:
           name: job-done
           imagePullPolicy: IfNotPresent
       initContainers:
-        - command:
-            - sh
-            - /opt/tqtezos/import_keys.sh
+        - image: {{ .Values.images.key_importer }}
+          name: key-importer
+          imagePullPolicy: IfNotPresent
           envFrom:
             - secretRef:
                 name: tezos-secret
-          image: {{ .Values.images.tezos | quote}}
-          name: import-keys
           volumeMounts:
-            - mountPath: /opt/tqtezos
-              name: tqtezos-utils
             - mountPath: /var/tezos
               name: var-volume
-        - command:
-            - python
-            - /opt/tqtezos/generateTezosConfig.py
+        - image: {{ .Values.images.config_generator }}
+          imagePullPolicy: IfNotPresent
+          name: config-generator
+          args:
             - "--generate-parameters-json"
           envFrom:
             - configMapRef:
                 name: tezos-config
-          image: python:alpine
-          imagePullPolicy: IfNotPresent
-          name: tezos-config-generator
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
-            - mountPath: /opt/tqtezos
-              name: tqtezos-utils
             - mountPath: /var/tezos
               name: var-volume
         - image: "{{ .Values.images.chain_initiator }}"
@@ -65,9 +57,6 @@ spec:
           name: config-volume
         - emptyDir: {}
           name: var-volume
-        - configMap:
-            name: tqtezos-utils
-          name: tqtezos-utils
 {{ end }}
 ---
 {{- if not .Values.is_invitation }}
@@ -183,38 +172,29 @@ spec:
                 - SYS_ADMIN
             privileged: true
           volumeMounts:
-            - mountPath: /opt/tqtezos
-              name: tqtezos-utils
             - mountPath: /var/tezos
               name: var-volume
             - mountPath: /dev/net/tun
               name: dev-net-tun
 {{- end }}
-        - command:
-            - sh
-            - /opt/tqtezos/import_keys.sh
+        - image: {{ .Values.images.key_importer }}
+          name: key-importer
+          imagePullPolicy: IfNotPresent
           envFrom:
             - secretRef:
                 name: tezos-secret
-          image: {{ .Values.images.tezos | quote}}
-          imagePullPolicy: IfNotPresent
-          name: import-keys
           volumeMounts:
-            - mountPath: /opt/tqtezos
-              name: tqtezos-utils
             - mountPath: /var/tezos
               name: var-volume
-        - command:
-            - python
-            - /opt/tqtezos/generateTezosConfig.py
+        - image: {{ .Values.images.config_generator }}
+          imagePullPolicy: IfNotPresent
+          name: config-generator
+          args:
             - "--generate-config-json"
             - "--generate-parameters-json"
           envFrom:
             - configMapRef:
                 name: tezos-config
-          image: python:alpine
-          imagePullPolicy: IfNotPresent
-          name: tezos-config-generator
           env:
             - name: MY_POD_IP
               valueFrom:
@@ -223,8 +203,6 @@ spec:
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
-            - mountPath: /opt/tqtezos
-              name: tqtezos-utils
             - mountPath: /var/tezos
               name: var-volume
         - args:
@@ -248,9 +226,6 @@ spec:
           name: dev-net-tun
         - emptyDir: {}
           name: config-volume
-        - configMap:
-            name: tqtezos-utils
-          name: tqtezos-utils
         - name: var-volume
           persistentVolumeClaim:
             claimName: tezos-bootstrap-node-pv-claim
