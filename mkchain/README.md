@@ -65,7 +65,7 @@ You can explicitly specify some values by:
 | YAML Key                         | mkchain argument   | Description                                                                 | Default                |
 | -------------------------------- | ------------------ | --------------------------------------------------------------------------- | ---------------------- |
 | bootstrap_peer                   | --bootstrap-peer   | Peer ip to connect to                                                       |                        |
-| images.tezos                     | --docker-image     | Version of the Tezos docker image                                           | tezos/tezos:v7-release |
+| images.tezos                     | --docker-image     | Version of the Tezos docker image                                           | tezos/tezos:v8-release |
 | number_of_nodes                  | --number-of-nodes  | Number of peers in the cluster                                              | 1                      |
 | rpc_auth                         | --rpc-auth         | Whether or not an [RPC auth](../rpc-auth/README.md) backend will be spun up | False                  |
 | zerotier_config.zerotier_network | --zerotier-network | Zerotier network id for external chain access                               |                        |

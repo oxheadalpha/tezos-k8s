@@ -30,7 +30,7 @@
 
 - Set a `CHAIN_NAME` env var.
 
-- Run `devspace dev --var CHAIN_NAME=$CHAIN_NAME` (you can leave out the `--var` flag if you used `export CHAIN_NAME=my_chain`).
+- Run `devspace dev --var CHAIN_NAME=$CHAIN_NAME` (you can leave out the `--var` flag if you used `export CHAIN_NAME=my-chain`).
 
 - You may add the `rpc-auth` devspace [profile](https://devspace.sh/cli/docs/configuration/profiles/basics) by using the `-p rpc-auth` flag in the `devspace dev` command. This tells devspace deploy `rpc-auth` and to redeploy it if its files change. You can also pass another `--var` flag for `rpc-auth` like so: `--var FLASK_ENV=<development|production>`. Devpsace defaults it to `development`. Running with `development` will allow the the python server to hot reload on file changes. Devspace does not need to restart the pod on file changes as the python server file is [synced](https://devspace.sh/cli/docs/configuration/development/file-synchronization) to the container.
 
