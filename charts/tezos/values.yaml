@@ -14,6 +14,8 @@ images:
 # Images that are part of the tezos-k8s repo go here
 tezos_k8s_images:
   chain_initiator: tezos-k8s-chain-initiator:dev
+  config_generator: tezos-k8s-config-generator:dev
+  key_importer: tezos-k8s-key-importer:dev
   zerotier: tezos-k8s-zerotier:dev
 
 protocol:
