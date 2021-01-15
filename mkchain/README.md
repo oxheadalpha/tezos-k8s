@@ -16,7 +16,7 @@ eval $(minikube docker-env)
 mkdir mkchain && cd mkchain
 python3 -m venv .venv
 source .venv/bin/activate
-pip install mkchain
+pip install wheel && pip install mkchain
 ```
 
 Set [unbuffered IO](https://docs.python.org/3.6/using/cmdline.html#envvar-PYTHONUNBUFFERED) for python:

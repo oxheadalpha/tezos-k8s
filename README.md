@@ -68,13 +68,16 @@ eval $(minikube docker-env)
 
 ## mkchain
 
-Follow the [Install mkchain](./mkchain/README.md#install-mkchain) step in `mkchain/README.md`. See there for more info on how you can customize your chain.
+mkchain is a python script that generates Helm values which Helm then uses to create your Tezos chain on k8s.
+
+Follow _just_ the [Install mkchain](./mkchain/README.md#install-mkchain) step in `mkchain/README.md` under the Quickstart. See there for more info on how you can customize your chain.
 
 Set as an environment variable the name you would like to give to your chain:
 
 ```shell
 CHAIN_NAME=my-chain
 ```
+NOTE: k8s will throw an error when deploying if your chain name format does not match certain requirements. From k8s: `DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')`
 
 Set [unbuffered IO](https://docs.python.org/3.6/using/cmdline.html#envvar-PYTHONUNBUFFERED) for python:
 
@@ -84,7 +87,7 @@ PYTHONUNBUFFERED=x
 
 ## Start your chain
 
-Run the following command to create the Helm configuration and feed it to Helm:
+Run the following commands to create the Helm values, get the Helm chart repo, and install the Helm chart to start your chain.
 
 ```shell
 mkchain $CHAIN_NAME --zerotier-network $ZT_NET --zerotier-token $ZT_TOKEN
