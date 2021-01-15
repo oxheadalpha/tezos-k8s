@@ -1,3 +1,11 @@
+{{- /* Function to get number of bakers */}}
+{{- define "bakers" }}
+  {{- range $i, $node := $.Values.nodes }}
+    {{- if (hasKey $node "bake_for") }}
+{{ $i }}: true
+    {{- end }}
+  {{- end }}
+{{- end -}}
 {{- if not .Values.is_invitation }}
 apiVersion: batch/v1
 kind: Job
@@ -61,16 +69,16 @@ spec:
 ---
 {{- if not .Values.is_invitation }}
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: tezos-bootstrap-node
   namespace: {{ .Release.Namespace }}
 spec:
+  replicas: {{ include "bakers" . | fromYaml | values | len }}
+  serviceName: tezos-bootstrap-node-rpc
   selector:
     matchLabels:
       app: tezos-bootstrap-node
-  strategy:
-    type: Recreate
   template:
     metadata:
       labels:
@@ -109,37 +117,26 @@ spec:
               name: config-volume
             - mountPath: /var/tezos
               name: var-volume
-        - args:
-            - "-A"
-            - localhost
-            - "-P"
-            - '8732'
-            - "-d"
-            - /var/tezos/client
-            - run
-            - with
-            - local
-            - node
-            - /var/tezos/node
-            - baker
-          command:
-            - "{{ .Values.baker_command }}"
-          image: "{{ .Values.images.tezos }}"
-          name: baker-job
+        - image: "{{ .Values.images.baker }}"
           imagePullPolicy: IfNotPresent
+          name: baker
           volumeMounts:
             - mountPath: /var/tezos
               name: var-volume
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+            - secretRef:
+                name: tezos-secret
+          env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
 {{- if .Values.zerotier_in_use }}
         - args:
             - "-c"
             - "echo 'starting zerotier' && zerotier-one /var/tezos/zerotier"
-            - "-P"
-            - '8732'
-            - "-d"
-            - /var/tezos/client
-            - run
-            - baker
           command:
             - sh
           image: "{{ .Values.images.zerotier }}"
@@ -226,7 +223,17 @@ spec:
           name: dev-net-tun
         - emptyDir: {}
           name: config-volume
-        - name: var-volume
-          persistentVolumeClaim:
-            claimName: tezos-bootstrap-node-pv-claim
+        - configMap:
+            name: tqtezos-utils
+          name: tqtezos-utils
+  volumeClaimTemplates:
+    - metadata:
+        name: var-volume
+        namespace: {{ .Release.Namespace }}
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: "15Gi"
 {{- end }}

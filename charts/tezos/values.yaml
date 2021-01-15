@@ -11,6 +11,7 @@ images:
   zerotier: tezos-k8s-zerotier:dev
   tezos: tezos/tezos:v8-release
   chain_initiator: tezos-k8s-chain-initiator:dev
+  baker: tezos-k8s-baker:dev
   key_importer: tezos-k8s-key-importer:dev
   config_generator: tezos-k8s-config-generator:dev
 protocol:
