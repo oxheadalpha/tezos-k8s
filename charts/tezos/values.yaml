@@ -7,12 +7,17 @@ zerotier_in_use: false
 zerotier_config:
   zerotier_network: YOUR_NETWORK_ID_HERE
   zerotier_token: YOUR_ZEROTIER_TOKEN_HERE
+
+# Images not part of the tezos-k8s repo go here
 images:
-  zerotier: tezos-k8s-zerotier:dev
   tezos: tezos/tezos:v8-release
+# Images that are part of the tezos-k8s repo go here
+tezos_k8s_images:
   chain_initiator: tezos-k8s-chain-initiator:dev
-  key_importer: tezos-k8s-key-importer:dev
   config_generator: tezos-k8s-config-generator:dev
+  key_importer: tezos-k8s-key-importer:dev
+  zerotier: tezos-k8s-zerotier:dev
+
 protocol:
   bootstrap_mutez: "4000000000000"
   hash: PsDELPH1Kxsxt8f9eWbxQeRxkjfbxoqM52jvs5Y5fBxWWh4ifpo

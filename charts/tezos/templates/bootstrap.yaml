@@ -18,7 +18,7 @@ spec:
           name: job-done
           imagePullPolicy: IfNotPresent
       initContainers:
-        - image: {{ .Values.images.key_importer }}
+        - image: {{ .Values.tezos_k8s_images.key_importer }}
           name: key-importer
           imagePullPolicy: IfNotPresent
           envFrom:
@@ -27,7 +27,7 @@ spec:
           volumeMounts:
             - mountPath: /var/tezos
               name: var-volume
-        - image: {{ .Values.images.config_generator }}
+        - image: {{ .Values.tezos_k8s_images.config_generator }}
           imagePullPolicy: IfNotPresent
           name: config-generator
           args:
@@ -40,7 +40,7 @@ spec:
               name: config-volume
             - mountPath: /var/tezos
               name: var-volume
-        - image: "{{ .Values.images.chain_initiator }}"
+        - image: "{{ .Values.tezos_k8s_images.chain_initiator }}"
           imagePullPolicy: IfNotPresent
           name: chain-initiator
           volumeMounts:
@@ -142,7 +142,7 @@ spec:
             - baker
           command:
             - sh
-          image: "{{ .Values.images.zerotier }}"
+          image: "{{ .Values.tezos_k8s_images.zerotier }}"
           imagePullPolicy: IfNotPresent
           name: zerotier
           securityContext:
@@ -161,7 +161,7 @@ spec:
         - envFrom:
             - configMapRef:
                 name: zerotier-config
-          image: "{{ .Values.images.zerotier }}"
+          image: "{{ .Values.tezos_k8s_images.zerotier }}"
           imagePullPolicy: IfNotPresent
           name: get-zerotier-ip
           securityContext:
@@ -177,7 +177,7 @@ spec:
             - mountPath: /dev/net/tun
               name: dev-net-tun
 {{- end }}
-        - image: {{ .Values.images.key_importer }}
+        - image: {{ .Values.tezos_k8s_images.key_importer }}
           name: key-importer
           imagePullPolicy: IfNotPresent
           envFrom:
@@ -186,7 +186,7 @@ spec:
           volumeMounts:
             - mountPath: /var/tezos
               name: var-volume
-        - image: {{ .Values.images.config_generator }}
+        - image: {{ .Values.tezos_k8s_images.config_generator }}
           imagePullPolicy: IfNotPresent
           name: config-generator
           args:
