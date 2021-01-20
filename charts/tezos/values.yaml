@@ -1,0 +1,41 @@
+baker: true
+baker_command: tezos-baker-007-PsDELPH1
+chain_name: YOUR_CHAIN_NAME_HERE
+is_invitation: false
+rpc_auth: false
+zerotier_in_use: false
+zerotier_config:
+  zerotier_network: YOUR_NETWORK_ID_HERE
+  zerotier_token: YOUR_ZEROTIER_TOKEN_HERE
+
+# Images not part of the tezos-k8s repo go here
+images:
+  tezos: tezos/tezos:v8-release
+# Images that are part of the tezos-k8s repo go here
+tezos_k8s_images:
+  chain_initiator: tezos-k8s-chain-initiator:dev
+  config_generator: tezos-k8s-config-generator:dev
+  key_importer: tezos-k8s-key-importer:dev
+  zerotier: tezos-k8s-zerotier:dev
+
+protocol:
+  bootstrap_mutez: "4000000000000"
+  hash: PsDELPH1Kxsxt8f9eWbxQeRxkjfbxoqM52jvs5Y5fBxWWh4ifpo
+genesis:
+  genesis_chain_id: "YOUR_GENESIS_CHAIN_ID_HERE"
+  bootstrap_timestamp: "YOUR_BOOTSTRAP_TIMESTAMP_HERE"
+accounts:
+  - name: sample1
+    key: edsk...
+    private: true
+    bootstrap: true
+    baker: true
+  - name: sample2
+    key: edsk...
+    private: true
+    bootstrap: true
+nodes:
+  - bake_for: sample2
+# TODO
+# archive nodes, node with open rpc
+# take into account fundraisers accounts that people need to activate

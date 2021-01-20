@@ -1,0 +1,189 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: redis
+spec:
+  ports:
+    - name: redis
+      port: 6379
+  selector:
+    app: redis
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: redis-pv-claim
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: redis
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-config
+  namespace: {{ .Release.Namespace }}
+data:
+  redis.conf: |
+    appendonly yes
+    appendfsync always
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: redis
+spec:
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: master
+          image: redis
+          command:
+            - redis-server
+            - "/redis/redis.conf"
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "redis-cli -h $(hostname) ping"
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "redis-cli -h $(hostname) ping"
+            initialDelaySeconds: 5
+            periodSeconds: 3
+          # resources:
+          #   requests:
+          #     cpu: 100m
+          #     memory: 100Mi
+          ports:
+            - containerPort: 6379
+          volumeMounts:
+            - mountPath: /data
+              name: redis-data
+            - mountPath: /redis
+              name: redis-config
+
+      volumes:
+        - name: redis-data
+          persistentVolumeClaim:
+            claimName: redis-pv-claim
+        - name: redis-config
+          configMap:
+            name: redis-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rpc-auth
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    app: rpc-auth
+  ports:
+    - name: rpc-auth
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rpc-auth
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: rpc-auth
+  template:
+    metadata:
+      labels:
+        app: rpc-auth
+        appType: rpc-auth
+    spec:
+      containers:
+        - name: rpc-auth
+          image: {{ .Values.tezos_k8s_images.rpc_auth | quote }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: REDIS_HOST
+              value: {{ .Values.redis.host | quote }}
+            - name: REDIS_PORT
+              value: {{ .Values.redis.port | quote }}
+            - name: TEZOS_RPC_SERVICE
+              value: tezos-bootstrap-node-rpc
+            - name: TEZOS_RPC_SERVICE_PORT
+              value: "8732"
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: rpc-vending-machine-ingress
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+spec:
+  rules:
+    - http:
+        paths:
+          # Client provides chain id and gets back a nonce
+          - path: /vending-machine/(.*)
+            pathType: Exact
+            backend:
+              serviceName: rpc-auth
+              servicePort: 8080
+          # Client provides signed data and gets back a secret url
+          - path: /vending-machine
+            pathType: Exact
+            backend:
+              serviceName: rpc-auth
+              servicePort: 8080
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: tezos-rpc-ingress
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    # https://github.com/kubernetes/ingress-nginx/blob/master/docs/user-guide/nginx-configuration/annotations.md#external-authentication
+    nginx.ingress.kubernetes.io/auth-url: http://$service_name.$namespace.svc.cluster.local:8080/auth
+    nginx.ingress.kubernetes.io/auth-snippet: |
+      # Bug with nginx setting auth-url annotation port with a variable.
+      # Service name and namespace variables work.
+      # https://github.com/kubernetes/ingress-nginx/issues/6427
+      set $service_name "rpc-auth";
+spec:
+  rules:
+    - http:
+        paths:
+          # Client uses secret url to access the RPC endpoint
+          - path: /tezos-node-rpc/(.*?)/(.*)
+            pathType: Exact
+            backend:
+              serviceName: tezos-bootstrap-node-rpc
+              servicePort: 8732

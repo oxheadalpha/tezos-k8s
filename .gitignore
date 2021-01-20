@@ -3,10 +3,15 @@
 dist
 *.pyc
 *.egg-info
+*.eggs
 .venv*
 .DS_Store
-build
+.vscode
+
 .devspace/
-mkchain-devspace.yaml
-/*_chain.yaml
-/*_chain_invite.yaml
+build
+
+# Ignore mkchain generated files
+*_values.yaml
+
+charts/tezos/charts
