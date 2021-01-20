@@ -124,7 +124,7 @@ spec:
     spec:
       containers:
         - name: rpc-auth
-          image: {{ .Values.images.rpc_auth | quote }}
+          image: {{ .Values.tezos_k8s_images.rpc_auth | quote }}
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080

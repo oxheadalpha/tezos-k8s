@@ -14,21 +14,29 @@ To deploy an RPC Authentication backend for your private chain, do either:
   mkchain $CHAIN_NAME ... --rpc-auth
   ```
 
-- Or manually add the field `rpc_auth: true` in your generated Helm values file `<CURRENT WORKING DIRECTORY>/${CHAIN_NAME}_values.yaml`.
+- Or manually add the field `rpc_auth: true` in your generated Helm values file `./${CHAIN_NAME}_values.yaml`.
+
+Make sure you have the Tezos Helm chart repo:
+
+```shell
+helm repo add tqtezos https://tqtezos.github.io/tezos-helm-charts
+```
 
 If you don't currently have a chain running, run the following command to start it:
+
 ```shell
-helm install $CHAIN_NAME charts/tezos \
---values <CURRENT WORKING DIRECTORY>/${CHAIN_NAME}_values.yaml \
+helm install $CHAIN_NAME tqtezos/tezos-chain \
+--values ./${CHAIN_NAME}_values.yaml \
 --namespace tqtezos --create-namespace
 ```
 
 If you already have a chain running, you need to use Helm's `upgrade` cmd instead of `install`:
-  ```shell
-  helm upgrade $CHAIN_NAME charts/tezos \
-  --values <CURRENT WORKING DIRECTORY>/${CHAIN_NAME}_values.yaml \
-  --namespace tqtezos
-  ```
+
+```shell
+helm upgrade $CHAIN_NAME tqtezos/tezos-chain \
+--values ./${CHAIN_NAME}_values.yaml \
+--namespace tqtezos
+```
 
 ## Client Authentication
 
@@ -41,10 +49,11 @@ If you already have a chain running, you need to use Helm's `upgrade` cmd instea
 1. You provide a trusted user with your cluster ip/address and your private tezos chain id.
    To see your chain id, either:
 
-   - ```shell
+   - Run
+     ```shell
      kubectl exec -it -n tqtezos deployment/tezos-bootstrap-node -c tezos-node -- tezos-client rpc get /chains/main/chain_id
      ```
-   - Use Lens to view the logs of the Tezos node
+   - Use a tool like [Lens](https://k8slens.dev/) to view the logs of the Tezos node. (As well as the rest of your k8s infrastructure)
    - Manually run the logs command `kubectl logs -n tqtezos deployment/tezos-bootstrap-node -c tezos-node`. The top of the logs should look similar to:
      ```
      Dec 21 19:42:08 - node.main: starting the Tezos node (chain = my-chain)
