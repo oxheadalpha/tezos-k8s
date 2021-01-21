@@ -1,6 +1,6 @@
 # Tezos k8s Private Chain
 
-This README will walk you through setting up a Tezos based private blockchain where you will spin up one bootstrap peer node as well as additional peer nodes if you'd like. These nodes will be running in a peer-to-peer network inside of a Kubernetes cluster using `minikube`.
+This README will walk you through setting up a Tezos based private blockchain where you will spin up one bootstrap node as well as additional peer nodes if you'd like. Using `minikube`, these nodes will be running in a peer-to-peer network via a Zerotier VPN, inside of a Kubernetes cluster.
 
 ## Prerequisites
 
@@ -35,6 +35,8 @@ pacman -Syu && pacman -S python3 minikube kubectl kubectx helm
 ```
 
 ## Zerotier
+
+Zerotier is a VPN service that the Tezos nodes in your cluster will use to communicate with each other.
 
 Create a ZeroTier network:
 
