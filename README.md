@@ -5,6 +5,7 @@ This README will walk you through setting up a Tezos based private blockchain wh
 ## Prerequisites
 
 - python3
+- [docker](https://docs.docker.com/get-docker/)
 - [kubectl](https://kubernetes.io/docs/reference/kubectl/kubectl/)
 - [minikube](https://minikube.sigs.k8s.io/docs/)
 - [helm](https://helm.sh/)
@@ -14,24 +15,77 @@ This README will walk you through setting up a Tezos based private blockchain wh
 
 This section varies depending on OS.
 
-### Mac with homebrew
+### Mac
 
-Make sure [homebrew](https://brew.sh/) is installed:
+- Install [Docker Desktop](https://docs.docker.com/docker-for-mac/install/).
 
-```shell
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
-```
+- Start Docker Desktop and follow the setup instructions. Note: You may quit Docker after it has finished setting up. It is not required that Docker Desktop is running for you to run a Tezos chain.
 
-Install prerequisites:
+- Install [homebrew](https://brew.sh/):
 
-```shell
-brew install python3 kubectl minikube helm
-```
+  ```shell
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+  ```
+
+- Install other prerequisites:
+  ```shell
+  brew install python3 kubectl minikube helm
+  ```
 
 ### Arch Linux
 
 ```shell
-pacman -Syu && pacman -S python3 minikube kubectl kubectx helm
+pacman -Syu && pacman -S docker python3 minikube kubectl kubectx helm
+```
+
+### Other Operating Systems
+
+Please see the respective pages for installation instructions:
+
+- [python3](https://www.python.org/downloads/)
+- [docker](https://docs.docker.com/get-docker/)
+- [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
+- [minikube](https://minikube.sigs.k8s.io/docs/start/)
+- [helm](https://helm.sh/docs/intro/install/)
+
+## Configuring Minikube
+
+It is suggested to deploy minikube as a virtual machine. This requires a virtual machine [driver](https://minikube.sigs.k8s.io/docs/drivers/).
+
+### Mac
+
+Requires the [hyperkit](https://minikube.sigs.k8s.io/docs/drivers/hyperkit/) driver. This comes already bundled together with Docker Desktop.
+
+Make hyperkit the default minikube driver:
+
+```shell
+minikube config set driver hyperkit
+```
+
+(Note: We do not use Docker itself as the minikube driver due to an [issue](https://github.com/kubernetes/minikube/issues/7332) regarding the minikube ingress addon that is required by [rpc-auth](./rpc-auth/README.md))
+
+### Other Operating Systems
+
+If in the next step minikube does not start correctly, you may need to configure a different driver for it. Please see the minikube docs [here](https://minikube.sigs.k8s.io/docs/drivers/) for more information.
+
+## Starting Minikube
+
+```shell
+minikube start
+```
+
+Configure your shell environment to use minikube’s Docker daemon:
+
+```shell
+eval $(minikube docker-env)
+```
+
+This allows you to run Docker commands inside of minikube. For example: `docker images` to view the images that minikube has.
+
+If you want to unset your shell from using minikube's docker daemon:
+
+```shell
+eval $(minikube docker-env -u)
 ```
 
 ## Zerotier
@@ -52,39 +106,28 @@ Create a ZeroTier network:
 Set Zerotier environment variables in order to access these values with later commands:
 
 ```shell
-ZT_TOKEN=yEflQt726fjXuSUyQ73WqXvAFoijXkLt
-ZT_NET=1c33c1ced02a5eee
-```
-
-## Start Minikube
-
-```shell
-minikube start
-```
-
-If you don't have docker installed, or you do but don't want to use your local install, configure your shell environment to use minikube’s Docker daemon:
-
-```shell
-eval $(minikube docker-env)
+export ZT_TOKEN=yEflQt726fjXuSUyQ73WqXvAFoijXkLt
+export ZT_NET=1c33c1ced02a5eee
 ```
 
 ## mkchain
 
-mkchain is a python script that generates Helm values which Helm then uses to create your Tezos chain on k8s.
+mkchain is a python script that generates Helm values, which Helm then uses to create your Tezos chain on k8s.
 
 Follow _just_ the [Install mkchain](./mkchain/README.md#install-mkchain) step in `mkchain/README.md` under the Quickstart. See there for more info on how you can customize your chain.
 
 Set as an environment variable the name you would like to give to your chain:
 
 ```shell
-CHAIN_NAME=my-chain
+export CHAIN_NAME=my-chain
 ```
+
 NOTE: k8s will throw an error when deploying if your chain name format does not match certain requirements. From k8s: `DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character (e.g. 'example.com', regex used for validation is '[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*')`
 
 Set [unbuffered IO](https://docs.python.org/3.6/using/cmdline.html#envvar-PYTHONUNBUFFERED) for python:
 
 ```shell
-PYTHONUNBUFFERED=x
+export PYTHONUNBUFFERED=x
 ```
 
 ## Start your chain
