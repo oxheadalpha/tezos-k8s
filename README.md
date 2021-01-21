@@ -176,7 +176,7 @@ a number of nodes of your choice by passing `--number-of-nodes N` to `mkchain`. 
 
 Or if you previously spun up the chain using `mkchain`, you may scale up/down your setup to an arbitrary number of nodes by adding or removing nodes in the `nodes` list in the values yaml file:
 
-```
+```yaml
 # <CURRENT WORKING DIRECTORY>/${CHAIN_NAME}_values.yaml
 ...
 nodes:
