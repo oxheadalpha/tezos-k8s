@@ -4,6 +4,7 @@ data:
     {
       "bootstrap_mutez": "{{ .Values.protocol.bootstrap_mutez }}",
       "bootstrap_peers": {{ toJson .Values.bootstrap_peers }},
+      "nodes": {{ toJson .Values.nodes }},
       "chain_name": "{{ .Values.chain_name }}",
       "genesis_block": "{{ .Values.genesis.genesis_chain_id }}",
       "activation_account": "{{ (index .Values.accounts 0).name }}",
@@ -24,6 +25,8 @@ data:
   CHAIN_NAME: "{{ .Values.chain_name }}"
   NETWORK_ID: "{{ .Values.zerotier_config.zerotier_network }}"
   ZTAUTHTOKEN: "{{ .Values.zerotier_config.zerotier_token }}"
+  NODES: |
+{{ .Values.nodes | toJson | indent 4}}
 kind: ConfigMap
 metadata:
   name: zerotier-config

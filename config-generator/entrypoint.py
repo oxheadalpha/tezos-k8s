@@ -42,7 +42,16 @@ def main():
             if bootstrap_peers == []:
                 bootstrap_peers.extend(get_zerotier_bootstrap_peer_ips())
         else:
-            bootstrap_peers.append("tezos-bootstrap-node-p2p:9732")
+            local_bootstrap_peers = []
+            for i, node in enumerate(CHAIN_PARAMS["nodes"]["baking"]):
+                if (
+                    node.get("bootstrap", False)
+                    and f"tezos-baking-node-{i}" not in socket.gethostname()
+                ):
+                    local_bootstrap_peers.append(
+                        f"tezos-baking-node-{i}.tezos-baking-node:9732"
+                    )
+            bootstrap_peers.extend(local_bootstrap_peers)
 
         config_json = json.dumps(
             get_node_config(
