@@ -76,6 +76,7 @@ metadata:
   name: tezos-bootstrap-node
   namespace: {{ .Release.Namespace }}
 spec:
+  podManagementPolicy: Parallel
   replicas: {{ include "bakers" . | fromYaml | values | len }}
   serviceName: tezos-bootstrap-node-rpc
   selector:
