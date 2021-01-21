@@ -6,6 +6,7 @@ echo $ACCOUNTS | jq -c --raw-output .[] | while read line; do
     key=$(echo $line | jq -r '.key')
     name=$(echo $line | jq -r '.name')
     keytype=$(echo $line | jq -r '.type')
+    protocol=$(echo $CHAIN_PARAMS | jq -r '.protocol_hash')
     printf "\nImporting key ${name}\n"
-    tezos-client -d /var/tezos/client --protocol PsDELPH1Kxsx import ${keytype} key ${name} unencrypted:${key} -f
+    tezos-client -d /var/tezos/client --protocol ${protocol} import ${keytype} key ${name} unencrypted:${key} -f
 done
