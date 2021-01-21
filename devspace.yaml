@@ -28,6 +28,10 @@ images:
     image: tezos-k8s-key-importer
     dockerfile: ./key-importer/Dockerfile
     context: ./key-importer
+  wait-for-bootstrap:
+    image: tezos-k8s-wait-for-bootstrap
+    dockerfile: ./wait-for-bootstrap/Dockerfile
+    context: ./wait-for-bootstrap
   config-generator:
     image: tezos-k8s-config-generator
     dockerfile: ./config-generator/Dockerfile

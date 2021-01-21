@@ -17,6 +17,7 @@ tezos_k8s_images:
   baker: tezos-k8s-baker:dev
   key_importer: tezos-k8s-key-importer:dev
   config_generator: tezos-k8s-config-generator:dev
+  wait_for_bootstrap: tezos-k8s-wait-for-bootstrap:dev
   key_importer: tezos-k8s-key-importer:dev
   zerotier: tezos-k8s-zerotier:dev
 
@@ -30,14 +31,16 @@ accounts:
   - name: sample1
     key: edsk...
     private: true
-    bootstrap: true
     baker: true
   - name: sample2
     key: edsk...
     private: true
-    bootstrap: true
 nodes:
+  baking:
   - bake_for: sample2
+    bootstrap: true
+  regular:
+  - {}
 # TODO
 # archive nodes, node with open rpc
 # take into account fundraisers accounts that people need to activate
