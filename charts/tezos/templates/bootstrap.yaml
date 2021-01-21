@@ -223,9 +223,6 @@ spec:
           name: dev-net-tun
         - emptyDir: {}
           name: config-volume
-        - configMap:
-            name: tqtezos-utils
-          name: tqtezos-utils
   volumeClaimTemplates:
     - metadata:
         name: var-volume
