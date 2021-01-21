@@ -200,7 +200,6 @@ spec:
           name: config-generator
           args:
             - "--generate-config-json"
-            - "--generate-parameters-json"
           envFrom:
             - configMapRef:
                 name: tezos-config
