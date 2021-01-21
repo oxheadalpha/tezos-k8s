@@ -39,7 +39,7 @@ def main():
         if CHAIN_PARAMS["zerotier_in_use"]:
             with open("/var/tezos/zerotier_data.json", "r") as f:
                 net_addr = json.load(f)[0]["assignedAddresses"][0].split("/")[0]
-            if bootstrap_peers == [] and "bootstrap" not in socket.gethostname():
+            if bootstrap_peers == []:
                 bootstrap_peers.extend(get_zerotier_bootstrap_peer_ips())
         else:
             bootstrap_peers.append("tezos-bootstrap-node-p2p:9732")
@@ -47,7 +47,7 @@ def main():
         config_json = json.dumps(
             get_node_config(
                 CHAIN_PARAMS["chain_name"],
-                bootstrap_accounts["genesis"],
+                bootstrap_accounts[CHAIN_PARAMS["activation_account"]],
                 CHAIN_PARAMS["timestamp"],
                 bootstrap_peers,
                 CHAIN_PARAMS["genesis_block"],

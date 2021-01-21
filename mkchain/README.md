@@ -66,7 +66,8 @@ You can explicitly specify some values by:
 | -------------------------------- | ------------------ | --------------------------------------------------------------------------- | ---------------------- |
 | bootstrap_peer                   | --bootstrap-peer   | Peer ip to connect to                                                       |                        |
 | images.tezos                     | --docker-image     | Version of the Tezos docker image                                           | tezos/tezos:v8-release |
-| number_of_nodes                  | --number-of-nodes  | Number of peers in the cluster                                              | 1                      |
+| number_of_nodes                  | --number-of-nodes  | Total number of nodes in the cluster                                        | 1                      |
+| number_of_bakers                 | --number-of-bakers | Number of nodes in the cluster that are bakers                              | 1                      |
 | rpc_auth                         | --rpc-auth         | Whether or not an [RPC auth](../rpc-auth/README.md) backend will be spun up | False                  |
 | zerotier_config.zerotier_network | --zerotier-network | Zerotier network id for external chain access                               |                        |
 | zerotier_config.zerotier_token   | --zerotier-token   | Zerotier token for external chain access                                    |                        |
