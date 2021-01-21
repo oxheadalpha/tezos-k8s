@@ -157,8 +157,7 @@ def main():
         {"bake_for": f"baker{n}"} for n in range(args.number_of_bakers)
     ] + [{} for n in range(args.number_of_nodes - args.number_of_bakers)]
 
-    # for invitation, do not include baking nodes, and include at least one node
-    invitation_nodes = [{}] * args.number_of_nodes
+    invitation_nodes = [{}]
 
     bootstrap_peers = [args.bootstrap_peer] if args.bootstrap_peer else []
 
