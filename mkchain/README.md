@@ -2,47 +2,38 @@
 
 Helper program to generate values for the Tezos chain Helm chart
 
-## Quickstart
+This assumes you have [docker](https://docs.docker.com/get-docker/), [minikube](https://minikube.sigs.k8s.io/docs/), [helm](https://helm.sh/), and `python3` installed.
 
-This assumes you have [minikube](https://minikube.sigs.k8s.io/docs/), [helm](https://helm.sh/), and `python3` installed. If you don't have docker installed, or you do but don't want to use your local install, configure your shell environment to use minikube’s Docker daemon:
+Start minikube and configure your shell environment to use minikube’s Docker daemon:
 
 ```shell
+minikube start
+
 eval $(minikube docker-env)
 ```
 
-### Install mkchain
+## Install mkchain
 
 ```shell
 mkdir mkchain && cd mkchain
 python3 -m venv .venv
-source .venv/bin/activate
+. .venv/bin/activate
 pip install wheel && pip install mkchain
 ```
 
 Set [unbuffered IO](https://docs.python.org/3.6/using/cmdline.html#envvar-PYTHONUNBUFFERED) for python:
 
 ```shell
-PYTHONUNBUFFERED=x
-```
-
-### Create Tezos Chain
-
-Make sure you have the Tezos Helm chart repo:
-
-```shell
-helm repo add tqtezos https://tqtezos.github.io/tezos-helm-charts
-```
-
-```shell
-CHAIN_NAME=my-chain
-mkchain $CHAIN_NAME
-
-helm install $CHAIN_NAME tqtezos/tezos-chain \
---values ./${CHAIN_NAME}_values.yaml \
---namespace tqtezos --create-namespace
+export PYTHONUNBUFFERED=x
 ```
 
 ## Generate Helm Values
+
+Set as an environment variable the name you would like to give to your chain:
+
+```shell
+export CHAIN_NAME=my-chain
+```
 
 Your chain is uniquely defined by a set of values such as bootstrap account keys, chain id, timestamp...
 
@@ -71,3 +62,19 @@ You can explicitly specify some values by:
 | rpc_auth                         | --rpc-auth         | Whether or not an [RPC auth](../rpc-auth/README.md) backend will be spun up | False                  |
 | zerotier_config.zerotier_network | --zerotier-network | Zerotier network id for external chain access                               |                        |
 | zerotier_config.zerotier_token   | --zerotier-token   | Zerotier token for external chain access                                    |                        |
+
+## Create Tezos Chain
+
+Make sure you have the Tezos Helm chart repo:
+
+```shell
+helm repo add tqtezos https://tqtezos.github.io/tezos-helm-charts
+```
+
+Then install the Tezos Helm chart:
+
+```shell
+helm install $CHAIN_NAME tqtezos/tezos-chain \
+--values ./${CHAIN_NAME}_values.yaml \
+--namespace tqtezos --create-namespace
+```

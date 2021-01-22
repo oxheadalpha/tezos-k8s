@@ -26,7 +26,7 @@
 
 - Run `mkchain` to generate your Helm values. (Note: Devspace will only deploy `rpc-auth` if you use the `rpc-auth` profile, regardless if you set it in mkchain. This is to avoid devspace deployment issues. See more below.)
 
-- Run `helm dependency update charts/tezos`. This grabs all the Tezos chart dependencies and packages them inside the chart's `charts/` directory. Currently this is just the `rpc-auth` chart.
+- Run `helm dependency update charts/tezos`. This grabs all the Tezos chart dependencies and packages them inside the chart's `charts/` directory. Currently this is just the `rpc-auth` chart. You'll need to run this for all charts that have dependencies in the future.
 
 - Set a `CHAIN_NAME` env var.
 
@@ -48,9 +48,47 @@ Devspace will now do a few things:
 
 ## Notes
 
+- If you would like to build all of our images without using Devspace to deploy (you might want to do a `helm install` instead), you can run `devspace build -t dev`.
+
 - Due to a current limitation of devspace, multiple profiles cannot be used at one time. Therefore, devspace will watch `zerotier` files even if tezos nodes are not configured to use it via `mkchain`. Preferably `zerotier` would also be a profile in addition to `rpc-auth` being one.
 
-# Releases
-The way releases currently work is that upon release, every component of the tezos-k8s repo will be bumped to that version. This is regardless if there were changes or not to that particular component. This is because tezos-k8s is a monorepo and we'd like to keep the versions consistent across the different components.
+- If you find that you have images built but Devspace is having a hard time getting them and/or is producing errors that don't seem to make sense, you can try `rm -rf .devspace` to remove any potentially wrong state.
 
-...
+# Creating Docker Images
+
+Currently, we are placing all docker images in the the root level directory. The name of the folder is treated as the name of the image being created.
+
+Here is an example of the flow for creating new images and how they are published to Docker Hub via the CI:
+
+- You are creating a new image that you call `chain-initiator`. Name its folder `chain-initiator`. This folder should contain at least a `Dockerfile`.
+
+- The CI on release will pre-pend `tezos-k8s` to the folder name, so `tezos-k8s-chain-initiator`. That is what the image will be named on Docker Hub under the `tqtezos` repo. So you would pull/push `tqtezos/tezos-k8s-chain-initiator`. All of our image names will have this format.
+
+- In Helm charts that will be using the new image, set in the `values.yaml` file under the field `tezos_k8s_images` the value of `tezos-k8s-chain-initiator:dev`. (Any other images that a chart uses that it just pulls from a remote registry should go under the `images` field.) This is how the file will be stored in version control. On releases, the CI will set the tags to the release version and publish that to Docker Hub.
+
+- When adding an image to Devspace, the image name needs to be the same as it is in `values.yaml`, i.e. `tezos-k8s-chain-initiator`. It does not need to be tagged because Devspace will add its own tag.
+  Example:
+  ```yaml
+  images:
+    chain-initiator:
+      image: tezos-k8s-chain-initiator
+      dockerfile: ./chain-initiator/Dockerfile
+      context: ./chain-initiator
+  ```
+
+# Creating Helm Charts
+The `version` in Chart.yaml should be `0.0.0`. This is what is stored in version control. The CI will update the version on release and store in our Helm chart repo.
+
+Chart.yaml does not require an `appVersion`. So we are not using it as it doesn't make sense in our context being that our application is currently a monorepo and every component version is bumped as one. The `version` field is sufficient.
+
+Regarding chart dependencies, Chart.yaml also doesn't require a dependency version for a _local_ chart. Being that all components are bumped to the same version, the parent chart will be getting the latest version of the dependency by default (which is the same as its own version).
+
+# Releases
+
+Upon release, every component of the tezos-k8s repo will be bumped to that version. This is regardless if there were changes or not to that particular component. This is because tezos-k8s is a monorepo and we'd like to keep the versions consistent across the different components.
+
+- mkchain will be published to pypi
+- Docker images will be deployed to Docker Hub
+- Helm charts will be deployed to our Github Pages [repo](https://github.com/tqtezos/tezos-helm-charts)
+
+See the Github CI file [./.github/workflows/ci.yml](.github/workflows/ci.yml) for our full CI pipeline.
