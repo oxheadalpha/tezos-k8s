@@ -228,6 +228,8 @@ jobs:
 
       - name: Set Helm Chart and Image Versions
         run: |
+          set -x
+
           RELEASE_VERSION=${{ steps.get_release_version.outputs.RELEASE_VERSION }}
 
           for chart in charts/*; do
@@ -238,11 +240,12 @@ jobs:
             yq e ".version = \"$RELEASE_VERSION\"" -i "$chart/Chart.yaml"
 
             # Get tqtezos/tezos-k8s images specified in values.yaml
-            tq_images=$(yq e '(.images[] | select(. == "tezos-k8s*")) | path | .[-1]' "$chart/values.yaml")
+            tq_images=$(yq e '(.tezos_k8s_images[]) | path | .[-1]' "$chart/values.yaml")
+
             # Update the release version of each of tezos-k8s images
             for image in $tq_images; do
-              image_name=$(yq e ".images.$image" $chart/values.yaml | sed -E "s/tezos-k8s-(.*):.*/\1/")
-              yq e ".images.$image = \"tqtezos/tezos-k8s-$image_name:$RELEASE_VERSION\"" -i $chart/values.yaml
+              image_name=$(yq e ".tezos_k8s_images.$image" $chart/values.yaml | sed -E "s/tezos-k8s-(.*):.*/\1/")
+              yq e ".tezos_k8s_images.$image = \"tqtezos/tezos-k8s-$image_name:$RELEASE_VERSION\"" -i $chart/values.yaml
             done
           done
 
