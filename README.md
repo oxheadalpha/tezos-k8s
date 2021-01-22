@@ -95,15 +95,15 @@ Zerotier is a VPN service that the Tezos nodes in your cluster will use to commu
 Create a ZeroTier network:
 
 - Go to https://my.zerotier.com
-- Login with google credentials or create a new account
-- Create a new API access token by clicking on the "Generate New
-  Token" button. Save the generated access token. e.g. "yEflQt726fjXuSUyQ73WqXvAFoijXkLt"
+- Login with credentials or create a new account
+- Go to https://my.zerotier.com/account to create a new API access token
+- Under `API Access Tokens > New Token`, give a name to your access token and generate it by clicking on the "generate" button. Save the generated access token, e.g. `yEflQt726fjXuSUyQ73WqXvAFoijXkLt` on your computer.
 - Go to https://my.zerotier.com/network
 - Create a new network by clicking on the "Create a Network"
   button. Save the 16 character generated network
-  id. e.g. "1c33c1ced02a5eee"
+  id, e.g. `1c33c1ced02a5eee` on your computer.
 
-Set Zerotier environment variables in order to access these values with later commands:
+Set Zerotier environment variables in order to access the network id and access token values with later commands:
 
 ```shell
 export ZT_TOKEN=yEflQt726fjXuSUyQ73WqXvAFoijXkLt
