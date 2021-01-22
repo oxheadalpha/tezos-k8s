@@ -48,6 +48,8 @@ Devspace will now do a few things:
 
 ## Notes
 
+- If you would like to build all of our images without using Devspace to deploy (you might want to do a `helm install` instead), you can run `devspace build -t dev`.
+
 - Due to a current limitation of devspace, multiple profiles cannot be used at one time. Therefore, devspace will watch `zerotier` files even if tezos nodes are not configured to use it via `mkchain`. Preferably `zerotier` would also be a profile in addition to `rpc-auth` being one.
 
 - If you find that you have images built but Devspace is having a hard time getting them and/or is producing errors that don't seem to make sense, you can try `rm -rf .devspace` to remove any potentially wrong state.
@@ -83,10 +85,10 @@ Regarding chart dependencies, Chart.yaml also doesn't require a dependency versi
 
 # Releases
 
-The way releases currently work is that upon release, every component of the tezos-k8s repo will be bumped to that version. This is regardless if there were changes or not to that particular component. This is because tezos-k8s is a monorepo and we'd like to keep the versions consistent across the different components.
+Upon release, every component of the tezos-k8s repo will be bumped to that version. This is regardless if there were changes or not to that particular component. This is because tezos-k8s is a monorepo and we'd like to keep the versions consistent across the different components.
 
 - mkchain will be published to pypi
 - Docker images will be deployed to Docker Hub
-- Helm charts will be deployed to our Github Pages [repo](https://github.com/tqtezos/tezos-helm-charts).
+- Helm charts will be deployed to our Github Pages [repo](https://github.com/tqtezos/tezos-helm-charts)
 
-See the Github CI file `.github/workflows/ci.yaml` for our full CI pipeline.
+See the Github CI file [./.github/workflows/ci.yml](.github/workflows/ci.yml) for our full CI pipeline.

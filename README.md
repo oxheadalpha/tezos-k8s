@@ -114,7 +114,7 @@ export ZT_NET=1c33c1ced02a5eee
 
 mkchain is a python script that generates Helm values, which Helm then uses to create your Tezos chain on k8s.
 
-Follow _just_ the [Install mkchain](./mkchain/README.md#install-mkchain) step in `mkchain/README.md` under the Quickstart. See there for more info on how you can customize your chain.
+Follow _just_ the [Install mkchain](./mkchain/README.md#install-mkchain) step in `./mkchain/README.md`. See there for more info on how you can customize your chain.
 
 Set as an environment variable the name you would like to give to your chain:
 
@@ -178,12 +178,10 @@ Or if you previously spun up the chain using `mkchain`, you may scale up/down yo
 
 ```yaml
 # <CURRENT WORKING DIRECTORY>/${CHAIN_NAME}_values.yaml
-...
 nodes:
   - bake_for: baker
   - {} # second non-baking node
   - {} # third non-baking node
-...
 ```
 
 To upgrade your Helm release run:
@@ -248,3 +246,7 @@ Follow the steps [here](./rpc-auth/README.md).
 # Notes
 
 We recommend using a very nice GUI for your k8s Tezos chain infrastructure called [Lens](https://k8slens.dev/). This allows you to easily see all of the k8s resources that have been spun up as well as to view the logs for your Tezos nodes.
+
+# Development
+
+Please see [DEVELOPMENT.md](./DEVELOPMENT.md)
