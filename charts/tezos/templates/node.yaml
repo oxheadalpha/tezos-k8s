@@ -107,6 +107,8 @@ spec:
           envFrom:
             - secretRef:
                 name: tezos-secret
+            - configMapRef:
+                name: tezos-config
           volumeMounts:
             - mountPath: /var/tezos
               name: var-volume

@@ -35,7 +35,7 @@ def gen_key(image):
         "'/usr/local/bin/tezos-client --protocol PsDELPH1Kxsx gen keys mykey && /usr/local/bin/tezos-client --protocol PsDELPH1Kxsx show address mykey -S'",
     ).split(b"\n")
 
-    return {"public_key": extract_key(keys, 1), "secret_key": extract_key(keys, 2)}
+    return {"public": extract_key(keys, 1), "secret": extract_key(keys, 2)}
 
 
 def get_genesis_vanity_chain_id(seed_len=16):
@@ -64,6 +64,11 @@ def get_genesis_vanity_chain_id(seed_len=16):
 CHAIN_CONSTANTS = {
     "number_of_nodes": {
         "help": "number of peers in the cluster",
+        "default": 1,
+        "type": int,
+    },
+    "number_of_bakers": {
+        "help": "number of bakers in the cluster",
         "default": 1,
         "type": int,
     },
@@ -109,12 +114,13 @@ def main():
         )
         exit(1)
 
-    bootstrap_accounts = [
-        "baker",
-        "bootstrap_account_1",
-        "bootstrap_account_2",
-        "genesis",
-    ]
+    if args.number_of_bakers < 1:
+        print(
+            f"Invalid argument --number-of-bakers {args.number_of_bakers}, must be 1 or more"
+        )
+        exit(1)
+
+    bootstrap_accounts = [f"baker{n}" for n in range(args.number_of_bakers)]
 
     base_constants = {
         "chain_name": args.chain_name,
@@ -133,10 +139,9 @@ def main():
             "zerotier_network": args.zerotier_network,
             "zerotier_token": args.zerotier_token,
         },
-        "nodes": [{"bake_for": "baker"}] + [{}] * (args.number_of_nodes - 1),
     }
 
-    accounts = {"secret_key": [], "public_key": []}
+    accounts = {"secret": [], "public": []}
     for account in bootstrap_accounts:
         keys = gen_key(args.docker_image)
         for key_type in keys:
@@ -144,25 +149,31 @@ def main():
                 {
                     "name": account,
                     "key": keys[key_type],
-                    "private": key_type == "secret_key",
-                    "bootstrap": True,
-                    "baker": True,
+                    "type": key_type,
                 }
             )
+
+    creation_nodes = [
+        {"bake_for": f"baker{n}"} for n in range(args.number_of_bakers)
+    ] + [{} for n in range(args.number_of_nodes - args.number_of_bakers)]
+
+    invitation_nodes = [{}]
 
     bootstrap_peers = [args.bootstrap_peer] if args.bootstrap_peer else []
 
     creation_constants = {
         **base_constants,
-        "accounts": accounts["secret_key"],
+        "accounts": accounts["secret"],
         "is_invitation": False,
         "bootstrap_peers": bootstrap_peers,
+        "nodes": creation_nodes,
     }
     invitation_constants = {
         **base_constants,
-        "accounts": accounts["public_key"],
+        "accounts": accounts["public"],
         "is_invitation": True,
         "bootstrap_peers": bootstrap_peers,
+        "nodes": invitation_nodes,
     }
     invitation_constants.pop("rpc_auth")
 

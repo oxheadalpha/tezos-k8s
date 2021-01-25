@@ -5,8 +5,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   ports:
-    - nodePort: 31732
-      port: 8732
+    - port: 8732
   selector:
     app: tezos-bootstrap-node
   type: NodePort
@@ -19,21 +18,9 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   ports:
-    - nodePort: 30732
-      port: 9732
+    - port: 9732
   selector:
     app: tezos-bootstrap-node
   type: NodePort
 ---
 {{ end }}
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: tezos-bootstrap-node-pv-claim
-  namespace: {{ .Release.Namespace }}
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: "15Gi"
