@@ -22,10 +22,11 @@ const helm_values = YAML.parse(helm_values_file)
 const nginx_ingress_helm_values_file = fs.readFileSync('nginx_ingress_values.yaml', 'utf8')
 const nginx_ingress_helm_values = YAML.parse(nginx_ingress_helm_values_file)
 
-helm_values["container_images"]["zerotier_docker_image"] = repo.buildAndPushImage("../zerotier");
-helm_values["container_images"]["tezos_chain_initiator_docker_image"] = repo.buildAndPushImage("../chain-initiator");
-helm_values["container_images"]["tezos_config_generator_docker_image"] = repo.buildAndPushImage("../config-generator");
-helm_values["container_images"]["tezos_key_importer_docker_image"] = repo.buildAndPushImage("../key-importer");
+helm_values['tezos_k8s_images'] = helm_values['tezos_k8s_images'] || {};
+helm_values["tezos_k8s_images"]["zerotier_docker_image"] = repo.buildAndPushImage("../zerotier");
+helm_values["tezos_k8s_images"]["tezos_chain_initiator_docker_image"] = repo.buildAndPushImage("../chain-initiator");
+helm_values["tezos_k8s_images"]["tezos_config_generator_docker_image"] = repo.buildAndPushImage("../config-generator");
+helm_values["tezos_k8s_images"]["tezos_key_importer_docker_image"] = repo.buildAndPushImage("../key-importer");
 
 const rpc_auth_helm_values = { "container_images" : { "rpc_auth_image": repo.buildAndPushImage("../rpc-auth") } };
 
