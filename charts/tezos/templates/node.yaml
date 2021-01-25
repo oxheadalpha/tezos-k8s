@@ -1,11 +1,3 @@
-{{- /* Function to get number of non bakers */}}
-{{- define "nonBakers" }}
-  {{- range $i, $node := $.Values.nodes }}
-    {{- if (not (hasKey $node "bake_for")) }}
-{{ $i }}: true
-    {{- end }}
-  {{- end }}
-{{- end -}}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -13,7 +5,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   podManagementPolicy: Parallel
-  replicas: {{ include "nonBakers" . | fromYaml | values | len }}
+  replicas: {{ .Values.nodes.regular | len }}
   selector:
     matchLabels:
       app: tezos-node
@@ -100,6 +92,11 @@ spec:
               name: var-volume
             - mountPath: /dev/net/tun
               name: dev-net-tun
+          env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
 {{- end }}
         - image: {{ .Values.tezos_k8s_images.key_importer }}
           name: key-importer
@@ -141,6 +138,12 @@ spec:
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+        - image: {{ .Values.tezos_k8s_images.wait_for_bootstrap }}
+          imagePullPolicy: IfNotPresent
+          name: wait-for-bootstrap
+          volumeMounts:
             - mountPath: /var/tezos
               name: var-volume
       securityContext:

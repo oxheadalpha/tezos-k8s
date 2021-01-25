@@ -134,7 +134,7 @@ spec:
             - name: REDIS_PORT
               value: {{ .Values.redis.port | quote }}
             - name: TEZOS_RPC_SERVICE
-              value: tezos-bootstrap-node-rpc
+              value: tezos-node-rpc
             - name: TEZOS_RPC_SERVICE_PORT
               value: "8732"
 ---
@@ -185,5 +185,5 @@ spec:
           - path: /tezos-node-rpc/(.*?)/(.*)
             pathType: Exact
             backend:
-              serviceName: tezos-bootstrap-node-rpc
+              serviceName: tezos-node-rpc
               servicePort: 8732

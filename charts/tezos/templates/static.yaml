@@ -1,26 +1,29 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: tezos-bootstrap-node-rpc
+  name: tezos-node-rpc
   namespace: {{ .Release.Namespace }}
 spec:
   ports:
     - port: 8732
   selector:
-    app: tezos-bootstrap-node
+    app: tezos-baking-node
   type: NodePort
 ---
-{{- if not .Values.zerotier_in_use }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: tezos-bootstrap-node-p2p
-  namespace: {{ .Release.Namespace }}
+  name: tezos-node
 spec:
-  ports:
-    - port: 9732
+  clusterIP: None
   selector:
-    app: tezos-bootstrap-node
-  type: NodePort
+    app: tezos-node
 ---
-{{ end }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: tezos-baking-node
+spec:
+  clusterIP: None
+  selector:
+    app: tezos-baking-node

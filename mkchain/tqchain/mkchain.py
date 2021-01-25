@@ -120,7 +120,7 @@ def main():
         )
         exit(1)
 
-    bootstrap_accounts = [f"baker{n}" for n in range(args.number_of_bakers)]
+    baking_accounts = [f"baker{n}" for n in range(args.number_of_bakers)]
 
     base_constants = {
         "chain_name": args.chain_name,
@@ -142,7 +142,7 @@ def main():
     }
 
     accounts = {"secret": [], "public": []}
-    for account in bootstrap_accounts:
+    for account in baking_accounts:
         keys = gen_key(args.docker_image)
         for key_type in keys:
             accounts[key_type].append(
@@ -153,11 +153,17 @@ def main():
                 }
             )
 
-    creation_nodes = [
-        {"bake_for": f"baker{n}"} for n in range(args.number_of_bakers)
-    ] + [{} for n in range(args.number_of_nodes - args.number_of_bakers)]
+    creation_nodes = {
+        "baking": [{"bake_for": f"baker{n}"} for n in range(args.number_of_bakers)],
+        "regular": [{} for n in range(args.number_of_nodes - args.number_of_bakers)],
+    }
 
-    invitation_nodes = [{}]
+    # first nodes are acting as bootstrap nodes for the others
+    creation_nodes["baking"][0]["bootstrap"] = True
+    if len(creation_nodes["baking"]) > 1:
+        creation_nodes["baking"][1]["bootstrap"] = True
+
+    invitation_nodes = {"baking": [], "regular": [{}]}
 
     bootstrap_peers = [args.bootstrap_peer] if args.bootstrap_peer else []
 

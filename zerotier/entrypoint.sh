@@ -7,15 +7,6 @@ set -x
 
 supervisord -c /etc/supervisor/supervisord.conf
 
-echo "Set zerotier name"
-if [[ $(hostname) == *"bootstrap-node"* ]]; then
-    zerotier_name="${CHAIN_NAME}_bootstrap"
-    zerotier_description="Bootstrap node for chain ${CHAIN_NAME}"
-else
-    zerotier_name="${CHAIN_NAME}_node"
-    zerotier_description="P2p node of chain ${CHAIN_NAME}"
-fi
-
 [ ! -z $NETWORK_ID ] && { sleep 5; zerotier-cli -D/var/tezos/zerotier join $NETWORK_ID || exit 1; }
 
 # waiting for Zerotier IP
@@ -41,12 +32,13 @@ do
 done
 
 echo "Set zerotier name"
-if [[ $(hostname) == *"bootstrap-node"* ]]; then
+POD_INDEX=$(echo $POD_NAME | sed -e s/tezos-baking-node-// | sed -e s/tezos-node-//)
+if grep baking <<< $POD_NAME && [ "$(echo $NODES | jq -r ".baking[${POD_INDEX}].bootstrap")" == "true" ]; then
     zerotier_name="${CHAIN_NAME}_bootstrap"
-    zerotier_description="Bootstrap node for chain ${CHAIN_NAME}"
+    zerotier_description="Bootstrap node ${POD_NAME} for chain ${CHAIN_NAME}"
 else
     zerotier_name="${CHAIN_NAME}_node"
-    zerotier_description="P2p node of chain ${CHAIN_NAME}"
+    zerotier_description="Node ${POD_NAME} of chain ${CHAIN_NAME}"
 fi
 curl -s -XPOST \
   -H "Authorization: Bearer $ZTAUTHTOKEN" \
