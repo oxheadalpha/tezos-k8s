@@ -38,15 +38,14 @@ def gen_key(image):
     return {"public": extract_key(keys, 1), "secret": extract_key(keys, 2)}
 
 
-def get_genesis_vanity_chain_id(seed_len=16):
+def get_genesis_vanity_chain_id(docker_image, seed_len=16):
     seed = "".join(
         random.choice(string.ascii_uppercase + string.digits) for _ in range(seed_len)
     )
 
-    FLEXTESA = "registry.gitlab.com/tezos/flextesa:01e3f596-run"
     return (
         run_docker(
-            FLEXTESA,
+            docker_image,
             "flextesa",
             "vani",
             '""',
@@ -105,6 +104,13 @@ def get_args():
     return parser.parse_args()
 
 
+def pull_docker_images(images):
+    print("Pulling docker images...")
+    for image in images:
+        subprocess.check_output(f"docker pull {image}", shell=True)
+    print("Done pulling docker images")
+
+
 def main():
     args = get_args()
 
@@ -120,6 +126,13 @@ def main():
         )
         exit(1)
 
+    # Dirty fix. If tezos image doesn't exist, pull it before `docker run` can
+    # pull it. This is to avoid parsing extra output. Preferably, we want to get
+    # rid of docker dependency from mkchain.
+    FLEXTESA = "registry.gitlab.com/tezos/flextesa:01e3f596-run"
+    images = [FLEXTESA, args.docker_image]
+    pull_docker_images(images)
+
     baking_accounts = [f"baker{n}" for n in range(args.number_of_bakers)]
 
     base_constants = {
@@ -128,7 +141,7 @@ def main():
             "tezos": args.docker_image,
         },
         "genesis": {
-            "genesis_chain_id": get_genesis_vanity_chain_id(),
+            "genesis_chain_id": get_genesis_vanity_chain_id(FLEXTESA),
             "bootstrap_timestamp": datetime.utcnow()
             .replace(tzinfo=timezone.utc)
             .isoformat(),
