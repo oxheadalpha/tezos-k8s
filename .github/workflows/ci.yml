@@ -127,7 +127,6 @@ jobs:
     # https://stackoverflow.com/a/62953566/207209
     runs-on: ubuntu-latest
     needs: test
-    if: github.event_name == 'release' && github.event.action == 'created'
     outputs:
       matrix: ${{ steps.gen-containers-matrix.outputs.matrix }}
     steps:
