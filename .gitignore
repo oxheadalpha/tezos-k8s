@@ -7,9 +7,11 @@ dist
 .venv*
 .DS_Store
 .vscode
+node_modules
 
 .devspace/
 build
+
 
 # Ignore mkchain generated files
 *_values.yaml
