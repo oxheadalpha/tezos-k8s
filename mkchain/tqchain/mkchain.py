@@ -109,7 +109,7 @@ def pull_docker_images(images):
         has_image_return_code = subprocess.run(
             f"docker inspect --type=image {image} > /dev/null 2>&1", shell=True
         ).returncode
-        if has_image_return_code == 1:
+        if has_image_return_code != 0:
             print(f"Pulling docker image {image}")
             subprocess.check_output(
                 f"docker pull {image}", shell=True, stderr=subprocess.STDOUT
