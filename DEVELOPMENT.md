@@ -48,11 +48,29 @@ Devspace will now do a few things:
 
 ## Notes
 
+- Devspace recommends to run [devspace purge](https://devspace.sh/cli/docs/commands/devspace_purge) to delete deployments. Keep in mind though that it currently does not delete persistent volumes and claims. They currently don't mention this in their docs. If you want to delete all resources including persistent volumes and claims, run `kubectl delete namespace <NAMESPACE>`. Even with this command, there are times where PV's/PVC's do not get deleted. This is important to know because you may be spinning up nodes that get old volumes attached with old state, and you may encounter Tezos pod errors. I have experienced this in situations where I left my cluster running for a long time, say overnight, and I shut my laptop and/or it went to sleep. After logging back in and deleting the namespace, the PV's/PVC's are still there and need to be manually deleted. This appears to be a minikube bug.
+
 - If you would like to build all of our images without using Devspace to deploy (you might want to do a `helm install` instead), you can run `devspace build -t dev`.
 
 - Due to a current limitation of devspace, multiple profiles cannot be used at one time. Therefore, devspace will watch `zerotier` files even if tezos nodes are not configured to use it via `mkchain`. Preferably `zerotier` would also be a profile in addition to `rpc-auth` being one.
 
 - If you find that you have images built but Devspace is having a hard time getting them and/or is producing errors that don't seem to make sense, you can try `rm -rf .devspace` to remove any potentially wrong state.
+
+# Helm Charts
+
+## Creating Charts
+
+The `version` in Chart.yaml should be `0.0.0`. This is what is stored in version control. The CI will update the version on release and store in our Helm chart repo.
+
+Chart.yaml does not require an `appVersion`. So we are not using it as it doesn't make sense in our context being that our application is currently a monorepo and every component version is bumped as one. The `version` field is sufficient.
+
+Regarding chart dependencies, Chart.yaml should not specify a dependency version for another _local_ chart.
+
+Being that all charts are bumped to the same version on release, the parent chart will get the latest version of the dependency by default (which is the same as its own version) when installing via our Helm chart [repo](https://github.com/tqtezos/tezos-helm-charts).
+
+## Notes
+
+If you use `helm install|upgrade` (instead of devspace) for local charts, make sure you `helm dependency update <chart>` to get the latest local dependency chart changes that you've made packaged into the parent chart.
 
 # Creating Docker Images
 
@@ -75,13 +93,6 @@ Here is an example of the flow for creating new images and how they are publishe
       dockerfile: ./chain-initiator/Dockerfile
       context: ./chain-initiator
   ```
-
-# Creating Helm Charts
-The `version` in Chart.yaml should be `0.0.0`. This is what is stored in version control. The CI will update the version on release and store in our Helm chart repo.
-
-Chart.yaml does not require an `appVersion`. So we are not using it as it doesn't make sense in our context being that our application is currently a monorepo and every component version is bumped as one. The `version` field is sufficient.
-
-Regarding chart dependencies, Chart.yaml also doesn't require a dependency version for a _local_ chart. Being that all components are bumped to the same version, the parent chart will be getting the latest version of the dependency by default (which is the same as its own version).
 
 # Releases
 
