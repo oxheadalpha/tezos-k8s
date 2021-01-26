@@ -56,6 +56,22 @@ Devspace will now do a few things:
 
 - If you find that you have images built but Devspace is having a hard time getting them and/or is producing errors that don't seem to make sense, you can try `rm -rf .devspace` to remove any potentially wrong state.
 
+# Helm Charts
+
+## Creating Charts
+
+The `version` in Chart.yaml should be `0.0.0`. This is what is stored in version control. The CI will update the version on release and store in our Helm chart repo.
+
+Chart.yaml does not require an `appVersion`. So we are not using it as it doesn't make sense in our context being that our application is currently a monorepo and every component version is bumped as one. The `version` field is sufficient.
+
+Regarding chart dependencies, Chart.yaml should not specify a dependency version for another _local_ chart.
+
+Being that all charts are bumped to the same version on release, the parent chart will get the latest version of the dependency by default (which is the same as its own version) when installing via our Helm chart [repo](https://github.com/tqtezos/tezos-helm-charts).
+
+## Notes
+
+If you use `helm install|upgrade` (instead of devspace) for local charts, make sure you `helm repo update <chart>` to get the latest local dependency chart changes that you've made.
+
 # Creating Docker Images
 
 Currently, we are placing all docker images in the the root level directory. The name of the folder is treated as the name of the image being created.
@@ -77,13 +93,6 @@ Here is an example of the flow for creating new images and how they are publishe
       dockerfile: ./chain-initiator/Dockerfile
       context: ./chain-initiator
   ```
-
-# Creating Helm Charts
-The `version` in Chart.yaml should be `0.0.0`. This is what is stored in version control. The CI will update the version on release and store in our Helm chart repo.
-
-Chart.yaml does not require an `appVersion`. So we are not using it as it doesn't make sense in our context being that our application is currently a monorepo and every component version is bumped as one. The `version` field is sufficient.
-
-Regarding chart dependencies, Chart.yaml also doesn't require a dependency version for a _local_ chart. Being that all components are bumped to the same version, the parent chart will be getting the latest version of the dependency by default (which is the same as its own version).
 
 # Releases
 
