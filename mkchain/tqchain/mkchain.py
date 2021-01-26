@@ -154,14 +154,12 @@ def main():
             )
 
     creation_nodes = {
-        "baking": [{"bake_for": f"baker{n}"} for n in range(args.number_of_bakers)],
+        "baking": [
+            {"bake_for": f"baker{n}", "bootstrap": True}
+            for n in range(args.number_of_bakers)
+        ],
         "regular": [{} for n in range(args.number_of_nodes - args.number_of_bakers)],
     }
-
-    # first nodes are acting as bootstrap nodes for the others
-    creation_nodes["baking"][0]["bootstrap"] = True
-    if len(creation_nodes["baking"]) > 1:
-        creation_nodes["baking"][1]["bootstrap"] = True
 
     invitation_nodes = {"baking": [], "regular": [{}]}
 
