@@ -10,7 +10,7 @@ data:
       "activation_account": "{{ (index .Values.accounts 0).name }}",
       "timestamp": "{{ .Values.genesis.bootstrap_timestamp }}",
       "zerotier_in_use": {{ .Values.zerotier_in_use }},
-      "baker_command": "{{ .Values.baker_command }}",
+      "proto_command": "{{ .Values.protocol.command }}",
       "protocol_hash": "{{ .Values.protocol.hash }}"
     }
   NODES: |

@@ -1,5 +1,4 @@
 baker: true
-baker_command: tezos-baker-007-PsDELPH1
 chain_name: YOUR_CHAIN_NAME_HERE
 is_invitation: false
 rpc_auth: false
@@ -13,7 +12,7 @@ images:
   tezos: tezos/tezos:v8-release
 # Images that are part of the tezos-k8s repo go here
 tezos_k8s_images:
-  baker: tezos-k8s-baker:dev
+  baker_endorser: tezos-k8s-baker-endorser:dev
   chain_initiator: tezos-k8s-chain-initiator:dev
   config_generator: tezos-k8s-config-generator:dev
   wait_for_bootstrap: tezos-k8s-wait-for-bootstrap:dev
@@ -23,6 +22,7 @@ tezos_k8s_images:
 protocol:
   bootstrap_mutez: "4000000000000"
   hash: PsDELPH1Kxsxt8f9eWbxQeRxkjfbxoqM52jvs5Y5fBxWWh4ifpo
+  command: 007-PsDELPH1
 genesis:
   genesis_chain_id: "YOUR_GENESIS_CHAIN_ID_HERE"
   bootstrap_timestamp: "YOUR_BOOTSTRAP_TIMESTAMP_HERE"
