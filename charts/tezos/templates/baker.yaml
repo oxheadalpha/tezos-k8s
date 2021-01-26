@@ -97,16 +97,6 @@ spec:
               name: tezos-rpc
             - containerPort: 9732
               name: tezos-net
-          readinessProbe:
-            exec:
-              command:
-                - nc
-                - "-z"
-                - '127.0.0.1'
-                - '8732'
-            initialDelaySeconds: 2
-            periodSeconds: 2
-            timeoutSeconds: 1
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
