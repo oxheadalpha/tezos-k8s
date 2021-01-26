@@ -105,10 +105,16 @@ def get_args():
 
 
 def pull_docker_images(images):
-    print("Pulling docker images...")
     for image in images:
-        subprocess.check_output(f"docker pull {image}", shell=True)
-    print("Done pulling docker images")
+        has_image_return_code = subprocess.run(
+            f"docker inspect --type=image {image} > /dev/null 2>&1", shell=True
+        ).returncode
+        if has_image_return_code == 1:
+            print(f"Pulling docker image {image}")
+            subprocess.check_output(
+                f"docker pull {image}", shell=True, stderr=subprocess.STDOUT
+            )
+            print(f"Done pulling docker image {image}")
 
 
 def main():
