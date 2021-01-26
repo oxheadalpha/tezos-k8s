@@ -70,7 +70,7 @@ Being that all charts are bumped to the same version on release, the parent char
 
 ## Notes
 
-If you use `helm install|upgrade` (instead of devspace) for local charts, make sure you `helm repo update <chart>` to get the latest local dependency chart changes that you've made.
+If you use `helm install|upgrade` (instead of devspace) for local charts, make sure you `helm dependency update <chart>` to get the latest local dependency chart changes that you've made packaged into the parent chart.
 
 # Creating Docker Images
 
