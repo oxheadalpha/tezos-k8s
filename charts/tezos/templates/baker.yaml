@@ -118,7 +118,7 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
-          - name: WHAT
+          - name: DAEMON
             value: baker
         - image: "{{ .Values.tezos_k8s_images.baker_endorser }}"
           imagePullPolicy: IfNotPresent
@@ -136,7 +136,7 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
-          - name: WHAT
+          - name: DAEMON
             value: endorser
 {{- if .Values.zerotier_in_use }}
         - args:
