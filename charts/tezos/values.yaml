@@ -29,11 +29,10 @@ genesis:
 accounts:
   - name: sample1
     key: edsk...
-    private: true
-    baker: true
+    type: secret
   - name: sample2
     key: edsk...
-    private: true
+    type: secret
 nodes:
   baking:
   - bake_for: sample2
