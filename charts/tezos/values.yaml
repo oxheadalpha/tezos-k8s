@@ -30,7 +30,6 @@ accounts:
   - name: sample1
     key: edsk...
     private: true
-    baker: true
   - name: sample2
     key: edsk...
     private: true
