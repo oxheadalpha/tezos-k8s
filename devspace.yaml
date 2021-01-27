@@ -40,7 +40,7 @@ images:
 dev:
   ports:
     - labelSelector:
-        app: tezos-bootstrap-node
+        app: tezos-baking-node
       forward:
         - port: 8732
           remotePort: 8732
