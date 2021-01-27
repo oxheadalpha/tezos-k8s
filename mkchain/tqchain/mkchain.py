@@ -146,12 +146,6 @@ def main():
         "images": {
             "tezos": args.docker_image,
         },
-        "genesis": {
-            "genesis_chain_id": get_genesis_vanity_chain_id(FLEXTESA),
-            "bootstrap_timestamp": datetime.utcnow()
-            .replace(tzinfo=timezone.utc)
-            .isoformat(),
-        },
         "zerotier_in_use": bool(args.zerotier_network),
         "rpc_auth": args.rpc_auth,
         "zerotier_config": {
@@ -160,17 +154,44 @@ def main():
         },
     }
 
+    # preserve pre-existing values, if any (in case of scale-up)
+    old_create_values = {}
+    files_path = f"{os.getcwd()}/{args.chain_name}"
+    if os.path.isfile(f"{files_path}_values.yaml"):
+        with open(f"{files_path}_values.yaml", "r") as yaml_file:
+            old_create_values = yaml.safe_load(yaml_file)
+        if len(old_create_values["nodes"]["baking"]) != args.number_of_bakers:
+            print("ERROR: the number of bakers must not change on a pre-existing chain")
+            exit(1)
+        with open(f"{files_path}_invite_values.yaml", "r") as yaml_file:
+            old_invite_values = yaml.safe_load(yaml_file)
+
+    if old_create_values.get("genesis", None):
+        base_constants["genesis"] = old_create_values["genesis"]
+    else:
+        # create new chain genesis params if brand new chain
+        base_constants["genesis"] = {
+            "genesis_chain_id": get_genesis_vanity_chain_id(FLEXTESA),
+            "bootstrap_timestamp": datetime.utcnow()
+            .replace(tzinfo=timezone.utc)
+            .isoformat(),
+        }
+
     accounts = {"secret": [], "public": []}
-    for account in baking_accounts:
-        keys = gen_key(args.docker_image)
-        for key_type in keys:
-            accounts[key_type].append(
-                {
-                    "name": account,
-                    "key": keys[key_type],
-                    "type": key_type,
-                }
-            )
+    if old_create_values.get("accounts", None):
+        accounts["secret"] = old_create_values["accounts"]
+        accounts["public"] = old_invite_values["accounts"]
+    else:
+        for account in baking_accounts:
+            keys = gen_key(args.docker_image)
+            for key_type in keys:
+                accounts[key_type].append(
+                    {
+                        "name": account,
+                        "key": keys[key_type],
+                        "type": key_type,
+                    }
+                )
 
     creation_nodes = {
         "baking": [{"bake_for": f"baker{n}"} for n in range(args.number_of_bakers)],
@@ -202,7 +223,6 @@ def main():
     }
     invitation_constants.pop("rpc_auth")
 
-    files_path = f"{os.getcwd()}/{args.chain_name}"
     with open(f"{files_path}_values.yaml", "w") as yaml_file:
         yaml.dump(creation_constants, yaml_file)
         print(f"Wrote chain creation constants to {files_path}_values.yaml")
