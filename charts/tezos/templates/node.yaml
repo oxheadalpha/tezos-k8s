@@ -83,6 +83,8 @@ spec:
             - mountPath: /dev/net/tun
               name: dev-net-tun
           env:
+          - name: CHAIN_NAME
+            value: "{{ .Values.chain_name }}"
           - name: POD_NAME
             valueFrom:
               fieldRef:

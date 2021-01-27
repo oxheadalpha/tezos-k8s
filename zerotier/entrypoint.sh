@@ -47,7 +47,24 @@ curl -s -XPOST \
 
 zerotier-cli -D/var/tezos/zerotier -j listnetworks > /var/tezos/zerotier_data.json
 
-# fetch all the network members
-curl -s -XGET \
-  -H "Authorization: Bearer $ZTAUTHTOKEN" \
-  "https://my.zerotier.com/api/network/$NETWORK_ID/member" > /var/tezos/zerotier_network_members.json
+fetch_all_network_members() {
+    curl -s -XGET \
+      -H "Authorization: Bearer $ZTAUTHTOKEN" \
+      "https://my.zerotier.com/api/network/$NETWORK_ID/member" > /var/tezos/zerotier_network_members.json
+}
+
+fetch_all_network_members
+
+# first bootstrap node
+FBN=tezos-baking-node-0.tezos-baking-node
+HOST=$(hostname -f)
+if [ "${HOST##$FBN}" != "$HOST" ]; then
+    printf "do not wait for myself\n"
+    exit 0
+fi
+
+# if not first bootstrap node, wait for any bootstrap node to exist on zerotier
+while ! cat /var/tezos/zerotier_network_members.json |  jq -r ".[].name?" | grep "${CHAIN_NAME}_bootstrap"; do
+    sleep 2
+    fetch_all_network_members
+done

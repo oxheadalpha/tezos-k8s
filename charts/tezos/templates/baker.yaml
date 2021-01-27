@@ -163,6 +163,8 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
+          - name: CHAIN_NAME
+            value: "{{ .Values.chain_name }}"
 {{- end }}
         - image: {{ .Values.tezos_k8s_images.key_importer }}
           name: key-importer
