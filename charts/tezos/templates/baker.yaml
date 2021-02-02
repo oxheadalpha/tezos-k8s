@@ -163,6 +163,9 @@ spec:
         - image: {{ .Values.tezos_k8s_images.wait_for_bootstrap }}
           imagePullPolicy: IfNotPresent
           name: wait-for-bootstrap
+          envFrom:
+            - configMapRef:
+                name: tezos-config
           volumeMounts:
             - mountPath: /var/tezos
               name: var-volume
