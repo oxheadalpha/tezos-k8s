@@ -195,7 +195,7 @@ def main():
 
     creation_nodes = {
         "baking": [{"bake_for": f"baker{n}"} for n in range(args.number_of_bakers)],
-        "regular": [{} for n in range(args.number_of_nodes - args.number_of_bakers)],
+        "regular": [{} for n in range(args.number_of_nodes)],
     }
 
     # first nodes are acting as bootstrap nodes for the others
