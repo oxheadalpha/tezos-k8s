@@ -171,17 +171,16 @@ chain running one node.
 
 ## Adding nodes within the cluster
 
-You can configure a self-contained testnet within your cluster with
-a number of nodes of your choice by passing `--number-of-nodes N` to `mkchain`. Pass this along with your previously used flags (`--zerotier-network` and `--zerotier-token`). You can use this to scale up and down.
+You can configure the number of nodes in your cluster by passing `--number-of-nodes N` to `mkchain`. Pass this along with your previously used flags (`--zerotier-network` and `--zerotier-token`). You can use this to scale up and down.
 
-Or if you previously spun up the chain using `mkchain`, you may scale up/down your setup to an arbitrary number of nodes by adding or removing nodes in the `nodes` list in the values yaml file:
+Or if you previously spun up the chain using `mkchain`, you may scale up/down your setup to an arbitrary number of nodes by adding or removing nodes in the `nodes.regular` list in the values yaml file:
 
 ```yaml
 # <CURRENT WORKING DIRECTORY>/${CHAIN_NAME}_values.yaml
 nodes:
-  - bake_for: baker
+  regular:
+  - {} # first non-baking node
   - {} # second non-baking node
-  - {} # third non-baking node
 ```
 
 To upgrade your Helm release run:
