@@ -120,15 +120,25 @@ def pull_docker_images(images):
 def main():
     args = get_args()
 
-    if args.number_of_nodes < 1:
+    if args.number_of_nodes < 0:
         print(
-            f"Invalid argument --number-of-nodes {args.number_of_nodes}, must be 1 or more"
+            f"Invalid argument --number-of-nodes ({args.number_of_nodes}) "
+            f"must be non-negative"
         )
         exit(1)
 
-    if args.number_of_bakers < 1:
+    if args.number_of_bakers < 0:
         print(
-            f"Invalid argument --number-of-bakers {args.number_of_bakers}, must be 1 or more"
+            f"Invalid argument --number-of-bakers ({args.number_of_bakers}) "
+            f"must be non-negative"
+        )
+        exit(1)
+
+    if args.number_of_nodes + args.number_of_bakers < 1:
+        print(
+            f"Invalid arguments: either "
+            f"--number-of-nodes ({args.number_of_nodes}) or "
+            f"--number-of-bakers ({args.number_of_bakers}) must be non-zero"
         )
         exit(1)
 
@@ -195,7 +205,7 @@ def main():
 
     creation_nodes = {
         "baking": [{"bake_for": f"baker{n}"} for n in range(args.number_of_bakers)],
-        "regular": [{} for n in range(args.number_of_nodes - args.number_of_bakers)],
+        "regular": [{} for n in range(args.number_of_nodes)],
     }
 
     # first nodes are acting as bootstrap nodes for the others
