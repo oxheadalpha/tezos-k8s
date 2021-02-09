@@ -159,6 +159,36 @@ spec:
               name: var-volume
 {{- end }}
       initContainers:
+        - image: {{ .Values.tezos_k8s_images.key_importer }}
+          name: key-importer
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - secretRef:
+                name: tezos-secret
+            - configMapRef:
+                name: tezos-config
+          volumeMounts:
+            - mountPath: /var/tezos
+              name: var-volume
+        - args:
+            - "-c"
+            - "[ -f /var/tezos/node/identity.json ] || (mkdir -p /var/tezos/node && /usr/local/bin/tezos-node identity generate 0 --data-dir /var/tezos/node --config-file /etc/tezos/config.json)"
+          command:
+            - /bin/sh
+          image: {{ .Values.images.tezos | quote }}
+          name: identity-job
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+        - image: {{ .Values.tezos_k8s_images.wait_for_bootstrap }}
+          imagePullPolicy: IfNotPresent
+          name: wait-for-bootstrap
+          volumeMounts:
+            - mountPath: /var/tezos
+              name: var-volume
 {{- if .Values.zerotier_in_use }}
         - envFrom:
             - configMapRef:
@@ -184,17 +214,6 @@ spec:
               fieldRef:
                 fieldPath: metadata.name
 {{- end }}
-        - image: {{ .Values.tezos_k8s_images.key_importer }}
-          name: key-importer
-          imagePullPolicy: IfNotPresent
-          envFrom:
-            - secretRef:
-                name: tezos-secret
-            - configMapRef:
-                name: tezos-config
-          volumeMounts:
-            - mountPath: /var/tezos
-              name: var-volume
         - image: {{ .Values.tezos_k8s_images.config_generator }}
           imagePullPolicy: IfNotPresent
           name: config-generator
@@ -211,25 +230,6 @@ spec:
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
-            - mountPath: /var/tezos
-              name: var-volume
-        - args:
-            - "-c"
-            - "[ -f /var/tezos/node/identity.json ] || (mkdir -p /var/tezos/node && /usr/local/bin/tezos-node identity generate 0 --data-dir /var/tezos/node --config-file /etc/tezos/config.json)"
-          command:
-            - /bin/sh
-          image: {{ .Values.images.tezos | quote }}
-          name: identity-job
-          imagePullPolicy: IfNotPresent
-          volumeMounts:
-            - mountPath: /etc/tezos
-              name: config-volume
-            - mountPath: /var/tezos
-              name: var-volume
-        - image: {{ .Values.tezos_k8s_images.wait_for_bootstrap }}
-          imagePullPolicy: IfNotPresent
-          name: wait-for-bootstrap
-          volumeMounts:
             - mountPath: /var/tezos
               name: var-volume
       securityContext:

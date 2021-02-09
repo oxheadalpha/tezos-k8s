@@ -4,6 +4,7 @@
 # The IP is meant to be passed to the tezos container.
 # Then, this container should be restarted with a different command: `zerotier-one/var/tezos/zerotier`
 set -x
+set -e
 
 supervisord -c /etc/supervisor/supervisord.conf
 
