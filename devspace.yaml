@@ -24,10 +24,6 @@ images:
     image: tezos-k8s-chain-initiator
     dockerfile: ./chain-initiator/Dockerfile
     context: ./chain-initiator
-  key-importer:
-    image: tezos-k8s-key-importer
-    dockerfile: ./key-importer/Dockerfile
-    context: ./key-importer
   wait-for-bootstrap:
     image: tezos-k8s-wait-for-bootstrap
     dockerfile: ./wait-for-bootstrap/Dockerfile

@@ -14,9 +14,8 @@ fi
 POD_INDEX=$(echo $POD_NAME | sed -e s/tezos-baking-node-//)
 baker_account=$(echo $NODES | jq -r ".baking[${POD_INDEX}].bake_for")
 
-if [ -z "$baker_account" ]; then
-    echo "Baker account (bake_for:) not set" 1>&2
-    exit 1
+if [ "$baker_account" = null ]; then
+    baker_account="baker$POD_INDEX"
 fi
 
 CLIENT="$TEZ_BIN/tezos-client -d $CLIENT_DIR"
