@@ -186,10 +186,8 @@ def main():
     else:
         # create new chain genesis params if brand new chain
         base_constants["genesis"] = {
-            "genesis_chain_id": get_genesis_vanity_chain_id(FLEXTESA),
-            "bootstrap_timestamp": datetime.utcnow()
-            .replace(tzinfo=timezone.utc)
-            .isoformat(),
+            "block": get_genesis_vanity_chain_id(FLEXTESA),
+            "timestamp": datetime.utcnow().replace(tzinfo=timezone.utc).isoformat(),
         }
 
     accounts = {"secret": [], "public": []}
