@@ -210,7 +210,6 @@ The member needs to:
 
 1. Follow the [prerequisite installation instructions](#installing-prerequisites)
 2. [Start minikube](#start-minikube)
-3. [Install mkchain](./mkchain/README.md#install-mkchain)
 
 Then run:
 
