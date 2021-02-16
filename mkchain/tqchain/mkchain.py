@@ -168,6 +168,11 @@ def main():
     old_create_values = {}
     files_path = f"{os.getcwd()}/{args.chain_name}"
     if os.path.isfile(f"{files_path}_values.yaml"):
+        print(
+            "Found old values file. Some pre-existing values will remain the "
+            "same, e.g. public/private keys. Please delete the values file to "
+            "generate all new values.\n"
+        )
         with open(f"{files_path}_values.yaml", "r") as yaml_file:
             old_create_values = yaml.safe_load(yaml_file)
         if len(old_create_values["nodes"]["baking"]) != args.number_of_bakers:
