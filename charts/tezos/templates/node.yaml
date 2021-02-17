@@ -23,6 +23,9 @@ spec:
             - /etc/tezos/config.json
           command:
             - /usr/local/bin/tezos-node
+          env:
+            - name: TEZOS_EVENTS_CONFIG
+              value: "file-descriptor-path:/dev/stdout"
           image: {{ .Values.images.tezos | quote }}
           imagePullPolicy: IfNotPresent
           name: tezos-node
@@ -36,6 +39,9 @@ spec:
               name: config-volume
             - mountPath: /var/tezos
               name: var-volume
+        - name: logger
+          image: "{{ .Values.tezos_k8s_images.logger }}"
+          imagePullPolicy: IfNotPresent
 {{- if eq .Values.chain_type "private" }}
         - args:
             - "-c"

@@ -36,6 +36,10 @@ images:
     image: tezos-k8s-config-generator
     dockerfile: ./config-generator/Dockerfile
     context: ./config-generator
+  logger:
+    image: tezos-k8s-logger
+    dockerfile: ./logger/Dockerfile
+    context: ./logger
 
 dev:
   ports:

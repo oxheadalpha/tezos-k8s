@@ -80,6 +80,9 @@ spec:
             - /etc/tezos/config.json
           command:
             - /usr/local/bin/tezos-node
+          env:
+            - name: TEZOS_EVENTS_CONFIG
+              value: "file-descriptor-path:/dev/stdout"
           image: "{{ .Values.images.tezos }}"
           imagePullPolicy: IfNotPresent
           name: tezos-node
@@ -105,6 +108,8 @@ spec:
             - secretRef:
                 name: tezos-secret
           env:
+          - name: TEZOS_EVENTS_CONFIG
+            value: "file-descriptor-path:/dev/stdout"
           - name: POD_NAME
             valueFrom:
               fieldRef:
@@ -123,12 +128,17 @@ spec:
             - secretRef:
                 name: tezos-secret
           env:
+          - name: TEZOS_EVENTS_CONFIG
+            value: "file-descriptor-path:/dev/stdout"
           - name: POD_NAME
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
           - name: DAEMON
             value: endorser
+        - name: logger
+          image: "{{ .Values.tezos_k8s_images.logger }}"
+          imagePullPolicy: IfNotPresent
 {{- if eq .Values.chain_type "private" }}
         - args:
             - "-c"
