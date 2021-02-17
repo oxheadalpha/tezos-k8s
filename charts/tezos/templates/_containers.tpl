@@ -117,6 +117,8 @@
         name: tezos-config
   env:
 {{- include "tezos.localvars.pod_envvars" . | indent 4 }}
+    - name: TEZOS_EVENTS_CONFIG
+      value: "file-descriptor-path:/dev/stdout?level-at-least=info"
 {{- end }}
 {{- end }}
 
@@ -140,6 +142,15 @@
       name: config-volume
     - mountPath: /var/tezos
       name: var-volume
+  envFrom:
+    - configMapRef:
+        name: tezos-config
+  env:
+{{- include "tezos.localvars.pod_envvars" . | indent 4 }}
+    - name: DAEMON
+      value: baker
+    - name: TEZOS_EVENTS_CONFIG
+      value: "file-descriptor-path:/dev/stdout?level-at-least=notice"
 {{- end }}
 
 {{- define "tezos.container.baker" }}
@@ -164,6 +175,8 @@
 {{- include "tezos.localvars.pod_envvars" . | indent 4 }}
     - name: DAEMON
       value: baker
+    - name: TEZOS_EVENTS_CONFIG
+      value: "file-descriptor-path:/dev/stdout?level-at-least=info"
 {{- end }}
 
 {{- define "tezos.container.endorser" }}
@@ -190,6 +203,28 @@
 {{- include "tezos.localvars.pod_envvars" . | indent 4 }}
     - name: DAEMON
       value: endorser
+    - name: TEZOS_EVENTS_CONFIG
+      value: "file-descriptor-path:/dev/stdout?level-at-least=info"
+{{- end }}
+
+{{- define "tezos.container.logger" }}
+- image: {{ .Values.tezos_k8s_images.utils }}
+  imagePullPolicy: IfNotPresent
+  name: logger
+  args:
+    - "logger"
+  envFrom:
+    - secretRef:
+        name: tezos-secret
+    - configMapRef:
+        name: tezos-config
+  env:
+{{- include "tezos.localvars.pod_envvars" . | indent 4 }}
+  volumeMounts:
+    - mountPath: /etc/tezos
+      name: config-volume
+    - mountPath: /var/tezos
+      name: var-volume
 {{- end }}
 
 {{/*
