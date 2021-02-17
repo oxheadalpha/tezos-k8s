@@ -138,7 +138,7 @@ spec:
                 fieldPath: metadata.name
           - name: DAEMON
             value: endorser
-{{- if .Values.zerotier_in_use }}
+{{- if eq .Values.chain_type "private" }}
         - args:
             - "-c"
             - "echo 'starting zerotier' && zerotier-one /var/tezos/zerotier"
@@ -189,7 +189,7 @@ spec:
           volumeMounts:
             - mountPath: /var/tezos
               name: var-volume
-{{- if .Values.zerotier_in_use }}
+{{- if eq .Values.chain_type "private" }}
         - envFrom:
             - configMapRef:
                 name: zerotier-config

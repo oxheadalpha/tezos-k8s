@@ -2,7 +2,8 @@ baker: true
 chain_name: YOUR_CHAIN_NAME_HERE
 is_invitation: false
 rpc_auth: false
-zerotier_in_use: false
+chain_type: public
+network: edo2net
 zerotier_config:
   zerotier_network: YOUR_NETWORK_ID_HERE
   zerotier_token: YOUR_ZEROTIER_TOKEN_HERE
