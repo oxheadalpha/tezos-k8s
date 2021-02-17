@@ -183,12 +183,14 @@ spec:
               name: config-volume
             - mountPath: /var/tezos
               name: var-volume
+{{- if not .Values.is_invitation }}
         - image: {{ .Values.tezos_k8s_images.wait_for_bootstrap }}
           imagePullPolicy: IfNotPresent
           name: wait-for-bootstrap
           volumeMounts:
             - mountPath: /var/tezos
               name: var-volume
+{{- end }}
 {{- if eq .Values.chain_type "private" }}
         - envFrom:
             - configMapRef:
