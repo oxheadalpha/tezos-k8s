@@ -3,10 +3,17 @@ import json
 import os
 import socket
 
+from base58 import b58encode_check, b58decode_check
+from hashlib import blake2b
+from nacl.signing import SigningKey
+
 CHAIN_PARAMS = json.loads(os.environ["CHAIN_PARAMS"])
+ACCOUNTS = json.loads(os.environ["ACCOUNTS"])
 
 
 def main():
+    fill_in_missing_genesis_block()
+    import_keys()
     print("Starting tezos config file generation")
     main_parser = argparse.ArgumentParser()
     main_parser.add_argument(
@@ -43,7 +50,8 @@ def main():
                 bootstrap_peers.extend(get_zerotier_bootstrap_peer_ips())
         else:
             local_bootstrap_peers = []
-            for i, node in enumerate(CHAIN_PARAMS["nodes"]["baking"]):
+            bakers = CHAIN_PARAMS["nodes"]["baking"]
+            for i, node in enumerate(bakers):
                 if (
                     node.get("bootstrap", False)
                     and f"tezos-baking-node-{i}" not in socket.gethostname()
@@ -52,6 +60,8 @@ def main():
                         f"tezos-baking-node-{i}.tezos-baking-node:9732"
                     )
             bootstrap_peers.extend(local_bootstrap_peers)
+            if not bootstrap_peers:
+                bootstrap_peers=[f"tezos-baking-node-0.tezos-baking-node:9732"]
 
         config_json = json.dumps(
             get_node_config(
@@ -183,6 +193,155 @@ def generate_parameters_config(parameters_argv):
     namespace = parser.parse_args(parameters_argv)
     return vars(namespace)
 
+#
+# If CHAIN_PARAMS["genesis_block"] hasn't been specified, we
+# generate a deterministic one.
+
+def fill_in_missing_genesis_block():
+    print("Ensure that we have genesis_block")
+    if CHAIN_PARAMS["genesis_block"] == 'YOUR_GENESIS_CHAIN_ID_HERE':
+        print("  Generating missing genesis_block")
+        seed = "foo"
+        gbk  = blake2b(seed.encode(), digest_size=32).digest()
+        gbk_b58 = b58encode_check(b"\x01\x34" + gbk).decode("utf-8")
+        CHAIN_PARAMS["genesis_block"] = gbk_b58
+
+#
+# flatten_accounts() turns ACCOUNTS into a more amenable data structure:
+#
+# We return:
+#
+#    [{ "name" : "baker0, "keys" : { "secret" : s1, "public" : pk0 }}]
+#
+# This is more natural, because secret/public keys are matches and need
+# be processed together.  Neither key must be specified, later code will
+# fill in the details if they are not specified.
+#
+# We then create any missing accounts that are refered to by
+# CHAIN_PARAMS["nodes"]["baking"] to ensure that all named accounts
+# exist.
+#
+# If we then find that we have been asked to make more bakers
+# than accounts were specified, we create accounts of the form
+#
+#	baker<baker num>
+#
+# and fill in the details appropriately.
+
+def flatten_accounts():
+    accounts = {}
+    for name, type, key in [[a["name"],a["type"],a["key"]] for a in ACCOUNTS]:
+        if name in accounts:
+            if type in accounts[name]:
+                print("  WARNING: key specified twice! " + name + ":" + type)
+            else:
+                accounts[name][type] = key
+        else:
+            accounts[name] = { type : key }
+    i=0
+    for i, node in enumerate(CHAIN_PARAMS["nodes"]["baking"]):
+        acct = node.get("bake_for", "baker" + str(i))
+        if acct not in accounts:
+            print("    Creating specified but missing account " + acct);
+            accounts[acct] = {}
+    return accounts
+
+#
+# import_keys() creates three files in /var/tezos/client which specify
+# the keys for each of the accounts: secret_keys, public_keys, and
+# public_key_hashs.
+#
+# We iterate over flatten_accounts() which ensures that we
+# have a full set of accounts for which to write keys.
+#
+# If the account has a private key specified, we parse it and use it to
+# derive the public key and its hash.  If a public key is also specified,
+# we check to ensure that it matches the secret key.  If neither a secret
+# nor a public key are specified, then we derive one from a hash of
+# the account name and the gensis_block (which may be generated above.)
+#
+# Both specified and generated keys are stable for the same _values.yaml
+# files.  The specified keys for obvious reasons.  The generated keys
+# are stable because we take care not to use any information that is not
+# specified in the _values.yaml file in the seed used to generate them.
+
+edsk = b"\x0d\x0f\x3a\x07";
+edpk = b"\x0d\x0f\x25\xd9"
+tz1  = b"\x06\xa1\x9f"
+
+def import_keys():
+    print("Importing keys")
+    tezdir = "/var/tezos/client"
+    os.makedirs(tezdir, exist_ok=True)
+    os.chmod(tezdir, 0o777);
+    secret_keys = []
+    public_keys = []
+    public_key_hashs = []
+    for name, keys in flatten_accounts().items():
+        print("  Making account: " + name)
+        sk = pk = None
+        if "secret" in keys:
+            print("    Secret key specified")
+            sk = b58decode_check(keys["secret"])
+            if sk[0:4] != edsk:
+                print("WARNING: unrecognised secret key prefix")
+            sk = sk[4:]
+        if "public" in keys:
+            print("    Public key specified")
+            pk = b58decode_check(keys["public"])
+            if pk[0:4] != edpk:
+                print("WARNING: unrecognised public key prefix")
+            pk = pk[4:]
+
+        if sk == None and pk == None:
+            print("    Secret key derived from genesis_block")
+            seed = name + ":" + CHAIN_PARAMS["genesis_block"]
+            sk = blake2b(seed.encode(), digest_size=32).digest()
+
+        if sk != None:
+            if pk == None:
+                print("    Deriving public key from secret key")
+            tmp_pk = SigningKey(sk).verify_key.encode()
+            if pk != None and pk != tmp_pk:
+                print("WARNING: secret/public key mismatch for " + name)
+                print("WARNING: using derived key not specified key")
+            pk = tmp_pk
+
+        pkh = blake2b(pk, digest_size=20).digest()
+
+        pk_b58  = b58encode_check(edpk + pk).decode("utf-8")
+        pkh_b58 = b58encode_check(tz1 + pkh).decode("utf-8")
+
+        if sk != None:
+            print("    Appending secret key")
+            sk_b58 = b58encode_check(edsk + sk).decode("utf-8")
+            secret_keys.append({
+                "name" : name,
+                "value": "unencrypted:" + sk_b58
+            })
+
+        print("    Appending public key")
+        public_keys.append({
+            "name" : name,
+            "value": {
+                "locator" : "unencrypted:" + pk_b58,
+                "key": pk_b58
+            }
+        })
+
+        print("    Appending public key hash")
+        public_key_hashs.append({
+            "name" : name,
+            "value": pkh_b58
+        })
+
+    print("  Writing " + tezdir + "/secret_keys")
+    json.dump(secret_keys, open(tezdir + "/secret_keys", "w"), indent=4)
+    print("  Writing " + tezdir + "/public_keys")
+    json.dump(public_keys, open(tezdir + "/public_keys", "w"), indent=4)
+    print("  Writing " + tezdir + "/public_key_hashs")
+    json.dump(public_key_hashs, open(tezdir + "/public_key_hashs", "w"),
+              indent=4)
 
 if __name__ == "__main__":
     main()

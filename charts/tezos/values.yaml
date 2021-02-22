@@ -17,7 +17,6 @@ tezos_k8s_images:
   chain_initiator: tezos-k8s-chain-initiator:dev
   config_generator: tezos-k8s-config-generator:dev
   wait_for_bootstrap: tezos-k8s-wait-for-bootstrap:dev
-  key_importer: tezos-k8s-key-importer:dev
   zerotier: tezos-k8s-zerotier:dev
 
 protocol:
@@ -25,19 +24,14 @@ protocol:
   hash: PsDELPH1Kxsxt8f9eWbxQeRxkjfbxoqM52jvs5Y5fBxWWh4ifpo
   command: 007-PsDELPH1
 genesis:
-  genesis_chain_id: "YOUR_GENESIS_CHAIN_ID_HERE"
-  bootstrap_timestamp: "YOUR_BOOTSTRAP_TIMESTAMP_HERE"
+  block: "YOUR_GENESIS_CHAIN_ID_HERE"
+  timestamp:  '2021-02-12T17:02:24.061398+00:00'
+bootstrap_peers: []
 accounts:
-  - name: sample1
-    key: edsk...
-    type: secret
-  - name: sample2
-    key: edsk...
-    type: secret
+   - name: baker0
 nodes:
   baking:
-  - bake_for: sample2
-    bootstrap: true
+  - {}
   regular:
   - {}
 # TODO
