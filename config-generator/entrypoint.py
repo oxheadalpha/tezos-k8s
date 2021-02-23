@@ -48,6 +48,9 @@ def main():
                 net_addr = json.load(f)[0]["assignedAddresses"][0].split("/")[0]
             if bootstrap_peers == []:
                 bootstrap_peers.extend(get_zerotier_bootstrap_peer_ips())
+        if CHAIN_PARAMS["chain_type"] == "public":
+            with open("/tmp/data/config.json", "r") as f:
+                bootstrap_peers.extend(json.load(f)["p2p"]["bootstrap-peers"])
         else:
             local_bootstrap_peers = []
             bakers = CHAIN_PARAMS["nodes"]["baking"]
@@ -114,14 +117,15 @@ def get_node_config(
                 "listen-addrs": [f"{os.getenv('MY_POD_IP')}:8732", "127.0.0.1:8732"],
                 },
             "p2p": {
-                "expected-proof-of-work": 0,
+                "bootstrap-peers": bootstrap_peers,
                 "listen-addr": ( net_addr + ":9732" if net_addr else "[::]:9732" )
-                }
-            }
+                },
+            #"log": { "level": "debug"},
+        }
     if CHAIN_PARAMS["chain_type"] == "public":
         node_config["network"] = CHAIN_PARAMS["network"]
     else:
-        node_config["p2p"]["bootstrap-peers"] = bootstrap_nodes
+        node_config["p2p"]["expected-proof-of-work"] = 0
         node_config["network"] = {
                 "chain_name": chain_name,
                 "sandboxed_chain_name": "SANDBOZED_TEZOS",

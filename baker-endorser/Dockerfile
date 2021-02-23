@@ -1,4 +1,4 @@
-FROM tezos/tezos:v8-release
+FROM tezos/tezos:master
 RUN sudo apk add jq bash
 COPY entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]

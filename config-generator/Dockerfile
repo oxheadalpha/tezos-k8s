@@ -1,8 +1,8 @@
-FROM python:alpine
+FROM tezos/tezos:master
 ENV PYTHONUNBUFFERED=1
-RUN apk add --no-cache --virtual .build-deps gcc musl-dev libffi-dev make \
-     && pip install base58 pynacl \
-     && apk del .build-deps gcc musl-dev libffi-dev make
+RUN sudo apk add --no-cache --virtual .build-deps jq gcc py3-pip python3-dev musl-dev libffi-dev make \
+     && pip install base58 pynacl
 COPY entrypoint.py /
-ENTRYPOINT ["python", "/entrypoint.py"]
+COPY entrypoint.sh /
+ENTRYPOINT ["/entrypoint.sh"]
 CMD []
