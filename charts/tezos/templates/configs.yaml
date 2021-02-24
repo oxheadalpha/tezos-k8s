@@ -11,6 +11,7 @@ data:
       "timestamp": "{{ .Values.genesis.timestamp }}",
       "chain_type": "{{ .Values.chain_type }}",
       "network": "{{ .Values.network }}",
+      "snapshot_url": "{{ .Values.snapshot_url }}",
       "proto_command": "{{ .Values.protocol.command }}",
       "protocol_hash": "{{ .Values.protocol.hash }}"
     }

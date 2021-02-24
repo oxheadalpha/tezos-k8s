@@ -18,7 +18,9 @@ tezos_k8s_images:
   config_generator: tezos-k8s-config-generator:dev
   wait_for_bootstrap: tezos-k8s-wait-for-bootstrap:dev
   zerotier: tezos-k8s-zerotier:dev
+  snapshot_downloader: tezos-k8s-snapshot-downloader:dev
 
+snapshot_url: https://mainnet.xtz-shots.io/rolling
 protocol:
   bootstrap_mutez: "4000000000000"
   hash: PsDELPH1Kxsxt8f9eWbxQeRxkjfbxoqM52jvs5Y5fBxWWh4ifpo

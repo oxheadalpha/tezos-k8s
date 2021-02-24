@@ -112,13 +112,16 @@ def get_node_config(
     net_addr=None,
 ):
 
-    node_config = { "data-dir": "/var/tezos/node",
+    node_config = { "data-dir": "/var/tezos/node/data",
             "rpc": {
                 "listen-addrs": [f"{os.getenv('MY_POD_IP')}:8732", "127.0.0.1:8732"],
                 },
             "p2p": {
                 "bootstrap-peers": bootstrap_peers,
                 "listen-addr": ( net_addr + ":9732" if net_addr else "[::]:9732" )
+                },
+            "shell": {
+                "history_mode": "rolling"
                 },
             #"log": { "level": "debug"},
         }
