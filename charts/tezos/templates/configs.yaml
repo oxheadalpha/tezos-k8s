@@ -7,7 +7,7 @@ data:
       "nodes": {{ toJson .Values.nodes }},
       "chain_name": "{{ .Values.chain_name }}",
       "genesis_block": "{{ .Values.genesis.block }}",
-      "activation_account": "{{ (index .Values.accounts 0).name }}",
+      "activation_account": "{{ default "baker0" (first .Values.accounts).name }}",
       "timestamp": "{{ .Values.genesis.timestamp }}",
       "zerotier_in_use": {{ .Values.zerotier_in_use }},
       "proto_command": "{{ .Values.protocol.command }}",

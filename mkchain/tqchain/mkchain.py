@@ -1,8 +1,5 @@
 import argparse
 import os
-import random
-import string
-import subprocess
 import sys
 from datetime import datetime, timezone
 
@@ -13,52 +10,6 @@ from ._version import get_versions
 sys.path.insert(0, "tqchain")
 
 __version__ = get_versions()["version"]
-
-
-def run_docker(image, entrypoint, *args):
-    return subprocess.check_output(
-        "docker run --entrypoint %s --rm %s %s" % (entrypoint, image, " ".join(args)),
-        stderr=subprocess.STDOUT,
-        shell=True,
-    )
-
-
-def extract_key(keys, index: int) -> bytes:
-    return keys[index].split(b":")[index].strip().decode("ascii")
-
-
-def gen_key(image):
-    keys = run_docker(
-        image,
-        "sh",
-        "-c",
-        "'/usr/local/bin/tezos-client --protocol PsDELPH1Kxsx gen keys mykey && /usr/local/bin/tezos-client --protocol PsDELPH1Kxsx show address mykey -S'",
-    ).split(b"\n")
-
-    return {"public": extract_key(keys, 1), "secret": extract_key(keys, 2)}
-
-
-def get_genesis_vanity_chain_id(docker_image, seed_len=16):
-    seed = "".join(
-        random.choice(string.ascii_uppercase + string.digits) for _ in range(seed_len)
-    )
-
-    return (
-        run_docker(
-            docker_image,
-            "flextesa",
-            "vani",
-            '""',
-            "--seed",
-            seed,
-            "--first",
-            "--machine-readable",
-            "csv",
-        )
-        .decode("utf-8")
-        .split(",")[1]
-    )
-
 
 CHAIN_CONSTANTS = {
     "number_of_nodes": {
@@ -104,19 +55,6 @@ def get_args():
     return parser.parse_args()
 
 
-def pull_docker_images(images):
-    for image in images:
-        has_image_return_code = subprocess.run(
-            f"docker inspect --type=image {image} > /dev/null 2>&1", shell=True
-        ).returncode
-        if has_image_return_code != 0:
-            print(f"Pulling docker image {image}")
-            subprocess.check_output(
-                f"docker pull {image}", shell=True, stderr=subprocess.STDOUT
-            )
-            print(f"Done pulling docker image {image}")
-
-
 def main():
     args = get_args()
 
@@ -141,15 +79,6 @@ def main():
             f"--number-of-bakers ({args.number_of_bakers}) must be non-zero"
         )
         exit(1)
-
-    # Dirty fix. If tezos image doesn't exist, pull it before `docker run` can
-    # pull it. This is to avoid parsing extra output. Preferably, we want to get
-    # rid of docker dependency from mkchain.
-    FLEXTESA = "registry.gitlab.com/tezos/flextesa:01e3f596-run"
-    images = [FLEXTESA, args.docker_image]
-    pull_docker_images(images)
-
-    baking_accounts = [f"baker{n}" for n in range(args.number_of_bakers)]
 
     base_constants = {
         "chain_name": args.chain_name,
@@ -186,25 +115,15 @@ def main():
     else:
         # create new chain genesis params if brand new chain
         base_constants["genesis"] = {
-            "block": get_genesis_vanity_chain_id(FLEXTESA),
             "timestamp": datetime.utcnow().replace(tzinfo=timezone.utc).isoformat(),
         }
 
+    # These accounts are only what users manually added to values.yaml and
+    # invite_values.yaml.
     accounts = {"secret": [], "public": []}
     if old_create_values.get("accounts", None):
         accounts["secret"] = old_create_values["accounts"]
         accounts["public"] = old_invite_values["accounts"]
-    else:
-        for account in baking_accounts:
-            keys = gen_key(args.docker_image)
-            for key_type in keys:
-                accounts[key_type].append(
-                    {
-                        "name": account,
-                        "key": keys[key_type],
-                        "type": key_type,
-                    }
-                )
 
     creation_nodes = {
         "baking": [{"bake_for": f"baker{n}"} for n in range(args.number_of_bakers)],
