@@ -131,7 +131,7 @@ def get_node_config(
         node_config["p2p"]["expected-proof-of-work"] = 0
         node_config["network"] = {
                 "chain_name": chain_name,
-                "sandboxed_chain_name": "SANDBOZED_TEZOS",
+                "sandboxed_chain_name": "SANDBOXED_TEZOS",
                 "default_bootstrap_peers": [],
                 "genesis": {
                     "timestamp": timestamp,
@@ -279,8 +279,6 @@ tz1  = b"\x06\xa1\x9f"
 def import_keys():
     print("Importing keys")
     tezdir = "/var/tezos/client"
-    os.makedirs(tezdir, exist_ok=True)
-    os.chmod(tezdir, 0o777);
     secret_keys = []
     public_keys = []
     public_key_hashs = []
