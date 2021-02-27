@@ -130,12 +130,22 @@ Set [unbuffered IO](https://docs.python.org/3.6/using/cmdline.html#envvar-PYTHON
 export PYTHONUNBUFFERED=x
 ```
 
-## Start your chain
+## Chain types
+
+There are 3 types of chains supported:
+
+* **isolated**: self-sufficient private chain. Does not connect to the outside world,
+* **private**: private chain on a zerotier network. Can span multiple clusters,
+* **public**: public chain such as a public testnet or Tezos mainnet.
+
+The `--chain-type` parameter lets you choose between these different types.
+
+## Start your private chain
 
 Run the following commands to create the Helm values, get the Helm chart repo, and install the Helm chart to start your chain.
 
 ```shell
-mkchain $CHAIN_NAME --zerotier-network $ZT_NET --zerotier-token $ZT_TOKEN
+mkchain $CHAIN_NAME --zerotier-network $ZT_NET --zerotier-token $ZT_TOKEN --chain-type private
 
 helm repo add tqtezos https://tqtezos.github.io/tezos-helm-charts
 

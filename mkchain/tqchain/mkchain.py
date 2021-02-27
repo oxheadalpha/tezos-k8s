@@ -71,6 +71,10 @@ CHAIN_CONSTANTS = {
         "default": 1,
         "type": int,
     },
+    "chain_type": {"help": "Type of chain: public, private, isolated",
+        "default": "isolated",
+        },
+    "network": {"help": "Name of the tezos public network to connect to "},
     "zerotier_network": {"help": "Zerotier network id for external chain access"},
     "zerotier_token": {"help": "Zerotier token for external chain access"},
     "bootstrap_peer": {"help": "peer ip to join"},
@@ -156,7 +160,7 @@ def main():
         "images": {
             "tezos": args.docker_image,
         },
-        "zerotier_in_use": bool(args.zerotier_network),
+        "chain_type": args.chain_type,
         "rpc_auth": args.rpc_auth,
         "zerotier_config": {
             "zerotier_network": args.zerotier_network,
@@ -189,6 +193,9 @@ def main():
             "block": get_genesis_vanity_chain_id(FLEXTESA),
             "timestamp": datetime.utcnow().replace(tzinfo=timezone.utc).isoformat(),
         }
+
+    if base_constants["chain_type"] == "public":
+        base_constants["network"] = ( args.network if args.network else "mainnet" )
 
     accounts = {"secret": [], "public": []}
     if old_create_values.get("accounts", None):
