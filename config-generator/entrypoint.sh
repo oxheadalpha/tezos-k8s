@@ -25,4 +25,6 @@ sudo mkdir -p /var/tezos/client
 sudo chmod -R 777 /var/tezos/client
 python3 /entrypoint.py $@
 
-rm -r /tmp/data/
+if [ "${chain_type}" == "public" ]; then
+    rm -r /tmp/data/
+fi
