@@ -63,6 +63,31 @@ spec:
               name: var-volume
 {{- end }}
       initContainers:
+{{- if eq .Values.chain_type "private" }}
+        - envFrom:
+            - configMapRef:
+                name: zerotier-config
+          image: "{{ .Values.tezos_k8s_images.zerotier }}"
+          imagePullPolicy: IfNotPresent
+          name: get-zerotier-ip
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+                - NET_RAW
+                - SYS_ADMIN
+            privileged: true
+          volumeMounts:
+            - mountPath: /var/tezos
+              name: var-volume
+            - mountPath: /dev/net/tun
+              name: dev-net-tun
+          env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+{{- end }}
         - image: {{ .Values.tezos_k8s_images.config_generator }}
           imagePullPolicy: IfNotPresent
           name: config-generator
@@ -101,31 +126,6 @@ spec:
           volumeMounts:
             - mountPath: /var/tezos
               name: var-volume
-{{- end }}
-{{- if eq .Values.chain_type "private" }}
-        - envFrom:
-            - configMapRef:
-                name: zerotier-config
-          image: "{{ .Values.tezos_k8s_images.zerotier }}"
-          imagePullPolicy: IfNotPresent
-          name: get-zerotier-ip
-          securityContext:
-            capabilities:
-              add:
-                - NET_ADMIN
-                - NET_RAW
-                - SYS_ADMIN
-            privileged: true
-          volumeMounts:
-            - mountPath: /var/tezos
-              name: var-volume
-            - mountPath: /dev/net/tun
-              name: dev-net-tun
-          env:
-          - name: POD_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.name
 {{- end }}
       securityContext:
         fsGroup: 100

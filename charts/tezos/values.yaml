@@ -23,8 +23,8 @@ tezos_k8s_images:
 snapshot_url: https://mainnet.xtz-shots.io/rolling
 protocol:
   bootstrap_mutez: "4000000000000"
-  hash: PsDELPH1Kxsxt8f9eWbxQeRxkjfbxoqM52jvs5Y5fBxWWh4ifpo
-  command: 007-PsDELPH1
+  hash: PtEdo2ZkT9oKpimTah6x2embF25oss54njMuPzkJTEi5RqfdZFA
+  command: 008-PtEdo2Zk
 genesis:
   block: "YOUR_GENESIS_CHAIN_ID_HERE"
   timestamp:  '2021-02-12T17:02:24.061398+00:00'
