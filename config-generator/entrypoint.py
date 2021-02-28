@@ -120,13 +120,11 @@ def get_node_config(
                 "bootstrap-peers": bootstrap_peers,
                 "listen-addr": ( net_addr + ":9732" if net_addr else "[::]:9732" )
                 },
-            "shell": {
-                "history_mode": "rolling"
-                },
             #"log": { "level": "debug"},
         }
     if CHAIN_PARAMS["chain_type"] == "public":
         node_config["network"] = CHAIN_PARAMS["network"]
+        node_config["shell"] = { "history_mode": "rolling" }
     else:
         node_config["p2p"]["expected-proof-of-work"] = 0
         node_config["network"] = {
