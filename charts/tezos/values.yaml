@@ -10,7 +10,7 @@ zerotier_config:
 
 # Images not part of the tezos-k8s repo go here
 images:
-  tezos: master_328bc6c3_20210215194506
+  tezos: v8-release
 # Images that are part of the tezos-k8s repo go here
 tezos_k8s_images:
   baker_endorser: tezos-k8s-baker-endorser:dev

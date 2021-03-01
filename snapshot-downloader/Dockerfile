@@ -1,4 +1,4 @@
-FROM tezos/tezos:master_328bc6c3_20210215194506
+FROM tezos/tezos:v8-release
 RUN sudo apk add curl lz4 xz jq
 COPY entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]

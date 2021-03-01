@@ -1,4 +1,4 @@
-FROM tezos/tezos:master_328bc6c3_20210215194506
+FROM tezos/tezos:v8-release
 RUN sudo apk add jq netcat-openbsd
 COPY entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]
