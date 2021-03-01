@@ -6,10 +6,11 @@ TEZ_VAR=/var/tezos
 TEZ_BIN=/usr/local/bin
 CLIENT_DIR="$TEZ_VAR/client"
 NODE_DIR="$TEZ_VAR/node"
+NODE_DATA_DIR="$TEZ_VAR/node/data"
 
 proto_command=$(echo $CHAIN_PARAMS | jq -r '.proto_command')
 if [ "${DAEMON}" == "baker" ]; then
-    extra_args="with local node $NODE_DIR"
+    extra_args="with local node $NODE_DATA_DIR"
 fi
 POD_INDEX=$(echo $POD_NAME | sed -e s/tezos-baking-node-//)
 baker_account=$(echo $NODES | jq -r ".baking[${POD_INDEX}].bake_for")
