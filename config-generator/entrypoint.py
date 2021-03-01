@@ -64,7 +64,7 @@ def main():
                     )
             bootstrap_peers.extend(local_bootstrap_peers)
             if not bootstrap_peers:
-                bootstrap_peers=[f"tezos-baking-node-0.tezos-baking-node:9732"]
+                bootstrap_peers = [f"tezos-baking-node-0.tezos-baking-node:9732"]
 
         config_json = json.dumps(
             get_node_config(
@@ -112,36 +112,37 @@ def get_node_config(
     net_addr=None,
 ):
 
-    node_config = { "data-dir": "/var/tezos/node/data",
-            "rpc": {
-                "listen-addrs": [f"{os.getenv('MY_POD_IP')}:8732", "127.0.0.1:8732"],
-                },
-            "p2p": {
-                "bootstrap-peers": bootstrap_peers,
-                "listen-addr": ( net_addr + ":9732" if net_addr else "[::]:9732" )
-                },
-            #"log": { "level": "debug"},
-        }
+    node_config = {
+        "data-dir": "/var/tezos/node/data",
+        "rpc": {
+            "listen-addrs": [f"{os.getenv('MY_POD_IP')}:8732", "127.0.0.1:8732"],
+        },
+        "p2p": {
+            "bootstrap-peers": bootstrap_peers,
+            "listen-addr": (net_addr + ":9732" if net_addr else "[::]:9732"),
+        },
+        # "log": { "level": "debug"},
+    }
     if CHAIN_PARAMS["chain_type"] == "public":
         node_config["network"] = CHAIN_PARAMS["network"]
-        node_config["shell"] = { "history_mode": "rolling" }
+        node_config["shell"] = {"history_mode": "rolling"}
     else:
         node_config["p2p"]["expected-proof-of-work"] = 0
         node_config["network"] = {
-                "chain_name": chain_name,
-                "sandboxed_chain_name": "SANDBOXED_TEZOS",
-                "default_bootstrap_peers": [],
-                "genesis": {
-                    "timestamp": timestamp,
-                    "block": genesis_block,
-                    "protocol": "PtYuensgYBb3G3x1hLLbCmcav8ue8Kyd2khADcL5LsT5R1hcXex"
-                    },
-                "genesis_parameters": {
-                    "values": {
-                        "genesis_pubkey": genesis_key,
-                    },
+            "chain_name": chain_name,
+            "sandboxed_chain_name": "SANDBOXED_TEZOS",
+            "default_bootstrap_peers": [],
+            "genesis": {
+                "timestamp": timestamp,
+                "block": genesis_block,
+                "protocol": "PtYuensgYBb3G3x1hLLbCmcav8ue8Kyd2khADcL5LsT5R1hcXex",
+            },
+            "genesis_parameters": {
+                "values": {
+                    "genesis_pubkey": genesis_key,
                 },
-            }
+            },
+        }
 
     return node_config
 
@@ -198,18 +199,21 @@ def generate_parameters_config(parameters_argv):
     namespace = parser.parse_args(parameters_argv)
     return vars(namespace)
 
+
 #
 # If CHAIN_PARAMS["genesis_block"] hasn't been specified, we
 # generate a deterministic one.
 
+
 def fill_in_missing_genesis_block():
     print("Ensure that we have genesis_block")
-    if CHAIN_PARAMS["genesis_block"] == 'YOUR_GENESIS_CHAIN_ID_HERE':
+    if CHAIN_PARAMS["genesis_block"] == "YOUR_GENESIS_CHAIN_ID_HERE":
         print("  Generating missing genesis_block")
         seed = "foo"
-        gbk  = blake2b(seed.encode(), digest_size=32).digest()
+        gbk = blake2b(seed.encode(), digest_size=32).digest()
         gbk_b58 = b58encode_check(b"\x01\x34" + gbk).decode("utf-8")
         CHAIN_PARAMS["genesis_block"] = gbk_b58
+
 
 #
 # flatten_accounts() turns ACCOUNTS into a more amenable data structure:
@@ -229,27 +233,29 @@ def fill_in_missing_genesis_block():
 # If we then find that we have been asked to make more bakers
 # than accounts were specified, we create accounts of the form
 #
-#	baker<baker num>
+# 	baker<baker num>
 #
 # and fill in the details appropriately.
 
+
 def flatten_accounts():
     accounts = {}
-    for name, type, key in [[a["name"],a["type"],a["key"]] for a in ACCOUNTS]:
+    for name, type, key in [[a["name"], a["type"], a["key"]] for a in ACCOUNTS]:
         if name in accounts:
             if type in accounts[name]:
                 print("  WARNING: key specified twice! " + name + ":" + type)
             else:
                 accounts[name][type] = key
         else:
-            accounts[name] = { type : key }
-    i=0
+            accounts[name] = {type: key}
+    i = 0
     for i, node in enumerate(CHAIN_PARAMS["nodes"]["baking"]):
         acct = node.get("bake_for", "baker" + str(i))
         if acct not in accounts:
-            print("    Creating specified but missing account " + acct);
+            print("    Creating specified but missing account " + acct)
             accounts[acct] = {}
     return accounts
+
 
 #
 # import_keys() creates three files in /var/tezos/client which specify
@@ -270,9 +276,10 @@ def flatten_accounts():
 # are stable because we take care not to use any information that is not
 # specified in the _values.yaml file in the seed used to generate them.
 
-edsk = b"\x0d\x0f\x3a\x07";
+edsk = b"\x0d\x0f\x3a\x07"
 edpk = b"\x0d\x0f\x25\xd9"
-tz1  = b"\x06\xa1\x9f"
+tz1 = b"\x06\xa1\x9f"
+
 
 def import_keys():
     print("Importing keys")
@@ -312,39 +319,29 @@ def import_keys():
 
         pkh = blake2b(pk, digest_size=20).digest()
 
-        pk_b58  = b58encode_check(edpk + pk).decode("utf-8")
+        pk_b58 = b58encode_check(edpk + pk).decode("utf-8")
         pkh_b58 = b58encode_check(tz1 + pkh).decode("utf-8")
 
         if sk != None:
             print("    Appending secret key")
             sk_b58 = b58encode_check(edsk + sk).decode("utf-8")
-            secret_keys.append({
-                "name" : name,
-                "value": "unencrypted:" + sk_b58
-            })
+            secret_keys.append({"name": name, "value": "unencrypted:" + sk_b58})
 
         print("    Appending public key")
-        public_keys.append({
-            "name" : name,
-            "value": {
-                "locator" : "unencrypted:" + pk_b58,
-                "key": pk_b58
-            }
-        })
+        public_keys.append(
+            {"name": name, "value": {"locator": "unencrypted:" + pk_b58, "key": pk_b58}}
+        )
 
         print("    Appending public key hash")
-        public_key_hashs.append({
-            "name" : name,
-            "value": pkh_b58
-        })
+        public_key_hashs.append({"name": name, "value": pkh_b58})
 
     print("  Writing " + tezdir + "/secret_keys")
     json.dump(secret_keys, open(tezdir + "/secret_keys", "w"), indent=4)
     print("  Writing " + tezdir + "/public_keys")
     json.dump(public_keys, open(tezdir + "/public_keys", "w"), indent=4)
     print("  Writing " + tezdir + "/public_key_hashs")
-    json.dump(public_key_hashs, open(tezdir + "/public_key_hashs", "w"),
-              indent=4)
+    json.dump(public_key_hashs, open(tezdir + "/public_key_hashs", "w"), indent=4)
+
 
 if __name__ == "__main__":
     main()

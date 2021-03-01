@@ -71,9 +71,10 @@ CHAIN_CONSTANTS = {
         "default": 1,
         "type": int,
     },
-    "chain_type": {"help": "Type of chain: public, private, isolated",
+    "chain_type": {
+        "help": "Type of chain: public, private, isolated",
         "default": "isolated",
-        },
+    },
     "network": {"help": "Name of the tezos public network to connect to "},
     "zerotier_network": {"help": "Zerotier network id for external chain access"},
     "zerotier_token": {"help": "Zerotier token for external chain access"},
@@ -195,7 +196,7 @@ def main():
         }
 
     if base_constants["chain_type"] == "public":
-        base_constants["network"] = ( args.network if args.network else "mainnet" )
+        base_constants["network"] = args.network if args.network else "mainnet"
 
     accounts = {"secret": [], "public": []}
     if old_create_values.get("accounts", None):
