@@ -56,7 +56,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: tezos-baking-node
+  name: {{ .Values.baker_statefulset.name }}
   namespace: {{ .Release.Namespace }}
 spec:
   podManagementPolicy: Parallel
@@ -64,11 +64,11 @@ spec:
   serviceName: tezos-baking-node
   selector:
     matchLabels:
-      app: tezos-baking-node
+      app: {{ .Values.baker_statefulset.name }}
   template:
     metadata:
       labels:
-        app: tezos-baking-node
+        app: {{ .Values.baker_statefulset.name }}
         appType: tezos
     spec:
       containers:
@@ -198,6 +198,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume

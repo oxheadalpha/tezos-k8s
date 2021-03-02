@@ -5,6 +5,7 @@ import socket
 from hashlib import blake2b
 from json.decoder import JSONDecodeError
 from operator import itemgetter
+from re import match
 
 from base58 import b58decode_check, b58encode_check
 from nacl.signing import SigningKey
@@ -34,7 +35,7 @@ def main():
 
     if main_args.generate_parameters_json:
         bootstrap_accounts = get_non_baker_public_key_hashes(flattened_accounts)
-        protocol_parameters = get_protocol_parameters(
+        protocol_parameters = create_protocol_parameters_json(
             bootstrap_accounts, bootstrap_baker_accounts
         )
 
@@ -72,12 +73,9 @@ def main():
         #net_addr="52.15.225.122"
 
         config_json = json.dumps(
-            get_node_config(
-                CHAIN_PARAMS["chain_name"],
-                bootstrap_baker_accounts[CHAIN_PARAMS["activation_account"]]["key"],
-                CHAIN_PARAMS["timestamp"],
+            create_node_config_json(
+                bootstrap_baker_accounts,
                 bootstrap_peers,
-                CHAIN_PARAMS["genesis_block"],
                 net_addr,
             ),
             indent=2,
@@ -127,14 +125,29 @@ def get_non_baker_public_key_hashes(accounts):
     return hashes
 
 
-def get_node_config(
-    chain_name,
-    genesis_key,
-    timestamp,
+def get_this_nodes_settings():
+    my_pod_name = os.getenv("MY_POD_NAME")
+
+    if match("tezos-baking-node-\d", my_pod_name):
+        baking_nodes = CHAIN_PARAMS["nodes"]["baking"]
+        for node in baking_nodes:
+            if node["name"] == my_pod_name:
+                return node
+    elif match("tezos-node-\d", my_pod_name):
+        regular_nodes = CHAIN_PARAMS["nodes"]["regular"]
+        for node in regular_nodes:
+            if node["name"] == my_pod_name:
+                return node
+
+
+def create_node_config_json(
+    bootstrap_baker_accounts,
     bootstrap_peers,
-    genesis_block=None,
     net_addr=None,
 ):
+    """ Create the node's config.json file """
+
+    this_nodes_settings = get_this_nodes_settings()
 
     node_config = {
         "data-dir": "/var/tezos/node/data",
@@ -145,25 +158,27 @@ def get_node_config(
             "bootstrap-peers": bootstrap_peers,
             "listen-addr": (net_addr + ":9732" if net_addr else "[::]:9732"),
         },
+        "shell": {"history_mode": this_nodes_settings["history_mode"]}
         # "log": { "level": "debug"},
     }
     if CHAIN_PARAMS["chain_type"] == "public":
         node_config["network"] = CHAIN_PARAMS["network"]
-        node_config["shell"] = {"history_mode": "rolling"}
     else:
         node_config["p2p"]["expected-proof-of-work"] = 0
         node_config["network"] = {
-            "chain_name": chain_name,
+            "chain_name": CHAIN_PARAMS["chain_name"],
             "sandboxed_chain_name": "SANDBOXED_TEZOS",
             "default_bootstrap_peers": [],
             "genesis": {
-                "timestamp": timestamp,
-                "block": genesis_block,
+                "timestamp": CHAIN_PARAMS["timestamp"],
+                "block": CHAIN_PARAMS["genesis_block"],
                 "protocol": "PtYuensgYBb3G3x1hLLbCmcav8ue8Kyd2khADcL5LsT5R1hcXex",
             },
             "genesis_parameters": {
                 "values": {
-                    "genesis_pubkey": genesis_key,
+                    "genesis_pubkey": bootstrap_baker_accounts[
+                        CHAIN_PARAMS["activation_account"]
+                    ]["key"],
                 },
             },
         }
@@ -197,7 +212,9 @@ def get_accounts_pubkey_balance_pairs(accounts, accounts_type):
 # `CHAIN_PARAMS["protocol_parameters"]`. The commitment size for Florence was
 # too large to load from Helm to k8s. So we are mounting a file containing them.
 # bootstrap accounts always needs massaging so they are passed as arguments.
-def get_protocol_parameters(bootstrap_accounts, bootstrap_baker_accounts):
+def create_protocol_parameters_json(bootstrap_accounts, bootstrap_baker_accounts):
+    """ Create the protocol's parameters.json file """
+
     protocol_params = CHAIN_PARAMS["protocol_parameters"]
 
     bootstrap_accounts_pubkey_balance_pairs = get_accounts_pubkey_balance_pairs(

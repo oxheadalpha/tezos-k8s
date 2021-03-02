@@ -2,7 +2,7 @@ apiVersion: v1
 data:
   CHAIN_PARAMS: |
     {
-      "activation_account": "{{ (index .Values.protocol_parameters.bootstrap_accounts 0).name }}",
+      "activation_account": "{{ (index .Values.accounts 0).name }}",
       "bootstrap_peers": {{ toJson .Values.bootstrap_peers }},
       "chain_name": "{{ .Values.chain_name }}",
       "chain_type": "{{ .Values.chain_type }}",
@@ -13,7 +13,7 @@ data:
       "nodes": {{ toJson .Values.nodes }},
       "proto_command": "{{ .Values.protocol.command }}",
       "protocol_hash": "{{ .Values.protocol.hash }}",
-      "protocol_parameters": {{ toJson (omit .Values.protocol_parameters "bootstrap_accounts") }},
+      "protocol_parameters": {{ toJson .Values.protocol_parameters }},
       "snapshot_url": "{{ .Values.snapshot_url }}",
       "timestamp": "{{ .Values.genesis.timestamp }}"
     }
@@ -39,7 +39,7 @@ metadata:
 apiVersion: v1
 data:
   ACCOUNTS: |
-{{ .Values.protocol_parameters.bootstrap_accounts | toJson | b64enc | indent 4 }}
+{{ .Values.accounts | toJson | b64enc | indent 4 }}
 kind: Secret
 metadata:
   name: tezos-secret

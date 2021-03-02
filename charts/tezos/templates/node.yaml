@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: tezos-node
+  name: {{ .Values.plain_node_statefulset.name }}
   namespace: {{ .Release.Namespace }}
 spec:
   podManagementPolicy: Parallel
   replicas: {{ .Values.nodes.regular | len }}
   selector:
     matchLabels:
-      app: tezos-node
+      app: {{ .Values.plain_node_statefulset.name }}
   serviceName: tezos-node
   template:
     metadata:
       labels:
-        app: tezos-node
+        app: {{ .Values.plain_node_statefulset.name }}
         appType: tezos
     spec:
       containers:
