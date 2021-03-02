@@ -2,7 +2,7 @@ baker: true
 chain_name: YOUR_CHAIN_NAME_HERE
 is_invitation: false
 rpc_auth: false
-zerotier_in_use: false
+chain_type: isolated
 zerotier_config:
   zerotier_network: YOUR_NETWORK_ID_HERE
   zerotier_token: YOUR_ZEROTIER_TOKEN_HERE
@@ -17,11 +17,13 @@ tezos_k8s_images:
   config_generator: tezos-k8s-config-generator:dev
   wait_for_bootstrap: tezos-k8s-wait-for-bootstrap:dev
   zerotier: tezos-k8s-zerotier:dev
+  snapshot_downloader: tezos-k8s-snapshot-downloader:dev
 
+snapshot_url: https://mainnet.xtz-shots.io/rolling
 protocol:
   bootstrap_mutez: "4000000000000"
-  hash: PsDELPH1Kxsxt8f9eWbxQeRxkjfbxoqM52jvs5Y5fBxWWh4ifpo
-  command: 007-PsDELPH1
+  hash: PtEdo2ZkT9oKpimTah6x2embF25oss54njMuPzkJTEi5RqfdZFA
+  command: 008-PtEdo2Zk
 genesis:
   block: "YOUR_GENESIS_CHAIN_ID_HERE"
   timestamp:  '2021-02-12T17:02:24.061398+00:00'

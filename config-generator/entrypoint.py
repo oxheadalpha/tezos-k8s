@@ -43,11 +43,14 @@ def main():
     if main_args.generate_config_json:
         net_addr = None
         bootstrap_peers = CHAIN_PARAMS.get("bootstrap_peers", [])
-        if CHAIN_PARAMS["zerotier_in_use"]:
+        if CHAIN_PARAMS["chain_type"] == "private":
             with open("/var/tezos/zerotier_data.json", "r") as f:
                 net_addr = json.load(f)[0]["assignedAddresses"][0].split("/")[0]
             if bootstrap_peers == []:
                 bootstrap_peers.extend(get_zerotier_bootstrap_peer_ips())
+        if CHAIN_PARAMS["chain_type"] == "public":
+            with open("/tmp/data/config.json", "r") as f:
+                bootstrap_peers.extend(json.load(f)["p2p"]["bootstrap-peers"])
         else:
             local_bootstrap_peers = []
             bakers = CHAIN_PARAMS["nodes"]["baking"]
@@ -61,7 +64,7 @@ def main():
                     )
             bootstrap_peers.extend(local_bootstrap_peers)
             if not bootstrap_peers:
-                bootstrap_peers=[f"tezos-baking-node-0.tezos-baking-node:9732"]
+                bootstrap_peers = [f"tezos-baking-node-0.tezos-baking-node:9732"]
 
         config_json = json.dumps(
             get_node_config(
@@ -109,105 +112,37 @@ def get_node_config(
     net_addr=None,
 ):
 
-    p2p = ["p2p"]
-    for bootstrap_peer in bootstrap_peers:
-        p2p.extend(["--bootstrap-peers", bootstrap_peer])
-    if net_addr:
-        p2p.extend(["--listen-addr", net_addr + ":9732"])
-
-    node_config_args = p2p + [
-        "global",
-        "rpc",
-        "network",
-        "--chain-name",
-        chain_name,
-        "genesis",
-        "--timestamp",
-        timestamp,
-        "--block",
-        genesis_block,
-        "genesis_parameters",
-        "--genesis-pubkey",
-        genesis_key,
-    ]
-
-    return generate_node_config(node_config_args)
-
-
-# FIXME - this should probably be replaced with subprocess calls to tezos-node-config
-def generate_node_config(node_argv):
-    parser = argparse.ArgumentParser(prog="nodeconfig")
-    subparsers = parser.add_subparsers(help="sub-command help", dest="subparser_name")
-
-    global_parser = subparsers.add_parser("global")
-    global_parser.add_argument("--data-dir", default="/var/tezos/node")
-
-    rpc_parser = subparsers.add_parser("rpc")
-    rpc_parser.add_argument(
-        "--listen-addrs",
-        action="append",
-        default=[f"{os.getenv('MY_POD_IP')}:8732", "127.0.0.1:8732"],
-    )
-
-    p2p_parser = subparsers.add_parser("p2p")
-    p2p_parser.add_argument("--bootstrap-peers", action="append", default=[])
-    p2p_parser.add_argument("--listen-addr", default="[::]:9732")
-    p2p_parser.add_argument("--expected-proof-of-work", default=0, type=int)
-
-    network_parser = subparsers.add_parser("network")
-    network_parser.add_argument("--chain-name")
-    network_parser.add_argument("--sandboxed-chain-name", default="SANDBOXED_TEZOS")
-    network_parser.add_argument(
-        "--default-bootstrap-peers", action="append", default=[]
-    )
-
-    genesis_parser = subparsers.add_parser("genesis")
-    genesis_parser.add_argument("--timestamp")
-    genesis_parser.add_argument(
-        "--block", default="BLockGenesisGenesisGenesisGenesisGenesisd6f5afWyME7"
-    )
-    genesis_parser.add_argument(
-        "--protocol", default="PtYuensgYBb3G3x1hLLbCmcav8ue8Kyd2khADcL5LsT5R1hcXex"
-    )
-
-    genesis_parameters_parser = subparsers.add_parser("genesis_parameters")
-    genesis_parameters_parser.add_argument("--genesis-pubkey")
-
-    namespaces = []
-    while node_argv:
-        namespace, node_argv = parser.parse_known_args(node_argv)
-        namespaces.append(namespace)
-        if not namespace.subparser_name:
-            break
-
-    node_config = {}
-    special_keys = [
-        "listen_addrs",
-        "bootstrap_peers",
-        "data_dir",
-        "listen_addr",
-        "expected_proof_of_work",
-    ]
-    for namespace in namespaces:
-        section = vars(namespace)
-        fixed_section = {}
-        for k, v in section.items():
-            if k in special_keys:
-                fixed_section[k.replace("_", "-")] = v
-            else:
-                fixed_section[k] = v
-
-        key = fixed_section.pop("subparser_name")
-        if key == "global":
-            node_config.update(fixed_section)
-        else:
-            # doubly nested parsers are a bit tricky. we'll just force the network keys where they belong
-            if key == "genesis":
-                node_config["network"][key] = fixed_section
-            elif key == "genesis_parameters":
-                node_config["network"][key] = {"values": fixed_section}
-            else:
-                node_config[key] = fixed_section
+    node_config = {
+        "data-dir": "/var/tezos/node/data",
+        "rpc": {
+            "listen-addrs": [f"{os.getenv('MY_POD_IP')}:8732", "127.0.0.1:8732"],
+        },
+        "p2p": {
+            "bootstrap-peers": bootstrap_peers,
+            "listen-addr": (net_addr + ":9732" if net_addr else "[::]:9732"),
+        },
+        # "log": { "level": "debug"},
+    }
+    if CHAIN_PARAMS["chain_type"] == "public":
+        node_config["network"] = CHAIN_PARAMS["network"]
+        node_config["shell"] = {"history_mode": "rolling"}
+    else:
+        node_config["p2p"]["expected-proof-of-work"] = 0
+        node_config["network"] = {
+            "chain_name": chain_name,
+            "sandboxed_chain_name": "SANDBOXED_TEZOS",
+            "default_bootstrap_peers": [],
+            "genesis": {
+                "timestamp": timestamp,
+                "block": genesis_block,
+                "protocol": "PtYuensgYBb3G3x1hLLbCmcav8ue8Kyd2khADcL5LsT5R1hcXex",
+            },
+            "genesis_parameters": {
+                "values": {
+                    "genesis_pubkey": genesis_key,
+                },
+            },
+        }
 
     return node_config
 
@@ -264,18 +199,21 @@ def generate_parameters_config(parameters_argv):
     namespace = parser.parse_args(parameters_argv)
     return vars(namespace)
 
+
 #
 # If CHAIN_PARAMS["genesis_block"] hasn't been specified, we
 # generate a deterministic one.
 
+
 def fill_in_missing_genesis_block():
     print("Ensure that we have genesis_block")
-    if CHAIN_PARAMS["genesis_block"] == 'YOUR_GENESIS_CHAIN_ID_HERE':
+    if CHAIN_PARAMS["genesis_block"] == "YOUR_GENESIS_CHAIN_ID_HERE":
         print("  Generating missing genesis_block")
         seed = "foo"
-        gbk  = blake2b(seed.encode(), digest_size=32).digest()
+        gbk = blake2b(seed.encode(), digest_size=32).digest()
         gbk_b58 = b58encode_check(b"\x01\x34" + gbk).decode("utf-8")
         CHAIN_PARAMS["genesis_block"] = gbk_b58
+
 
 #
 # flatten_accounts() turns ACCOUNTS into a more amenable data structure:
@@ -295,27 +233,29 @@ def fill_in_missing_genesis_block():
 # If we then find that we have been asked to make more bakers
 # than accounts were specified, we create accounts of the form
 #
-#	baker<baker num>
+# 	baker<baker num>
 #
 # and fill in the details appropriately.
 
+
 def flatten_accounts():
     accounts = {}
-    for name, type, key in [[a["name"],a["type"],a["key"]] for a in ACCOUNTS]:
+    for name, type, key in [[a["name"], a["type"], a["key"]] for a in ACCOUNTS]:
         if name in accounts:
             if type in accounts[name]:
                 print("  WARNING: key specified twice! " + name + ":" + type)
             else:
                 accounts[name][type] = key
         else:
-            accounts[name] = { type : key }
-    i=0
+            accounts[name] = {type: key}
+    i = 0
     for i, node in enumerate(CHAIN_PARAMS["nodes"]["baking"]):
         acct = node.get("bake_for", "baker" + str(i))
         if acct not in accounts:
-            print("    Creating specified but missing account " + acct);
+            print("    Creating specified but missing account " + acct)
             accounts[acct] = {}
     return accounts
+
 
 #
 # import_keys() creates three files in /var/tezos/client which specify
@@ -336,15 +276,14 @@ def flatten_accounts():
 # are stable because we take care not to use any information that is not
 # specified in the _values.yaml file in the seed used to generate them.
 
-edsk = b"\x0d\x0f\x3a\x07";
+edsk = b"\x0d\x0f\x3a\x07"
 edpk = b"\x0d\x0f\x25\xd9"
-tz1  = b"\x06\xa1\x9f"
+tz1 = b"\x06\xa1\x9f"
+
 
 def import_keys():
     print("Importing keys")
     tezdir = "/var/tezos/client"
-    os.makedirs(tezdir, exist_ok=True)
-    os.chmod(tezdir, 0o777);
     secret_keys = []
     public_keys = []
     public_key_hashs = []
@@ -380,39 +319,29 @@ def import_keys():
 
         pkh = blake2b(pk, digest_size=20).digest()
 
-        pk_b58  = b58encode_check(edpk + pk).decode("utf-8")
+        pk_b58 = b58encode_check(edpk + pk).decode("utf-8")
         pkh_b58 = b58encode_check(tz1 + pkh).decode("utf-8")
 
         if sk != None:
             print("    Appending secret key")
             sk_b58 = b58encode_check(edsk + sk).decode("utf-8")
-            secret_keys.append({
-                "name" : name,
-                "value": "unencrypted:" + sk_b58
-            })
+            secret_keys.append({"name": name, "value": "unencrypted:" + sk_b58})
 
         print("    Appending public key")
-        public_keys.append({
-            "name" : name,
-            "value": {
-                "locator" : "unencrypted:" + pk_b58,
-                "key": pk_b58
-            }
-        })
+        public_keys.append(
+            {"name": name, "value": {"locator": "unencrypted:" + pk_b58, "key": pk_b58}}
+        )
 
         print("    Appending public key hash")
-        public_key_hashs.append({
-            "name" : name,
-            "value": pkh_b58
-        })
+        public_key_hashs.append({"name": name, "value": pkh_b58})
 
     print("  Writing " + tezdir + "/secret_keys")
     json.dump(secret_keys, open(tezdir + "/secret_keys", "w"), indent=4)
     print("  Writing " + tezdir + "/public_keys")
     json.dump(public_keys, open(tezdir + "/public_keys", "w"), indent=4)
     print("  Writing " + tezdir + "/public_key_hashs")
-    json.dump(public_key_hashs, open(tezdir + "/public_key_hashs", "w"),
-              indent=4)
+    json.dump(public_key_hashs, open(tezdir + "/public_key_hashs", "w"), indent=4)
+
 
 if __name__ == "__main__":
     main()
