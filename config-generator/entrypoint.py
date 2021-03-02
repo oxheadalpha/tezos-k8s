@@ -30,12 +30,13 @@ def main():
     )
     main_args = main_parser.parse_args()
 
-    baker_public_keys = get_baker_public_keys(flattened_accounts)
+    bootstrap_baker_accounts = get_baker_public_keys(flattened_accounts)
 
     if main_args.generate_parameters_json:
-        non_baker_public_key_hashes = get_non_baker_public_key_hashes(flattened_accounts)
-        bootstrap_accounts = {**baker_public_keys, **non_baker_public_key_hashes}
-        protocol_parameters = get_protocol_parameters([*bootstrap_accounts.values()])
+        bootstrap_accounts = get_non_baker_public_key_hashes(flattened_accounts)
+        protocol_parameters = get_protocol_parameters(
+            bootstrap_accounts, bootstrap_baker_accounts
+        )
 
         print("Generated parameters.json :")
         protocol_params_json = json.dumps(protocol_parameters, indent=2)
@@ -72,7 +73,7 @@ def main():
         config_json = json.dumps(
             get_node_config(
                 CHAIN_PARAMS["chain_name"],
-                baker_public_keys[CHAIN_PARAMS["activation_account"]]["key"],
+                bootstrap_baker_accounts[CHAIN_PARAMS["activation_account"]]["key"],
                 CHAIN_PARAMS["timestamp"],
                 bootstrap_peers,
                 CHAIN_PARAMS["genesis_block"],
@@ -169,20 +170,50 @@ def get_node_config(
     return node_config
 
 
+def get_accounts_pubkey_balance_pairs(accounts, accounts_type):
+    """ accounts_type = "plain_account" | "baker_account" """
+
+    default_balance = CHAIN_PARAMS["defualt_bootstrap_mutez"]
+    pubkey_and_balance_pairs = []
+
+    for account in accounts:
+        account_balance = str(account.get("balance") or default_balance)
+        if (  # plain accounts || baker accounts but old account format
+            accounts_type == "plain_accounts"
+            or CHAIN_PARAMS["is_old_accounts_parameter_format"]
+        ):
+            pubkey_and_balance_pairs.append([account["key"], account_balance])
+        else:  # baker accounts
+            pubkey_and_balance_pairs.append(
+                {"amount": account_balance, "key": account["key"]}
+            )
+
+    return pubkey_and_balance_pairs
+
+
 #
 # commitments and bootstrap_accounts are not part of
-# `CHAIN_PARAMS["protocol_parameters"]`. The commitment size for Florence
-# was too large to load from Helm to k8s. So we are mounting a file
-# containing them. bootstrap_accounts always needs massaging so it is passed as an
-# argument.
-def get_protocol_parameters(bootstrap_accounts):
+# `CHAIN_PARAMS["protocol_parameters"]`. The commitment size for Florence was
+# too large to load from Helm to k8s. So we are mounting a file containing them.
+# bootstrap accounts always needs massaging so they are passed as arguments.
+def get_protocol_parameters(bootstrap_accounts, bootstrap_baker_accounts):
     protocol_params = CHAIN_PARAMS["protocol_parameters"]
-    protocol_params["bootstrap_accounts"] = []
-    default_balance = CHAIN_PARAMS["defualt_bootstrap_mutez"]
 
-    for account in bootstrap_accounts:
-        account_balance = account.get("balance") or default_balance
-        protocol_params["bootstrap_accounts"].append([account["key"], str(account_balance)])
+    bootstrap_accounts_pubkey_balance_pairs = get_accounts_pubkey_balance_pairs(
+        bootstrap_accounts.values(), "plain_accounts"
+    )
+    bootstrap_bakers_pubkey_balance_pairs = get_accounts_pubkey_balance_pairs(
+        bootstrap_baker_accounts.values(), "baker_accounts"
+    )
+
+    if CHAIN_PARAMS["is_old_accounts_parameter_format"]:
+        protocol_params["bootstrap_accounts"] = [
+            *bootstrap_accounts_pubkey_balance_pairs,
+            *bootstrap_bakers_pubkey_balance_pairs,
+        ]
+    else:
+        protocol_params["bootstrap_accounts"] = bootstrap_accounts_pubkey_balance_pairs
+        protocol_params["bootstrap_bakers"] = bootstrap_bakers_pubkey_balance_pairs
 
     with open("/commitment-params.json", "r") as f:
         try:
