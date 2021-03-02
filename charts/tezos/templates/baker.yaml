@@ -150,6 +150,14 @@ spec:
               name: var-volume
 {{- end }}
       initContainers:
+{{- if not .Values.is_invitation }}
+        - image: {{ .Values.tezos_k8s_images.wait_for_bootstrap }}
+          imagePullPolicy: IfNotPresent
+          name: wait-for-bootstrap
+          volumeMounts:
+            - mountPath: /var/tezos
+              name: var-volume
+{{- end }}
 {{- if eq .Values.chain_type "private" }}
         - envFrom:
             - configMapRef:
@@ -207,14 +215,6 @@ spec:
           envFrom:
             - configMapRef:
                 name: tezos-config
-{{- end }}
-{{- if not .Values.is_invitation }}
-        - image: {{ .Values.tezos_k8s_images.wait_for_bootstrap }}
-          imagePullPolicy: IfNotPresent
-          name: wait-for-bootstrap
-          volumeMounts:
-            - mountPath: /var/tezos
-              name: var-volume
 {{- end }}
       securityContext:
         fsGroup: 100

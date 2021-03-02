@@ -63,6 +63,14 @@ spec:
               name: var-volume
 {{- end }}
       initContainers:
+{{- if not .Values.is_invitation }}
+        - image: {{ .Values.tezos_k8s_images.wait_for_bootstrap }}
+          imagePullPolicy: IfNotPresent
+          name: wait-for-bootstrap
+          volumeMounts:
+            - mountPath: /var/tezos
+              name: var-volume
+{{- end }}
 {{- if eq .Values.chain_type "private" }}
         - envFrom:
             - configMapRef:
@@ -108,6 +116,7 @@ spec:
               name: config-volume
             - mountPath: /var/tezos
               name: var-volume
+{{- if eq .Values.chain_type "public" }}
         - image: "{{ .Values.tezos_k8s_images.snapshot_downloader }}"
           imagePullPolicy: IfNotPresent
           name: snapshot-downloader
@@ -119,13 +128,6 @@ spec:
           envFrom:
             - configMapRef:
                 name: tezos-config
-{{- if not .Values.is_invitation }}
-        - image: {{ .Values.tezos_k8s_images.wait_for_bootstrap }}
-          imagePullPolicy: IfNotPresent
-          name: wait-for-bootstrap
-          volumeMounts:
-            - mountPath: /var/tezos
-              name: var-volume
 {{- end }}
       securityContext:
         fsGroup: 100
