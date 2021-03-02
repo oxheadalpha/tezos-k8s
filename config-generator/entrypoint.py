@@ -5,6 +5,7 @@ import socket
 from hashlib import blake2b
 from json.decoder import JSONDecodeError
 from operator import itemgetter
+from re import match
 
 from base58 import b58decode_check, b58encode_check
 from nacl.signing import SigningKey
@@ -123,12 +124,29 @@ def get_non_baker_public_key_hashes(accounts):
     return hashes
 
 
+def get_this_nodes_settings():
+    my_pod_name = os.getenv("MY_POD_NAME")
+
+    if match("tezos-baking-node-\d", my_pod_name):
+        baking_nodes = CHAIN_PARAMS["nodes"]["baking"]
+        for node in baking_nodes:
+            if node["name"] == my_pod_name:
+                return node
+    elif match("tezos-node-\d", my_pod_name):
+        regular_nodes = CHAIN_PARAMS["nodes"]["regular"]
+        for node in regular_nodes:
+            if node["name"] == my_pod_name:
+                return node
+
+
 def create_node_config_json(
     bootstrap_baker_accounts,
     bootstrap_peers,
     net_addr=None,
 ):
     """ Create the node's config.json file """
+
+    this_nodes_settings = get_this_nodes_settings()
 
     node_config = {
         "data-dir": "/var/tezos/node/data",
@@ -139,11 +157,11 @@ def create_node_config_json(
             "bootstrap-peers": bootstrap_peers,
             "listen-addr": (net_addr + ":9732" if net_addr else "[::]:9732"),
         },
+        "shell": {"history_mode": this_nodes_settings["history_mode"]}
         # "log": { "level": "debug"},
     }
     if CHAIN_PARAMS["chain_type"] == "public":
         node_config["network"] = CHAIN_PARAMS["network"]
-        node_config["shell"] = {"history_mode": "rolling"}
     else:
         node_config["p2p"]["expected-proof-of-work"] = 0
         node_config["network"] = {
