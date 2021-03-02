@@ -26,16 +26,19 @@ protocol:
   command: 008-PtEdo2Zk
 genesis:
   block: "YOUR_GENESIS_CHAIN_ID_HERE"
-  timestamp:  '2021-02-12T17:02:24.061398+00:00'
+  timestamp: "2021-02-12T17:02:24.061398+00:00"
 bootstrap_peers: []
 nodes:
   baking:
-  - {}
+    - {}
   regular:
-  - {}
+    - {}
 # TODO
 # archive nodes, node with open rpc
 # take into account fundraisers accounts that people need to activate
+
+bootstrap_accounts:
+  - name: baker0
 
 protocol_parameters:
   preserved_cycles: 2
@@ -64,5 +67,3 @@ protocol_parameters:
   initial_endorsers: 1
   delay_per_missing_endorsement: "1"
   baking_reward_per_endorsement: ["200000"]
-  bootstrap_accounts:
-   - name: baker0
