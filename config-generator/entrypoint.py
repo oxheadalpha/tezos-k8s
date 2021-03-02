@@ -3,6 +3,7 @@ import json
 import os
 import socket
 from hashlib import blake2b
+from operator import itemgetter
 
 from base58 import b58decode_check, b58encode_check
 from nacl.signing import SigningKey
@@ -13,7 +14,9 @@ ACCOUNTS = json.loads(os.environ["ACCOUNTS"])
 
 def main():
     fill_in_missing_genesis_block()
-    import_keys()
+    flattened_accounts = flatten_accounts()
+    import_keys(flattened_accounts)
+
     print("Starting tezos config file generation")
     main_parser = argparse.ArgumentParser()
     main_parser.add_argument(
@@ -26,12 +29,14 @@ def main():
     )
     main_args = main_parser.parse_args()
 
-    bootstrap_accounts = get_bootstrap_account_pubkeys()
+    baker_public_keys = get_baker_public_keys(flattened_accounts)
+    non_baker_public_key_hashes = get_non_baker_public_key_hashes(flattened_accounts)
+    bootstrap_accounts = {**baker_public_keys, **non_baker_public_key_hashes}
+
     if main_args.generate_parameters_json:
         parameters_json = json.dumps(
             get_parameters_config(
                 [*bootstrap_accounts.values()],
-                CHAIN_PARAMS["bootstrap_mutez"],
             ),
             indent=2,
         )
@@ -66,7 +71,7 @@ def main():
         config_json = json.dumps(
             get_node_config(
                 CHAIN_PARAMS["chain_name"],
-                bootstrap_accounts[CHAIN_PARAMS["activation_account"]],
+                flattened_accounts[CHAIN_PARAMS["activation_account"]]["secret"],
                 CHAIN_PARAMS["timestamp"],
                 bootstrap_peers,
                 CHAIN_PARAMS["genesis_block"],
@@ -91,13 +96,32 @@ def get_zerotier_bootstrap_peer_ips():
     ]
 
 
-def get_bootstrap_account_pubkeys():
+def get_baker_public_keys(accounts):
     with open("/var/tezos/client/public_keys", "r") as f:
         tezos_pubkey_list = json.load(f)
     pubkeys = {}
     for key in tezos_pubkey_list:
-        pubkeys[key["name"]] = key["value"]["key"]
+        key_name = key["name"]
+        if accounts[key_name]["bootstrap_baker"]:
+            pubkeys[key_name] = {
+                "key": key["value"]["key"],
+                "balance": accounts[key_name]["balance"],
+            }
     return pubkeys
+
+
+def get_non_baker_public_key_hashes(accounts):
+    with open("/var/tezos/client/public_key_hashs", "r") as f:
+        pubkey_hash_list = json.load(f)
+    hashes = {}
+    for account in pubkey_hash_list:
+        account_name = account["name"]
+        if not accounts[account_name]["bootstrap_baker"]:
+            hashes[account_name] = {
+                "key": account["value"],
+                "balance": accounts[account_name]["balance"],
+            }
+    return hashes
 
 
 def get_node_config(
@@ -108,7 +132,6 @@ def get_node_config(
     genesis_block=None,
     net_addr=None,
 ):
-
     p2p = ["p2p"]
     for bootstrap_peer in bootstrap_peers:
         p2p.extend(["--bootstrap-peers", bootstrap_peer])
@@ -212,15 +235,13 @@ def generate_node_config(node_argv):
     return node_config
 
 
-def get_parameters_config(bootstrap_accounts, bootstrap_mutez):
+def get_parameters_config(bootstrap_accounts):
+    default_balance = CHAIN_PARAMS["defualt_bootstrap_mutez"]
     parameter_config_argv = []
-    for bootstrap_account in bootstrap_accounts:
+    for account in bootstrap_accounts:
+        account_balance = account.get("balance") or default_balance
         parameter_config_argv.extend(
-            [
-                "--bootstrap-accounts",
-                bootstrap_account,
-                bootstrap_mutez,
-            ]
+            ["--bootstrap-accounts", account["key"], str(account_balance)]
         )
     return generate_parameters_config(parameter_config_argv)
 
@@ -305,20 +326,32 @@ def fill_in_missing_genesis_block():
 
 def flatten_accounts():
     accounts = {}
-    for name, type, key in [[a["name"], a["type"], a["key"]] for a in ACCOUNTS]:
+    for account in ACCOUNTS:
+        name, type, key, balance, bootstrap_baker = itemgetter(
+            "name", "type", "key", "balance", "bootstrap_baker"
+        )(account)
+
         if name in accounts:
             if type in accounts[name]:
                 print("  WARNING: key specified twice! " + name + ":" + type)
             else:
                 accounts[name][type] = key
         else:
-            accounts[name] = {type: key}
+            accounts[name] = {
+                type: key,
+                "balance": balance,
+                "bootstrap_baker": bootstrap_baker,
+            }
+
     i = 0
     for i, node in enumerate(CHAIN_PARAMS["nodes"]["baking"]):
         acct = node.get("bake_for", "baker" + str(i))
         if acct not in accounts:
             print("    Creating specified but missing account " + acct)
-            accounts[acct] = {}
+            accounts[acct] = {
+                balance: CHAIN_PARAMS["defualt_bootstrap_mutez"],
+                bootstrap_baker: True,
+            }
     return accounts
 
 
@@ -346,7 +379,7 @@ edpk = b"\x0d\x0f\x25\xd9"
 tz1 = b"\x06\xa1\x9f"
 
 
-def import_keys():
+def import_keys(flattened_accounts):
     print("Importing keys")
     tezdir = "/var/tezos/client"
     os.makedirs(tezdir, exist_ok=True)
@@ -354,7 +387,7 @@ def import_keys():
     secret_keys = []
     public_keys = []
     public_key_hashs = []
-    for name, keys in flatten_accounts().items():
+    for name, keys in flattened_accounts.items():
         print("  Making account: " + name)
         sk = pk = None
         if "secret" in keys:
