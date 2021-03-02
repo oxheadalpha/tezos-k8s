@@ -26,8 +26,6 @@ genesis:
   block: "YOUR_GENESIS_CHAIN_ID_HERE"
   timestamp:  '2021-02-12T17:02:24.061398+00:00'
 bootstrap_peers: []
-accounts:
-   - name: baker0
 nodes:
   baking:
   - {}
@@ -64,4 +62,5 @@ protocol_parameters:
   initial_endorsers: 1
   delay_per_missing_endorsement: "1"
   baking_reward_per_endorsement: ["200000"]
-  bootstrap_accounts: []
+  bootstrap_accounts:
+   - name: baker0
