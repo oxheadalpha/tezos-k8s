@@ -34,7 +34,7 @@ def main():
 
     if main_args.generate_parameters_json:
         bootstrap_accounts = get_non_baker_public_key_hashes(flattened_accounts)
-        protocol_parameters = get_protocol_parameters(
+        protocol_parameters = create_protocol_parameters_json(
             bootstrap_accounts, bootstrap_baker_accounts
         )
 
@@ -71,7 +71,7 @@ def main():
                 bootstrap_peers = [f"tezos-baking-node-0.tezos-baking-node:9732"]
 
         config_json = json.dumps(
-            get_node_config(
+            create_node_config_json(
                 bootstrap_baker_accounts,
                 bootstrap_peers,
                 net_addr,
@@ -123,11 +123,12 @@ def get_non_baker_public_key_hashes(accounts):
     return hashes
 
 
-def get_node_config(
+def create_node_config_json(
     bootstrap_baker_accounts,
     bootstrap_peers,
     net_addr=None,
 ):
+    """ Create the node's config.json file """
 
     node_config = {
         "data-dir": "/var/tezos/node/data",
@@ -192,7 +193,9 @@ def get_accounts_pubkey_balance_pairs(accounts, accounts_type):
 # `CHAIN_PARAMS["protocol_parameters"]`. The commitment size for Florence was
 # too large to load from Helm to k8s. So we are mounting a file containing them.
 # bootstrap accounts always needs massaging so they are passed as arguments.
-def get_protocol_parameters(bootstrap_accounts, bootstrap_baker_accounts):
+def create_protocol_parameters_json(bootstrap_accounts, bootstrap_baker_accounts):
+    """ Create the protocol's parameters.json file """
+
     protocol_params = CHAIN_PARAMS["protocol_parameters"]
 
     bootstrap_accounts_pubkey_balance_pairs = get_accounts_pubkey_balance_pairs(
