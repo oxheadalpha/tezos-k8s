@@ -27,3 +27,19 @@ spec:
   clusterIP: None
   selector:
     app: tezos-baking-node
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tezos-node-p2p
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: nlb-ip
+spec:
+  ports:
+    - port: 9732
+      targetPort: 9732
+      protocol: TCP
+  selector:
+    app: tezos-baking-node
+  type: LoadBalancer
