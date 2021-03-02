@@ -31,19 +31,11 @@ def main():
     main_args = main_parser.parse_args()
 
     baker_public_keys = get_baker_public_keys(flattened_accounts)
-    non_baker_public_key_hashes = get_non_baker_public_key_hashes(flattened_accounts)
-    bootstrap_accounts = {**baker_public_keys, **non_baker_public_key_hashes}
 
     if main_args.generate_parameters_json:
-        protocol_parameters = get_parameters_config([*bootstrap_accounts.values()])
-
-        with open("/commitment-params.json", "r") as f:
-            try:
-                commitments = json.load(f)
-                protocol_parameters["commitments"] = commitments
-            except JSONDecodeError:
-                print("No JSON found in /commitment-params.json")
-                pass
+        non_baker_public_key_hashes = get_non_baker_public_key_hashes(flattened_accounts)
+        bootstrap_accounts = {**baker_public_keys, **non_baker_public_key_hashes}
+        protocol_parameters = get_protocol_parameters([*bootstrap_accounts.values()])
 
         print("Generated parameters.json :")
         protocol_params_json = json.dumps(protocol_parameters, indent=2)
@@ -177,55 +169,30 @@ def get_node_config(
     return node_config
 
 
-def get_parameters_config(bootstrap_accounts):
+#
+# commitments and bootstrap_accounts are not part of
+# `CHAIN_PARAMS["protocol_parameters"]`. The commitment size for Florence
+# was too large to load from Helm to k8s. So we are mounting a file
+# containing them. bootstrap_accounts always needs massaging so it is passed as an
+# argument.
+def get_protocol_parameters(bootstrap_accounts):
+    protocol_params = CHAIN_PARAMS["protocol_parameters"]
+    protocol_params["bootstrap_accounts"] = []
     default_balance = CHAIN_PARAMS["defualt_bootstrap_mutez"]
-    parameter_config_argv = []
+
     for account in bootstrap_accounts:
         account_balance = account.get("balance") or default_balance
-        parameter_config_argv.extend(
-            ["--bootstrap-accounts", account["key"], str(account_balance)]
-        )
-    return generate_parameters_config(parameter_config_argv)
+        protocol_params["bootstrap_accounts"].append([account["key"], str(account_balance)])
 
+    with open("/commitment-params.json", "r") as f:
+        try:
+            commitments = json.load(f)
+            protocol_params["commitments"] = commitments
+        except JSONDecodeError:
+            print("No JSON found in /commitment-params.json")
+            pass
 
-def generate_parameters_config(parameters_argv):
-    parser = argparse.ArgumentParser(prog="parametersconfig")
-    parser.add_argument(
-        "--bootstrap-accounts",
-        type=str,
-        nargs="+",
-        action="append",
-        help="public key, mutez",
-    )
-    parser.add_argument("--preserved-cycles", type=int, default=2)
-    parser.add_argument("--blocks-per-cycle", type=int, default=8)
-    parser.add_argument("--blocks-per-commitment", type=int, default=4)
-    parser.add_argument("--blocks-per-roll-snapshot", type=int, default=4)
-    parser.add_argument("--blocks-per-voting-period", type=int, default=64)
-    parser.add_argument("--time-between-blocks", default=["10", "20"])
-    parser.add_argument("--endorsers-per-block", type=int, default=32)
-    parser.add_argument("--hard-gas-limit-per-operation", default="800000")
-    parser.add_argument("--hard-gas-limit-per-block", default="8000000")
-    parser.add_argument("--proof-of-work-threshold", default="-1")
-    parser.add_argument("--tokens-per-roll", default="8000000000")
-    parser.add_argument("--michelson-maximum-type-size", type=int, default=1000)
-    parser.add_argument("--seed-nonce-revelation-tip", default="125000")
-    parser.add_argument("--origination-size", type=int, default=257)
-    parser.add_argument("--block-security-deposit", default="512000000")
-    parser.add_argument("--endorsement-security-deposit", default="64000000")
-    parser.add_argument("--endorsement-reward", default=["2000000"])
-    parser.add_argument("--cost-per-byte", default="1000")
-    parser.add_argument("--hard-storage-limit-per-operation", default="60000")
-    parser.add_argument("--test-chain-duration", default="1966080")
-    parser.add_argument("--quorum-min", type=int, default=2000)
-    parser.add_argument("--quorum-max", type=int, default=7000)
-    parser.add_argument("--min-proposal-quorum", type=int, default=500)
-    parser.add_argument("--initial-endorsers", type=int, default=1)
-    parser.add_argument("--delay-per-missing-endorsement", default="1")
-    parser.add_argument("--baking-reward-per-endorsement", default=["200000"])
-
-    namespace = parser.parse_args(parameters_argv)
-    return vars(namespace)
+    return protocol_params
 
 
 #

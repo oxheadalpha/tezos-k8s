@@ -6,7 +6,7 @@ data:
       "bootstrap_peers": {{ toJson .Values.bootstrap_peers }},
       "nodes": {{ toJson .Values.nodes }},
       "chain_name": "{{ .Values.chain_name }}",
-      "protocol_parameters": "{{ omit .Values.protocol_parameters "bootstrap_accounts" }}",
+      "protocol_parameters": {{ toJson (omit .Values.protocol_parameters "bootstrap_accounts") }},
       "genesis_block": "{{ .Values.genesis.block }}",
       "timestamp": "{{ .Values.genesis.timestamp }}",
       "activation_account": "{{ (index .Values.protocol_parameters.bootstrap_accounts 0).name }}",

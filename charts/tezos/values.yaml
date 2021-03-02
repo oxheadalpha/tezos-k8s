@@ -39,7 +39,7 @@ nodes:
 
 protocol_parameters:
   preserved_cycles: 2
-  blocks-per-cycle: 8
+  blocks_per_cycle: 8
   blocks_per_commitment: 4
   blocks_per_roll_snapshot: 4
   blocks_per_voting_period: 64
