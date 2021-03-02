@@ -71,7 +71,7 @@ def main():
         config_json = json.dumps(
             get_node_config(
                 CHAIN_PARAMS["chain_name"],
-                flattened_accounts[CHAIN_PARAMS["activation_account"]]["secret"],
+                baker_public_keys[CHAIN_PARAMS["activation_account"]]["key"],
                 CHAIN_PARAMS["timestamp"],
                 bootstrap_peers,
                 CHAIN_PARAMS["genesis_block"],
