@@ -72,11 +72,8 @@ def main():
 
         config_json = json.dumps(
             get_node_config(
-                CHAIN_PARAMS["chain_name"],
-                bootstrap_baker_accounts[CHAIN_PARAMS["activation_account"]]["key"],
-                CHAIN_PARAMS["timestamp"],
+                bootstrap_baker_accounts,
                 bootstrap_peers,
-                CHAIN_PARAMS["genesis_block"],
                 net_addr,
             ),
             indent=2,
@@ -127,11 +124,8 @@ def get_non_baker_public_key_hashes(accounts):
 
 
 def get_node_config(
-    chain_name,
-    genesis_key,
-    timestamp,
+    bootstrap_baker_accounts,
     bootstrap_peers,
-    genesis_block=None,
     net_addr=None,
 ):
 
@@ -152,17 +146,19 @@ def get_node_config(
     else:
         node_config["p2p"]["expected-proof-of-work"] = 0
         node_config["network"] = {
-            "chain_name": chain_name,
+            "chain_name": CHAIN_PARAMS["chain_name"],
             "sandboxed_chain_name": "SANDBOXED_TEZOS",
             "default_bootstrap_peers": [],
             "genesis": {
-                "timestamp": timestamp,
-                "block": genesis_block,
+                "timestamp": CHAIN_PARAMS["timestamp"],
+                "block": CHAIN_PARAMS["genesis_block"],
                 "protocol": "PtYuensgYBb3G3x1hLLbCmcav8ue8Kyd2khADcL5LsT5R1hcXex",
             },
             "genesis_parameters": {
                 "values": {
-                    "genesis_pubkey": genesis_key,
+                    "genesis_pubkey": bootstrap_baker_accounts[
+                        CHAIN_PARAMS["activation_account"]
+                    ]["key"],
                 },
             },
         }
