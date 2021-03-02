@@ -3,6 +3,7 @@ import json
 import os
 import socket
 from hashlib import blake2b
+from json.decoder import JSONDecodeError
 from operator import itemgetter
 
 from base58 import b58decode_check, b58encode_check
@@ -34,16 +35,21 @@ def main():
     bootstrap_accounts = {**baker_public_keys, **non_baker_public_key_hashes}
 
     if main_args.generate_parameters_json:
-        parameters_json = json.dumps(
-            get_parameters_config(
-                [*bootstrap_accounts.values()],
-            ),
-            indent=2,
-        )
+        protocol_parameters = get_parameters_config([*bootstrap_accounts.values()])
+
+        with open("/commitment-params.json", "r") as f:
+            try:
+                commitments = json.load(f)
+                protocol_parameters["commitments"] = commitments
+            except JSONDecodeError:
+                print("No JSON found in /commitment-params.json")
+                pass
+
         print("Generated parameters.json :")
-        print(parameters_json)
+        protocol_params_json = json.dumps(protocol_parameters, indent=2)
+        print(protocol_params_json)
         with open("/etc/tezos/parameters.json", "w") as json_file:
-            print(parameters_json, file=json_file)
+            print(protocol_params_json, file=json_file)
 
     if main_args.generate_config_json:
         net_addr = None
