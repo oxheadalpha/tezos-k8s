@@ -1,4 +1,4 @@
-FROM tezos/tezos:v8-release
+FROM registry.gitlab.com/nomadic-labs/tezos:amd64-florencenet-docker
 ENV PYTHONUNBUFFERED=1
 
 # Note: we install build deps for pip, then remove everything after pip install.

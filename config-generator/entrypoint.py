@@ -65,6 +65,7 @@ def main():
             bootstrap_peers.extend(local_bootstrap_peers)
             if not bootstrap_peers:
                 bootstrap_peers = [f"tezos-baking-node-0.tezos-baking-node:9732"]
+        #net_addr="52.15.225.122"
 
         config_json = json.dumps(
             get_node_config(
