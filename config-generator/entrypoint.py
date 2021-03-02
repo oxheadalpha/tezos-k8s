@@ -54,11 +54,14 @@ def main():
     if main_args.generate_config_json:
         net_addr = None
         bootstrap_peers = CHAIN_PARAMS.get("bootstrap_peers", [])
-        if CHAIN_PARAMS["zerotier_in_use"]:
+        if CHAIN_PARAMS["chain_type"] == "private":
             with open("/var/tezos/zerotier_data.json", "r") as f:
                 net_addr = json.load(f)[0]["assignedAddresses"][0].split("/")[0]
             if bootstrap_peers == []:
                 bootstrap_peers.extend(get_zerotier_bootstrap_peer_ips())
+        if CHAIN_PARAMS["chain_type"] == "public":
+            with open("/tmp/data/config.json", "r") as f:
+                bootstrap_peers.extend(json.load(f)["p2p"]["bootstrap-peers"])
         else:
             local_bootstrap_peers = []
             bakers = CHAIN_PARAMS["nodes"]["baking"]
@@ -138,105 +141,38 @@ def get_node_config(
     genesis_block=None,
     net_addr=None,
 ):
-    p2p = ["p2p"]
-    for bootstrap_peer in bootstrap_peers:
-        p2p.extend(["--bootstrap-peers", bootstrap_peer])
-    if net_addr:
-        p2p.extend(["--listen-addr", net_addr + ":9732"])
 
-    node_config_args = p2p + [
-        "global",
-        "rpc",
-        "network",
-        "--chain-name",
-        chain_name,
-        "genesis",
-        "--timestamp",
-        timestamp,
-        "--block",
-        genesis_block,
-        "genesis_parameters",
-        "--genesis-pubkey",
-        genesis_key,
-    ]
-
-    return generate_node_config(node_config_args)
-
-
-# FIXME - this should probably be replaced with subprocess calls to tezos-node-config
-def generate_node_config(node_argv):
-    parser = argparse.ArgumentParser(prog="nodeconfig")
-    subparsers = parser.add_subparsers(help="sub-command help", dest="subparser_name")
-
-    global_parser = subparsers.add_parser("global")
-    global_parser.add_argument("--data-dir", default="/var/tezos/node")
-
-    rpc_parser = subparsers.add_parser("rpc")
-    rpc_parser.add_argument(
-        "--listen-addrs",
-        action="append",
-        default=[f"{os.getenv('MY_POD_IP')}:8732", "127.0.0.1:8732"],
-    )
-
-    p2p_parser = subparsers.add_parser("p2p")
-    p2p_parser.add_argument("--bootstrap-peers", action="append", default=[])
-    p2p_parser.add_argument("--listen-addr", default="[::]:9732")
-    p2p_parser.add_argument("--expected-proof-of-work", default=0, type=int)
-
-    network_parser = subparsers.add_parser("network")
-    network_parser.add_argument("--chain-name")
-    network_parser.add_argument("--sandboxed-chain-name", default="SANDBOXED_TEZOS")
-    network_parser.add_argument(
-        "--default-bootstrap-peers", action="append", default=[]
-    )
-
-    genesis_parser = subparsers.add_parser("genesis")
-    genesis_parser.add_argument("--timestamp")
-    genesis_parser.add_argument(
-        "--block", default="BLockGenesisGenesisGenesisGenesisGenesisd6f5afWyME7"
-    )
-    genesis_parser.add_argument(
-        "--protocol", default="PtYuensgYBb3G3x1hLLbCmcav8ue8Kyd2khADcL5LsT5R1hcXex"
-    )
-
-    genesis_parameters_parser = subparsers.add_parser("genesis_parameters")
-    genesis_parameters_parser.add_argument("--genesis-pubkey")
-
-    namespaces = []
-    while node_argv:
-        namespace, node_argv = parser.parse_known_args(node_argv)
-        namespaces.append(namespace)
-        if not namespace.subparser_name:
-            break
-
-    node_config = {}
-    special_keys = [
-        "listen_addrs",
-        "bootstrap_peers",
-        "data_dir",
-        "listen_addr",
-        "expected_proof_of_work",
-    ]
-    for namespace in namespaces:
-        section = vars(namespace)
-        fixed_section = {}
-        for k, v in section.items():
-            if k in special_keys:
-                fixed_section[k.replace("_", "-")] = v
-            else:
-                fixed_section[k] = v
-
-        key = fixed_section.pop("subparser_name")
-        if key == "global":
-            node_config.update(fixed_section)
-        else:
-            # doubly nested parsers are a bit tricky. we'll just force the network keys where they belong
-            if key == "genesis":
-                node_config["network"][key] = fixed_section
-            elif key == "genesis_parameters":
-                node_config["network"][key] = {"values": fixed_section}
-            else:
-                node_config[key] = fixed_section
+    node_config = {
+        "data-dir": "/var/tezos/node/data",
+        "rpc": {
+            "listen-addrs": [f"{os.getenv('MY_POD_IP')}:8732", "127.0.0.1:8732"],
+        },
+        "p2p": {
+            "bootstrap-peers": bootstrap_peers,
+            "listen-addr": (net_addr + ":9732" if net_addr else "[::]:9732"),
+        },
+        # "log": { "level": "debug"},
+    }
+    if CHAIN_PARAMS["chain_type"] == "public":
+        node_config["network"] = CHAIN_PARAMS["network"]
+        node_config["shell"] = {"history_mode": "rolling"}
+    else:
+        node_config["p2p"]["expected-proof-of-work"] = 0
+        node_config["network"] = {
+            "chain_name": chain_name,
+            "sandboxed_chain_name": "SANDBOXED_TEZOS",
+            "default_bootstrap_peers": [],
+            "genesis": {
+                "timestamp": timestamp,
+                "block": genesis_block,
+                "protocol": "PtYuensgYBb3G3x1hLLbCmcav8ue8Kyd2khADcL5LsT5R1hcXex",
+            },
+            "genesis_parameters": {
+                "values": {
+                    "genesis_pubkey": genesis_key,
+                },
+            },
+        }
 
     return node_config
 
@@ -355,8 +291,8 @@ def flatten_accounts():
         if acct not in accounts:
             print("    Creating specified but missing account " + acct)
             accounts[acct] = {
-                balance: CHAIN_PARAMS["defualt_bootstrap_mutez"],
-                bootstrap_baker: True,
+                "balance": CHAIN_PARAMS["defualt_bootstrap_mutez"],
+                "bootstrap_baker": True,
             }
     return accounts
 
@@ -388,8 +324,6 @@ tz1 = b"\x06\xa1\x9f"
 def import_keys(flattened_accounts):
     print("Importing keys")
     tezdir = "/var/tezos/client"
-    os.makedirs(tezdir, exist_ok=True)
-    os.chmod(tezdir, 0o777)
     secret_keys = []
     public_keys = []
     public_key_hashs = []

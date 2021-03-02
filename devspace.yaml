@@ -28,6 +28,10 @@ images:
     image: tezos-k8s-wait-for-bootstrap
     dockerfile: ./wait-for-bootstrap/Dockerfile
     context: ./wait-for-bootstrap
+  snapshot-downloader:
+    image: tezos-k8s-snapshot-downloader
+    dockerfile: ./snapshot-downloader/Dockerfile
+    context: ./snapshot-downloader
   config-generator:
     image: tezos-k8s-config-generator
     dockerfile: ./config-generator/Dockerfile
