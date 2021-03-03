@@ -160,7 +160,7 @@ def create_node_config_json(
             "bootstrap-peers": bootstrap_peers,
             "listen-addr": (net_addr + ":9732" if net_addr else "[::]:9732"),
         },
-        "shell": {"history_mode": this_nodes_settings["history_mode"]}
+        "shell": {"history_mode": this_nodes_settings.get("history_mode", "rolling")}
         # "log": { "level": "debug"},
     }
     if CHAIN_PARAMS["chain_type"] == "public":
