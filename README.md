@@ -1,3 +1,14 @@
+## Pulumi branch
+
+To deploy the fbetanets I did:
+
+* change the tezos container version in all dockerfiles (committed here)
+* added a service of type loadbalancer for exposing the p2p ports with NLB (committed here)
+* modified pulumi index.ts by hand to deploy 2 tezos charts in the same cluster. the values.yaml files for both these charts are not committed since they contain our bakers private keys.
+* deployed the aws load balancer controller manually using this guide : https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html Hopefully this can be automated.
+* once I had the IP addresses, I created entries in route53 manually
+
+
 # Tezos k8s Private Chain
 
 This README will walk you through setting up a Tezos based private blockchain where you will spin up one bootstrap node as well as additional peer nodes if you'd like. Using `minikube`, these nodes will be running in a peer-to-peer network via a Zerotier VPN, inside of a Kubernetes cluster.
