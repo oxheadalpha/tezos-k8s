@@ -213,7 +213,7 @@ def main():
                         "key": keys[key_type],
                         "type": key_type,
                         "bootstrap_baker": True,
-                        "bootstrap_balance": 50000000000000,
+                        "bootstrap_balance": 4000000000000,
                     }
                 )
 
