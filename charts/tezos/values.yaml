@@ -1,4 +1,3 @@
-baker: true
 chain_name: YOUR_CHAIN_NAME_HERE
 is_invitation: false
 rpc_auth: false
@@ -34,7 +33,7 @@ bootstrap_peers: []
 
 baker_statefulset:
   name: tezos-baking-node
-plain_node_statefulset:
+regular_node_statefulset:
   name: tezos-node
 
 # Names should be consistent with the above statefulset names with suffix being

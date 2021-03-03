@@ -31,10 +31,10 @@ def main():
     )
     main_args = main_parser.parse_args()
 
-    bootstrap_baker_accounts = get_baker_public_keys(flattened_accounts)
+    bootstrap_baker_accounts = get_bootstrap_bakers_pubkeys(flattened_accounts)
 
     if main_args.generate_parameters_json:
-        bootstrap_accounts = get_non_baker_public_key_hashes(flattened_accounts)
+        bootstrap_accounts = get_bootstrap_accounts_pubkey_hashes(flattened_accounts)
         protocol_parameters = create_protocol_parameters_json(
             bootstrap_accounts, bootstrap_baker_accounts
         )
@@ -97,33 +97,34 @@ def get_zerotier_bootstrap_peer_ips():
     ]
 
 
-def get_baker_public_keys(accounts):
-    with open("/var/tezos/client/public_keys", "r") as f:
-        tezos_pubkey_list = json.load(f)
-    pubkeys = {}
-    for key in tezos_pubkey_list:
+def get_keys_and_balances(accounts, keys_list, for_bootstrap_bakers):
+    keys = {}
+    for key in keys_list:
         key_name = key["name"]
-        if accounts[key_name]["bootstrap_baker"]:
-            pubkeys[key_name] = {
+        if for_bootstrap_bakers and accounts[key_name]["bootstrap_baker"]:
+            keys[key_name] = {
                 "key": key["value"]["key"],
-                "balance": accounts[key_name]["balance"],
+                "bootstrap_balance": accounts[key_name]["bootstrap_balance"],
             }
-    return pubkeys
+        elif not for_bootstrap_bakers and not accounts[key_name]["bootstrap_baker"]:
+            keys[key_name] = {
+                "key": key["value"],
+                "bootstrap_balance": accounts[key_name]["bootstrap_balance"],
+            }
+
+    return keys
 
 
-def get_non_baker_public_key_hashes(accounts):
+def get_bootstrap_bakers_pubkeys(accounts):
+    with open("/var/tezos/client/public_keys", "r") as f:
+        pubkey_list = json.load(f)
+    return get_keys_and_balances(accounts, pubkey_list, for_bootstrap_bakers=True)
+
+
+def get_bootstrap_accounts_pubkey_hashes(accounts):
     with open("/var/tezos/client/public_key_hashs", "r") as f:
         pubkey_hash_list = json.load(f)
-    hashes = {}
-    for account in pubkey_hash_list:
-        account_name = account["name"]
-        if not accounts[account_name]["bootstrap_baker"]:
-            hashes[account_name] = {
-                "key": account["value"],
-                "balance": accounts[account_name]["balance"],
-            }
-    return hashes
-
+    return get_keys_and_balances(accounts, pubkey_hash_list, for_bootstrap_bakers=False)
 
 def get_this_nodes_settings():
     my_pod_name = os.getenv("MY_POD_NAME")
@@ -138,6 +139,8 @@ def get_this_nodes_settings():
         for node in regular_nodes:
             if node["name"] == my_pod_name:
                 return node
+
+    print("Could not find any node setting for this node!")
 
 
 def create_node_config_json(
@@ -158,7 +161,7 @@ def create_node_config_json(
             "bootstrap-peers": bootstrap_peers,
             "listen-addr": (net_addr + ":9732" if net_addr else "[::]:9732"),
         },
-        "shell": {"history_mode": this_nodes_settings["history_mode"]}
+        "shell": {"history_mode": this_nodes_settings.get("history_mode", "rolling")}
         # "log": { "level": "debug"},
     }
     if CHAIN_PARAMS["chain_type"] == "public":
@@ -186,14 +189,17 @@ def create_node_config_json(
     return node_config
 
 
-def get_accounts_pubkey_balance_pairs(accounts, accounts_type):
+def get_genesis_accounts_pubkey_and_balance(accounts, accounts_type):
     """ accounts_type = "plain_account" | "baker_account" """
 
-    default_balance = CHAIN_PARAMS["defualt_bootstrap_mutez"]
     pubkey_and_balance_pairs = []
 
     for account in accounts:
-        account_balance = str(account.get("balance") or default_balance)
+        account_balance = str(account.get("bootstrap_balance"))
+
+        # Don't add accounts with 0 tez to parameters.json
+        if account_balance == "0":
+            continue
         if (  # plain accounts || baker accounts but old account format
             accounts_type == "plain_accounts"
             or CHAIN_PARAMS["is_old_accounts_parameter_format"]
@@ -217,10 +223,10 @@ def create_protocol_parameters_json(bootstrap_accounts, bootstrap_baker_accounts
 
     protocol_params = CHAIN_PARAMS["protocol_parameters"]
 
-    bootstrap_accounts_pubkey_balance_pairs = get_accounts_pubkey_balance_pairs(
+    bootstrap_accounts_pubkey_balance_pairs = get_genesis_accounts_pubkey_and_balance(
         bootstrap_accounts.values(), "plain_accounts"
     )
-    bootstrap_bakers_pubkey_balance_pairs = get_accounts_pubkey_balance_pairs(
+    bootstrap_bakers_pubkey_balance_pairs = get_genesis_accounts_pubkey_and_balance(
         bootstrap_baker_accounts.values(), "baker_accounts"
     )
 
@@ -285,8 +291,8 @@ def fill_in_missing_genesis_block():
 def flatten_accounts():
     accounts = {}
     for account in ACCOUNTS:
-        name, type, key, balance, bootstrap_baker = itemgetter(
-            "name", "type", "key", "balance", "bootstrap_baker"
+        name, type, key, bootstrap_balance, bootstrap_baker = itemgetter(
+            "name", "type", "key", "bootstrap_balance", "bootstrap_baker"
         )(account)
 
         if name in accounts:
@@ -297,7 +303,7 @@ def flatten_accounts():
         else:
             accounts[name] = {
                 type: key,
-                "balance": balance,
+                "bootstrap_balance": bootstrap_balance,
                 "bootstrap_baker": bootstrap_baker,
             }
 
@@ -307,7 +313,7 @@ def flatten_accounts():
         if acct not in accounts:
             print("    Creating specified but missing account " + acct)
             accounts[acct] = {
-                "balance": CHAIN_PARAMS["defualt_bootstrap_mutez"],
+                "bootstrap_balance": CHAIN_PARAMS["defualt_bootstrap_mutez"],
                 "bootstrap_baker": True,
             }
     return accounts
