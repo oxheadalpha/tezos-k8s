@@ -230,7 +230,10 @@ def main():
     if len(creation_nodes["baking"]) > 1:
         creation_nodes["baking"][1]["bootstrap"] = True
 
-    invitation_nodes = {"baking": [], "regular": [{}]}
+    invitation_nodes = {
+        "baking": [],
+        "regular": [{"name": f"tezos-node-{n}"} for n in range(args.number_of_nodes)],
+    }
 
     bootstrap_peers = [args.bootstrap_peer] if args.bootstrap_peer else []
 
