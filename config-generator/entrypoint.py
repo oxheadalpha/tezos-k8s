@@ -312,7 +312,7 @@ def flatten_accounts():
         if acct not in accounts:
             print("    Creating specified but missing account " + acct)
             accounts[acct] = {
-                "balance": CHAIN_PARAMS["defualt_bootstrap_mutez"],
+                "bootstrap_balance": CHAIN_PARAMS["defualt_bootstrap_mutez"],
                 "bootstrap_baker": True,
             }
     return accounts
