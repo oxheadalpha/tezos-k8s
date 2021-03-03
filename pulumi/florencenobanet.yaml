@@ -1,0 +1,86 @@
+bootstrap_peers: []
+chain_name: TEZOS_FLORENCENOBANET_2021-03-03T11:00:00Z
+genesis:
+  block: BMFCHw1mv3A71KpTuGD3MoFnkHk9wvTYjUzuR9QqiUumKGFG6pM
+  timestamp: "2021-03-03T11:00:00Z"
+protocol:
+  bootstrap_mutez: "4000000000000"
+  hash: PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i
+  command: 009-PsFLoren
+images:
+  tezos: registry.gitlab.com/nomadic-labs/tezos:amd64-florencenet-docker
+is_invitation: false
+nodes:
+  baking:
+    - bake_for: baker0
+      bootstrap: true
+      history_mode: archive
+      name: tezos-baking-node-0
+  regular: []
+rpc_auth: false
+zerotier_config:
+  zerotier_network: null
+  zerotier_token: null
+zerotier_in_use: false
+
+accounts:
+  - name: baker2 # third party genesis baker
+    key: edpktv8Advoagbpo5TiyyDnmC1Mqne6vJMaXQ2vvuzUfJnBfMKJmdC
+    type: public
+    bootstrap_baker: true
+    balance: 50000000000000
+  - name: baker3 # third party genesis baker
+    key: edpkvNGUd3xcBNmPWRbXJoS6WEvxu1BVoWjHr7ab7QoAJFFqhx9tkR
+    type: public
+    bootstrap_baker: true
+    balance: 50000000000000
+  - name: baker4 # third party genesis baker
+    key: edpkvP1NXoo8vhYbPSvXdy466EHoYWBpf6zmjghB2p3DwJPjbB5nsf
+    type: public
+    bootstrap_baker: true
+    balance: 50000000000000
+  - name: baker5 # third party genesis baker
+    key: edpkurotC8ScNphdQuj4fpYtwbV2oBxNRv4X1eFh9DzqjmMfcJSYP4
+    type: public
+    bootstrap_baker: true
+    balance: 50000000000000
+  - name: baker6 # third party genesis baker
+    key: edpkvE2HEoPyM1XbToGiLmuPhzzrZsAYCcR3nbrjEVsbEe6vFQFdPo
+    type: public
+    bootstrap_baker: true
+    balance: 50000000000000
+
+is_old_accounts_parameter_format: true
+protocol_parameters:
+  preserved_cycles: 3
+  blocks_per_cycle: 512
+  blocks_per_commitment: 16
+  blocks_per_roll_snapshot: 32
+  blocks_per_voting_period: 1024
+  time_between_blocks:
+    - "30"
+    - "20"
+  endorsers_per_block: 32
+  hard_gas_limit_per_operation: "1040000"
+  hard_gas_limit_per_block: "10400000"
+  proof_of_work_threshold: "70368744177663"
+  tokens_per_roll: "8000000000"
+  michelson_maximum_type_size: 1000
+  seed_nonce_revelation_tip: "125000"
+  origination_size: 257
+  block_security_deposit: "512000000"
+  endorsement_security_deposit: "64000000"
+  baking_reward_per_endorsement:
+    - "1250000"
+    - "187500"
+  endorsement_reward:
+    - "1250000"
+    - "833333"
+  cost_per_byte: "250"
+  hard_storage_limit_per_operation: "60000"
+  test_chain_duration: "61440"
+  quorum_min: 2000
+  quorum_max: 7000
+  min_proposal_quorum: 500
+  initial_endorsers: 24
+  delay_per_missing_endorsement: "4"

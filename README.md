@@ -1,10 +1,14 @@
-## Pulumi branch
+## Pulumi florencenets branch
 
-To deploy the fbetanets I did:
+This branch acts as a record on how we are deploying the florencenets.
+
+Some of the needed changes are hardcoded, and other have been done manually and are recorded in the README.
+
+To deploy florencenets:
 
 * change the tezos container version in all dockerfiles (committed here)
 * added a service of type loadbalancer for exposing the p2p ports with NLB (committed here)
-* modified pulumi index.ts by hand to deploy 2 tezos charts in the same cluster. the values.yaml files for both these charts are not committed since they contain our bakers private keys.
+* modified pulumi index.ts by hand to deploy 2 tezos charts in the same cluster. the values.yaml files for both these charts are committed, with the private keys omitted.
 * deployed the aws load balancer controller manually using this guide : https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html Hopefully this can be automated.
 * once I had the IP addresses, I created entries in route53 manually
 

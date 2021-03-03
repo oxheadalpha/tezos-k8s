@@ -18,7 +18,7 @@ const chainName = "fbetanet"
 const defaultHelmValuesFile = fs.readFileSync("../charts/tezos/values.yaml", 'utf8')
 const defaultHelmValues = YAML.parse(defaultHelmValuesFile)
 
-const helmValuesFile = fs.readFileSync('florence_with_baking.yaml', 'utf8')
+const helmValuesFile = fs.readFileSync('florencenobanet.yaml', 'utf8')
 const helmValues = YAML.parse(helmValuesFile)
 
 const tezosK8sImages = defaultHelmValues["tezos_k8s_images"]
@@ -56,12 +56,31 @@ const cluster = new eks.Cluster(chainName + "-chain", {
     maxSize: 100,
 })
 
+// private key for the baker inside the topo for both networks
+const private_baking_key = fs.readFileSync('private_baking_key', 'utf8');
+
+// private key for the bootstrap account with a lot of funds for both networks
+const private_non_baking_key = fs.readFileSync('private_non_baking_key', 'utf8');
+
 const nsFlorence = new k8s.core.v1.Namespace("fbeta", {metadata: {name:"fbeta",}},
 					      { provider: cluster.provider});
 export const nsNameFlorence = nsFlorence.metadata.name;
 
-const helmValuesFlorenceFile = fs.readFileSync('florence_with_baking.yaml', 'utf8')
+const helmValuesFlorenceFile = fs.readFileSync('florencenet.yaml', 'utf8')
 const helmValuesFlorence = YAML.parse(helmValuesFlorenceFile)
+helmValuesFlorence["accounts"].append({
+    "name": "baker0",
+    "key": private_baking_key,
+    "type": "secret",
+    "bootstrap_baker": true,
+    "bootstrap_balance": 5000000000000});
+helmValuesFlorence["accounts"].append({
+    "name": "TQFree",
+    "key": private_non_baking_key,
+    "type": "secret",
+    "bootstrap_baker": false,
+    "bootstrap_balance": 10000000000000});
+
 
 helmValuesFlorence["tezos_k8s_images"] = pulumiTaggedImages
 // Deploy Tezos into our cluster.
@@ -75,8 +94,20 @@ const nsFlorenceNoBa = new k8s.core.v1.Namespace("fbetanoba", {metadata: {name:"
 					      { provider: cluster.provider});
 export const nsNameFlorenceNoBa = nsFlorenceNoBa.metadata.name;
 
-const helmValuesFlorenceNoBaFile = fs.readFileSync('florence_without_baking.yaml', 'utf8')
+const helmValuesFlorenceNoBaFile = fs.readFileSync('florencenobanet.yaml', 'utf8')
 const helmValuesFlorenceNoBa = YAML.parse(helmValuesFlorenceNoBaFile)
+helmValuesFlorenceNoBa["accounts"].append({
+    "name": "baker0",
+    "key": private_baking_key,
+    "type": "secret",
+    "bootstrap_baker": true,
+    "bootstrap_balance": 5000000000000});
+helmValuesFlorenceNoBa["accounts"].append({
+    "name": "TQFree",
+    "key": private_non_baking_key,
+    "type": "secret",
+    "bootstrap_baker": false,
+    "bootstrap_balance": 10000000000000});
 helmValuesFlorenceNoBa["tezos_k8s_images"] = pulumiTaggedImages
 
 // Deploy Tezos into our cluster.
