@@ -167,6 +167,7 @@ def main():
             "zerotier_network": args.zerotier_network,
             "zerotier_token": args.zerotier_token,
         },
+        "is_old_accounts_parameter_format": True,
     }
 
     # preserve pre-existing values, if any (in case of scale-up)
@@ -211,12 +212,17 @@ def main():
                         "name": account,
                         "key": keys[key_type],
                         "type": key_type,
+                        "bootstrap_baker": True,
+                        "bootstrap_balance": 4000000000000,
                     }
                 )
 
     creation_nodes = {
-        "baking": [{"bake_for": f"baker{n}"} for n in range(args.number_of_bakers)],
-        "regular": [{} for n in range(args.number_of_nodes)],
+        "baking": [
+            {"bake_for": f"baker{n}", "name": f"tezos-baking-node-{n}"}
+            for n in range(args.number_of_bakers)
+        ],
+        "regular": [{"name": f"tezos-node-{n}"} for n in range(args.number_of_nodes)],
     }
 
     # first nodes are acting as bootstrap nodes for the others
@@ -224,7 +230,10 @@ def main():
     if len(creation_nodes["baking"]) > 1:
         creation_nodes["baking"][1]["bootstrap"] = True
 
-    invitation_nodes = {"baking": [], "regular": [{}]}
+    invitation_nodes = {
+        "baking": [],
+        "regular": [{"name": f"tezos-node-{n}"} for n in range(args.number_of_nodes)],
+    }
 
     bootstrap_peers = [args.bootstrap_peer] if args.bootstrap_peer else []
 
