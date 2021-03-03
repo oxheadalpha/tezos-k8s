@@ -1,4 +1,3 @@
-baker: true
 chain_name: YOUR_CHAIN_NAME_HERE
 is_invitation: false
 rpc_auth: false
