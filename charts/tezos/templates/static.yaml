@@ -13,15 +13,6 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: tezos-node
-spec:
-  clusterIP: None
-  selector:
-    app: tezos-node
----
-apiVersion: v1
-kind: Service
-metadata:
   name: tezos-baking-node
 spec:
   clusterIP: None

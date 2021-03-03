@@ -167,7 +167,7 @@ def create_node_config_json(
     if CHAIN_PARAMS["chain_type"] == "public":
         node_config["network"] = CHAIN_PARAMS["network"]
     else:
-        node_config["p2p"]["expected-proof-of-work"] = 0
+        node_config["p2p"]["expected-proof-of-work"] = 26
         node_config["network"] = {
             "chain_name": CHAIN_PARAMS["chain_name"],
             "sandboxed_chain_name": "SANDBOXED_TEZOS",

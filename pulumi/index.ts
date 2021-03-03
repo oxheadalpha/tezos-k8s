@@ -13,12 +13,12 @@ const repo = new awsx.ecr.Repository("tezos-k8s");
 //   mkchain pulumi
 //
 
-const chainName = process.env.CHAIN_NAME || "pulumi";
+const chainName = "fbetanet"
 
 const defaultHelmValuesFile = fs.readFileSync("../charts/tezos/values.yaml", 'utf8')
 const defaultHelmValues = YAML.parse(defaultHelmValuesFile)
 
-const helmValuesFile = fs.readFileSync(chainName + '_values.yaml', 'utf8')
+const helmValuesFile = fs.readFileSync('florence_with_baking.yaml', 'utf8')
 const helmValues = YAML.parse(helmValuesFile)
 
 const tezosK8sImages = defaultHelmValues["tezos_k8s_images"]
@@ -56,39 +56,35 @@ const cluster = new eks.Cluster(chainName + "-chain", {
     maxSize: 100,
 })
 
-const ns = new k8s.core.v1.Namespace("tezos", {metadata: {name:"tezos",}},
+const nsFlorence = new k8s.core.v1.Namespace("fbeta", {metadata: {name:"fbeta",}},
 					      { provider: cluster.provider});
-export const nsName = ns.metadata.name;
+export const nsNameFlorence = nsFlorence.metadata.name;
 
+const helmValuesFlorenceFile = fs.readFileSync('florence_with_baking.yaml', 'utf8')
+const helmValuesFlorence = YAML.parse(helmValuesFlorenceFile)
+
+helmValuesFlorence["tezos_k8s_images"] = pulumiTaggedImages
 // Deploy Tezos into our cluster.
 const chain = new k8s.helm.v2.Chart("chain", {
-    namespace: nsName,
+    namespace: nsNameFlorence,
     path: "../charts/tezos",
-    values: helmValues,
+    values: helmValuesFlorence,
 }, { providers: { "kubernetes": cluster.provider } });
 
-if (helmValues["rpc_auth"] == true) {
-    const nginxIngressHelmValues_file
-	= fs.readFileSync('nginx_ingress_values.yaml', 'utf8')
-    const nginxIngressHelmValues = YAML.parse(nginxIngressHelmValues_file)
+const nsFlorenceNoBa = new k8s.core.v1.Namespace("fbetanoba", {metadata: {name:"fbetanoba",}},
+					      { provider: cluster.provider});
+export const nsNameFlorenceNoBa = nsFlorenceNoBa.metadata.name;
 
-    const rpc = new k8s.helm.v2.Chart("rpc-auth", {
-	namespace: nsName,
-	path: "../charts/rpc-auth",
-	values: helmValues,
-    }, { providers: { "kubernetes": cluster.provider } });
+const helmValuesFlorenceNoBaFile = fs.readFileSync('florence_without_baking.yaml', 'utf8')
+const helmValuesFlorenceNoBa = YAML.parse(helmValuesFlorenceNoBaFile)
+helmValuesFlorenceNoBa["tezos_k8s_images"] = pulumiTaggedImages
 
-    // Manual step at this point:
-    // * create a certificate
-    // * put certificate arn in the nginx_ingress_values.yaml
-    const nginxIngress = new k8s.helm.v2.Chart("nginx-ingress", {
-	namespace: nsName,
-	chart: "ingress-nginx",
-	fetchOpts: {
-	  repo: "https://kubernetes.github.io/ingress-nginx" },
-	values: nginxIngressHelmValues,
-    }, { providers: { "kubernetes": cluster.provider } });
-}
+// Deploy Tezos into our cluster.
+const chainNoBa = new k8s.helm.v2.Chart("chainNoBa", {
+    namespace: nsNameFlorenceNoBa,
+    path: "../charts/tezos",
+    values: helmValuesFlorenceNoBa,
+}, { providers: { "kubernetes": cluster.provider } });
 
 // Manual steps after all is done:
 // Enable proxy protocol v2 on the target groups:
