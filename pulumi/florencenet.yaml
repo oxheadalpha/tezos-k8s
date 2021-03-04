@@ -54,7 +54,20 @@ accounts:
     type: public
     bootstrap_baker: true
     bootstrap_balance: 50000000000000
+  - name: tz1THUNA # Romain's faucet
+    key: edpkuh3WSwziyd6nXqDXeh48vZHp5ETxFd43EdkbzhmW98BvuLXK81
+    type: public
+    bootstrap_baker: false
+    bootstrap_balance: 50000000000000
+  - name: midl # MIDL.dev future testnet baker
+    key: edpkuZ69G79B2UggajnVC3YYPVVhLgp13rqfPXGbvHnvLshS4M3Ugq
+    type: public
+    bootstrap_baker: false
+    bootstrap_balance: 50000000000000
 
+      #two more accouts added by pulumi (not shown here):
+      # * tq's baker
+      # * tq's faucet
 
 protocol_parameters:
   preserved_cycles: 3
