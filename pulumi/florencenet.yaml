@@ -1,14 +1,14 @@
 bootstrap_peers: []
-chain_name: TEZOS_FLORENCENET_2021-03-03T11:00:00Z
+chain_name: TEZOS_FLORENCENET_2021-03-04T20:00:00Z
 genesis:
   block: BMFCHw1mv3A71KpTuGD3MoFnkHk9wvTYjUzuR9QqiUumKGFG6pM
-  timestamp: "2021-03-03T11:00:00Z"
+  timestamp: "2021-03-04T20:00:00Z"
 protocol:
   bootstrap_mutez: "4000000000000"
   hash: PsFLorBArSaXjuy9oP76Qv1v2FRYnUs7TFtteK5GkRBC24JvbdE
   command: 009-PsFLorBA
 images:
-  tezos: registry.gitlab.com/nomadic-labs/tezos:amd64-florencenet-docker
+  tezos: tezos/tezos:master_???
 is_invitation: false
 nodes:
   baking:
@@ -24,27 +24,32 @@ zerotier_config:
 zerotier_in_use: false
 
 accounts:
-  - name: baker1 # third party genesis baker
+  - name: smartpy
     key: edpktv8Advoagbpo5TiyyDnmC1Mqne6vJMaXQ2vvuzUfJnBfMKJmdC
     type: public
     bootstrap_baker: true
     bootstrap_balance: 50000000000000
-  - name: baker2 # third party genesis baker
+  - name: akishino
     key: edpkvNGUd3xcBNmPWRbXJoS6WEvxu1BVoWjHr7ab7QoAJFFqhx9tkR
     type: public
     bootstrap_baker: true
     bootstrap_balance: 50000000000000
-  - name: baker3 # third party genesis baker
+  - name: ecadlabs
     key: edpkvP1NXoo8vhYbPSvXdy466EHoYWBpf6zmjghB2p3DwJPjbB5nsf
     type: public
     bootstrap_baker: true
     bootstrap_balance: 50000000000000
-  - name: baker4 # third party genesis baker
-    key: edpkurotC8ScNphdQuj4fpYtwbV2oBxNRv4X1eFh9DzqjmMfcJSYP4
+  - name: tezosil
+    key: edpkvQj8r3YigN6QFsDRaKQCoxDNhKK4whDUkFkw6Gom36d86uhEbv
     type: public
     bootstrap_baker: true
     bootstrap_balance: 50000000000000
-  - name: baker5 # third party genesis baker
+  - name: romain
+    key: edpku4HKE3q2BhPejtYYSmfF8unntUGWEEXPLZHPJrP45z6Gke64iU
+    type: public
+    bootstrap_baker: true
+    bootstrap_balance: 50000000000000
+  - name: pirbo
     key: edpkvE2HEoPyM1XbToGiLmuPhzzrZsAYCcR3nbrjEVsbEe6vFQFdPo
     type: public
     bootstrap_baker: true
