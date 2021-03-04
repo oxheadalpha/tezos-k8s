@@ -41,16 +41,39 @@ baker_statefulset: # charts/tezos/templates/baker.yaml
 regular_node_statefulset: # charts/tezos/templates/node.yaml
   name: tezos-node
 
-# Names should be consistent with the above statefulset names with suffix being
-# index of node.
+accounts:
+ tqtezos_baker_0:
+    key: edsk...
+    type: secret
+    bootstrap_baker: true
+    bootstrap_balance: 50000000000000
+ tqtezos_baker_1:
+    key: edsk...
+    type: secret
+    bootstrap_baker: true
+    bootstrap_balance: 4000000000000
+  tqtezos_node_0:
+    key: edsk...
+    type: public
+    bootstrap_baker: false
+    bootstrap_balance: 4000000000000
+
+
+# Names of nodes should be consistent with the above statefulset names but with
+# an added suffix being the index of the node. These names with suffix are the
+# `metadata.name` of the downward k8s API. They should be kebab case.
+# https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/
 nodes:
   baking:
-    - name: tezos-baking-node-0
+    tezos-baking-node-0:
+      bake_using_account: tqtezos_baker_0
+      bootstrap: true
+      history_mode: archive
   regular:
-    - name: tezos-node-0
-
-accounts:
-  - name: baker0
+    tezos-node-0:
+      bake_using_account: tqtezos_baker_1
+      bootstrap: true
+      history_mode: archive
 
 protocol_parameters:
   preserved_cycles: 2
