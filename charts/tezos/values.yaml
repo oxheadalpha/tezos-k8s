@@ -35,29 +35,29 @@ bootstrap_peers: []
 # archive nodes, node with open rpc
 # take into account fundraisers accounts that people need to activate
 
+# Accounts with bootstrap balances > 0 will be part of the genesis block
+accounts:
+  tqtezos_baker_0:
+    key: edsk...
+    type: secret
+    is_bootstrap_baker_account: true
+    bootstrap_balance: "50000000000000"
+  tqtezos_baker_1:
+    key: edsk...
+    type: secret
+    is_bootstrap_baker_account: true
+    bootstrap_balance: "4000000000000"
+  tqtezos_node_0:
+    key: edpk...
+    type: public
+    is_bootstrap_baker_account: false
+    bootstrap_balance: "4000000000000"
+
 # Properties that are templated in Helm template files
 baker_statefulset: # charts/tezos/templates/baker.yaml
   name: tezos-baking-node
 regular_node_statefulset: # charts/tezos/templates/node.yaml
   name: tezos-node
-
-accounts:
- tqtezos_baker_0:
-    key: edsk...
-    type: secret
-    is_bootstrap_baker_account: true
-    bootstrap_balance: 50000000000000
- tqtezos_baker_1:
-    key: edsk...
-    type: secret
-    is_bootstrap_baker_account: true
-    bootstrap_balance: 4000000000000
-  tqtezos_node_0:
-    key: edsk...
-    type: public
-    is_bootstrap_baker_account: false
-    bootstrap_balance: 4000000000000
-
 
 # Names of nodes should be consistent with the above statefulset names but with
 # an added suffix being the index of the node. These names with suffix are the
@@ -68,11 +68,15 @@ nodes:
     tezos-baking-node-0:
       bake_using_account: tqtezos_baker_0
       bootstrap: true
-      history_mode: archive
+      config:
+        shell:
+          history_mode: archive
+
   regular:
     tezos-node-0:
-      bake_using_account: tqtezos_baker_1
-      history_mode: archive
+      config:
+        shell:
+          history_mode: full
 
 protocol_parameters:
   preserved_cycles: 2
