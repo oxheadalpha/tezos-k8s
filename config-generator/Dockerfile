@@ -1,4 +1,4 @@
-FROM tezos/tezos:master_a4e67499_20210304001354
+FROM tezos/tezos:master_08351e3d_20210304172252
 ENV PYTHONUNBUFFERED=1
 
 # Note: we install build deps for pip, then remove everything after pip install.

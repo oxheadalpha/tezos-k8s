@@ -1,4 +1,4 @@
-FROM tezos/tezos:master_a4e67499_20210304001354
+FROM tezos/tezos:master_08351e3d_20210304172252
 RUN sudo apk add jq
 COPY entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]

@@ -8,7 +8,7 @@ protocol:
   hash: PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i
   command: 009-PsFLoren
 images:
-  tezos: tezos/tezos:master_???
+  tezos: tezos/tezos:master_08351e3d_20210304172252
 is_invitation: false
 nodes:
   baking:
