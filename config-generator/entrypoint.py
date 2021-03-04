@@ -100,12 +100,12 @@ def get_keys_and_balances(accounts, keys_list, for_bootstrap_bakers):
     keys = {}
     for key in keys_list:
         key_name = key["name"]
-        if for_bootstrap_bakers and accounts[key_name]["bootstrap_baker"]:
+        if for_bootstrap_bakers and accounts[key_name]["is_bootstrap_baker_account"]:
             keys[key_name] = {
                 "key": key["value"]["key"],
                 "bootstrap_balance": accounts[key_name]["bootstrap_balance"],
             }
-        elif not for_bootstrap_bakers and not accounts[key_name]["bootstrap_baker"]:
+        elif not for_bootstrap_bakers and not accounts[key_name]["is_bootstrap_baker_account"]:
             keys[key_name] = {
                 "key": key["value"],
                 "bootstrap_balance": accounts[key_name]["bootstrap_balance"],
@@ -290,8 +290,8 @@ def fill_in_missing_genesis_block():
 def flatten_accounts():
     accounts = {}
     for account in ACCOUNTS:
-        name, type, key, bootstrap_balance, bootstrap_baker = itemgetter(
-            "name", "type", "key", "bootstrap_balance", "bootstrap_baker"
+        name, type, key, bootstrap_balance, is_bootstrap_baker_account = itemgetter(
+            "name", "type", "key", "bootstrap_balance", "is_bootstrap_baker_account"
         )(account)
 
         if name in accounts:
@@ -303,7 +303,7 @@ def flatten_accounts():
             accounts[name] = {
                 type: key,
                 "bootstrap_balance": bootstrap_balance,
-                "bootstrap_baker": bootstrap_baker,
+                "is_bootstrap_baker_account": is_bootstrap_baker_account,
             }
 
     i = 0
@@ -313,7 +313,7 @@ def flatten_accounts():
             print("    Creating specified but missing account " + acct)
             accounts[acct] = {
                 "bootstrap_balance": CHAIN_PARAMS["defualt_bootstrap_mutez"],
-                "bootstrap_baker": True,
+                "is_bootstrap_baker_account": True,
             }
     return accounts
 

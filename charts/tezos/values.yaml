@@ -45,17 +45,17 @@ accounts:
  tqtezos_baker_0:
     key: edsk...
     type: secret
-    bootstrap_baker: true
+    is_bootstrap_baker_account: true
     bootstrap_balance: 50000000000000
  tqtezos_baker_1:
     key: edsk...
     type: secret
-    bootstrap_baker: true
+    is_bootstrap_baker_account: true
     bootstrap_balance: 4000000000000
   tqtezos_node_0:
     key: edsk...
     type: public
-    bootstrap_baker: false
+    is_bootstrap_baker_account: false
     bootstrap_balance: 4000000000000
 
 
@@ -72,7 +72,6 @@ nodes:
   regular:
     tezos-node-0:
       bake_using_account: tqtezos_baker_1
-      bootstrap: true
       history_mode: archive
 
 protocol_parameters:

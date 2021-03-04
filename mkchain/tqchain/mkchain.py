@@ -212,7 +212,7 @@ def main():
                         "name": account,
                         "key": keys[key_type],
                         "type": key_type,
-                        "bootstrap_baker": True,
+                        "is_bootstrap_baker_account": True,
                         "bootstrap_balance": 4000000000000,
                     }
                 )
