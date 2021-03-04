@@ -68,7 +68,7 @@ export const nsNameFlorence = nsFlorence.metadata.name;
 
 const helmValuesFlorenceFile = fs.readFileSync('florencenet.yaml', 'utf8')
 const helmValuesFlorence = YAML.parse(helmValuesFlorenceFile)
-helmValuesFlorence["accounts"].push({
+helmValuesFlorence["accounts"].unshift({
     "name": "baker0",
     "key": private_baking_key,
     "type": "secret",
@@ -96,7 +96,7 @@ export const nsNameFlorenceNoBa = nsFlorenceNoBa.metadata.name;
 
 const helmValuesFlorenceNoBaFile = fs.readFileSync('florencenobanet.yaml', 'utf8')
 const helmValuesFlorenceNoBa = YAML.parse(helmValuesFlorenceNoBaFile)
-helmValuesFlorenceNoBa["accounts"].push({
+helmValuesFlorenceNoBa["accounts"].unshift({
     "name": "baker0",
     "key": private_baking_key,
     "type": "secret",
