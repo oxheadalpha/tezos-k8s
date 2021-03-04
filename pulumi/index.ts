@@ -62,7 +62,7 @@ const private_baking_key = fs.readFileSync('private_baking_key', 'utf8');
 // private key for the bootstrap account with a lot of funds for both networks
 const private_non_baking_key = fs.readFileSync('private_non_baking_key', 'utf8');
 
-const nsFlorence = new k8s.core.v1.Namespace("fbeta", {metadata: {name:"fbeta",}},
+const nsFlorence = new k8s.core.v1.Namespace("florence", {metadata: {name:"florence",}},
 					      { provider: cluster.provider});
 export const nsNameFlorence = nsFlorence.metadata.name;
 
@@ -90,7 +90,7 @@ const chain = new k8s.helm.v2.Chart("chain", {
     values: helmValuesFlorence,
 }, { providers: { "kubernetes": cluster.provider } });
 
-const nsFlorenceNoBa = new k8s.core.v1.Namespace("fbetanoba", {metadata: {name:"fbetanoba",}},
+const nsFlorenceNoBa = new k8s.core.v1.Namespace("florencenoba", {metadata: {name:"florencenoba",}},
 					      { provider: cluster.provider});
 export const nsNameFlorenceNoBa = nsFlorenceNoBa.metadata.name;
 
