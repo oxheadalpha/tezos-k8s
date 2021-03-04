@@ -73,7 +73,7 @@ protocol_parameters:
   preserved_cycles: 3
   blocks_per_cycle: 2048
   blocks_per_commitment: 16
-  blocks_per_roll_snapshot: 32
+  blocks_per_roll_snapshot: 128
   blocks_per_voting_period: 1024
   time_between_blocks:
     - "30"
