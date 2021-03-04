@@ -28,37 +28,42 @@ accounts:
     key: edpktv8Advoagbpo5TiyyDnmC1Mqne6vJMaXQ2vvuzUfJnBfMKJmdC
     type: public
     bootstrap_baker: true
-    bootstrap_balance: 50000000000000
+    bootstrap_balance: 2500000000000
   - name: akishino
     key: edpkvNGUd3xcBNmPWRbXJoS6WEvxu1BVoWjHr7ab7QoAJFFqhx9tkR
     type: public
     bootstrap_baker: true
-    bootstrap_balance: 50000000000000
+    bootstrap_balance: 2500000000000
   - name: ecadlabs
     key: edpkvP1NXoo8vhYbPSvXdy466EHoYWBpf6zmjghB2p3DwJPjbB5nsf
     type: public
     bootstrap_baker: true
-    bootstrap_balance: 50000000000000
+    bootstrap_balance: 2500000000000
   - name: tezosil
     key: edpkvQj8r3YigN6QFsDRaKQCoxDNhKK4whDUkFkw6Gom36d86uhEbv
     type: public
     bootstrap_baker: true
-    bootstrap_balance: 50000000000000
+    bootstrap_balance: 2500000000000
   - name: romain
     key: edpku4HKE3q2BhPejtYYSmfF8unntUGWEEXPLZHPJrP45z6Gke64iU
     type: public
     bootstrap_baker: true
-    bootstrap_balance: 50000000000000
+    bootstrap_balance: 2500000000000
   - name: pirbo
     key: edpkvE2HEoPyM1XbToGiLmuPhzzrZsAYCcR3nbrjEVsbEe6vFQFdPo
     type: public
     bootstrap_baker: true
-    bootstrap_balance: 50000000000000
+    bootstrap_balance: 2500000000000
   - name: tz1THUNA # Romain's faucet
     key: edpkuh3WSwziyd6nXqDXeh48vZHp5ETxFd43EdkbzhmW98BvuLXK81
     type: public
     bootstrap_baker: false
     bootstrap_balance: 50000000000000
+  - name: midl # MIDL.dev future testnet baker
+    key: edpkuZ69G79B2UggajnVC3YYPVVhLgp13rqfPXGbvHnvLshS4M3Ugq
+    type: public
+    bootstrap_baker: false
+    bootstrap_balance: 2500000000000
 
       #two more accouts added by pulumi (not shown here):
       # * tq's baker
@@ -67,7 +72,7 @@ accounts:
 is_old_accounts_parameter_format: true
 protocol_parameters:
   preserved_cycles: 3
-  blocks_per_cycle: 512
+  blocks_per_cycle: 2048
   blocks_per_commitment: 16
   blocks_per_roll_snapshot: 32
   blocks_per_voting_period: 1024
