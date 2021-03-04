@@ -101,13 +101,13 @@ helmValuesFlorenceNoBa["accounts"].append({
     "key": private_baking_key,
     "type": "secret",
     "bootstrap_baker": true,
-    "bootstrap_balance": 5000000000000});
+    "bootstrap_balance": 2500000000000});
 helmValuesFlorenceNoBa["accounts"].append({
     "name": "TQFree",
     "key": private_non_baking_key,
     "type": "secret",
     "bootstrap_baker": false,
-    "bootstrap_balance": 10000000000000});
+    "bootstrap_balance": 50000000000000});
 helmValuesFlorenceNoBa["tezos_k8s_images"] = pulumiTaggedImages
 
 // Deploy Tezos into our cluster.
