@@ -145,7 +145,7 @@ The `--chain-type` parameter lets you choose between these different types.
 Run the following commands to create the Helm values, get the Helm chart repo, and install the Helm chart to start your chain.
 
 ```shell
-mkchain $CHAIN_NAME --zerotier-network $ZT_NET --zerotier-token $ZT_TOKEN --chain-type private
+mkchain $CHAIN_NAME --zerotier-network $ZT_NET --zerotier-token $ZT_TOKEN
 
 helm repo add tqtezos https://tqtezos.github.io/tezos-helm-charts
 
