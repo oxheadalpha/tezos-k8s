@@ -132,6 +132,9 @@ spec:
           envFrom:
             - configMapRef:
                 name: tezos-config
+          env:
+          - name: MY_NODE_TYPE
+            value: {{ .Values.regular_node_statefulset.node_type }}
 {{- end }}
       securityContext:
         fsGroup: 100

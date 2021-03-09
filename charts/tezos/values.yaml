@@ -1,5 +1,6 @@
-chain_name: YOUR_CHAIN_NAME_HERE
+# Is the values file an invitation for a private chain
 is_invitation: false
+# Should the rpc-auth service be spun up
 rpc_auth: false
 
 # Chain type options: isolated, private, public
@@ -17,60 +18,62 @@ tezos_k8s_images:
   baker_endorser: tezos-k8s-baker-endorser:dev
   chain_initiator: tezos-k8s-chain-initiator:dev
   config_generator: tezos-k8s-config-generator:dev
+  snapshot_downloader: tezos-k8s-snapshot-downloader:dev
   wait_for_bootstrap: tezos-k8s-wait-for-bootstrap:dev
   zerotier: tezos-k8s-zerotier:dev
-  snapshot_downloader: tezos-k8s-snapshot-downloader:dev
 
-snapshot_url: https://mainnet.xtz-shots.io/rolling
-protocol:
-  # The defualt mutez given to an account if account is not provided
-  bootstrap_mutez: "4000000000000"
-  hash: PtEdo2ZkT9oKpimTah6x2embF25oss54njMuPzkJTEi5RqfdZFA
-  command: 008-PtEdo2Zk
-genesis:
-  block: "YOUR_GENESIS_CHAIN_ID_HERE"
-  timestamp: "2021-02-12T17:02:24.061398+00:00"
-bootstrap_peers: []
-# TODO
-# archive nodes, node with open rpc
-# take into account fundraisers accounts that people need to activate
+# Properties that are templated in Helm template files
+baker_statefulset: # charts/tezos/templates/baker.yaml
+  name: tezos-baking-node
+  node_type: baking
+regular_node_statefulset: # charts/tezos/templates/node.yaml
+  name: tezos-node
+  node_type: regular
 
-# Accounts with bootstrap balances > 0 will be part of the genesis block
+# For isolated/private chains: the defualt mutez given to an account if the
+# account is not explicitly set below.
+bootstrap_mutez: "4000000000000"
+
+# Accounts with bootstrap balances > 0 will be part of the genesis block. If you
+# specify more baking nodes then you do baking accounts, baking accounts with
+# deterministic keys will be created for those nodes.
+
 accounts:
   tqtezos_baker_0:
     key: edsk...
     type: secret
     is_bootstrap_baker_account: true
     bootstrap_balance: "50000000000000"
-  tqtezos_baker_1:
-    key: edsk...
-    type: secret
-    is_bootstrap_baker_account: true
-    bootstrap_balance: "4000000000000"
   tqtezos_node_0:
     key: edpk...
     type: public
     is_bootstrap_baker_account: false
     bootstrap_balance: "4000000000000"
 
-# Properties that are templated in Helm template files
-baker_statefulset: # charts/tezos/templates/baker.yaml
-  name: tezos-baking-node
-regular_node_statefulset: # charts/tezos/templates/node.yaml
-  name: tezos-node
-
-# Names of nodes should be consistent with the above statefulset names but with
+# Names of nodes should be consistent with their statefulset names but with
 # an added suffix being the index of the node. These names with suffix are the
 # `metadata.name` of the downward k8s API. They should be kebab case.
 # https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/
+#
+# The `config` property should mimic the structure of a node's config.json.
+# Run `tezos-node config --help` for more info.
 nodes:
   baking:
     tezos-baking-node-0:
       bake_using_account: tqtezos_baker_0
-      bootstrap: true
+      is_bootstrap_node: true
       config:
         shell:
           history_mode: archive
+    # An account with deterministic keys will automatically be created for
+    # tezos-baking-node-1, as no account named tqtezos_baker_1 is specified in
+    # accounts.
+    tezos-baking-node-1:
+      bake_using_account: tqtezos_baker_1
+      is_bootstrap_node: true
+      config:
+        shell:
+          history_mode: full
 
   regular:
     tezos-node-0:
@@ -78,6 +81,41 @@ nodes:
         shell:
           history_mode: full
 
+# List of peers for nodes to connect to. Gets set under config.json `p2p` field
+bootstrap_peers: []
+
+# If not set, will default to the protocol's expected-proof-of-work for identity
+# generation.
+expected_proof_of_work:
+
+# Where full and rolling history mode nodes will get their snapshots from
+full_snapshot_url: https://mainnet.xtz-shots.io/full
+rolling_snapshot_url: https://mainnet.xtz-shots.io/rolling
+
+# The network configuration for each node's config.json. The format for a
+# private network is below. For joining a public network (that has it's own
+# binaries as part of the Tezos version in use), this can be set to just the
+# network's name, e.g "mainnet".
+node_config_network:
+  chain_name: YOUR_CHAIN_NAME_HERE
+  genesis:
+    timestamp: "2021-02-12T17:02:24.061398+00:00"
+    block: YOUR_GENESIS_BLOCK_HASH_HERE
+    protocol: PtYuensgYBb3G3x1hLLbCmcav8ue8Kyd2khADcL5LsT5R1hcXex
+  # The name of the account who's public key will be set downstream at
+  # `node_config_network.genesis_parameters.values.genesis_pubkey`.
+  # Example: tqtezos_baker_0
+  activation_account_name: BAKER_ACCOUNT_NAME_FOR_GENESIS_PUBKEY
+
+# Activate a new chain from genesis. Note, this is only for when your chain does
+# not exist yet. For subsequent deploys, remove this.
+activation:
+  protocol_hash: PtEdo2ZkT9oKpimTah6x2embF25oss54njMuPzkJTEi5RqfdZFA
+
+protocol:
+  command: 008-PtEdo2Zk
+
+# parameters.json
 protocol_parameters:
   preserved_cycles: 2
   blocks_per_cycle: 8
