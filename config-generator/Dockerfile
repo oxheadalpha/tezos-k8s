@@ -1,4 +1,4 @@
-FROM tezos/tezos:v8-release
+FROM tezos/tezos:master_d7f9a88c_20210309095327
 ENV PYTHONUNBUFFERED=1
 
 # Note: we install build deps for pip, then remove everything after pip install.

@@ -241,7 +241,7 @@ def create_protocol_parameters_json(bootstrap_accounts, bootstrap_baker_accounts
     with open("/commitment-params.json", "r") as f:
         try:
             commitments = json.load(f)
-            protocol_params["commitments"] = commitments
+            #protocol_params["commitments"] = commitments
         except JSONDecodeError:
             print("No JSON found in /commitment-params.json")
             pass

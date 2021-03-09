@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.indexer_statefulset.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.indexer_statefulset.name }}
+  serviceName: tezos-node
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.indexer_statefulset.name }}
+        appType: tezos
+    spec:
+      containers:
+        - image: registry.gitlab.com/nomadic-labs/tezos-indexer/tezos-indexer:latest
+          name: tezos-indexer
+          args:
+            - --verbose
+            - --debug
+            - --verbosity=10
+            - --force-from=1
+            - --db=postgresql://localhost/tezos
+            -  --tezos-url=http://tezos-node-0.tezos-node:8732
+            - --edonet
+        - image: postgres:alpine
+          image: "{{ .Values.tezos_k8s_images.indexer_db }}"
+          name: postgres
