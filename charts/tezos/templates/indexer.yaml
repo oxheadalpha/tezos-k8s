@@ -16,6 +16,14 @@ spec:
         app: {{ .Values.indexer_statefulset.name }}
         appType: tezos
     spec:
+      initContainers:
+        - image: registry.gitlab.com/nomadic-labs/tezos-indexer/tezos-indexer:latest
+          command: ["/bin/bash","-c"]
+          args: [ "/home/tezos/tezos-indexer --db-schema | tee /docker-entrypoint-initdb.d/tezos-indexer-schema.sql" ]
+          name: schema-extractor
+          volumeMounts:
+            - mountPath: /docker-entrypoint-initdb.d/
+              name: schema-volume
       containers:
         - image: registry.gitlab.com/nomadic-labs/tezos-indexer/tezos-indexer:latest
           name: tezos-indexer
@@ -28,5 +36,28 @@ spec:
             -  --tezos-url=http://tezos-node-0.tezos-node:8732
             - --edonet
         - image: postgres:alpine
-          image: "{{ .Values.tezos_k8s_images.indexer_db }}"
           name: postgres
+          volumeMounts:
+            - mountPath: /docker-entrypoint-initdb.d/
+              name: schema-volume
+            - mountPath: /var/lib/postgresql/data
+              name: indexer-db
+          env:
+            - name: POSTGRES_USER
+              value: tezos
+            - name: POSTGRES_DB
+              value: tezos
+            - name: POSTGRES_PASSWORD
+              value: tezosrocks
+      volumes:
+        - emptyDir: {}
+          name: schema-volume
+  volumeClaimTemplates:
+    - metadata:
+        name: indexer-db
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: "5Gi"
