@@ -255,13 +255,13 @@ def create_protocol_parameters_json(bootstrap_accounts, bootstrap_baker_accounts
 
 
 #
-# If CHAIN_PARAMS["genesis_block"] hasn't been specified, we
-# generate a deterministic one.
+# If CHAIN_PARAMS["node_config_network"]["genesis"]["block"] hasn't been
+# specified, we generate a deterministic one.
 
 
 def fill_in_missing_genesis_block():
     print("Ensure that we have genesis_block")
-    if CHAIN_PARAMS["genesis_block"] == "YOUR_GENESIS_CHAIN_ID_HERE":
+    if CHAIN_PARAMS["node_config_network"]["genesis"]["block"] == "YOUR_GENESIS_BLOCK_HASH_HERE":
         print("  Generating missing genesis_block")
         seed = "foo"
         gbk = blake2b(seed.encode(), digest_size=32).digest()
