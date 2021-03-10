@@ -222,6 +222,10 @@ spec:
             - configMapRef:
                 name: tezos-config
           env:
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
             - name: MY_NODE_TYPE
               value: {{ .Values.baker_statefulset.node_type }}
 {{- end }}

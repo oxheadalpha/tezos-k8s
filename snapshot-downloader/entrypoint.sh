@@ -9,8 +9,15 @@ node_dir="$data_dir/node"
 node_data_dir="$node_dir/data"
 node="$bin_dir/tezos-node"
 
-tezos_network=$(echo $CHAIN_PARAMS | jq -r '.network')
-snapshot_url=$(echo $CHAIN_PARAMS | jq -r '.snapshot_url')
+tezos_network=$(echo $CHAIN_PARAMS | jq '.network')
+my_nodes_history_mode=$(echo $CHAIN_PARAMS | jq -r ".nodes.${MY_NODE_TYPE}.\"${MY_POD_NAME}\".config.shell.history_mode")
+
+if [ "$my_nodes_history_mode" == "full" ]; then
+ snapshot_url=$(echo $CHAIN_PARAMS | jq -r '.full_snapshot_url')
+elif [ "$my_nodes_history_mode" == "rolling" ]; then
+   snapshot_url=$(echo $CHAIN_PARAMS | jq -r '.rolling_snapshot_url')
+fi
+
 if [ -d ${node_dir}/data/context ]; then
     echo "Blockchain has already been imported, exiting"
     exit 0
