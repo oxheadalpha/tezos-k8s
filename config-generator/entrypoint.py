@@ -12,12 +12,13 @@ from nacl.signing import SigningKey
 
 CHAIN_PARAMS = json.loads(os.environ["CHAIN_PARAMS"])
 ACCOUNTS = json.loads(os.environ["ACCOUNTS"])
+MY_POD_NAME = os.environ("MY_POD_NAME")
 
 
 def main():
     fill_in_missing_genesis_block()
-    flattened_accounts = flatten_accounts()
-    import_keys(flattened_accounts)
+    get_missing_baker_accounts()
+    import_keys()
 
     print("Starting tezos config file generation")
     main_parser = argparse.ArgumentParser()
@@ -105,7 +106,10 @@ def get_keys_and_balances(accounts, keys_list, for_bootstrap_bakers):
                 "key": key["value"]["key"],
                 "bootstrap_balance": accounts[key_name]["bootstrap_balance"],
             }
-        elif not for_bootstrap_bakers and not accounts[key_name]["is_bootstrap_baker_account"]:
+        elif (
+            not for_bootstrap_bakers
+            and not accounts[key_name]["is_bootstrap_baker_account"]
+        ):
             keys[key_name] = {
                 "key": key["value"],
                 "bootstrap_balance": accounts[key_name]["bootstrap_balance"],
@@ -124,6 +128,7 @@ def get_bootstrap_accounts_pubkey_hashes(accounts):
     with open("/var/tezos/client/public_key_hashs", "r") as f:
         pubkey_hash_list = json.load(f)
     return get_keys_and_balances(accounts, pubkey_hash_list, for_bootstrap_bakers=False)
+
 
 def get_this_nodes_settings():
     my_pod_name = os.getenv("MY_POD_NAME")
@@ -265,57 +270,39 @@ def fill_in_missing_genesis_block():
 
 
 #
-# flatten_accounts() turns ACCOUNTS into a more amenable data structure:
 #
-# We return:
+# Secret and public keys are matches and need be processed together. Neither key
+# must be specified, as later code will fill in the details if they are not.
 #
-#    [{ "name" : "baker0, "keys" : { "secret" : s1, "public" : pk0 }}]
+# We create any missing accounts that are refered to by by a node at
+# CHAIN_PARAMS["nodes"]["baking"] to ensure that all named accounts exist.
 #
-# This is more natural, because secret/public keys are matches and need
-# be processed together.  Neither key must be specified, later code will
-# fill in the details if they are not specified.
-#
-# We then create any missing accounts that are refered to by
-# CHAIN_PARAMS["nodes"]["baking"] to ensure that all named accounts
-# exist.
-#
-# If we then find that we have been asked to make more bakers
-# than accounts were specified, we create accounts of the form
-#
-# 	baker<baker num>
-#
-# and fill in the details appropriately.
 
 
-def flatten_accounts():
-    accounts = {}
-    for account in ACCOUNTS:
-        name, type, key, bootstrap_balance, is_bootstrap_baker_account = itemgetter(
-            "name", "type", "key", "bootstrap_balance", "is_bootstrap_baker_account"
-        )(account)
+def get_missing_baker_accounts():
+    new_accounts = {}
+    for baker_name, baker_values in CHAIN_PARAMS["nodes"]["baking"].items():
+        baker_account_name = baker_values.get("bake_using_account")
 
-        if name in accounts:
-            if type in accounts[name]:
-                print("  WARNING: key specified twice! " + name + ":" + type)
+        if not baker_account_name or baker_account_name not in ACCOUNTS:
+            new_baker_account_name = None
+            if not baker_account_name:
+                print(
+                    f"    A new account named {baker_name} will be created for this node "
+                )
+                new_baker_account_name = baker_name
             else:
-                accounts[name][type] = key
-        else:
-            accounts[name] = {
-                type: key,
-                "bootstrap_balance": bootstrap_balance,
-                "is_bootstrap_baker_account": is_bootstrap_baker_account,
-            }
+                print(
+                    f"    Specified account named {baker_account_name} is missing and will be created for this node "
+                )
+                new_baker_account_name = baker_account_name
 
-    i = 0
-    for i, node in enumerate(CHAIN_PARAMS["nodes"]["baking"]):
-        acct = node.get("bake_for", "baker" + str(i))
-        if acct not in accounts:
-            print("    Creating specified but missing account " + acct)
-            accounts[acct] = {
+            new_accounts[new_baker_account_name] = {
                 "bootstrap_balance": CHAIN_PARAMS["defualt_bootstrap_mutez"],
                 "is_bootstrap_baker_account": True,
             }
-    return accounts
+
+    return {**new_accounts, **ACCOUNTS}
 
 
 #
