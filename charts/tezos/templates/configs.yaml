@@ -5,7 +5,7 @@ data:
       "bootstrap_peers": {{ toJson .Values.bootstrap_peers }},
       "chain_type": "{{ .Values.chain_type }}",
       "defualt_bootstrap_mutez": "{{ .Values.bootstrap_mutez }}",
-      "expected-proof-of-work" {{ toJson .Values.expected_proof_of_work }},
+      "expected-proof-of-work": {{ toJson .Values.expected_proof_of_work }},
 
       "full_snapshot_url": {{ toJson .Values.full_snapshot_url }},
       "rolling_snapshot_url": {{ toJson .Values.rolling_snapshot_url }},
