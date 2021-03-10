@@ -310,7 +310,7 @@ def get_missing_baker_accounts():
 # the keys for each of the accounts: secret_keys, public_keys, and
 # public_key_hashs.
 #
-# We iterate over flatten_accounts() which ensures that we
+# We iterate over get_missing_baker_accounts() which ensures that we
 # have a full set of accounts for which to write keys.
 #
 # If the account has a private key specified, we parse it and use it to
@@ -329,41 +329,56 @@ edpk = b"\x0d\x0f\x25\xd9"
 tz1 = b"\x06\xa1\x9f"
 
 
-def import_keys(flattened_accounts):
+def import_keys():
     print("Importing keys")
     tezdir = "/var/tezos/client"
     secret_keys = []
     public_keys = []
     public_key_hashs = []
-    for name, keys in flattened_accounts.items():
-        print("  Making account: " + name)
+    for account_name, account_values in get_missing_baker_accounts().values():
+        print("  Importing account: " + account_name)
+        account_key_type = account_values["type"]
+        account_key = account_values["key"]
         sk = pk = None
-        if "secret" in keys:
+
+        # If a key is specified in the account
+        if account_key_type == "secret":
             print("    Secret key specified")
-            sk = b58decode_check(keys["secret"])
+            sk = b58decode_check(account_key)
             if sk[0:4] != edsk:
                 print("WARNING: unrecognised secret key prefix")
             sk = sk[4:]
-        if "public" in keys:
+        if account_key_type == "public":
             print("    Public key specified")
-            pk = b58decode_check(keys["public"])
+            pk = b58decode_check(account_key)
             if pk[0:4] != edpk:
                 print("WARNING: unrecognised public key prefix")
             pk = pk[4:]
 
+        # If both a secret and public key are missing for this account, generate
+        # a deterministic secret key
         if sk == None and pk == None:
-            print("    Secret key derived from genesis_block")
-            seed = name + ":" + CHAIN_PARAMS["genesis_block"]
+            print(
+                f"    Deriving secret key for account {account_name} from genesis_block"
+            )
+            seed = account_name + ":" + CHAIN_PARAMS["genesis_block"]
             sk = blake2b(seed.encode(), digest_size=32).digest()
 
+        # If we have a secret key, whether provided or was generated above
         if sk != None:
+            # Verify the public key is derived from the secret key
             if pk == None:
                 print("    Deriving public key from secret key")
             tmp_pk = SigningKey(sk).verify_key.encode()
             if pk != None and pk != tmp_pk:
-                print("WARNING: secret/public key mismatch for " + name)
-                print("WARNING: using derived key not specified key")
+                print("ERROR: secret/public key mismatch for " + account_name)
+                exit(1)
             pk = tmp_pk
+        # If there is no secret key but there is a public key, and this account
+        # is a bootstrap baker account, error as the baker needs a secret key
+        elif pk != None and account_values["is_bootstrap_baker_account"]:
+            print(f"ERROR: A secret key is required for a baker")
+            exit(1)
 
         pkh = blake2b(pk, digest_size=20).digest()
 
@@ -373,15 +388,18 @@ def import_keys(flattened_accounts):
         if sk != None:
             print("    Appending secret key")
             sk_b58 = b58encode_check(edsk + sk).decode("utf-8")
-            secret_keys.append({"name": name, "value": "unencrypted:" + sk_b58})
+            secret_keys.append({"name": account_name, "value": "unencrypted:" + sk_b58})
 
         print("    Appending public key")
         public_keys.append(
-            {"name": name, "value": {"locator": "unencrypted:" + pk_b58, "key": pk_b58}}
+            {
+                "name": account_name,
+                "value": {"locator": "unencrypted:" + pk_b58, "key": pk_b58},
+            }
         )
 
         print("    Appending public key hash")
-        public_key_hashs.append({"name": name, "value": pkh_b58})
+        public_key_hashs.append({"name": account_name, "value": pkh_b58})
 
     print("  Writing " + tezdir + "/secret_keys")
     json.dump(secret_keys, open(tezdir + "/secret_keys", "w"), indent=4)
