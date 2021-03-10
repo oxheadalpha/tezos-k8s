@@ -178,10 +178,12 @@ spec:
             - mountPath: /dev/net/tun
               name: dev-net-tun
           env:
-          - name: POD_NAME
+          - name: MY_POD_NAME
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
+          - name: MY_NODE_TYPE
+            value: {{ .Values.baker_statefulset.node_type }}
 {{- end }}
         - image: {{ .Values.tezos_k8s_images.config_generator }}
           imagePullPolicy: IfNotPresent
