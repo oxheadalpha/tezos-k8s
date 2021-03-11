@@ -86,7 +86,7 @@ bootstrap_peers: []
 
 # If not set, will default to the protocol's expected-proof-of-work for identity
 # generation.
-expected_proof_of_work:
+expected_proof_of_work: 0
 
 # Where full and rolling history mode nodes will get their snapshots from
 full_snapshot_url: https://mainnet.xtz-shots.io/full
