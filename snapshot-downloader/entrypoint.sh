@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -x
+set -ex
 
 bin_dir="/usr/local/bin"
 
@@ -9,7 +9,7 @@ node_dir="$data_dir/node"
 node_data_dir="$node_dir/data"
 node="$bin_dir/tezos-node"
 
-tezos_network=$(echo $CHAIN_PARAMS | jq '.network')
+tezos_network=$(echo $CHAIN_PARAMS | jq -r ".network")
 my_nodes_history_mode=$(echo $NODES | jq -r ".${MY_NODE_TYPE}.\"${MY_POD_NAME}\".config.shell.history_mode")
 
 if [ "$my_nodes_history_mode" == "full" ]; then
