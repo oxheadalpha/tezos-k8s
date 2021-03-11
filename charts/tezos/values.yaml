@@ -104,8 +104,7 @@ node_config_network:
     protocol: PtYuensgYBb3G3x1hLLbCmcav8ue8Kyd2khADcL5LsT5R1hcXex
   # The name of the account who's public key will be set downstream at
   # `node_config_network.genesis_parameters.values.genesis_pubkey`.
-  # Example: tqtezos_baker_0
-  activation_account_name: BAKER_ACCOUNT_NAME_FOR_GENESIS_PUBKEY
+  activation_account_name: tqtezos_baker_0
 
 # Activate a new chain from genesis. Note, this is only for when your chain does
 # not exist yet. For subsequent deploys, remove this.
