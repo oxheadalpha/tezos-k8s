@@ -63,7 +63,7 @@ spec:
               name: var-volume
 {{- end }}
       initContainers:
-{{- if not .Values.is_invitation }}
+{{- if and (not .Values.is_invitation) (not (eq .Values.chain_type "public")) }}
         - image: {{ .Values.tezos_k8s_images.wait_for_bootstrap }}
           imagePullPolicy: IfNotPresent
           name: wait-for-bootstrap
