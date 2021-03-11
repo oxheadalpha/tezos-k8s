@@ -28,6 +28,13 @@ spec:
                 name: tezos-secret
             - configMapRef:
                 name: tezos-config
+          env:
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_NODE_TYPE
+              value: {{ .Values.baker_statefulset.node_type }}
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -105,10 +112,12 @@ spec:
             - secretRef:
                 name: tezos-secret
           env:
-          - name: POD_NAME
+          - name: MY_POD_NAME
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
+          - name: MY_NODE_TYPE
+            value: {{ .Values.baker_statefulset.node_type }}
           - name: DAEMON
             value: baker
         - image: "{{ .Values.tezos_k8s_images.baker_endorser }}"
@@ -123,10 +132,12 @@ spec:
             - secretRef:
                 name: tezos-secret
           env:
-          - name: POD_NAME
+          - name: MY_POD_NAME
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
+          - name: MY_NODE_TYPE
+            value: {{ .Values.baker_statefulset.node_type }}
           - name: DAEMON
             value: endorser
 {{- if eq .Values.chain_type "private" }}
@@ -204,6 +215,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: MY_NODE_TYPE
+              value: {{ .Values.baker_statefulset.node_type }}
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume

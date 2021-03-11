@@ -117,6 +117,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: MY_NODE_TYPE
+              value: {{ .Values.regular_node_statefulset.node_type }}
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
