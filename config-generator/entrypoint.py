@@ -116,6 +116,7 @@ def fill_in_missing_genesis_block():
 
 
 def fill_in_missing_baker_accounts():
+    print("Filling in any missing baker accounts...")
     new_accounts = {}
     for baker_name, baker_values in NODES["baking"].items():
         baker_account_name = baker_values.get("bake_using_account")
@@ -123,13 +124,11 @@ def fill_in_missing_baker_accounts():
         if not baker_account_name or baker_account_name not in ACCOUNTS:
             new_baker_account_name = None
             if not baker_account_name:
-                print(
-                    f"    A new account named {baker_name} will be created for this node "
-                )
+                print(f"A new account named {baker_name} will be created")
                 new_baker_account_name = baker_name
             else:
                 print(
-                    f"    Specified account named {baker_account_name} is missing and will be created for this node "
+                    f"Specified account named {baker_account_name} is missing and will be created"
                 )
                 new_baker_account_name = baker_account_name
 
@@ -166,13 +165,13 @@ tz1 = b"\x06\xa1\x9f"
 
 
 def import_keys(all_baker_accounts):
-    print("Importing keys")
+    print("\nImporting keys")
     tezdir = "/var/tezos/client"
     secret_keys = []
     public_keys = []
     public_key_hashs = []
     for account_name, account_values in all_baker_accounts.items():
-        print("  Importing account: " + account_name)
+        print("  \nImporting keys for account: " + account_name)
         account_key_type = account_values.get("type")
         account_key = account_values.get("key")
         sk = pk = None
@@ -207,14 +206,12 @@ def import_keys(all_baker_accounts):
                 print("    Deriving public key from secret key")
             tmp_pk = SigningKey(sk).verify_key.encode()
             if pk != None and pk != tmp_pk:
-                print("ERROR: secret/public key mismatch for " + account_name)
-                exit(1)
+                raise Exception("ERROR: secret/public key mismatch for " + account_name)
             pk = tmp_pk
         # If there is no secret key but there is a public key, and this account
-        # is a bootstrap baker account, error as the baker needs a secret key
+        # is a bootstrap baker account, error as the baker needs a secret key.
         elif pk != None and account_values["is_bootstrap_baker_account"]:
-            print(f"ERROR: A secret key is required for a baker")
-            exit(1)
+            raise Exception("ERROR: A secret key is required for a baker account")
 
         pkh = blake2b(pk, digest_size=20).digest()
 

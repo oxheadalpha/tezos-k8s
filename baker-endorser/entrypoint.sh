@@ -14,7 +14,7 @@ if [ "${DAEMON}" == "baker" ]; then
 fi
 
 my_baker_account=$(echo $NODES | jq -r ".${MY_NODE_TYPE}.\"${MY_POD_NAME}\".bake_using_account")
-# If not account to bake for was specified in the node's settings,
+# If no account to bake for was specified in the node's settings,
 # config-generator defaults the account name to the pod's name.
 if [ "$my_baker_account" = null ]; then
     my_baker_account="$MY_POD_NAME"
