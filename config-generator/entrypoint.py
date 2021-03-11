@@ -10,8 +10,10 @@ from re import match, sub
 from base58 import b58decode_check, b58encode_check
 from nacl.signing import SigningKey
 
-CHAIN_PARAMS = json.loads(os.environ["CHAIN_PARAMS"])
 ACCOUNTS = json.loads(os.environ["ACCOUNTS"])
+CHAIN_PARAMS = json.loads(os.environ["CHAIN_PARAMS"])
+NODES = json.loads(os.environ["NODES"])
+
 MY_POD_NAME = os.environ["MY_POD_NAME"]
 
 
@@ -61,7 +63,7 @@ def main():
                 bootstrap_peers.extend(json.load(f)["p2p"]["bootstrap-peers"])
         else:
             local_bootstrap_peers = []
-            bakers = CHAIN_PARAMS["nodes"]["baking"]
+            bakers = NODES["baking"]
             for baker_name, baker_settings in bakers.items():
                 my_pod_fqdn_with_port = f"{socket.getfqdn()}:9732"
                 if (
@@ -109,13 +111,13 @@ def fill_in_missing_genesis_block():
 # must be specified, as later code will fill in the details if they are not.
 #
 # We create any missing accounts that are refered to by by a node at
-# CHAIN_PARAMS["nodes"]["baking"] to ensure that all named accounts exist.
+# NODES["baking"] to ensure that all named accounts exist.
 #
 
 
 def fill_in_missing_baker_accounts():
     new_accounts = {}
-    for baker_name, baker_values in CHAIN_PARAMS["nodes"]["baking"].items():
+    for baker_name, baker_values in NODES["baking"].items():
         baker_account_name = baker_values.get("bake_using_account")
 
         if not baker_account_name or baker_account_name not in ACCOUNTS:
@@ -341,7 +343,7 @@ def create_node_config_json(
 ):
     """ Create the node's config.json file """
     MY_NODE_TYPE = os.environ["MY_NODE_TYPE"]
-    MY_NODE = CHAIN_PARAMS["nodes"][MY_NODE_TYPE][MY_POD_NAME]
+    MY_NODE = NODES[MY_NODE_TYPE][MY_POD_NAME]
 
     node_config = {
         "data-dir": "/var/tezos/node/data",

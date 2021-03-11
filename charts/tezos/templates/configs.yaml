@@ -11,7 +11,6 @@ data:
       "rolling_snapshot_url": {{ toJson .Values.rolling_snapshot_url }},
 
       "network": {{ toJson .Values.node_config_network }},
-      "nodes": {{ toJson .Values.nodes }},
       "proto_command": "{{ .Values.protocol.command }}",
       "protocol_hash": {{ toJson .Values.activation.protocol_hash }},
       "protocol_parameters": {{ toJson .Values.protocol_parameters }}
