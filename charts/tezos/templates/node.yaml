@@ -9,7 +9,7 @@ spec:
   selector:
     matchLabels:
       app: {{ .Values.regular_node_statefulset.name }}
-  serviceName: tezos-node
+  serviceName: {{ .Values.regular_node_statefulset.name }}
   template:
     metadata:
       labels:

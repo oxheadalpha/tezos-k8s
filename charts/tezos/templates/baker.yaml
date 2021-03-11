@@ -68,7 +68,7 @@ metadata:
 spec:
   podManagementPolicy: Parallel
   replicas: {{ .Values.nodes.baking | len }}
-  serviceName: tezos-baking-node
+  serviceName: {{ .Values.baker_statefulset.name }}
   selector:
     matchLabels:
       app: {{ .Values.baker_statefulset.name }}
