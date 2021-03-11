@@ -90,148 +90,9 @@ def main():
             print(config_json, file=json_file)
 
 
-def get_zerotier_bootstrap_peer_ips():
-    with open("/var/tezos/zerotier_network_members.json", "r") as f:
-        network_members = json.load(f)
-    return [
-        n["config"]["ipAssignments"][0]
-        for n in network_members
-        if "ipAssignments" in n["config"]
-        and n["name"] == f"{CHAIN_PARAMS['network']['chain_name']}_bootstrap"
-    ]
-
-
-def get_bootstrap_accounts(accounts, keys_list, for_bootstrap_bakers):
-    keys = {}
-    for key in keys_list:
-        key_name = key["name"]
-        bootstrap_balance = accounts[key_name]["bootstrap_balance"]
-        # Don't add accounts with 0 tez to parameters.json
-        if bootstrap_balance == "0":
-            continue
-
-        # If we are handling pubkeys for baker accounts
-        if for_bootstrap_bakers and accounts[key_name]["is_bootstrap_baker_account"]:
-            keys[key_name] = {
-                "key": key["value"]["key"],
-                "bootstrap_balance": bootstrap_balance,
-            }
-        elif (  # We are handling pubkey hashes for regular accounts
-            not for_bootstrap_bakers
-            and not accounts[key_name]["is_bootstrap_baker_account"]
-        ):
-            keys[key_name] = {
-                "key": key["value"],
-                "bootstrap_balance": bootstrap_balance,
-            }
-
-    return keys
-
-
-def get_bootstrap_bakers_pubkeys_for_genesis(accounts):
-    with open("/var/tezos/client/public_keys", "r") as f:
-        pubkey_list = json.load(f)
-    return get_bootstrap_accounts(accounts, pubkey_list, for_bootstrap_bakers=True)
-
-
-def get_bootstrap_accounts_pubkey_hashes_for_genesis(accounts):
-    with open("/var/tezos/client/public_key_hashs", "r") as f:
-        pubkey_hash_list = json.load(f)
-    return get_bootstrap_accounts(
-        accounts, pubkey_hash_list, for_bootstrap_bakers=False
-    )
-
-
-def create_node_config_json(
-    bootstrap_baker_accounts,
-    bootstrap_peers,
-    net_addr=None,
-):
-    """ Create the node's config.json file """
-    MY_NODE_TYPE = os.environ["MY_NODE_TYPE"]
-    MY_NODE = CHAIN_PARAMS["nodes"][MY_NODE_TYPE][MY_POD_NAME]
-
-    node_config = {
-        "data-dir": "/var/tezos/node/data",
-        "rpc": {
-            "listen-addrs": [f"{os.getenv('MY_POD_IP')}:8732", "127.0.0.1:8732"],
-        },
-        "p2p": {
-            "bootstrap-peers": bootstrap_peers,
-            "listen-addr": (net_addr + ":9732" if net_addr else "[::]:9732"),
-        },
-        "shell": MY_NODE.get("shell", {})
-        # "log": { "level": "debug"},
-    }
-    if CHAIN_PARAMS["chain_type"] == "public":
-        node_config["network"] = CHAIN_PARAMS["network"]
-    else:
-        if CHAIN_PARAMS["expected-proof-of-work"] is not None:
-            node_config["p2p"]["expected-proof-of-work"] = CHAIN_PARAMS[
-                "expected-proof-of-work"
-            ]
-
-        node_config["network"] = {
-            "chain_name": CHAIN_PARAMS["network"]["chain_name"],
-            "sandboxed_chain_name": "SANDBOXED_TEZOS",
-            "default_bootstrap_peers": [],
-            "genesis": CHAIN_PARAMS["network"]["genesis"],
-            "genesis_parameters": {
-                "values": {
-                    "genesis_pubkey": bootstrap_baker_accounts[
-                        CHAIN_PARAMS["network"]["activation_account_name"]
-                    ]["key"],
-                },
-            },
-        }
-
-    return node_config
-
-
-def get_genesis_accounts_pubkey_and_balance(accounts):
-    pubkey_and_balance_pairs = []
-
-    for account_values in accounts.values():
-        pubkey_and_balance_pairs.append(
-            [account_values["key"], account_values["bootstrap_balance"]]
-        )
-
-    return pubkey_and_balance_pairs
-
-
-#
-# commitments and bootstrap_accounts are not part of
-# `CHAIN_PARAMS["protocol_parameters"]`. The commitment size for Florence was
-# too large to load from Helm to k8s. So we are mounting a file containing them.
-# bootstrap accounts always needs massaging so they are passed as arguments.
-def create_protocol_parameters_json(bootstrap_accounts, bootstrap_baker_accounts):
-    """ Create the protocol's parameters.json file """
-
-    accounts = {**bootstrap_accounts, **bootstrap_baker_accounts}
-    pubkeys_with_balances = get_genesis_accounts_pubkey_and_balance(accounts)
-
-    protocol_params = CHAIN_PARAMS["protocol_parameters"]
-    protocol_params["bootstrap_accounts"] = pubkeys_with_balances
-
-    try:
-        with open("/commitment-params.json", "r") as f:
-            try:
-                commitments = json.load(f)
-                protocol_params["commitments"] = commitments
-            except JSONDecodeError:
-                print("No JSON found in /commitment-params.json")
-                pass
-    except OSError:
-        print("No commitment-parms.json found")
-
-    return protocol_params
-
-
 #
 # If CHAIN_PARAMS["node_config_network"]["genesis"]["block"] hasn't been specified, we
 # generate a deterministic one.
-
-
 def fill_in_missing_genesis_block():
     print("Ensure that we have genesis_block")
     if CHAIN_PARAMS["network"]["genesis"]["block"] == "YOUR_GENESIS_BLOCK_HASH_HERE":
@@ -380,6 +241,143 @@ def import_keys(all_baker_accounts):
     json.dump(public_keys, open(tezdir + "/public_keys", "w"), indent=4)
     print("  Writing " + tezdir + "/public_key_hashs")
     json.dump(public_key_hashs, open(tezdir + "/public_key_hashs", "w"), indent=4)
+
+
+def get_bootstrap_accounts(accounts, keys_list, for_bootstrap_bakers):
+    keys = {}
+    for key in keys_list:
+        key_name = key["name"]
+        bootstrap_balance = accounts[key_name]["bootstrap_balance"]
+        # Don't add accounts with 0 tez to parameters.json
+        if bootstrap_balance == "0":
+            continue
+
+        # If we are handling pubkeys for baker accounts
+        if for_bootstrap_bakers and accounts[key_name]["is_bootstrap_baker_account"]:
+            keys[key_name] = {
+                "key": key["value"]["key"],
+                "bootstrap_balance": bootstrap_balance,
+            }
+        elif (  # We are handling pubkey hashes for regular accounts
+            not for_bootstrap_bakers
+            and not accounts[key_name]["is_bootstrap_baker_account"]
+        ):
+            keys[key_name] = {
+                "key": key["value"],
+                "bootstrap_balance": bootstrap_balance,
+            }
+
+    return keys
+
+
+def get_bootstrap_bakers_pubkeys_for_genesis(accounts):
+    with open("/var/tezos/client/public_keys", "r") as f:
+        pubkey_list = json.load(f)
+    return get_bootstrap_accounts(accounts, pubkey_list, for_bootstrap_bakers=True)
+
+
+def get_bootstrap_accounts_pubkey_hashes_for_genesis(accounts):
+    with open("/var/tezos/client/public_key_hashs", "r") as f:
+        pubkey_hash_list = json.load(f)
+    return get_bootstrap_accounts(
+        accounts, pubkey_hash_list, for_bootstrap_bakers=False
+    )
+
+
+def get_genesis_accounts_pubkey_and_balance(accounts):
+    pubkey_and_balance_pairs = []
+
+    for account_values in accounts.values():
+        pubkey_and_balance_pairs.append(
+            [account_values["key"], account_values["bootstrap_balance"]]
+        )
+
+    return pubkey_and_balance_pairs
+
+
+#
+# commitments and bootstrap_accounts are not part of
+# `CHAIN_PARAMS["protocol_parameters"]`. The commitment size for Florence was
+# too large to load from Helm to k8s. So we are mounting a file containing them.
+# bootstrap accounts always needs massaging so they are passed as arguments.
+def create_protocol_parameters_json(bootstrap_accounts, bootstrap_baker_accounts):
+    """ Create the protocol's parameters.json file """
+
+    accounts = {**bootstrap_accounts, **bootstrap_baker_accounts}
+    pubkeys_with_balances = get_genesis_accounts_pubkey_and_balance(accounts)
+
+    protocol_params = CHAIN_PARAMS["protocol_parameters"]
+    protocol_params["bootstrap_accounts"] = pubkeys_with_balances
+
+    try:
+        with open("/commitment-params.json", "r") as f:
+            try:
+                commitments = json.load(f)
+                protocol_params["commitments"] = commitments
+            except JSONDecodeError:
+                print("No JSON found in /commitment-params.json")
+                pass
+    except OSError:
+        print("No commitment-parms.json found")
+
+    return protocol_params
+
+
+def get_zerotier_bootstrap_peer_ips():
+    with open("/var/tezos/zerotier_network_members.json", "r") as f:
+        network_members = json.load(f)
+    return [
+        n["config"]["ipAssignments"][0]
+        for n in network_members
+        if "ipAssignments" in n["config"]
+        and n["name"] == f"{CHAIN_PARAMS['network']['chain_name']}_bootstrap"
+    ]
+
+
+def create_node_config_json(
+    bootstrap_baker_accounts,
+    bootstrap_peers,
+    net_addr=None,
+):
+    """ Create the node's config.json file """
+    MY_NODE_TYPE = os.environ["MY_NODE_TYPE"]
+    MY_NODE = CHAIN_PARAMS["nodes"][MY_NODE_TYPE][MY_POD_NAME]
+
+    node_config = {
+        "data-dir": "/var/tezos/node/data",
+        "rpc": {
+            "listen-addrs": [f"{os.getenv('MY_POD_IP')}:8732", "127.0.0.1:8732"],
+        },
+        "p2p": {
+            "bootstrap-peers": bootstrap_peers,
+            "listen-addr": (net_addr + ":9732" if net_addr else "[::]:9732"),
+        },
+        "shell": MY_NODE.get("shell", {})
+        # "log": { "level": "debug"},
+    }
+    if CHAIN_PARAMS["chain_type"] == "public":
+        node_config["network"] = CHAIN_PARAMS["network"]
+    else:
+        if CHAIN_PARAMS["expected-proof-of-work"] is not None:
+            node_config["p2p"]["expected-proof-of-work"] = CHAIN_PARAMS[
+                "expected-proof-of-work"
+            ]
+
+        node_config["network"] = {
+            "chain_name": CHAIN_PARAMS["network"]["chain_name"],
+            "sandboxed_chain_name": "SANDBOXED_TEZOS",
+            "default_bootstrap_peers": [],
+            "genesis": CHAIN_PARAMS["network"]["genesis"],
+            "genesis_parameters": {
+                "values": {
+                    "genesis_pubkey": bootstrap_baker_accounts[
+                        CHAIN_PARAMS["network"]["activation_account_name"]
+                    ]["key"],
+                },
+            },
+        }
+
+    return node_config
 
 
 if __name__ == "__main__":
