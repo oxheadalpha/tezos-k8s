@@ -69,8 +69,6 @@ def main():
                         f"tezos-baking-node-{i}.tezos-baking-node:9732"
                     )
             bootstrap_peers.extend(local_bootstrap_peers)
-            if not bootstrap_peers:
-                bootstrap_peers = [f"tezos-baking-node-0.tezos-baking-node:9732"]
 
         config_json = json.dumps(
             create_node_config_json(
