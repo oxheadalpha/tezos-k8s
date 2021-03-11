@@ -127,32 +127,36 @@ if (false) {
 // Create a A record in the dns domain for which a certificate was created.
 
 
-// Create Cloudwatch namespace in EKS cluster
-const amazonCloudwatchNamespace = new k8s.core.v1.Namespace("amazon-cloudwatch",
-                                    {metadata: {name:"amazon-cloudwatch",}},
-                                    {provider: cluster.provider});
+if (helmValues["cloudwatch"] == true) {
+    // Create Cloudwatch namespace in EKS cluster
+    const amazonCloudwatchNamespace = new k8s.core.v1.Namespace(
+				        "amazon-cloudwatch",
+					{metadata: {name:"amazon-cloudwatch"}},
+					{provider: cluster.provider});
 
+    // Create Fluent Bit configuration in EKS cluster
+    const clusterInfoConfigMap = new k8s.core.v1.ConfigMap(
+	"fluent-bit-cluster-info", {
+	metadata: {
+	    name: "fluent-bit-cluster-info",
+	    namespace: "amazon-cloudwatch",
+	},
+	data: {
+	    "cluster.name": cluster.eksCluster.name,
+	    "http.server": "Off",
+	    "http.port": "",
+	    "read.head": "On",
+	    "read.tail": "Off",
+	    "logs.region": new pulumi.Config("aws").require("region"),
+	},
+    }, {provider: cluster.provider});
 
-// Create Fluent Bit configuration in EKS cluster
-const clusterInfoConfigMap = new k8s.core.v1.ConfigMap("fluent-bit-cluster-info", {
-    metadata: {
-        name: "fluent-bit-cluster-info",
-        namespace: "amazon-cloudwatch",
-    },
-    data: {
-        "cluster.name": cluster.eksCluster.name,
-        "http.server": "Off",
-        "http.port": "",
-        "read.head": "On",
-        "read.tail": "Off",
-        "logs.region": new pulumi.Config("aws").require("region"),
-    },
-}, {provider: cluster.provider});
-
-// Deploy Fluent Bit DaemonSet to the EKS cluster
-const fluentbit = new k8s.yaml.ConfigFile("fluent-bit", {file: "./fluent-bit.yaml"},
-    {provider: cluster.provider}
-);
+    // Deploy Fluent Bit DaemonSet to the EKS cluster
+    const fluentbit = new k8s.yaml.ConfigFile("fluent-bit",
+	{file: "./fluent-bit.yaml"},
+	{provider: cluster.provider}
+    );
+}
 
 // Export the cluster's kubeconfig.
 export const kubeconfig = cluster.kubeconfig;
