@@ -361,8 +361,10 @@ def create_node_config_json(
         "shell": MY_NODE.get("config", {}).get("shell", {})
         # "log": { "level": "debug"},
     }
+
+    network_config = CHAIN_PARAMS["network"]
     if CHAIN_PARAMS["chain_type"] == "public":
-        node_config["network"] = CHAIN_PARAMS["network"]
+        node_config["network"] = network_config
     else:
         if CHAIN_PARAMS["expected-proof-of-work"] is not None:
             node_config["p2p"]["expected-proof-of-work"] = CHAIN_PARAMS[
@@ -370,14 +372,14 @@ def create_node_config_json(
             ]
 
         node_config["network"] = {
-            "chain_name": CHAIN_PARAMS["network"]["chain_name"],
+            "chain_name": network_config["chain_name"],
             "sandboxed_chain_name": "SANDBOXED_TEZOS",
             "default_bootstrap_peers": [],
-            "genesis": CHAIN_PARAMS["network"]["genesis"],
+            "genesis": network_config["genesis"],
             "genesis_parameters": {
                 "values": {
                     "genesis_pubkey": bootstrap_baker_accounts[
-                        CHAIN_PARAMS["network"]["activation_account_name"]
+                        network_config["activation_account_name"]
                     ]["key"],
                 },
             },

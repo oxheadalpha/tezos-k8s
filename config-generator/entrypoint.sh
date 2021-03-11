@@ -10,11 +10,11 @@ if [ "${chain_type}" == "public" ]; then
     mkdir -p /tmp/data
 
     # We use this command to extract the data we need from the binary
-    # the python script below 
+    # the python script below
     /usr/local/bin/tezos-node config init \
         --config-file /tmp/data/config.json \
         --data-dir /tmp/data \
-        --network $tezos_network 
+        --network $tezos_network
 
     cat /tmp/data/config.json
     echo ""
