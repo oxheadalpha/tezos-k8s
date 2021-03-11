@@ -358,7 +358,7 @@ def create_node_config_json(
             "bootstrap-peers": bootstrap_peers,
             "listen-addr": (net_addr + ":9732" if net_addr else "[::]:9732"),
         },
-        "shell": MY_NODE.get("shell", {})
+        "shell": MY_NODE.get("config", {}).get("shell", {})
         # "log": { "level": "debug"},
     }
     if CHAIN_PARAMS["chain_type"] == "public":
