@@ -78,6 +78,13 @@ def main():
                     local_bootstrap_peers.append(bootstrap_peer_fbn_with_port)
             bootstrap_peers.extend(local_bootstrap_peers)
 
+        MY_NODE_TYPE = os.environ["MY_NODE_TYPE"]
+        MY_NODE = NODES[MY_NODE_TYPE][MY_POD_NAME]
+        if not bootstrap_peers and not MY_NODE.get("is_bootstrap_node", False):
+            raise Exception(
+                "ERROR: No bootstrap peers found for this non-bootstrap node"
+            )
+
         config_json = json.dumps(
             create_node_config_json(
                 bootstrap_baker_accounts,
