@@ -5,20 +5,20 @@ import socket
 from hashlib import blake2b
 from json.decoder import JSONDecodeError
 from operator import itemgetter
-from re import match
+from re import match, sub
 
 from base58 import b58decode_check, b58encode_check
 from nacl.signing import SigningKey
 
 CHAIN_PARAMS = json.loads(os.environ["CHAIN_PARAMS"])
 ACCOUNTS = json.loads(os.environ["ACCOUNTS"])
-MY_POD_NAME = os.environ("MY_POD_NAME")
+MY_POD_NAME = os.environ["MY_POD_NAME"]
 
 
 def main():
     fill_in_missing_genesis_block()
-    get_missing_baker_accounts()
-    import_keys()
+    all_accounts = fill_in_missing_baker_accounts()
+    import_keys(all_accounts)
 
     print("Starting tezos config file generation")
     main_parser = argparse.ArgumentParser()
@@ -32,10 +32,12 @@ def main():
     )
     main_args = main_parser.parse_args()
 
-    bootstrap_baker_accounts = get_bootstrap_bakers_pubkeys(flattened_accounts)
+    bootstrap_baker_accounts = get_bootstrap_bakers_pubkeys_for_genesis(all_accounts)
 
     if main_args.generate_parameters_json:
-        bootstrap_accounts = get_bootstrap_accounts_pubkey_hashes(flattened_accounts)
+        bootstrap_accounts = get_bootstrap_accounts_pubkey_hashes_for_genesis(
+            all_accounts
+        )
         protocol_parameters = create_protocol_parameters_json(
             bootstrap_accounts, bootstrap_baker_accounts
         )
@@ -60,14 +62,18 @@ def main():
         else:
             local_bootstrap_peers = []
             bakers = CHAIN_PARAMS["nodes"]["baking"]
-            for i, node in enumerate(bakers):
+            for baker_name, baker_settings in bakers.items():
+                my_pod_fqdn_with_port = f"{socket.getfqdn()}:9732"
                 if (
-                    node.get("bootstrap", False)
-                    and f"tezos-baking-node-{i}" not in socket.gethostname()
+                    baker_settings.get("is_bootstrap_node", False)
+                    and baker_name not in my_pod_fqdn_with_port
                 ):
-                    local_bootstrap_peers.append(
-                        f"tezos-baking-node-{i}.tezos-baking-node:9732"
+                    # Construct the FBN of the bootstrap node for all node's bootstrap_peers
+                    bootstrap_peer_domain = sub(r"-\d+$", "", baker_name)
+                    bootstrap_peer_fbn_with_port = (
+                        f"{baker_name}.{bootstrap_peer_domain}:9732"
                     )
+                    local_bootstrap_peers.append(bootstrap_peer_fbn_with_port)
             bootstrap_peers.extend(local_bootstrap_peers)
 
         config_json = json.dumps(
@@ -91,58 +97,49 @@ def get_zerotier_bootstrap_peer_ips():
         n["config"]["ipAssignments"][0]
         for n in network_members
         if "ipAssignments" in n["config"]
-        and n["name"] == f"{CHAIN_PARAMS['chain_name']}_bootstrap"
+        and n["name"] == f"{CHAIN_PARAMS['network']['chain_name']}_bootstrap"
     ]
 
 
-def get_keys_and_balances(accounts, keys_list, for_bootstrap_bakers):
+def get_bootstrap_accounts(accounts, keys_list, for_bootstrap_bakers):
     keys = {}
     for key in keys_list:
         key_name = key["name"]
+        bootstrap_balance = accounts[key_name]["bootstrap_balance"]
+        # Don't add accounts with 0 tez to parameters.json
+        if bootstrap_balance == "0":
+            continue
+
+        # If we are handling pubkeys for baker accounts
         if for_bootstrap_bakers and accounts[key_name]["is_bootstrap_baker_account"]:
             keys[key_name] = {
                 "key": key["value"]["key"],
-                "bootstrap_balance": accounts[key_name]["bootstrap_balance"],
+                "bootstrap_balance": bootstrap_balance,
             }
-        elif (
+        elif (  # We are handling pubkey hashes for regular accounts
             not for_bootstrap_bakers
             and not accounts[key_name]["is_bootstrap_baker_account"]
         ):
             keys[key_name] = {
                 "key": key["value"],
-                "bootstrap_balance": accounts[key_name]["bootstrap_balance"],
+                "bootstrap_balance": bootstrap_balance,
             }
 
     return keys
 
 
-def get_bootstrap_bakers_pubkeys(accounts):
+def get_bootstrap_bakers_pubkeys_for_genesis(accounts):
     with open("/var/tezos/client/public_keys", "r") as f:
         pubkey_list = json.load(f)
-    return get_keys_and_balances(accounts, pubkey_list, for_bootstrap_bakers=True)
+    return get_bootstrap_accounts(accounts, pubkey_list, for_bootstrap_bakers=True)
 
 
-def get_bootstrap_accounts_pubkey_hashes(accounts):
+def get_bootstrap_accounts_pubkey_hashes_for_genesis(accounts):
     with open("/var/tezos/client/public_key_hashs", "r") as f:
         pubkey_hash_list = json.load(f)
-    return get_keys_and_balances(accounts, pubkey_hash_list, for_bootstrap_bakers=False)
-
-
-def get_this_nodes_settings():
-    my_pod_name = os.getenv("MY_POD_NAME")
-
-    if match("tezos-baking-node-\d", my_pod_name):
-        baking_nodes = CHAIN_PARAMS["nodes"]["baking"]
-        for node in baking_nodes:
-            if node["name"] == my_pod_name:
-                return node
-    elif match("tezos-node-\d", my_pod_name):
-        regular_nodes = CHAIN_PARAMS["nodes"]["regular"]
-        for node in regular_nodes:
-            if node["name"] == my_pod_name:
-                return node
-
-    print("Could not find any node setting for this node!")
+    return get_bootstrap_accounts(
+        accounts, pubkey_hash_list, for_bootstrap_bakers=False
+    )
 
 
 def create_node_config_json(
@@ -151,8 +148,8 @@ def create_node_config_json(
     net_addr=None,
 ):
     """ Create the node's config.json file """
-
-    this_nodes_settings = get_this_nodes_settings()
+    MY_NODE_TYPE = os.environ["MY_NODE_TYPE"]
+    MY_NODE = CHAIN_PARAMS["nodes"][MY_NODE_TYPE][MY_POD_NAME]
 
     node_config = {
         "data-dir": "/var/tezos/node/data",
@@ -163,26 +160,26 @@ def create_node_config_json(
             "bootstrap-peers": bootstrap_peers,
             "listen-addr": (net_addr + ":9732" if net_addr else "[::]:9732"),
         },
-        "shell": {"history_mode": this_nodes_settings.get("history_mode", "rolling")}
+        "shell": MY_NODE.get("shell", {})
         # "log": { "level": "debug"},
     }
     if CHAIN_PARAMS["chain_type"] == "public":
         node_config["network"] = CHAIN_PARAMS["network"]
     else:
-        node_config["p2p"]["expected-proof-of-work"] = 0
+        if CHAIN_PARAMS["expected-proof-of-work"] is not None:
+            node_config["p2p"]["expected-proof-of-work"] = CHAIN_PARAMS[
+                "expected-proof-of-work"
+            ]
+
         node_config["network"] = {
-            "chain_name": CHAIN_PARAMS["chain_name"],
+            "chain_name": CHAIN_PARAMS["network"]["chain_name"],
             "sandboxed_chain_name": "SANDBOXED_TEZOS",
             "default_bootstrap_peers": [],
-            "genesis": {
-                "timestamp": CHAIN_PARAMS["timestamp"],
-                "block": CHAIN_PARAMS["genesis_block"],
-                "protocol": "PtYuensgYBb3G3x1hLLbCmcav8ue8Kyd2khADcL5LsT5R1hcXex",
-            },
+            "genesis": CHAIN_PARAMS["network"]["genesis"],
             "genesis_parameters": {
                 "values": {
                     "genesis_pubkey": bootstrap_baker_accounts[
-                        CHAIN_PARAMS["activation_account"]
+                        CHAIN_PARAMS["network"]["activation_account_name"]
                     ]["key"],
                 },
             },
@@ -191,26 +188,13 @@ def create_node_config_json(
     return node_config
 
 
-def get_genesis_accounts_pubkey_and_balance(accounts, accounts_type):
-    """ accounts_type = "plain_account" | "baker_account" """
-
+def get_genesis_accounts_pubkey_and_balance(accounts):
     pubkey_and_balance_pairs = []
 
-    for account in accounts:
-        account_balance = str(account.get("bootstrap_balance"))
-
-        # Don't add accounts with 0 tez to parameters.json
-        if account_balance == "0":
-            continue
-        if (  # plain accounts || baker accounts but old account format
-            accounts_type == "plain_accounts"
-            or CHAIN_PARAMS["is_old_accounts_parameter_format"]
-        ):
-            pubkey_and_balance_pairs.append([account["key"], account_balance])
-        else:  # baker accounts
-            pubkey_and_balance_pairs.append(
-                {"amount": account_balance, "key": account["key"]}
-            )
+    for account_values in accounts.values():
+        pubkey_and_balance_pairs.append(
+            [account_values["key"], account_values["bootstrap_balance"]]
+        )
 
     return pubkey_and_balance_pairs
 
@@ -223,43 +207,34 @@ def get_genesis_accounts_pubkey_and_balance(accounts, accounts_type):
 def create_protocol_parameters_json(bootstrap_accounts, bootstrap_baker_accounts):
     """ Create the protocol's parameters.json file """
 
+    accounts = {**bootstrap_accounts, **bootstrap_baker_accounts}
+    pubkeys_with_balances = get_genesis_accounts_pubkey_and_balance(accounts)
+
     protocol_params = CHAIN_PARAMS["protocol_parameters"]
+    protocol_params["bootstrap_accounts"] = pubkeys_with_balances
 
-    bootstrap_accounts_pubkey_balance_pairs = get_genesis_accounts_pubkey_and_balance(
-        bootstrap_accounts.values(), "plain_accounts"
-    )
-    bootstrap_bakers_pubkey_balance_pairs = get_genesis_accounts_pubkey_and_balance(
-        bootstrap_baker_accounts.values(), "baker_accounts"
-    )
-
-    if CHAIN_PARAMS["is_old_accounts_parameter_format"]:
-        protocol_params["bootstrap_accounts"] = [
-            *bootstrap_accounts_pubkey_balance_pairs,
-            *bootstrap_bakers_pubkey_balance_pairs,
-        ]
-    else:
-        protocol_params["bootstrap_accounts"] = bootstrap_accounts_pubkey_balance_pairs
-        protocol_params["bootstrap_bakers"] = bootstrap_bakers_pubkey_balance_pairs
-
-    with open("/commitment-params.json", "r") as f:
-        try:
-            commitments = json.load(f)
-            protocol_params["commitments"] = commitments
-        except JSONDecodeError:
-            print("No JSON found in /commitment-params.json")
-            pass
+    try:
+        with open("/commitment-params.json", "r") as f:
+            try:
+                commitments = json.load(f)
+                protocol_params["commitments"] = commitments
+            except JSONDecodeError:
+                print("No JSON found in /commitment-params.json")
+                pass
+    except OSError:
+        print("No commitment-parms.json found")
 
     return protocol_params
 
 
 #
-# If CHAIN_PARAMS["node_config_network"]["genesis"]["block"] hasn't been
-# specified, we generate a deterministic one.
+# If CHAIN_PARAMS["node_config_network"]["genesis"]["block"] hasn't been specified, we
+# generate a deterministic one.
 
 
 def fill_in_missing_genesis_block():
     print("Ensure that we have genesis_block")
-    if CHAIN_PARAMS["node_config_network"]["genesis"]["block"] == "YOUR_GENESIS_BLOCK_HASH_HERE":
+    if CHAIN_PARAMS["network"]["genesis"]["block"] == "YOUR_GENESIS_BLOCK_HASH_HERE":
         print("  Generating missing genesis_block")
         seed = "foo"
         gbk = blake2b(seed.encode(), digest_size=32).digest()
@@ -277,7 +252,7 @@ def fill_in_missing_genesis_block():
 #
 
 
-def get_missing_baker_accounts():
+def fill_in_missing_baker_accounts():
     new_accounts = {}
     for baker_name, baker_values in CHAIN_PARAMS["nodes"]["baking"].items():
         baker_account_name = baker_values.get("bake_using_account")
@@ -308,7 +283,7 @@ def get_missing_baker_accounts():
 # the keys for each of the accounts: secret_keys, public_keys, and
 # public_key_hashs.
 #
-# We iterate over get_missing_baker_accounts() which ensures that we
+# We iterate over fill_in_missing_baker_accounts() which ensures that we
 # have a full set of accounts for which to write keys.
 #
 # If the account has a private key specified, we parse it and use it to
@@ -327,16 +302,16 @@ edpk = b"\x0d\x0f\x25\xd9"
 tz1 = b"\x06\xa1\x9f"
 
 
-def import_keys():
+def import_keys(all_baker_accounts):
     print("Importing keys")
     tezdir = "/var/tezos/client"
     secret_keys = []
     public_keys = []
     public_key_hashs = []
-    for account_name, account_values in get_missing_baker_accounts().values():
+    for account_name, account_values in all_baker_accounts.items():
         print("  Importing account: " + account_name)
-        account_key_type = account_values["type"]
-        account_key = account_values["key"]
+        account_key_type = account_values.get("type")
+        account_key = account_values.get("key")
         sk = pk = None
 
         # If a key is specified in the account
@@ -359,7 +334,7 @@ def import_keys():
             print(
                 f"    Deriving secret key for account {account_name} from genesis_block"
             )
-            seed = account_name + ":" + CHAIN_PARAMS["genesis_block"]
+            seed = account_name + ":" + CHAIN_PARAMS["network"]["genesis"]["block"]
             sk = blake2b(seed.encode(), digest_size=32).digest()
 
         # If we have a secret key, whether provided or was generated above
