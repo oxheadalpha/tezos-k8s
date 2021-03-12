@@ -18,8 +18,12 @@ MY_POD_NAME = os.environ["MY_POD_NAME"]
 
 
 def main():
-    fill_in_missing_genesis_block()
-    all_accounts = fill_in_missing_baker_accounts()
+    all_accounts = ACCOUNTS
+
+    if CHAIN_PARAMS["chain_type"] != "public":
+        fill_in_missing_genesis_block()
+        all_accounts = fill_in_missing_baker_accounts()
+
     import_keys(all_accounts)
 
     print("Starting tezos config file generation")
