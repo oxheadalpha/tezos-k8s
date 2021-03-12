@@ -104,12 +104,18 @@ def main():
 # generate a deterministic one.
 def fill_in_missing_genesis_block():
     print("Ensure that we have genesis_block")
-    if CHAIN_PARAMS["network"]["genesis"]["block"] == "YOUR_GENESIS_BLOCK_HASH_HERE":
-        print("  Generating missing genesis_block")
+    genesis_config = CHAIN_PARAMS["network"]["genesis"]
+    genesis_block_placeholder = "YOUR_GENESIS_BLOCK_HASH_HERE"
+
+    if (
+        genesis_config.get("block", genesis_block_placeholder)
+        == genesis_block_placeholder
+    ):
+        print("Deterministically generating missing genesis_block")
         seed = "foo"
         gbk = blake2b(seed.encode(), digest_size=32).digest()
         gbk_b58 = b58encode_check(b"\x01\x34" + gbk).decode("utf-8")
-        CHAIN_PARAMS["genesis_block"] = gbk_b58
+        genesis_config["block"] = gbk_b58
 
 
 #
