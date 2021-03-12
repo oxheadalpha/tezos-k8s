@@ -9,14 +9,13 @@ data:
 
       "full_snapshot_url": {{ toJson .Values.full_snapshot_url }},
       "rolling_snapshot_url": {{ toJson .Values.rolling_snapshot_url }},
-
-      "network": {{ toJson .Values.node_config_network }},
+      "network": {{ mustToPrettyJson .Values.node_config_network | indent 8 | trim }},
       "proto_command": "{{ .Values.protocol.command }}",
       "protocol_hash": {{ toJson .Values.activation.protocol_hash }},
-      "protocol_parameters": {{ toJson .Values.protocol_parameters }}
+      "protocol_parameters": {{ mustToPrettyJson .Values.protocol_parameters | indent 8 | trim }}
     }
   NODES: |
-{{ .Values.nodes | toJson | indent 4}}
+{{ .Values.nodes | mustToPrettyJson | indent 4 }}
 kind: ConfigMap
 metadata:
   name: tezos-config
@@ -29,7 +28,7 @@ data:
   NETWORK_ID: "{{ .Values.zerotier_config.zerotier_network }}"
   ZTAUTHTOKEN: "{{ .Values.zerotier_config.zerotier_token }}"
   NODES: |
-{{ .Values.nodes | toJson | indent 4}}
+{{ .Values.nodes | mustToPrettyJson | indent 4 }}
 kind: ConfigMap
 metadata:
   name: zerotier-config
