@@ -20,7 +20,7 @@ elif [ "$my_nodes_history_mode" == "rolling" ]; then
    snapshot_url=$(echo $CHAIN_PARAMS | jq -r '.rolling_snapshot_url')
 fi
 
-if [ -d ${node_dir}/data/context ]; then
+if [ -d ${node_data_dir}/context ]; then
     echo "Blockchain has already been imported, exiting"
     exit 0
 elif [ -z "$snapshot_url" ]; then
@@ -28,7 +28,7 @@ elif [ -z "$snapshot_url" ]; then
     exit 0
 else
     echo "Did not find pre-existing data, importing blockchain"
-    mkdir -p ${node_dir}/data
+    mkdir -p ${node_data_dir}
     echo '{ "version": "0.0.4" }' > ${node_dir}/version.json
     cp -v /usr/local/share/tezos/alphanet_version ${node_dir}
     snapshot_file=${node_dir}/chain.snapshot
