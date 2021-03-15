@@ -9,9 +9,11 @@ data:
 
       "full_snapshot_url": {{ toJson .Values.full_snapshot_url }},
       "rolling_snapshot_url": {{ toJson .Values.rolling_snapshot_url }},
+
       "network": {{ mustToPrettyJson .Values.node_config_network | indent 8 | trim }},
       "proto_command": "{{ .Values.protocol.command }}",
-      "protocol_hash": {{ toJson .Values.activation.protocol_hash }},
+      {{- $activation := .Values.activation | default dict }}
+      "protocol_hash": {{ toJson $activation.protocol_hash | default nil }},
       "protocol_parameters": {{ mustToPrettyJson .Values.protocol_parameters | indent 8 | trim }}
     }
   NODES: |
