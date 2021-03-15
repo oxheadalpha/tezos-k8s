@@ -30,7 +30,7 @@ else
     echo '{ "version": "0.0.4" }' > ${node_dir}/version.json
     cp -v /usr/local/share/tezos/alphanet_version ${node_dir}
     snapshot_file=${node_dir}/chain.snapshot
-    curl -L -o $snapshot_file $snapshot_url
+    curl -Lf -o $snapshot_file $snapshot_url
     ${node} snapshot import ${snapshot_file} --data-dir ${node_data_dir} --network $tezos_network --config-file /etc/tezos/config.json
     find ${node_dir}
     rm -rvf ${snapshot_file}
