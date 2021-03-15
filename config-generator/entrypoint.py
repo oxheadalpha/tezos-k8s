@@ -20,7 +20,7 @@ MY_POD_NAME = os.environ["MY_POD_NAME"]
 def main():
     all_accounts = ACCOUNTS
 
-    if CHAIN_PARAMS["chain_type"] != "public":
+    if CHAIN_TYPE != "public":
         fill_in_missing_genesis_block()
         all_accounts = fill_in_missing_baker_accounts()
 
