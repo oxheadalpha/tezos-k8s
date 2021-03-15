@@ -13,18 +13,20 @@ node="$bin_dir/tezos-node"
 # If network is a config object, it should have a network_name string.
 tezos_network=$(echo $CHAIN_PARAMS | jq -r 'if (.network | type=="string") then .network else .network.network_name end')
 my_nodes_history_mode=$(echo $NODES | jq -r ".${MY_NODE_TYPE}.\"${MY_POD_NAME}\".config.shell.history_mode")
+full_snapshot_url=$(echo $CHAIN_PARAMS | jq -r '.full_snapshot_url // empty')
+rolling_snapshot_url=$(echo $CHAIN_PARAMS | jq -r '.rolling_snapshot_url // empty')
 
-if [ "$my_nodes_history_mode" == "full" ]; then
- snapshot_url=$(echo $CHAIN_PARAMS | jq -r '.full_snapshot_url')
-elif [ "$my_nodes_history_mode" == "rolling" ]; then
-   snapshot_url=$(echo $CHAIN_PARAMS | jq -r '.rolling_snapshot_url')
+if [ "$my_nodes_history_mode" == "full" -a -n "$full_snapshot_url" ]; then
+ snapshot_url="$full_snapshot_url"
+elif [ "$my_nodes_history_mode" == "rolling" -a -n "$rolling_snapshot_url" ]; then
+   snapshot_url="$rolling_snapshot_url"
+else
+  echo "No snapshot url provided for node"
+  exit 0
 fi
 
 if [ -d ${node_data_dir}/context ]; then
     echo "Blockchain has already been imported, exiting"
-    exit 0
-elif [ -z "$snapshot_url" ]; then
-    echo "No snapshot was passed as parameter, exiting"
     exit 0
 else
     echo "Did not find pre-existing data, importing blockchain"
