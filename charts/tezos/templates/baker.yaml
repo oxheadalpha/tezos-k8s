@@ -33,8 +33,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            - name: MY_NODE_TYPE
-              value: {{ .Values.baker_statefulset.node_type }}
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
