@@ -36,10 +36,6 @@ images:
     image: tezos-k8s-config-generator
     dockerfile: ./config-generator/Dockerfile
     context: ./config-generator
-  indexer-db:
-    image: tezos-k8s-indexer-db
-    dockerfile: ./indexer-db/Dockerfile
-    context: ./indexer-db
 
 dev:
   ports:
