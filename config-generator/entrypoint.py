@@ -70,7 +70,6 @@ def main():
 
         print("Generated parameters.json :")
         protocol_params_json = json.dumps(protocol_parameters, indent=2)
-        print(protocol_params_json)
         with open("/etc/tezos/parameters.json", "w") as json_file:
             print(protocol_params_json, file=json_file)
 
@@ -368,6 +367,9 @@ def create_protocol_parameters_json(bootstrap_accounts, bootstrap_baker_accounts
 
     protocol_params = CHAIN_PARAMS["protocol_activation"]["protocol_parameters"]
     protocol_params["bootstrap_accounts"] = pubkeys_with_balances
+
+    print("Logging parameters.json without commitments")
+    print(json.dumps(protocol_params, indent=4))
 
     try:
         with open("/commitment-params.json", "r") as f:
