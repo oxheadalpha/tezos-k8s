@@ -3,14 +3,14 @@
 set -ex
 
 tezos_network=$(echo $CHAIN_PARAMS | jq -r 'if (.network | type=="string") then .network else empty end')
-if [ -z "$tezos_network" ]; then
-  echo "ERROR: No network given"
-  exit 1
-fi
-
 chain_type=$(echo $CHAIN_PARAMS | jq -r '.chain_type')
 
 if [ "${chain_type}" == "public" ]; then
+    if [ -z "$tezos_network" ]; then
+      echo "ERROR: No network given"
+      exit 1
+    fi
+
     printf "Writing custom configuration for public node\n"
     mkdir -p /tmp/data
 
