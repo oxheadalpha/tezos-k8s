@@ -366,7 +366,7 @@ def create_protocol_parameters_json(bootstrap_accounts, bootstrap_baker_accounts
     accounts = {**bootstrap_accounts, **bootstrap_baker_accounts}
     pubkeys_with_balances = get_genesis_accounts_pubkey_and_balance(accounts)
 
-    protocol_params = CHAIN_PARAMS["protocol_parameters"]
+    protocol_params = CHAIN_PARAMS["protocol_activation"]["protocol_parameters"]
     protocol_params["bootstrap_accounts"] = pubkeys_with_balances
 
     try:
