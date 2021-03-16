@@ -56,14 +56,16 @@ def main():
     )
     main_args = main_parser.parse_args()
 
-    bootstrap_baker_accounts = get_bootstrap_bakers_pubkeys_for_genesis(all_accounts)
-
+    # Create parameters.json
     if main_args.generate_parameters_json:
-        bootstrap_accounts = get_bootstrap_accounts_pubkey_hashes_for_genesis(
+        bootstrap_accounts_pubkey_hashes = get_bootstrap_accounts_pubkey_hashes(
+            all_accounts
+        )
+        baker_bootstrap_accounts_pubkeys = get_bootstrap_baker_accounts_pubkeys(
             all_accounts
         )
         protocol_parameters = create_protocol_parameters_json(
-            bootstrap_accounts, bootstrap_baker_accounts
+            bootstrap_accounts_pubkey_hashes, baker_bootstrap_accounts_pubkeys
         )
 
         print("Generated parameters.json :")
@@ -107,7 +109,6 @@ def main():
 
         config_json = json.dumps(
             create_node_config_json(
-                bootstrap_baker_accounts,
                 bootstrap_peers,
                 net_addr,
             ),
@@ -320,17 +321,21 @@ def get_bootstrap_accounts(accounts, keys_list, is_getting_accounts_for_bakers):
     return keys
 
 
-def get_bootstrap_bakers_pubkeys_for_genesis(accounts):
+# Get baking account's pubkeys for parameters.json bootstrap_accounts
+def get_bootstrap_baker_accounts_pubkeys(accounts):
     with open("/var/tezos/client/public_keys", "r") as f:
         pubkey_list = json.load(f)
-    return get_bootstrap_accounts(accounts, pubkey_list, for_bootstrap_bakers=True)
+    return get_bootstrap_accounts(
+        accounts, pubkey_list, is_getting_accounts_for_bakers=True
+    )
 
 
-def get_bootstrap_accounts_pubkey_hashes_for_genesis(accounts):
+# Get non-baking account's pubkey hashes for parameters.json bootstrap_accounts
+def get_bootstrap_accounts_pubkey_hashes(accounts):
     with open("/var/tezos/client/public_key_hashs", "r") as f:
         pubkey_hash_list = json.load(f)
     return get_bootstrap_accounts(
-        accounts, pubkey_hash_list, for_bootstrap_bakers=False
+        accounts, pubkey_hash_list, is_getting_accounts_for_bakers=False
     )
 
 
@@ -385,7 +390,6 @@ def get_zerotier_bootstrap_peer_ips():
 
 
 def create_node_config_json(
-    bootstrap_baker_accounts,
     bootstrap_peers,
     net_addr=None,
 ):
@@ -400,8 +404,8 @@ def create_node_config_json(
             "bootstrap-peers": bootstrap_peers,
             "listen-addr": (net_addr + ":9732" if net_addr else "[::]:9732"),
         },
-        "shell": MY_NODE.get("config", {}).get("shell", {})
-        # "log": { "level": "debug"},
+        "shell": MY_NODE.get("config", {}).get("shell", {}),
+        # "log": {"level": "debug"},
     }
 
     network_config = CHAIN_PARAMS["network"]
@@ -413,17 +417,24 @@ def create_node_config_json(
                 "expected-proof-of-work"
             ]
 
+        # Find the genesis pubkey
+        with open("/var/tezos/client/public_keys", "r") as f:
+            pubkeys = json.load(f)
+            genesis_pubkey = None
+            for _, pubkey in enumerate(pubkeys):
+                if pubkey["name"] == NETWORK_CONFIG["activation_account_name"]:
+                    genesis_pubkey = pubkey["value"]["key"]
+                    break
+            if not genesis_pubkey:
+                raise Exception("ERROR: Couldn't find the genesis_pubkey")
+
         node_config["network"] = {
             "chain_name": network_config["chain_name"],
             "sandboxed_chain_name": "SANDBOXED_TEZOS",
             "default_bootstrap_peers": [],
             "genesis": network_config["genesis"],
             "genesis_parameters": {
-                "values": {
-                    "genesis_pubkey": bootstrap_baker_accounts[
-                        network_config["activation_account_name"]
-                    ]["key"],
-                },
+                "values": {"genesis_pubkey": genesis_pubkey},
             },
         }
 
