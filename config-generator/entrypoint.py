@@ -83,10 +83,7 @@ def main():
                 net_addr = json.load(f)[0]["assignedAddresses"][0].split("/")[0]
             if bootstrap_peers == []:
                 bootstrap_peers.extend(get_zerotier_bootstrap_peer_ips())
-        if CHAIN_TYPE == "public" and (
-            isStringInstance(NETWORK_CONFIG)
-            or isStringInstance(NETWORK_CONFIG.get("network_name"))
-        ):
+        if CHAIN_PARAMS["chain_type"] == "public":
             with open("/tmp/data/config.json", "r") as f:
                 bootstrap_peers.extend(json.load(f)["p2p"]["bootstrap-peers"])
         else:
@@ -416,8 +413,9 @@ def create_node_config_json(
         # "log": {"level": "debug"},
     }
 
-    if CHAIN_TYPE == "public" and isinstance(NETWORK_CONFIG, str):
-        node_config["network"] = NETWORK_CONFIG
+    network_config = CHAIN_PARAMS["network"]
+    if CHAIN_PARAMS["chain_type"] == "public":
+        node_config["network"] = network_config
     else:
         if (
             CHAIN_TYPE != "public"
@@ -439,10 +437,10 @@ def create_node_config_json(
                 raise Exception("ERROR: Couldn't find the genesis_pubkey")
 
         node_config["network"] = {
-            "chain_name": NETWORK_CONFIG["chain_name"],
+            "chain_name": network_config["chain_name"],
             "sandboxed_chain_name": "SANDBOXED_TEZOS",
             "default_bootstrap_peers": [],
-            "genesis": NETWORK_CONFIG["genesis"],
+            "genesis": network_config["genesis"],
             "genesis_parameters": {
                 "values": {"genesis_pubkey": genesis_pubkey},
             },
