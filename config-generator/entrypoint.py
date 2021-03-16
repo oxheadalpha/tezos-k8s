@@ -38,10 +38,9 @@ def main():
     if CHAIN_TYPE != "public":
         fill_in_missing_genesis_block()
         all_accounts = fill_in_missing_baker_accounts()
-    else:
-        # For public chains, baker accounts must have a secret key as it will not
-        # be generated.
-        verify_baker_accounts_have_secret_keys()
+    elif MY_POD_NAME in BAKING_NODES:
+        # If this node is a baker, it must have an account with a secret key.
+        verify_this_bakers_account()
 
     import_keys(all_accounts)
 
@@ -168,6 +167,25 @@ def fill_in_missing_baker_accounts():
     return {**new_accounts, **ACCOUNTS}
 
 
+# Verify that the current baker has a baker account with secret key
+def verify_this_bakers_account():
+    account_using_to_bake = MY_NODE.get("bake_using_account")
+    if not account_using_to_bake:
+        raise Exception(f"ERROR: No account specified for baker {MY_POD_NAME}")
+
+    account = ACCOUNTS.get(account_using_to_bake)
+    if not account:
+        raise Exception(
+            f"ERROR: No account named {account_using_to_bake} found for baker {MY_POD_NAME}"
+        )
+
+    if account.get("type") != "secret" or not account.get("key"):
+        raise Exception(
+            "ERROR: Either a secret key was not provided or the key type not specified"
+            f", for account {account_using_to_bake} for baker {MY_POD_NAME}"
+        )
+
+
 #
 # import_keys() creates three files in /var/tezos/client which specify
 # the keys for each of the accounts: secret_keys, public_keys, and
@@ -271,25 +289,7 @@ def import_keys(all_accounts):
     json.dump(public_key_hashs, open(tezdir + "/public_key_hashs", "w"), indent=4)
 
 
-# This function is only run for public chains. It makes sure that every baker
-# node has an account with a secret key.
-def verify_baker_accounts_have_secret_keys():
-    bakers = NODES["baking"]
-    for baker_name, baker_values in bakers.items():
-        account_using_to_bake = baker_values.get("bake_using_account")
-        if not account_using_to_bake:
-            raise Exception(f"ERROR: No account specified for baker {baker_name}")
 
-        account = ACCOUNTS.get(account_using_to_bake)
-        if not account:
-            raise Exception(
-                f"ERROR: No account named {account_using_to_bake} found for baker {baker_name}"
-            )
-
-        if account["type"] != "secret":
-            raise Exception(
-                f"ERROR: A secret key was not provided to account {account_using_to_bake} for baker {baker_name}"
-            )
 
 def get_bootstrap_accounts(accounts, keys_list, is_getting_accounts_for_bakers):
     keys = {}
