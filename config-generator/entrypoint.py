@@ -241,22 +241,24 @@ def import_keys(all_accounts):
                 print("WARNING: unrecognised public key prefix")
             pk = pk[4:]
 
-        # If both a secret and public key are missing for this account, generate
-        # a deterministic secret key
-        if sk == None and pk == None:
-            print(
-                f"    Deriving secret key for account {account_name} from genesis_block"
-            )
-            seed = account_name + ":" + CHAIN_PARAMS["network"]["genesis"]["block"]
-            sk = blake2b(seed.encode(), digest_size=32).digest()
+        # If both a secret and public key are missing for this account in
+        # isolated/private chains, generate a deterministic secret key.
+        if CHAIN_TYPE != "public":
+            if sk == None and pk == None:
+                print(
+                    f"    Deriving secret key for account {account_name} from genesis_block"
+                )
+                seed = account_name + ":" + NETWORK_CONFIG["genesis"]["block"]
+                sk = blake2b(seed.encode(), digest_size=32).digest()
 
-        # If we have a secret key, whether provided or was generated above
-        if sk != None:
-            # Verify the public key is derived from the secret key
-            if pk == None:
+        # If we have a secret key, whether provided or was generated above.
+        if sk:
+            # Verify the pk is derived from sk, and derive it from the sk in the
+            # case where the sk was generated.
+            if not pk:
                 print("    Deriving public key from secret key")
             tmp_pk = SigningKey(sk).verify_key.encode()
-            if pk != None and pk != tmp_pk:
+            if pk and pk != tmp_pk:
                 raise Exception("ERROR: secret/public key mismatch for " + account_name)
             pk = tmp_pk
         # If there is no secret key but there is a public key, and this account
