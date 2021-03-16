@@ -9,7 +9,12 @@ node_dir="$data_dir/node"
 node_data_dir="$node_dir/data"
 node="$bin_dir/tezos-node"
 
-tezos_network=$(echo $CHAIN_PARAMS | jq -r ".network")
+tezos_network=$(echo $CHAIN_PARAMS | jq -r 'if (.network | type=="string") then .network else empty end')
+if [ -z "$tezos_network" ]; then
+  echo "No network given, exiting"
+  exit 0
+fi
+
 my_nodes_history_mode=$(echo $NODES | jq -r ".${MY_NODE_TYPE}.\"${MY_POD_NAME}\".config.shell.history_mode")
 full_snapshot_url=$(echo $CHAIN_PARAMS | jq -r '.full_snapshot_url // empty')
 rolling_snapshot_url=$(echo $CHAIN_PARAMS | jq -r '.rolling_snapshot_url // empty')
@@ -19,7 +24,7 @@ if [ "$my_nodes_history_mode" == "full" -a -n "$full_snapshot_url" ]; then
 elif [ "$my_nodes_history_mode" == "rolling" -a -n "$rolling_snapshot_url" ]; then
    snapshot_url="$rolling_snapshot_url"
 else
-  echo "No snapshot url provided for node"
+  echo "No snapshot url provided for node, exiting"
   exit 0
 fi
 

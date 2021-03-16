@@ -2,7 +2,12 @@
 
 set -ex
 
-tezos_network=$(echo $CHAIN_PARAMS | jq -r '.network')
+tezos_network=$(echo $CHAIN_PARAMS | jq -r 'if (.network | type=="string") then .network else empty end')
+if [ -z "$tezos_network" ]; then
+  echo "ERROR: No network given"
+  exit 1
+fi
+
 chain_type=$(echo $CHAIN_PARAMS | jq -r '.chain_type')
 
 if [ "${chain_type}" == "public" ]; then
@@ -10,7 +15,7 @@ if [ "${chain_type}" == "public" ]; then
     mkdir -p /tmp/data
 
     # We use this command to extract the data we need from the binary
-    # the python script below
+    # for the python script below.
     /usr/local/bin/tezos-node config init \
         --config-file /tmp/data/config.json \
         --data-dir /tmp/data \
