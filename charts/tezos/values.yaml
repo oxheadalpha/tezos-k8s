@@ -41,20 +41,24 @@ bootstrap_mutez: "4000000000000"
 #
 # Public chains: Accounts do not get `is_bootstrap_baker_account` and
 # `bootstrap_balance` fields.
-accounts:
-  tqtezos_baker_0:
-    key: edsk...
-    type: secret
-    is_bootstrap_baker_account: true
-    bootstrap_balance: "50000000000000"
-  tqtezos_regular_account_0:
-    key: edpk...
-    type: public
-    is_bootstrap_baker_account: false
-    bootstrap_balance: "4000000000000"
+#
+accounts: {}
+#   tqtezos_baker_0:
+#     key: edsk...
+#     type: secret
+#     is_bootstrap_baker_account: true
+#     bootstrap_balance: "50000000000000"
+
+#   tqtezos_regular_account_0:
+#     key: edpk...
+#     type: public
+#     is_bootstrap_baker_account: false
+#     bootstrap_balance: "4000000000000"
 
 # Names of nodes should be consistent with their statefulset names but with
-# an added suffix being the index of the node. These names with suffix are the
+# an added suffix being the index of the node.
+# Example: `baker_statefulset.name: tezos-baking-node` -> `nodes.baking.tezos-baking-node-0`
+# These names with suffix are the
 # `metadata.name` of the downward k8s API. They should be kebab case.
 # https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/
 #
@@ -63,7 +67,7 @@ accounts:
 nodes:
   baking:
     tezos-baking-node-0:
-      bake_using_account: tqtezos_baker_0
+      # bake_using_account: tqtezos_baker_0
       is_bootstrap_node: true
       config:
         shell:
@@ -74,18 +78,20 @@ nodes:
     # tqtezos_baker_1 is specified in accounts.
     #
     # Public chain: This baker will fail to boot as it doesn't have a secret key.
-    tezos-baking-node-1:
-      bake_using_account: tqtezos_baker_1
-      is_bootstrap_node: true
-      config:
-        shell:
-          history_mode: full
+    #
+    # tezos-baking-node-1:
+    #   bake_using_account: tqtezos_baker_1
+    #   is_bootstrap_node: true
+    #   config:
+    #     shell:
+    #       history_mode: full
 
-  regular:
-    tezos-node-0:
-      config:
-        shell:
-          history_mode: rolling
+  # Non-baking nodes
+  regular: {}
+    # tezos-node-0:
+    #   config:
+    #     shell:
+    #       history_mode: rolling
 
 # Where full and rolling history mode nodes will get their snapshots from
 full_snapshot_url: https://mainnet.xtz-shots.io/full
@@ -110,7 +116,8 @@ node_config_network:
     protocol: PtYuensgYBb3G3x1hLLbCmcav8ue8Kyd2khADcL5LsT5R1hcXex
   # The name of the account who's public key will be set downstream in
   # config.json at `network.genesis_parameters.values.genesis_pubkey`.
-  activation_account_name: tqtezos_baker_0
+  #
+  # activation_account_name: tqtezos_baker_0
 
 protocol:
   # Which tezos binary to use
