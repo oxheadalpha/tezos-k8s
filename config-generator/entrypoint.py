@@ -261,10 +261,15 @@ def import_keys(all_accounts):
             if pk and pk != tmp_pk:
                 raise Exception("ERROR: secret/public key mismatch for " + account_name)
             pk = tmp_pk
-        # If there is no secret key but there is a public key, and this account
-        # is a bootstrap baker account, error as the baker needs a secret key.
-        elif pk != None and account_values["is_bootstrap_baker_account"]:
-            raise Exception("ERROR: A secret key is required for a baker account")
+        # Since there is no sk or pk for this account, log a warning that this
+        # account will not be imported.
+        elif not pk:
+            print(
+                f"WARNING: No keys were provided for account {account_name}. Nothing to import"
+            )
+            continue
+
+        # At this point there is a pubkey. Every node will import it.
 
         pkh = blake2b(pk, digest_size=20).digest()
 
@@ -293,8 +298,6 @@ def import_keys(all_accounts):
     json.dump(public_keys, open(tezdir + "/public_keys", "w"), indent=4)
     print("  Writing " + tezdir + "/public_key_hashs")
     json.dump(public_key_hashs, open(tezdir + "/public_key_hashs", "w"), indent=4)
-
-
 
 
 def get_bootstrap_accounts(accounts, keys_list, is_getting_accounts_for_bakers):
