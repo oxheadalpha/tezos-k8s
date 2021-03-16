@@ -161,7 +161,7 @@ def fill_in_missing_baker_accounts():
                 new_baker_account_name = baker_account_name
 
             new_accounts[new_baker_account_name] = {
-                "bootstrap_balance": CHAIN_PARAMS["defualt_bootstrap_mutez"],
+                "bootstrap_balance": CHAIN_PARAMS["default_bootstrap_mutez"],
                 "is_bootstrap_baker_account": True,
             }
 
