@@ -34,17 +34,20 @@ regular_node_statefulset: # charts/tezos/templates/node.yaml
 # account is not explicitly set below.
 bootstrap_mutez: "4000000000000"
 
-# Accounts with bootstrap balances > 0 will be part of the genesis block. If you
-# specify more baking nodes then you do baking accounts, baking accounts with
-# deterministic keys will be created for those nodes.
-
+# Isolated/Private chains: Accounts with bootstrap balances > 0 will be part
+# of the genesis block. If you specify more baking nodes then you do baking
+# accounts, baking accounts with deterministic keys will be created for those
+# nodes.
+#
+# Public chains: Accounts do not get `is_bootstrap_baker_account` and
+# `bootstrap_balance` fields.
 accounts:
   tqtezos_baker_0:
     key: edsk...
     type: secret
     is_bootstrap_baker_account: true
     bootstrap_balance: "50000000000000"
-  tqtezos_node_0:
+  tqtezos_regular_account_0:
     key: edpk...
     type: public
     is_bootstrap_baker_account: false
@@ -65,9 +68,12 @@ nodes:
       config:
         shell:
           history_mode: archive
-    # An account with deterministic keys will automatically be created for
-    # tezos-baking-node-1, as no account named tqtezos_baker_1 is specified in
-    # accounts.
+
+    # Isolated/Private chain: An account with deterministic keys will
+    # automatically be created for this baker, as no account named
+    # tqtezos_baker_1 is specified in accounts.
+    #
+    # Public chain: This baker will fail to boot as it doesn't have a secret key.
     tezos-baking-node-1:
       bake_using_account: tqtezos_baker_1
       is_bootstrap_node: true
@@ -79,31 +85,31 @@ nodes:
     tezos-node-0:
       config:
         shell:
-          history_mode: full
-
-# List of peers for nodes to connect to. Gets set under config.json `p2p` field
-bootstrap_peers: []
-
-# If not set, will default to the protocol's expected-proof-of-work for identity
-# generation.
-expected_proof_of_work: 0
+          history_mode: rolling
 
 # Where full and rolling history mode nodes will get their snapshots from
 full_snapshot_url: https://mainnet.xtz-shots.io/full
 rolling_snapshot_url: https://mainnet.xtz-shots.io/rolling
 
+# List of peers for nodes to connect to. Gets set under config.json `p2p` field
+bootstrap_peers: []
+
+# Identity generation difficulty. Will be ignored when joining public chains and
+# will default to the protocol's expected-proof-of-work.
+expected_proof_of_work: 0
+
 # The network configuration for each node's config.json. The format for a
-# private network is below. For joining a public network (that has it's own
+# private network is below. For joining a public network (that has its own
 # binaries as part of the Tezos version in use), this can be set to just the
 # network's name, e.g "mainnet".
 node_config_network:
   chain_name: YOUR_CHAIN_NAME_HERE
   genesis:
-    timestamp: "2021-02-12T17:02:24.061398+00:00"
+    timestamp: "2021-03-04T20:00:00Z"
     block: YOUR_GENESIS_BLOCK_HASH_HERE
     protocol: PtYuensgYBb3G3x1hLLbCmcav8ue8Kyd2khADcL5LsT5R1hcXex
-  # The name of the account who's public key will be set downstream at
-  # `node_config_network.genesis_parameters.values.genesis_pubkey`.
+  # The name of the account who's public key will be set downstream in
+  # config.json at `network.genesis_parameters.values.genesis_pubkey`.
   activation_account_name: tqtezos_baker_0
 
 # Activate a new chain from genesis. Note, this is only for when your chain does
