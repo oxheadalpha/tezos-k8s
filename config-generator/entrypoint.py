@@ -14,7 +14,22 @@ ACCOUNTS = json.loads(os.environ["ACCOUNTS"])
 CHAIN_PARAMS = json.loads(os.environ["CHAIN_PARAMS"])
 NODES = json.loads(os.environ["NODES"])
 
+
 MY_POD_NAME = os.environ["MY_POD_NAME"]
+# The chain initiator job does not have a node type
+if os.environ.get("MY_NODE_TYPE"):
+    MY_NODE_TYPE = os.environ["MY_NODE_TYPE"]
+    MY_NODE = NODES[MY_NODE_TYPE][MY_POD_NAME]
+
+
+BAKING_NODES = NODES["baking"]
+CHAIN_TYPE = CHAIN_PARAMS["chain_type"]
+NETWORK_CONFIG = CHAIN_PARAMS["network"]
+
+
+# Helper function
+def isStringInstance(d):
+    return isinstance(d, str)
 
 
 def main():
