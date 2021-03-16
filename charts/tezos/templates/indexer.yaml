@@ -17,7 +17,7 @@ spec:
         appType: tezos
     spec:
       initContainers:
-        - image: registry.gitlab.com/nomadic-labs/tezos-indexer/tezos-indexer:v9.1.0-beta3
+        - image: registry.gitlab.com/nomadic-labs/tezos-indexer/tezos-indexer:v9.1.0-beta4
           command: ["/bin/bash","-c"]
           args: [ "/home/tezos/tezos-indexer --db-schema | tee /docker-entrypoint-initdb.d/tezos-indexer-schema.sql" ]
           name: schema-extractor
@@ -25,12 +25,11 @@ spec:
             - mountPath: /docker-entrypoint-initdb.d/
               name: schema-volume
       containers:
-        - image: registry.gitlab.com/nomadic-labs/tezos-indexer/tezos-indexer:latest
+        - image: registry.gitlab.com/nomadic-labs/tezos-indexer/tezos-indexer:v9.1.0-beta4
           name: tezos-indexer
           args:
-            - --verbose
             - --debug
-            - --verbosity=10
+            - --verbosity=1
             - --no-contract-balances
             - --db=postgresql://localhost/tezos
             -  --tezos-url=http://tezos-node-0.tezos-node:8732

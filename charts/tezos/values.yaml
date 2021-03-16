@@ -14,7 +14,6 @@ tezos_k8s_images:
   baker_endorser: tezos-k8s-baker-endorser:dev
   chain_initiator: tezos-k8s-chain-initiator:dev
   config_generator: tezos-k8s-config-generator:dev
-  indexer_db: tezos-k8s-indexer-db:dev
   wait_for_bootstrap: tezos-k8s-wait-for-bootstrap:dev
   zerotier: tezos-k8s-zerotier:dev
   snapshot_downloader: tezos-k8s-snapshot-downloader:dev
