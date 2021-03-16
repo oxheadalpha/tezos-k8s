@@ -13,7 +13,7 @@ const repo = new awsx.ecr.Repository("tezos-k8s");
 //   mkchain pulumi
 //
 
-const chainName = process.env.CHAIN_NAME || "pulumi";
+const chainName = pulumi.getStack();
 
 const defaultHelmValuesFile = fs.readFileSync("../charts/tezos/values.yaml", 'utf8')
 const defaultHelmValues = YAML.parse(defaultHelmValuesFile)
