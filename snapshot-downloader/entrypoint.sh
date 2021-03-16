@@ -9,9 +9,7 @@ node_dir="$data_dir/node"
 node_data_dir="$node_dir/data"
 node="$bin_dir/tezos-node"
 
-# If network is a network name, use that.
-# If network is a config object, it should have a network_name string.
-tezos_network=$(echo $CHAIN_PARAMS | jq -r 'if (.network | type=="string") then .network else .network.network_name end')
+tezos_network=$(echo $CHAIN_PARAMS | jq -r ".network")
 my_nodes_history_mode=$(echo $NODES | jq -r ".${MY_NODE_TYPE}.\"${MY_POD_NAME}\".config.shell.history_mode")
 full_snapshot_url=$(echo $CHAIN_PARAMS | jq -r '.full_snapshot_url // empty')
 rolling_snapshot_url=$(echo $CHAIN_PARAMS | jq -r '.rolling_snapshot_url // empty')
