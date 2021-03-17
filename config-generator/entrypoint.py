@@ -122,7 +122,7 @@ def main():
 # If NETWORK_CONFIG["genesis"]["block"] hasn't been specified, we generate a
 # deterministic one.
 def fill_in_missing_genesis_block():
-    print("Ensure that we have genesis_block")
+    print("\nEnsure that we have genesis_block")
     genesis_config = NETWORK_CONFIG["genesis"]
     genesis_block_placeholder = "YOUR_GENESIS_BLOCK_HASH_HERE"
 
@@ -143,7 +143,7 @@ def fill_in_missing_genesis_block():
 # We create any missing accounts that are refered to by a node at
 # BAKING_NODES to ensure that all named accounts exist.
 def fill_in_missing_baker_accounts():
-    print("Filling in any missing baker accounts...")
+    print("\nFilling in any missing baker accounts...")
     new_accounts = {}
     for baker_name, baker_values in BAKING_NODES.items():
         baker_account_name = baker_values.get("bake_using_account")
@@ -163,6 +163,8 @@ def fill_in_missing_baker_accounts():
                 "bootstrap_balance": CHAIN_PARAMS["default_bootstrap_mutez"],
                 "is_bootstrap_baker_account": True,
             }
+            # Add to the baker the account name it will use to bake
+            baker_values["bake_using_account"] = new_baker_account_name
 
     return {**new_accounts, **ACCOUNTS}
 
@@ -288,7 +290,7 @@ def import_keys(all_accounts):
         print("    Appending public key hash")
         public_key_hashs.append({"name": account_name, "value": pkh_b58})
 
-    print("  Writing " + tezdir + "/secret_keys")
+    print("\n  Writing " + tezdir + "/secret_keys")
     json.dump(secret_keys, open(tezdir + "/secret_keys", "w"), indent=4)
     print("  Writing " + tezdir + "/public_keys")
     json.dump(public_keys, open(tezdir + "/public_keys", "w"), indent=4)
@@ -372,17 +374,17 @@ def create_protocol_parameters_json(bootstrap_accounts, bootstrap_baker_accounts
     print(json.dumps(protocol_params, indent=4))
 
     if protocol_activation.get("should_include_commitments"):
-      try:
-          with open("/commitment-params.json", "r") as f:
-              try:
-                  commitments = json.load(f)
-                  protocol_params["commitments"] = commitments
-                  print("Commitments added to parameters.json")
-              except JSONDecodeError:
-                  print("No JSON found in /commitment-params.json")
-                  pass
-      except OSError:
-          print("No commitment-params.json found")
+        try:
+            with open("/commitment-params.json", "r") as f:
+                try:
+                    commitments = json.load(f)
+                    protocol_params["commitments"] = commitments
+                    print("Commitments added to parameters.json")
+                except JSONDecodeError:
+                    print("No JSON found in /commitment-params.json")
+                    pass
+        except OSError:
+            print("No commitment-params.json found")
 
     return protocol_params
 
