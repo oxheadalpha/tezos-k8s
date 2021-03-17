@@ -17,6 +17,7 @@ tezos_k8s_images:
   wait_for_bootstrap: tezos-k8s-wait-for-bootstrap:dev
   zerotier: tezos-k8s-zerotier:dev
   snapshot_downloader: tezos-k8s-snapshot-downloader:dev
+  bcd_api: tezos-k8s-bcd-api:dev
 
 snapshot_url: https://mainnet.xtz-shots.io/rolling
 protocol:

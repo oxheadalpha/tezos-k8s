@@ -21,9 +21,9 @@ spec:
         appType: tezos
     spec:
       containers:
-        - image: bakingbad/bcdhub-api:3.4
+        - image: "{{ .Values.tezos_k8s_images.bcd_api }}"
           name: api
-          command: [ "/go/bin/api", "-f", "/bcd_config/bcd_config.yaml" ]
+          command: [ "/go/bin/api", "-f", "production.yaml", "-f", "/bcd_config/bcd_config.yaml" ]
           env:
             - name: BCD_ENV
               value: sandbox
