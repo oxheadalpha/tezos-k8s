@@ -44,7 +44,6 @@ def main():
 
     import_keys(all_accounts)
 
-    print("Starting tezos config file generation")
     main_parser = argparse.ArgumentParser()
     main_parser.add_argument(
         "--generate-parameters-json",
@@ -58,6 +57,7 @@ def main():
 
     # Create parameters.json
     if main_args.generate_parameters_json:
+        print("Starting parameters.json file generation")
         bootstrap_accounts_pubkey_hashes = get_bootstrap_accounts_pubkey_hashes(
             all_accounts
         )
@@ -68,13 +68,13 @@ def main():
             bootstrap_accounts_pubkey_hashes, baker_bootstrap_accounts_pubkeys
         )
 
-        print("Generated parameters.json :")
         protocol_params_json = json.dumps(protocol_parameters, indent=2)
         with open("/etc/tezos/parameters.json", "w") as json_file:
             print(protocol_params_json, file=json_file)
 
     # Create config.json
     if main_args.generate_config_json:
+        print("Starting config.json file generation")
         net_addr = None
         bootstrap_peers = CHAIN_PARAMS.get("bootstrap_peers", [])
         if CHAIN_TYPE == "private":
@@ -365,22 +365,24 @@ def create_protocol_parameters_json(bootstrap_accounts, bootstrap_baker_accounts
     accounts = {**bootstrap_accounts, **bootstrap_baker_accounts}
     pubkeys_with_balances = get_genesis_accounts_pubkey_and_balance(accounts)
 
-    protocol_params = CHAIN_PARAMS["protocol_activation"]["protocol_parameters"]
+    protocol_activation = CHAIN_PARAMS["protocol_activation"]
+    protocol_params = protocol_activation["protocol_parameters"]
     protocol_params["bootstrap_accounts"] = pubkeys_with_balances
 
-    print("Logging parameters.json without commitments")
     print(json.dumps(protocol_params, indent=4))
 
-    try:
-        with open("/commitment-params.json", "r") as f:
-            try:
-                commitments = json.load(f)
-                protocol_params["commitments"] = commitments
-            except JSONDecodeError:
-                print("No JSON found in /commitment-params.json")
-                pass
-    except OSError:
-        print("No commitment-parms.json found")
+    if protocol_activation.get("should_include_commitments"):
+      try:
+          with open("/commitment-params.json", "r") as f:
+              try:
+                  commitments = json.load(f)
+                  protocol_params["commitments"] = commitments
+                  print("Commitments added to parameters.json")
+              except JSONDecodeError:
+                  print("No JSON found in /commitment-params.json")
+                  pass
+      except OSError:
+          print("No commitment-params.json found")
 
     return protocol_params
 
