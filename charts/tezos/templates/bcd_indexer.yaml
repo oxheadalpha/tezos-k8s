@@ -23,6 +23,7 @@ spec:
       containers:
         - image: bakingbad/bcdhub-api:3.4
           name: api
+          command: [ "/go/bin/api", "-f", "/bcd_config/bcd_config.yaml" ]
           env:
             - name: BCD_ENV
               value: sandbox
@@ -40,6 +41,9 @@ spec:
               value: guest
             - name: SANDBOX_NODE_URI
               value: http://sandbox:20000 # Optional key to point to sandbox
+          volumeMounts:
+            - mountPath: /bcd_config/
+              name: bcd-config
         - image: bakingbad/bcdhub-indexer:3.4
           name: indexer
           env:
@@ -93,6 +97,10 @@ spec:
               value: single-node
             - name: ES_JAVA_OPTS
               value: "-Xms256m -Xmx256m"
+      volumes:
+      - name: bcd-config
+        configMap:
+          name: bcd-config
   volumeClaimTemplates:
     - metadata:
         name: esdata
@@ -118,3 +126,20 @@ spec:
         resources:
           requests:
             storage: "5Gi"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bcd-config
+data:
+  bcd_config.yml: |-
+    storage:
+      uri:
+        - http://localhost:9200
+      timeout: 10
+    rabbitmq:
+      uri: "amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@localhost:5672/"
+      timeout: 10
+    db:
+      conn_string: "host=127.0.0.1 port=5432 user=${POSTGRES_USER} dbname=${POSTGRES_DB} password=${POSTGRES_PASSWORD} sslmode=disable"
+      timeout: 10
