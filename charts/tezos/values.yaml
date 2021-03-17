@@ -35,8 +35,10 @@ baker_statefulset:
   name: tezos-baking-node
 regular_node_statefulset:
   name: tezos-node
-indexer_statefulset:
-  name: tezos-indexer
+nomadic_indexer_statefulset:
+  name: nomadic-indexer
+bcd_indexer_statefulset:
+  name: bcd-indexer
 
 # Names should be consistent with the above statefulset names with suffix being
 # index of node.

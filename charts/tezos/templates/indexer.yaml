@@ -1,23 +1,27 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ .Values.indexer_statefulset.name }}
+  name: {{ .Values.nomadic_indexer_statefulset.name }}
   namespace: {{ .Release.Namespace }}
 spec:
   podManagementPolicy: Parallel
+  {{ if eq .Values.indexer.type "nomadic" }}
   replicas: 1
+  {{ else }}
+  replicas: 0
+  {{ end }}
   selector:
     matchLabels:
-      app: {{ .Values.indexer_statefulset.name }}
+      app: {{ .Values.nomadic_indexer_statefulset.name }}
   serviceName: tezos-node
   template:
     metadata:
       labels:
-        app: {{ .Values.indexer_statefulset.name }}
+        app: {{ .Values.nomadic_indexer_statefulset.name }}
         appType: tezos
     spec:
       initContainers:
-        - image: registry.gitlab.com/nomadic-labs/tezos-indexer/tezos-indexer:v9.1.0-beta4
+        - image: registry.gitlab.com/nomadic-labs/tezos-indexer/tezos-indexer:v9.1.0
           command: ["/bin/bash","-c"]
           args: [ "/home/tezos/tezos-indexer --db-schema | tee /docker-entrypoint-initdb.d/tezos-indexer-schema.sql" ]
           name: schema-extractor
@@ -25,7 +29,7 @@ spec:
             - mountPath: /docker-entrypoint-initdb.d/
               name: schema-volume
       containers:
-        - image: registry.gitlab.com/nomadic-labs/tezos-indexer/tezos-indexer:v9.1.0-beta4
+        - image: registry.gitlab.com/nomadic-labs/tezos-indexer/tezos-indexer:v9.1.0
           name: tezos-indexer
           args:
             - --debug
