@@ -40,11 +40,12 @@ def main():
     if CHAIN_TYPE != "public":
         fill_in_missing_genesis_block()
         all_accounts = fill_in_missing_baker_accounts()
-    elif MY_POD_NAME in BAKING_NODES:
-        # If this node is a baker, it must have an account with a secret key.
-        verify_this_bakers_account()
 
     import_keys(all_accounts)
+
+    if MY_POD_NAME in BAKING_NODES:
+        # If this node is a baker, it must have an account with a secret key.
+        verify_this_bakers_account(all_accounts)
 
     main_parser = argparse.ArgumentParser()
     main_parser.add_argument(
@@ -172,12 +173,12 @@ def fill_in_missing_baker_accounts():
 
 
 # Verify that the current baker has a baker account with secret key
-def verify_this_bakers_account():
+def verify_this_bakers_account(accounts):
     account_using_to_bake = MY_NODE.get("bake_using_account")
     if not account_using_to_bake:
         raise Exception(f"ERROR: No account specified for baker {MY_POD_NAME}")
 
-    account = ACCOUNTS.get(account_using_to_bake)
+    account = accounts.get(account_using_to_bake)
     if not account:
         raise Exception(
             f"ERROR: No account named {account_using_to_bake} found for baker {MY_POD_NAME}"
