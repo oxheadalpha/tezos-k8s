@@ -295,7 +295,7 @@ def import_keys(all_accounts):
                 account_values["key"] = sk_b58
                 account_values["type"] = "secret"
 
-        print("   Appending public key")
+        print(f"    Appending public key: {pk_b58}")
         public_keys.append(
             {
                 "name": account_name,
@@ -303,8 +303,12 @@ def import_keys(all_accounts):
             }
         )
 
-        print("    Appending public key hash")
+        print(f"    Appending public key hash: {pkh_b58}")
         public_key_hashs.append({"name": account_name, "value": pkh_b58})
+
+        print(f"    Account key type: {account_values.get('type')}")
+        print(f"    Account bootstrap balance: {account_values.get('bootstrap_balance')}")
+        print(f"    Is account a bootstrap baker: {account_values.get('is_bootstrap_baker_account', False)}")
 
     print("\n  Writing " + tezdir + "/secret_keys")
     json.dump(secret_keys, open(tezdir + "/secret_keys", "w"), indent=4)
