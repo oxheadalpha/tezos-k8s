@@ -100,9 +100,8 @@ rolling_snapshot_url: https://mainnet.xtz-shots.io/rolling
 # List of peers for nodes to connect to. Gets set under config.json `p2p` field
 bootstrap_peers: []
 
-# Identity generation difficulty. Will be ignored when joining public chains and
-# will default to the protocol's expected-proof-of-work.
-expected_proof_of_work: 0
+# Identity generation difficulty.
+expected_proof_of_work: 26
 
 # The network configuration for each node's config.json. The format for a
 # private network is below. For joining a public network (that has its own
