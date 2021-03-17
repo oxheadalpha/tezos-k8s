@@ -16,7 +16,9 @@ NODES = json.loads(os.environ["NODES"])
 
 
 MY_POD_NAME = os.environ["MY_POD_NAME"]
-# The chain initiator job does not have a node type
+MY_NODE_TYPE = MY_NODE = None
+# The chain initiator job does not have a MY_NODE_TYPE or MY_NODE. Only
+# statefulsets.
 if os.environ.get("MY_NODE_TYPE"):
     MY_NODE_TYPE = os.environ["MY_NODE_TYPE"]
     MY_NODE = NODES[MY_NODE_TYPE][MY_POD_NAME]
@@ -274,12 +276,26 @@ def import_keys(all_accounts):
         pk_b58 = b58encode_check(edpk + pk).decode("utf-8")
         pkh_b58 = b58encode_check(tz1 + pkh).decode("utf-8")
 
-        if sk != None:
+        sk_b58 = None
+        if sk:
             print("    Appending secret key")
             sk_b58 = b58encode_check(edsk + sk).decode("utf-8")
             secret_keys.append({"name": account_name, "value": "unencrypted:" + sk_b58})
 
-        print("    Appending public key")
+        # For isolated/private chains...
+        if CHAIN_TYPE != "public" and not account_values.get("key"):
+            # If it is not a bootstrap baker
+            # account, set the public key on the account.
+            if pk_b58 and not account_values.get("is_bootstrap_baker_account"):
+                account_values["key"] = pk_b58
+                account_values["type"] = "public"
+                # If it is a bootstrap baker
+                # account, set the secret key on the account.
+            elif sk_b58 and account_values.get("is_bootstrap_baker_account"):
+                account_values["key"] = sk_b58
+                account_values["type"] = "secret"
+
+        print("   Appending public key")
         public_keys.append(
             {
                 "name": account_name,
