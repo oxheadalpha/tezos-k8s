@@ -22,7 +22,7 @@ metadata:
   name: tezos-config
   namespace: {{ .Release.Namespace }}
 ---
-{{- if eq .Values.chain_type "private" }}
+{{- if (include "tezos.isThereZerotierConfig" .) }}
 apiVersion: v1
 data:
   CHAIN_NAME: "{{ .Values.node_config_network.chain_name }}"
@@ -34,8 +34,8 @@ kind: ConfigMap
 metadata:
   name: zerotier-config
   namespace: {{ .Release.Namespace }}
+{{- end }}
 ---
-{{- end}}
 apiVersion: v1
 data:
   ACCOUNTS: |

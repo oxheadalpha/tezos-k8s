@@ -36,7 +36,7 @@ spec:
               name: config-volume
             - mountPath: /var/tezos
               name: var-volume
-{{- if eq .Values.chain_type "private" }}
+{{- if (include "tezos.isThereZerotierConfig" .) }}
         - args:
             - "-c"
             - "echo 'starting zerotier' && zerotier-one /var/tezos/zerotier"
@@ -71,7 +71,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume
 {{- end }}
-{{- if eq .Values.chain_type "private" }}
+{{- if (include "tezos.isThereZerotierConfig" .) }}
         - envFrom:
             - configMapRef:
                 name: zerotier-config
