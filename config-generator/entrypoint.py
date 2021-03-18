@@ -425,6 +425,19 @@ def get_zerotier_bootstrap_peer_ips():
     ]
 
 
+def get_genesis_pubkey():
+    with open("/var/tezos/client/public_keys", "r") as f:
+        pubkeys = json.load(f)
+        genesis_pubkey = None
+        for _, pubkey in enumerate(pubkeys):
+            if pubkey["name"] == NETWORK_CONFIG["activation_account_name"]:
+                genesis_pubkey = pubkey["value"]["key"]
+                break
+        if not genesis_pubkey:
+            raise Exception("ERROR: Couldn't find the genesis_pubkey")
+        return genesis_pubkey
+
+
 def create_node_config_json(
     bootstrap_peers,
     net_addr=None,
@@ -452,24 +465,13 @@ def create_node_config_json(
                 "expected-proof-of-work"
             ]
 
-        # Find the genesis pubkey
-        with open("/var/tezos/client/public_keys", "r") as f:
-            pubkeys = json.load(f)
-            genesis_pubkey = None
-            for _, pubkey in enumerate(pubkeys):
-                if pubkey["name"] == NETWORK_CONFIG["activation_account_name"]:
-                    genesis_pubkey = pubkey["value"]["key"]
-                    break
-            if not genesis_pubkey:
-                raise Exception("ERROR: Couldn't find the genesis_pubkey")
-
         node_config["network"] = {
             "chain_name": NETWORK_CONFIG["chain_name"],
             "sandboxed_chain_name": "SANDBOXED_TEZOS",
             "default_bootstrap_peers": [],
             "genesis": NETWORK_CONFIG["genesis"],
             "genesis_parameters": {
-                "values": {"genesis_pubkey": genesis_pubkey},
+                "values": {"genesis_pubkey": get_genesis_pubkey()},
             },
         }
 
