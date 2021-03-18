@@ -472,7 +472,7 @@ def create_node_config_json(
     if CHAIN_TYPE == "public" and isinstance(NETWORK_CONFIG, str):
         node_config["network"] = NETWORK_CONFIG
     else:
-        if CHAIN_PARAMS.get("expected-proof-of-work"):
+        if CHAIN_PARAMS.get("expected-proof-of-work") != None:
             node_config["p2p"]["expected-proof-of-work"] = CHAIN_PARAMS[
                 "expected-proof-of-work"
             ]
