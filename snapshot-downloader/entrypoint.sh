@@ -9,7 +9,7 @@ node_dir="$data_dir/node"
 node_data_dir="$node_dir/data"
 node="$bin_dir/tezos-node"
 
-tezos_network=$(echo $CHAIN_PARAMS | jq -r 'if (.network | type=="string") then .network else empty end')
+tezos_network=$(echo $CHAIN_PARAMS | jq -r 'if (.network.genesis | not) then .network.chain_name else empty end')
 if [ -z "$tezos_network" ]; then
   echo "No network given, exiting"
   exit 0

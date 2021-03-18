@@ -2,8 +2,7 @@
 
 set -ex
 
-tezos_network=$(echo $CHAIN_PARAMS | jq -r 'if (.network | type=="string") then .network else empty end')
-
+tezos_network=$(echo $CHAIN_PARAMS | jq -r 'if (.network.genesis | not) then .network.chain_name else empty end')
 if [ -n "$tezos_network" ]; then
   printf "Writing custom configuration for public node\n"
   mkdir -p /tmp/data

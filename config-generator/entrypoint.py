@@ -31,10 +31,8 @@ SHOULD_GENERATE_UNSAFE_DETERMINISTIC_DATA = CHAIN_PARAMS.get(
     "should_generate_unsafe_deterministic_data"
 )
 
-# Helper function
-def isPublicNetwork(d):
-    return isinstance(d, str)
-
+# If there are no genesis params, this is a public chain.
+THIS_IS_A_PUBLIC_NET = True if not NETWORK_CONFIG.get("genesis") else False
 
 def main():
     all_accounts = ACCOUNTS
@@ -89,7 +87,7 @@ def main():
             if bootstrap_peers == []:
                 bootstrap_peers.extend(get_zerotier_bootstrap_peer_ips())
 
-        if isPublicNetwork(NETWORK_CONFIG):
+        if THIS_IS_A_PUBLIC_NET:
             with open("/tmp/data/config.json", "r") as f:
                 bootstrap_peers.extend(json.load(f)["p2p"]["bootstrap-peers"])
         else:
@@ -467,8 +465,8 @@ def create_node_config_json(
         # "log": {"level": "debug"},
     }
 
-    if isPublicNetwork(NETWORK_CONFIG):
-        node_config["network"] = NETWORK_CONFIG
+    if THIS_IS_A_PUBLIC_NET:
+        node_config["network"] = NETWORK_CONFIG["chain_name"]
     else:
         if CHAIN_PARAMS.get("expected-proof-of-work") != None:
             node_config["p2p"]["expected-proof-of-work"] = CHAIN_PARAMS[
