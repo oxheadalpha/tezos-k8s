@@ -36,7 +36,7 @@ spec:
               name: config-volume
             - mountPath: /var/tezos
               name: var-volume
-{{- if (include "tezos.isThereZerotierConfig" .) }}
+{{- if (include "tezos.doesZerotierConfigExist" .) }}
         - args:
             - "-c"
             - "echo 'starting zerotier' && zerotier-one /var/tezos/zerotier"
@@ -71,7 +71,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume
 {{- end }}
-{{- if (include "tezos.isThereZerotierConfig" .) }}
+{{- if (include "tezos.doesZerotierConfigExist" .) }}
         - envFrom:
             - configMapRef:
                 name: zerotier-config
@@ -124,7 +124,7 @@ spec:
               name: config-volume
             - mountPath: /var/tezos
               name: var-volume
-{{- if eq .Values.chain_type "public" }}
+{{- if include "tezos.shouldDownloadSnapshot" . }}
         - image: "{{ .Values.tezos_k8s_images.snapshot_downloader }}"
           imagePullPolicy: IfNotPresent
           name: snapshot-downloader

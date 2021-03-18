@@ -21,7 +21,7 @@ metadata:
   name: tezos-config
   namespace: {{ .Release.Namespace }}
 ---
-{{- if (include "tezos.isThereZerotierConfig" .) }}
+{{- if (include "tezos.doesZerotierConfigExist" .) }}
 apiVersion: v1
 data:
   CHAIN_NAME: "{{ .Values.node_config_network.chain_name }}"
