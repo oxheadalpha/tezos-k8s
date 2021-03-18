@@ -7,9 +7,9 @@ rpc_auth: false
 # Chain type options: isolated, private, public
 chain_type: isolated
 # A chain using Zerotier would be a private chain
-zerotier_config:
-  zerotier_network: YOUR_NETWORK_ID_HERE
-  zerotier_token: YOUR_ZEROTIER_TOKEN_HERE
+# zerotier_config:
+#   zerotier_network: YOUR_NETWORK_ID_HERE
+#   zerotier_token: YOUR_ZEROTIER_TOKEN_HERE
 
 # Images not part of the tezos-k8s repo go here
 images:
@@ -31,17 +31,26 @@ regular_node_statefulset: # charts/tezos/templates/node.yaml
   name: tezos-node
   node_type: regular
 
-# For isolated/private chains: the defualt mutez given to an account if the
+# For non-public chains the defualt mutez given to an account if the
 # account is not explicitly set below.
 bootstrap_mutez: "4000000000000"
 
-# Isolated/Private chains: Accounts with bootstrap balances > 0 will be part
-# of the genesis block. If you specify more baking nodes then you do baking
-# accounts, baking accounts with deterministic keys will be created for those
-# nodes.
+# # ACCOUNTS
 #
-# Public chains: Accounts do not get `is_bootstrap_baker_account` and
+# When running bakers for a public net, you must provide your own secret keys.
+# For non public networks, you can change this setting to true, and
+# deterministic keys will be generated for your nodes automatically. This is
+# helpful for spinning up local testnets.
+should_generate_unsafe_determinitic_keys: false
+#
+# - Public chains: Accounts do not get `is_bootstrap_baker_account` and
 # `bootstrap_balance` fields.
+# - Non-public chains: If you don't specify accounts needed by nodes, they can
+#   be created deterministically via the above setting. If specifying, accounts
+#   can be given a bootstrap balance and can also be configured to be bootstrap
+#   baker accounts. Accounts with balances set to "0" will be imported by the
+#   node but they will not be bootstrap accounts. If you don't set a bootstrap
+#   balance, it will default to the `bootstrap_mutez` field above.
 #
 accounts: {}
 #   tqtezos_baker_0:
@@ -56,6 +65,7 @@ accounts: {}
 #     is_bootstrap_baker_account: false
 #     bootstrap_balance: "4000000000000"
 
+# # NODES
 # Names of nodes should be consistent with their statefulset names but with
 # an added suffix being the index of the node.
 # Example: `baker_statefulset.name: tezos-baking-node` -> `nodes.baking.tezos-baking-node-0`
@@ -63,18 +73,22 @@ accounts: {}
 # `metadata.name` of the downward k8s API. They should be kebab case.
 # https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/
 #
+# Params for for non-public chains:
+# - `bake_using_account`: The name of the account that should be used for baking.
+# - `is_bootstrap_node`: Is this node a bootstrap peer.
+#
 # The `config` property should mimic the structure of a node's config.json.
 # Run `tezos-node config --help` for more info.
 nodes:
-  baking:
-    tezos-baking-node-0:
+  baking: {}
+    # tezos-baking-node-0:
       # bake_using_account: tqtezos_baker_0
-      is_bootstrap_node: true
-      config:
-        shell:
-          history_mode: archive
+      # is_bootstrap_node: true
+      # config:
+      #   shell:
+      #     history_mode: rolling
 
-    # Isolated/Private chain: An account with deterministic keys will
+    # Non-public chains: An account with deterministic keys will
     # automatically be created for this baker, as no account named
     # tqtezos_baker_1 is specified in accounts.
     #
@@ -88,11 +102,11 @@ nodes:
     #       history_mode: full
 
   # Non-baking nodes
-  regular: {}
-    # tezos-node-0:
-    #   config:
-    #     shell:
-    #       history_mode: rolling
+  regular:
+    tezos-node-0:
+      config:
+        shell:
+          history_mode: rolling
 
 # Where full and rolling history mode nodes will get their snapshots from
 full_snapshot_url: https://mainnet.xtz-shots.io/full
@@ -105,56 +119,60 @@ bootstrap_peers: []
 expected_proof_of_work: 26
 
 # The network configuration for each node's config.json. The format for a
-# private network is below. For joining a public network (that has its own
-# binaries as part of the Tezos version in use), this can be set to just the
-# network's name, e.g "mainnet".
-node_config_network:
-  chain_name: YOUR_CHAIN_NAME_HERE
-  genesis:
-    timestamp: "2021-03-04T20:00:00Z"
-    block: YOUR_GENESIS_BLOCK_HASH_HERE
-    protocol: PtYuensgYBb3G3x1hLLbCmcav8ue8Kyd2khADcL5LsT5R1hcXex
-  # The name of the account who's public key will be set downstream in
-  # config.json at `network.genesis_parameters.values.genesis_pubkey`.
-  #
-  # activation_account_name: tqtezos_baker_0
+# private network is:
+#
+# node_config_network:
+#   chain_name: YOUR_CHAIN_NAME_HERE
+#   genesis:
+#     timestamp: "2021-03-04T20:00:00Z"
+#     block: YOUR_GENESIS_BLOCK_HASH_HERE
+#     protocol: PtYuensgYBb3G3x1hLLbCmcav8ue8Kyd2khADcL5LsT5R1hcXex
+#   # The name of the account who's public key will be set downstream in
+#   # config.json at `network.genesis_parameters.values.genesis_pubkey`.
+#   activation_account_name: tqtezos_baker_0
+#
+# For joining a public network (that has its own binaries as part of the Tezos
+# version in use), this can be set to just the network's name.
+node_config_network: mainnet
+
 
 protocol:
   # Which tezos binary to use
   command: 008-PtEdo2Zk
 
-# Activate a new chain from genesis. Note, this is only for when your chain does
-# not exist yet. For subsequent deploys, remove this.
-activation:
-  protocol_hash: PtEdo2ZkT9oKpimTah6x2embF25oss54njMuPzkJTEi5RqfdZFA
-  # Should the commitments data in
-  # tezos-k8s/config-generator/commitment-params.json be part of parameters.json.
-  should_include_commitments: false
-  # parameters.json
-  protocol_parameters:
-    preserved_cycles: 2
-    blocks_per_cycle: 8
-    blocks_per_commitment: 4
-    blocks_per_roll_snapshot: 4
-    blocks_per_voting_period: 64
-    time_between_blocks: ["10", "20"]
-    endorsers_per_block: 32
-    hard_gas_limit_per_operation: "800000"
-    hard_gas_limit_per_block: "8000000"
-    proof_of_work_threshold: "-1"
-    tokens_per_roll: "8000000000"
-    michelson_maximum_type_size: 1000
-    seed_nonce_revelation_tip: "125000"
-    origination_size: 257
-    block_security_deposit: "512000000"
-    endorsement_security_deposit: "64000000"
-    endorsement_reward: ["2000000"]
-    cost_per_byte: "1000"
-    hard_storage_limit_per_operation: "60000"
-    test_chain_duration: "1966080"
-    quorum_min: 2000
-    quorum_max: 7000
-    min_proposal_quorum: 500
-    initial_endorsers: 1
-    delay_per_missing_endorsement: "1"
-    baking_reward_per_endorsement: ["200000"]
+# # Activate a new chain from genesis. Note, this is only for when your chain does
+# # not exist yet. For subsequent deploys, remove this.
+#
+# activation:
+#   protocol_hash: PtEdo2ZkT9oKpimTah6x2embF25oss54njMuPzkJTEi5RqfdZFA
+#   # Should the commitments data in
+#   # tezos-k8s/config-generator/commitment-params.json be part of parameters.json.
+#   should_include_commitments: false
+#   # parameters.json
+#   protocol_parameters:
+#     preserved_cycles: 2
+#     blocks_per_cycle: 8
+#     blocks_per_commitment: 4
+#     blocks_per_roll_snapshot: 4
+#     blocks_per_voting_period: 64
+#     time_between_blocks: ["10", "20"]
+#     endorsers_per_block: 32
+#     hard_gas_limit_per_operation: "800000"
+#     hard_gas_limit_per_block: "8000000"
+#     proof_of_work_threshold: "-1"
+#     tokens_per_roll: "8000000000"
+#     michelson_maximum_type_size: 1000
+#     seed_nonce_revelation_tip: "125000"
+#     origination_size: 257
+#     block_security_deposit: "512000000"
+#     endorsement_security_deposit: "64000000"
+#     endorsement_reward: ["2000000"]
+#     cost_per_byte: "1000"
+#     hard_storage_limit_per_operation: "60000"
+#     test_chain_duration: "1966080"
+#     quorum_min: 2000
+#     quorum_max: 7000
+#     min_proposal_quorum: 500
+#     initial_endorsers: 1
+#     delay_per_missing_endorsement: "1"
+#     baking_reward_per_endorsement: ["200000"]
