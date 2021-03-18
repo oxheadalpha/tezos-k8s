@@ -15,7 +15,6 @@ ACCOUNTS = json.loads(os.environ["ACCOUNTS"])
 CHAIN_PARAMS = json.loads(os.environ["CHAIN_PARAMS"])
 NODES = json.loads(os.environ["NODES"])
 
-
 MY_POD_NAME = os.environ["MY_POD_NAME"]
 MY_NODE_TYPE = MY_NODE = None
 # The chain initiator job does not have a MY_NODE_TYPE or MY_NODE. Only
@@ -26,19 +25,21 @@ if os.environ.get("MY_NODE_TYPE"):
 
 
 BAKING_NODES = NODES["baking"]
-CHAIN_TYPE = CHAIN_PARAMS["chain_type"]
 NETWORK_CONFIG = CHAIN_PARAMS["network"]
 
+SHOULD_GENERATE_UNSAFE_DETERMINISTIC_DATA = CHAIN_PARAMS.get(
+    "should_generate_unsafe_deterministic_data"
+)
 
 # Helper function
-def isStringInstance(d):
+def isPublicNetwork(d):
     return isinstance(d, str)
 
 
 def main():
     all_accounts = ACCOUNTS
 
-    if CHAIN_TYPE != "public":
+    if SHOULD_GENERATE_UNSAFE_DETERMINISTIC_DATA:
         fill_in_missing_genesis_block()
         all_accounts = fill_in_missing_baker_accounts()
 
@@ -88,7 +89,7 @@ def main():
             if bootstrap_peers == []:
                 bootstrap_peers.extend(get_zerotier_bootstrap_peer_ips())
 
-        if CHAIN_TYPE == "public" and isStringInstance(NETWORK_CONFIG):
+        if isPublicNetwork(NETWORK_CONFIG):
             with open("/tmp/data/config.json", "r") as f:
                 bootstrap_peers.extend(json.load(f)["p2p"]["bootstrap-peers"])
         else:
@@ -245,9 +246,7 @@ def import_keys(all_accounts):
                 print("WARNING: unrecognised public key prefix")
             pk = pk[4:]
 
-        # If both a secret and public key are missing for this account in
-        # isolated/private chains, generate a deterministic secret key.
-        if CHAIN_TYPE != "public":
+        if SHOULD_GENERATE_UNSAFE_DETERMINISTIC_DATA:
             if sk == None and pk == None:
                 print(
                     f"    Deriving secret key for account {account_name} from genesis_block"
@@ -286,8 +285,7 @@ def import_keys(all_accounts):
             sk_b58 = b58encode_check(edsk + sk).decode("utf-8")
             secret_keys.append({"name": account_name, "value": "unencrypted:" + sk_b58})
 
-        # For isolated/private chains...
-        if CHAIN_TYPE != "public" and not account_values.get("key"):
+        if SHOULD_GENERATE_UNSAFE_DETERMINISTIC_DATA and not account_values.get("key"):
             # If it is not a bootstrap baker
             # account, set the public key on the account.
             if pk_b58 and not account_values.get("is_bootstrap_baker_account"):
@@ -469,7 +467,7 @@ def create_node_config_json(
         # "log": {"level": "debug"},
     }
 
-    if CHAIN_TYPE == "public" and isinstance(NETWORK_CONFIG, str):
+    if isPublicNetwork(NETWORK_CONFIG):
         node_config["network"] = NETWORK_CONFIG
     else:
         if CHAIN_PARAMS.get("expected-proof-of-work") != None:

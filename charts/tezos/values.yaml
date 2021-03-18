@@ -4,8 +4,6 @@ is_invitation: false
 # Should the rpc-auth service be spun up
 rpc_auth: false
 
-# Chain type options: isolated, private, public
-chain_type: isolated
 # A chain using Zerotier would be a private chain
 # zerotier_config:
 #   zerotier_network: YOUR_NETWORK_ID_HERE
@@ -38,10 +36,11 @@ bootstrap_mutez: "4000000000000"
 # # ACCOUNTS
 #
 # When running bakers for a public net, you must provide your own secret keys.
-# For non public networks, you can change this setting to true, and
-# deterministic keys will be generated for your nodes automatically. This is
-# helpful for spinning up local testnets.
-should_generate_unsafe_determinitic_keys: false
+# For non public networks you can change this setting to true, and deterministic
+# keys will be generated for your nodes automatically. If a genesis block hash
+# is not provided, that will also be generated. This is helpful for spinning up
+# local testnets.
+should_generate_unsafe_deterministic_data: false
 #
 # - Public chains: Accounts do not get `is_bootstrap_baker_account` and
 # `bootstrap_balance` fields.

@@ -3,13 +3,13 @@ data:
   CHAIN_PARAMS: |
     {
       "bootstrap_peers": {{ toJson .Values.bootstrap_peers }},
-      "chain_type": "{{ .Values.chain_type }}",
       "default_bootstrap_mutez": "{{ .Values.bootstrap_mutez }}",
       "expected-proof-of-work": {{ toJson .Values.expected_proof_of_work }},
 
       "full_snapshot_url": {{ toJson .Values.full_snapshot_url }},
       "rolling_snapshot_url": {{ toJson .Values.rolling_snapshot_url }},
 
+      "should_generate_unsafe_deterministic_data": {{ toJson .Values.should_generate_unsafe_deterministic_data }},
       "network": {{ mustToPrettyJson .Values.node_config_network | indent 8 | trim }},
       "proto_command": "{{ .Values.protocol.command }}",
       "protocol_activation": {{ .Values.activation | mustToPrettyJson | indent 8 | trim }}
