@@ -12,8 +12,7 @@ data:
 
       "network": {{ mustToPrettyJson .Values.node_config_network | indent 8 | trim }},
       "proto_command": "{{ .Values.protocol.command }}",
-      {{- $activation := .Values.activation | default dict }}
-      "protocol_activation": {{ mustToPrettyJson $activation | indent 8 | trim }}
+      "protocol_activation": {{ .Values.activation | mustToPrettyJson | indent 8 | trim }}
     }
   NODES: |
 {{ .Values.nodes | mustToPrettyJson | indent 4 }}

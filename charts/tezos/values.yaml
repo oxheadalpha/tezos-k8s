@@ -1,5 +1,6 @@
 # Is the values file an invitation for a private chain
 is_invitation: false
+
 # Should the rpc-auth service be spun up
 rpc_auth: false
 

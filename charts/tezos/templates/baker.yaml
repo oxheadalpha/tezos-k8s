@@ -1,4 +1,4 @@
-{{- if and (not .Values.is_invitation) (not (eq .Values.chain_type "public")) }}
+{{- if (include "tezos.shouldActivateProtocol" .) }}
 apiVersion: batch/v1
 kind: Job
 metadata:

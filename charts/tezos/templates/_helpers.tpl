@@ -4,3 +4,10 @@
 true
 {{- end }}
 {{- end }}
+
+{{- define "tezos.shouldActivateProtocol" -}}
+{{ $activation := .Values.activation | default dict }}
+{{- if and ($activation.protocol_hash)  ($activation.protocol_parameters) }}
+true
+{{- end }}
+{{- end }}
