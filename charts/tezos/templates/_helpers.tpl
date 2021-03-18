@@ -12,6 +12,21 @@
 {{- end }}
 
 {{/*
+  Should nodes wait for a bootstrap node to be ready.
+  Yes if these conditions are met:
+  - Node is not an invitee to a private chain
+  - There are chain genesis parameters specified, i.e. this is not a public chain
+  Returns a string "true" or empty string which is falsey.
+*/}}
+{{- define "tezos.shouldWaitForBootstrapNode" -}}
+{{- if and (not .Values.is_invitation) (hasKey .Values.node_config_network "genesis")}}
+{{- "true" }}
+{{- else }}
+{{- "" }}
+{{- end }}
+{{- end }}
+
+{{/*
   Checks if a protocol should be activated. There needs to be a protocol_hash
   and protocol_parameters.
   Returns a string "true" or empty string which is falsey.

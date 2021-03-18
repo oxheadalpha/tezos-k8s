@@ -159,7 +159,7 @@ spec:
               name: var-volume
 {{- end }}
       initContainers:
-{{- if and (not .Values.is_invitation) (not (kindIs "string" .Values.node_config_network)) }}
+{{- if include "tezos.shouldWaitForBootstrapNode" . }}
         - image: {{ .Values.tezos_k8s_images.wait_for_bootstrap }}
           imagePullPolicy: IfNotPresent
           name: wait-for-bootstrap
