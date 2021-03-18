@@ -5,7 +5,8 @@ import socket
 from hashlib import blake2b
 from json.decoder import JSONDecodeError
 from operator import itemgetter
-from re import match, sub
+from pathlib import Path
+from re import sub
 
 from base58 import b58decode_check, b58encode_check
 from nacl.signing import SigningKey
@@ -78,13 +79,15 @@ def main():
     # Create config.json
     if main_args.generate_config_json:
         print("Starting config.json file generation")
-        net_addr = None
         bootstrap_peers = CHAIN_PARAMS.get("bootstrap_peers", [])
-        if CHAIN_TYPE == "private":
-            with open("/var/tezos/zerotier_data.json", "r") as f:
-                net_addr = json.load(f)[0]["assignedAddresses"][0].split("/")[0]
+
+        my_zerotier_ip = None
+        zerotier_data_file_path = Path("/var/tezos/zerotier_data.json")
+        if is_chain_running_on_zerotier_net(zerotier_data_file_path):
+            my_zerotier_ip = get_my_pods_zerotier_ip(zerotier_data_file_path)
             if bootstrap_peers == []:
                 bootstrap_peers.extend(get_zerotier_bootstrap_peer_ips())
+
         if CHAIN_TYPE == "public" and isStringInstance(NETWORK_CONFIG):
             with open("/tmp/data/config.json", "r") as f:
                 bootstrap_peers.extend(json.load(f)["p2p"]["bootstrap-peers"])
@@ -112,7 +115,7 @@ def main():
         config_json = json.dumps(
             create_node_config_json(
                 bootstrap_peers,
-                net_addr,
+                my_zerotier_ip,
             ),
             indent=2,
         )
@@ -412,6 +415,15 @@ def create_protocol_parameters_json(bootstrap_accounts, bootstrap_baker_accounts
             print("No commitment-params.json found")
 
     return protocol_params
+
+
+def is_chain_running_on_zerotier_net(file):
+    return file.is_file()
+
+
+def get_my_pods_zerotier_ip(zerotier_data_file_path):
+    with open(zerotier_data_file_path, "r") as f:
+        return json.load(f)[0]["assignedAddresses"][0].split("/")[0]
 
 
 def get_zerotier_bootstrap_peer_ips():
