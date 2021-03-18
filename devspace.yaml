@@ -40,6 +40,10 @@ images:
     image: tezos-k8s-bcd-api
     dockerfile: ../bcdhub/build/api/Dockerfile
     context: ../bcdhub/
+  bcd-indexer:
+    image: tezos-k8s-bcd-indexer
+    dockerfile: ../bcdhub/build/indexer/Dockerfile
+    context: ../bcdhub/
 
 dev:
   ports:

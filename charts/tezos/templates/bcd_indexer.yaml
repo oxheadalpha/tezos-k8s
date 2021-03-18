@@ -26,7 +26,7 @@ spec:
             #command: [ "/go/bin/api", "-f", "production.yaml", "-f", "/bcd_config/bcd_config.yaml" ]
           env:
             - name: BCD_ENV
-              value: sandbox
+              value: production
             - name: GIN_MODE
               value: debug
             - name: POSTGRES_USER
@@ -47,14 +47,11 @@ spec:
               value: guest
             - name: SANDBOX_NODE_URI
               value: http://sandbox:20000 # Optional key to point to sandbox
-          volumeMounts:
-            - mountPath: /bcd_config/
-              name: bcd-config
-        - image: bakingbad/bcdhub-indexer:3.4
+        - image: "{{ .Values.tezos_k8s_images.bcd_indexer }}"
           name: indexer
           env:
             - name: BCD_ENV
-              value: sandbox
+              value: production
             - name: GIN_MODE
               value: debug
             - name: POSTGRES_USER
@@ -63,6 +60,12 @@ spec:
               value: root
             - name: POSTGRES_DB
               value: bcd
+            - name: ELASTIC_HOSTNAME
+              value: localhost
+            - name: RABBITMQ_HOSTNAME
+              value: localhost
+            - name: DB_HOSTNAME
+              value: 127.0.0.1
             - name: RABBITMQ_DEFAULT_USER
               value: guest
             - name: RABBITMQ_DEFAULT_PASS
@@ -103,10 +106,6 @@ spec:
               value: single-node
             - name: ES_JAVA_OPTS
               value: "-Xms256m -Xmx256m"
-      volumes:
-      - name: bcd-config
-        configMap:
-          name: bcd-config
   volumeClaimTemplates:
     - metadata:
         name: esdata

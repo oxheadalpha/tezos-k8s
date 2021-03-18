@@ -18,6 +18,7 @@ tezos_k8s_images:
   zerotier: tezos-k8s-zerotier:dev
   snapshot_downloader: tezos-k8s-snapshot-downloader:dev
   bcd_api: tezos-k8s-bcd-api:dev
+  bcd_indexer: tezos-k8s-bcd-indexer:dev
 
 snapshot_url: https://mainnet.xtz-shots.io/rolling
 protocol:
