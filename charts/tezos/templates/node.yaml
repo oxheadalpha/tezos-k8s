@@ -25,7 +25,7 @@ spec:
             - /usr/local/bin/tezos-node
           env:
             - name: TEZOS_EVENTS_CONFIG
-              value: "file-descriptor-path:/dev/stdout"
+              value: "file-descriptor-path:/dev/stdout?level-at-least=debug"
           image: {{ .Values.images.tezos | quote }}
           imagePullPolicy: IfNotPresent
           name: tezos-node
