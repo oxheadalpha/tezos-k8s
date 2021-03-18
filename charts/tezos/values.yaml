@@ -117,8 +117,9 @@ bootstrap_peers: []
 # Identity generation difficulty.
 expected_proof_of_work: 26
 
-# The network configuration for each node's config.json. The format for a
-# private network is:
+# Create a custom network using a config structure that is similar to a node's
+# config.json.
+# Run `tezos-node config --help` for more info.
 #
 # node_config_network:
 #   chain_name: YOUR_CHAIN_NAME_HERE
@@ -130,13 +131,14 @@ expected_proof_of_work: 26
 #   # config.json at `network.genesis_parameters.values.genesis_pubkey`.
 #   activation_account_name: tqtezos_baker_0
 #
-# For joining a public network (that has its own binaries as part of the Tezos
-# version in use), this can be set like so:
+# For joining a public network. The network must be recognized by the
+# tezos/tezos:v8-release docker image.
 node_config_network:
   chain_name: mainnet
 
 protocol:
-  # Which tezos binary to use
+  # Set the protocol binary. The protocol must be recognized by the
+  # tezos/tezos:v8-release docker image.
   command: 008-PtEdo2Zk
 
 # # Activate a new chain from genesis. Note, this is only for when your chain does
