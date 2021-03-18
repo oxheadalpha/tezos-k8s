@@ -23,7 +23,7 @@ spec:
       containers:
         - image: "{{ .Values.tezos_k8s_images.bcd_api }}"
           name: api
-          command: [ "/go/bin/api", "-f", "production.yaml", "-f", "/bcd_config/bcd_config.yaml" ]
+            #command: [ "/go/bin/api", "-f", "production.yaml", "-f", "/bcd_config/bcd_config.yaml" ]
           env:
             - name: BCD_ENV
               value: sandbox
@@ -35,6 +35,12 @@ spec:
               value: root
             - name: POSTGRES_DB
               value: bcd
+            - name: ELASTIC_HOSTNAME
+              value: localhost
+            - name: RABBITMQ_HOSTNAME
+              value: localhost
+            - name: DB_HOSTNAME
+              value: 127.0.0.1
             - name: RABBITMQ_DEFAULT_USER
               value: guest
             - name: RABBITMQ_DEFAULT_PASS
