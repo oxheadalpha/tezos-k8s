@@ -14,6 +14,13 @@ sys.path.insert(0, "tqchain")
 
 __version__ = get_versions()["version"]
 
+# charts/tezos/templates/baker.yaml
+BAKER_NODE_NAME = "tezos-baking-node"
+BAKER_NODE_TYPE = "baking"
+# charts/tezos/templates/node.yaml
+REGULAR_NODE_NAME = "tezos-node"
+REGULAR_NODE_TYPE = "regular"
+
 
 def run_docker(image, entrypoint, *args):
     return subprocess.check_output(
@@ -61,9 +68,18 @@ def get_genesis_vanity_chain_id(docker_image, seed_len=16):
 
 
 CHAIN_CONSTANTS = {
+    "should_generate_unsafe_deterministic_data": {
+        "help": (
+            "Should tezos-k8s generate deterministic account keys and genesis"
+            " block hash instead of mkchain using tezos-client to generate"
+            " random ones. This option is helpful for testing purposes."
+        ),
+        "action": "store_true",
+        "default": False,
+    },
     "number_of_nodes": {
         "help": "number of peers in the cluster",
-        "default": 1,
+        "default": 0,
         "type": int,
     },
     "number_of_bakers": {
@@ -71,15 +87,10 @@ CHAIN_CONSTANTS = {
         "default": 1,
         "type": int,
     },
-    "chain_type": {
-        "help": "Type of chain: public, private, isolated",
-        "default": "isolated",
-    },
-    "network": {"help": "Name of the tezos public network to connect to "},
     "zerotier_network": {"help": "Zerotier network id for external chain access"},
     "zerotier_token": {"help": "Zerotier token for external chain access"},
     "bootstrap_peer": {"help": "peer ip to join"},
-    "docker_image": {
+    "tezos_docker_image": {
         "help": "Version of the Tezos docker image",
         "default": "tezos/tezos:v8-release",
     },
@@ -96,6 +107,7 @@ def get_args():
         description="Generate helm values for use with the tezos-chain helm chart"
     )
     parser.add_argument(
+        "-v",
         "--version",
         action="version",
         version="%(prog)s {version}".format(version=__version__),
@@ -151,27 +163,29 @@ def main():
     # pull it. This is to avoid parsing extra output. Preferably, we want to get
     # rid of docker dependency from mkchain.
     FLEXTESA = "registry.gitlab.com/tezos/flextesa:01e3f596-run"
-    images = [FLEXTESA, args.docker_image]
+    images = [args.tezos_docker_image]
+    if not args.should_generate_unsafe_deterministic_data:
+        images.append(FLEXTESA)
     pull_docker_images(images)
 
-    baking_accounts = [f"baker{n}" for n in range(args.number_of_bakers)]
-
     base_constants = {
-        "chain_name": args.chain_name,
         "images": {
-            "tezos": args.docker_image,
+            "tezos": args.tezos_docker_image,
         },
-        "chain_type": args.chain_type,
-        "rpc_auth": args.rpc_auth,
+        "node_config_network": {"chain_name": args.chain_name},
         "zerotier_config": {
             "zerotier_network": args.zerotier_network,
             "zerotier_token": args.zerotier_token,
         },
-        "is_old_accounts_parameter_format": True,
+        # Custom chains should not pull snapshots
+        "full_snapshot_url": None,
+        "rolling_snapshot_url": None,
+        "rpc_auth": args.rpc_auth,
     }
 
     # preserve pre-existing values, if any (in case of scale-up)
     old_create_values = {}
+    old_invite_values = {}
     files_path = f"{os.getcwd()}/{args.chain_name}"
     if os.path.isfile(f"{files_path}_values.yaml"):
         print(
@@ -187,67 +201,79 @@ def main():
         with open(f"{files_path}_invite_values.yaml", "r") as yaml_file:
             old_invite_values = yaml.safe_load(yaml_file)
 
-    if old_create_values.get("genesis", None):
-        base_constants["genesis"] = old_create_values["genesis"]
+    if old_create_values.get("node_config_network", {}).get("genesis"):
+        base_constants["node_config_network"]["genesis"] = old_create_values[
+            "node_config_network"
+        ]["genesis"]
     else:
         # create new chain genesis params if brand new chain
-        base_constants["genesis"] = {
-            "block": get_genesis_vanity_chain_id(FLEXTESA),
+        base_constants["node_config_network"]["genesis"] = {
+            "block": "YOUR_GENESIS_BLOCK_HASH_HERE"
+            if args.should_generate_unsafe_deterministic_data
+            else get_genesis_vanity_chain_id(FLEXTESA),
+            "protocol": "PtYuensgYBb3G3x1hLLbCmcav8ue8Kyd2khADcL5LsT5R1hcXex",
             "timestamp": datetime.utcnow().replace(tzinfo=timezone.utc).isoformat(),
         }
 
-    if base_constants["chain_type"] == "public":
-        base_constants["network"] = args.network if args.network else "mainnet"
-
-    accounts = {"secret": [], "public": []}
-    if old_create_values.get("accounts", None):
+    accounts = {"secret": {}, "public": {}}
+    if old_create_values.get("accounts"):
         accounts["secret"] = old_create_values["accounts"]
-        accounts["public"] = old_invite_values["accounts"]
-    else:
+        # If accounts were gend locally via tezos-client, then there are no
+        # public keys, hence no invite.
+        if not args.should_generate_unsafe_deterministic_data:
+            accounts["public"] = old_invite_values["accounts"]
+    elif not args.should_generate_unsafe_deterministic_data:
+        baking_accounts = {f"baker{n}": {} for n in range(args.number_of_bakers)}
         for account in baking_accounts:
-            keys = gen_key(args.docker_image)
+            print(f"Generating keys for account {account}")
+            keys = gen_key(args.tezos_docker_image)
             for key_type in keys:
-                accounts[key_type].append(
-                    {
-                        "name": account,
-                        "key": keys[key_type],
-                        "type": key_type,
-                        "is_bootstrap_baker_account": True,
-                        "bootstrap_balance": 4000000000000,
-                    }
-                )
+                accounts[key_type][account] = {
+                    "key": keys[key_type],
+                    "type": key_type,
+                    "is_bootstrap_baker_account": True,
+                    "bootstrap_balance": "4000000000000",
+                }
 
+    # First 2 bakers are acting as bootstrap nodes for the others, and run in
+    # archive mode. Any other bakers will be in rolling mode.
     creation_nodes = {
-        "baking": [
-            {"bake_for": f"baker{n}", "name": f"tezos-baking-node-{n}"}
+        BAKER_NODE_TYPE: {
+            f"{BAKER_NODE_NAME}-{n}": {
+                "bake_using_account": f"baker{n}",
+                "is_bootstrap_node": n < 2,
+                "config": {
+                    "shell": {"history_mode": "archive" if n < 2 else "rolling"}
+                },
+            }
             for n in range(args.number_of_bakers)
-        ],
-        "regular": [{"name": f"tezos-node-{n}"} for n in range(args.number_of_nodes)],
+        },
     }
 
-    # first nodes are acting as bootstrap nodes for the others
-    creation_nodes["baking"][0]["bootstrap"] = True
-    if len(creation_nodes["baking"]) > 1:
-        creation_nodes["baking"][1]["bootstrap"] = True
-
-    invitation_nodes = {
-        "baking": [],
-        "regular": [{"name": f"tezos-node-{n}"} for n in range(args.number_of_nodes)],
+    regular_nodes = {
+        f"{REGULAR_NODE_NAME}-{n}": {
+            "config": {"shell": {"history_mode": "rolling"}},
+        }
+        for n in range(args.number_of_nodes)
     }
+
+    creation_nodes[REGULAR_NODE_TYPE] = regular_nodes
+    first_regular_node_name = next(iter(regular_nodes))
+    invitation_nodes = { first_regular_node_name: regular_nodes[first_regular_node_name] }
 
     bootstrap_peers = [args.bootstrap_peer] if args.bootstrap_peer else []
 
     creation_constants = {
-        **base_constants,
-        "accounts": accounts["secret"],
         "is_invitation": False,
+        **base_constants,
         "bootstrap_peers": bootstrap_peers,
+        "accounts": accounts["secret"],
         "nodes": creation_nodes,
     }
     invitation_constants = {
+        "is_invitation": True,
         **base_constants,
         "accounts": accounts["public"],
-        "is_invitation": True,
         "bootstrap_peers": bootstrap_peers,
         "nodes": invitation_nodes,
     }
