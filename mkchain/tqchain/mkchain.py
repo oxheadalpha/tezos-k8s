@@ -67,7 +67,7 @@ def get_genesis_vanity_chain_id(docker_image, seed_len=16):
     )
 
 
-CHAIN_CONSTANTS = {
+cli_args = {
     "should_generate_unsafe_deterministic_data": {
         "help": (
             "Should tezos-k8s generate deterministic account keys and genesis"
@@ -115,7 +115,7 @@ def get_args():
 
     parser.add_argument("chain_name", action="store", help="Name of your chain")
 
-    for k, v in CHAIN_CONSTANTS.items():
+    for k, v in cli_args.items():
         parser.add_argument(*["--" + k.replace("_", "-")], **v)
 
     return parser.parse_args()
@@ -134,9 +134,7 @@ def pull_docker_images(images):
             print(f"Done pulling docker image {image}")
 
 
-def main():
-    args = get_args()
-
+def validate_number_of_nodes_args(args):
     if args.number_of_nodes < 0:
         print(
             f"Invalid argument --number-of-nodes ({args.number_of_nodes}) "
@@ -158,6 +156,12 @@ def main():
             f"--number-of-bakers ({args.number_of_bakers}) must be non-zero"
         )
         exit(1)
+
+
+def main():
+    args = get_args()
+
+    validate_number_of_nodes_args(args)
 
     # Dirty fix. If tezos image doesn't exist, pull it before `docker run` can
     # pull it. This is to avoid parsing extra output. Preferably, we want to get
@@ -259,7 +263,27 @@ def main():
 
     creation_nodes[REGULAR_NODE_TYPE] = regular_nodes
     first_regular_node_name = next(iter(regular_nodes))
-    invitation_nodes = { first_regular_node_name: regular_nodes[first_regular_node_name] }
+    invitation_nodes = {first_regular_node_name: regular_nodes[first_regular_node_name]}
+
+    first_baker_node_name = next(iter(creation_nodes[BAKER_NODE_TYPE]))
+    activation_account_name = creation_nodes["baking"][first_baker_node_name][
+        "bake_using_account"
+    ]
+    base_constants["node_config_network"][
+        "activation_account_name"
+    ] = activation_account_name
+
+    with open(
+        f"{os.path.dirname(os.path.realpath(__file__))}/parameters.yaml", "r"
+    ) as yaml_file:
+        parametersYaml = yaml.safe_load(yaml_file)
+        activation = {
+            "activation": {
+                "protocol_hash": "PtEdo2ZkT9oKpimTah6x2embF25oss54njMuPzkJTEi5RqfdZFA",
+                "should_include_commitments": False,
+                "protocol_parameters": parametersYaml,
+            },
+        }
 
     bootstrap_peers = [args.bootstrap_peer] if args.bootstrap_peer else []
 
@@ -269,6 +293,7 @@ def main():
         "bootstrap_peers": bootstrap_peers,
         "accounts": accounts["secret"],
         "nodes": creation_nodes,
+        **activation,
     }
     invitation_constants = {
         "is_invitation": True,
