@@ -46,6 +46,7 @@ def gen_key(image):
 
 
 def get_genesis_vanity_chain_id(docker_image, seed_len=16):
+    print("Generating vanity chain id")
     seed = "".join(
         random.choice(string.ascii_uppercase + string.digits) for _ in range(seed_len)
     )
@@ -89,6 +90,11 @@ cli_args = {
     },
     "zerotier_network": {"help": "Zerotier network id for external chain access"},
     "zerotier_token": {"help": "Zerotier token for external chain access"},
+    "expected_proof_of_work": {
+        "help": "Node identity generation difficulty",
+        "default": 0,
+        "type": int,
+    },
     "bootstrap_peer": {"help": "peer ip to join"},
     "tezos_docker_image": {
         "help": "Version of the Tezos docker image",
@@ -193,17 +199,19 @@ def main():
     files_path = f"{os.getcwd()}/{args.chain_name}"
     if os.path.isfile(f"{files_path}_values.yaml"):
         print(
-            "Found old values file. Some pre-existing values will remain the "
-            "same, e.g. public/private keys. Please delete the values file to "
-            "generate all new values.\n"
+            "Found old values file. Some pre-existing values might remain the "
+            "same, e.g. public/private keys, and genesis block. Please delete the "
+            "values file to generate all new values.\n"
         )
         with open(f"{files_path}_values.yaml", "r") as yaml_file:
             old_create_values = yaml.safe_load(yaml_file)
         if len(old_create_values["nodes"]["baking"]) != args.number_of_bakers:
             print("ERROR: the number of bakers must not change on a pre-existing chain")
             exit(1)
-        with open(f"{files_path}_invite_values.yaml", "r") as yaml_file:
-            old_invite_values = yaml.safe_load(yaml_file)
+
+        if os.path.isfile(f"{files_path}_invite_values.yaml"):
+            with open(f"{files_path}_invite_values.yaml", "r") as yaml_file:
+                old_invite_values = yaml.safe_load(yaml_file)
 
     if old_create_values.get("node_config_network", {}).get("genesis"):
         base_constants["node_config_network"]["genesis"] = old_create_values[
@@ -212,9 +220,9 @@ def main():
     else:
         # create new chain genesis params if brand new chain
         base_constants["node_config_network"]["genesis"] = {
-            "block": "YOUR_GENESIS_BLOCK_HASH_HERE"
-            if args.should_generate_unsafe_deterministic_data
-            else get_genesis_vanity_chain_id(FLEXTESA),
+            "block": get_genesis_vanity_chain_id(FLEXTESA)
+            if not args.should_generate_unsafe_deterministic_data
+            else "YOUR_GENESIS_BLOCK_HASH_HERE",
             "protocol": "PtYuensgYBb3G3x1hLLbCmcav8ue8Kyd2khADcL5LsT5R1hcXex",
             "timestamp": datetime.utcnow().replace(tzinfo=timezone.utc).isoformat(),
         }
@@ -222,9 +230,13 @@ def main():
     accounts = {"secret": {}, "public": {}}
     if old_create_values.get("accounts"):
         accounts["secret"] = old_create_values["accounts"]
-        # If accounts were gend locally via tezos-client, then there are no
-        # public keys, hence no invite.
-        if not args.should_generate_unsafe_deterministic_data:
+        # If accounts were not gend locally via tezos-client, then there are no
+        # public keys, hence no invite. Also if there is not zerotier config
+        # there is not invite.
+        if (
+            old_invite_values.get("accounts")
+            and not args.should_generate_unsafe_deterministic_data
+        ):
             accounts["public"] = old_invite_values["accounts"]
     elif not args.should_generate_unsafe_deterministic_data:
         baking_accounts = {f"baker{n}": {} for n in range(args.number_of_bakers)}
@@ -289,27 +301,40 @@ def main():
 
     creation_constants = {
         "is_invitation": False,
+        "should_generate_unsafe_deterministic_data": args.should_generate_unsafe_deterministic_data,
+        "expected_proof_of_work": args.expected_proof_of_work,
         **base_constants,
         "bootstrap_peers": bootstrap_peers,
-        "accounts": accounts["secret"],
         "nodes": creation_nodes,
         **activation,
     }
-    invitation_constants = {
-        "is_invitation": True,
-        **base_constants,
-        "accounts": accounts["public"],
-        "bootstrap_peers": bootstrap_peers,
-        "nodes": invitation_nodes,
-    }
-    invitation_constants.pop("rpc_auth")
+    if len(accounts["secret"]):
+        creation_constants["accounts"] = accounts["secret"]
 
     with open(f"{files_path}_values.yaml", "w") as yaml_file:
         yaml.dump(creation_constants, yaml_file)
         print(f"Wrote chain creation constants to {files_path}_values.yaml")
-    with open(f"{files_path}_invite_values.yaml", "w") as yaml_file:
-        print(f"Wrote chain invitation constants to {files_path}_invite_values.yaml")
-        yaml.dump(invitation_constants, yaml_file)
+
+    if base_constants.get("zerotier_config", {}).get("zerotier_network"):
+        invitation_constants = {
+            "is_invitation": True,
+            "should_generate_unsafe_deterministic_data": args.should_generate_unsafe_deterministic_data,
+            "expected_proof_of_work": args.expected_proof_of_work,
+            **base_constants,
+            "accounts": accounts["public"],
+            "bootstrap_peers": bootstrap_peers,
+            "nodes": invitation_nodes,
+        }
+        invitation_constants.pop("rpc_auth")
+
+        if len(accounts["public"]):
+            invitation_constants["accounts"] = accounts["public"]
+
+        with open(f"{files_path}_invite_values.yaml", "w") as yaml_file:
+            print(
+                f"Wrote chain invitation constants to {files_path}_invite_values.yaml"
+            )
+            yaml.dump(invitation_constants, yaml_file)
 
 
 if __name__ == "__main__":
