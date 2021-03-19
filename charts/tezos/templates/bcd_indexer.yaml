@@ -23,10 +23,9 @@ spec:
       containers:
         - image: "{{ .Values.tezos_k8s_images.bcd_api }}"
           name: api
-            #command: [ "/go/bin/api", "-f", "production.yaml", "-f", "/bcd_config/bcd_config.yaml" ]
           env:
             - name: BCD_ENV
-              value: production
+              value: sandbox
             - name: GIN_MODE
               value: debug
             - name: POSTGRES_USER
@@ -46,12 +45,12 @@ spec:
             - name: RABBITMQ_DEFAULT_PASS
               value: guest
             - name: SANDBOX_NODE_URI
-              value: http://sandbox:20000 # Optional key to point to sandbox
+              value: http://tezos-node-0.tezos-node:8732 
         - image: "{{ .Values.tezos_k8s_images.bcd_indexer }}"
           name: indexer
           env:
             - name: BCD_ENV
-              value: production
+              value: sandbox
             - name: GIN_MODE
               value: debug
             - name: POSTGRES_USER
@@ -71,7 +70,7 @@ spec:
             - name: RABBITMQ_DEFAULT_PASS
               value: guest
             - name: SANDBOX_NODE_URI
-              value: http://sandbox:20000 # Optional key to point to sandbox
+              value: http://tezos-node-0.tezos-node:8732 
         - image: postgres:alpine
           name: db
           volumeMounts:
