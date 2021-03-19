@@ -95,7 +95,11 @@ cli_args = {
         "default": 0,
         "type": int,
     },
-    "bootstrap_peer": {"help": "peer ip to join"},
+    "bootstrap_peers": {
+        "help": "Bootstrap addresses to connect to. Can specify multiple.",
+        "action": "extend",
+        "nargs": "+",
+    },
     "tezos_docker_image": {
         "help": "Version of the Tezos docker image",
         "default": "tezos/tezos:v8-release",
@@ -297,7 +301,7 @@ def main():
             },
         }
 
-    bootstrap_peers = [args.bootstrap_peer] if args.bootstrap_peer else []
+    bootstrap_peers = args.bootstrap_peers if args.bootstrap_peers else []
 
     creation_constants = {
         "is_invitation": False,
