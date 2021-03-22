@@ -144,7 +144,7 @@ def pull_docker_images(images):
             print(f"Done pulling docker image {image}")
 
 
-def validate_number_of_nodes_args(args):
+def validate_args(args):
     if args.number_of_nodes < 0:
         print(
             f"Invalid argument --number-of-nodes ({args.number_of_nodes}) "
@@ -167,11 +167,23 @@ def validate_number_of_nodes_args(args):
         )
         exit(1)
 
+    if (not args.zerotier_network and args.zerotier_token) or (
+        not args.zerotier_token and args.zerotier_network
+    ):
+        print("Configuring Zerotier requires both a network id and access token.")
+        exit(1)
+
+    if args.zerotier_network and args.should_generate_unsafe_deterministic_data:
+        print(
+            "Configuring a Zerotier network and generating unsafe deterministic data is not allowed."
+        )
+        exit(1)
+
 
 def main():
     args = get_args()
 
-    validate_number_of_nodes_args(args)
+    validate_args(args)
 
     # Dirty fix. If tezos image doesn't exist, pull it before `docker run` can
     # pull it. This is to avoid parsing extra output. Preferably, we want to get
