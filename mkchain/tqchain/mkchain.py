@@ -221,8 +221,12 @@ def main():
         )
         with open(f"{files_path}_values.yaml", "r") as yaml_file:
             old_create_values = yaml.safe_load(yaml_file)
-        if len(old_create_values["nodes"]["baking"]) != args.number_of_bakers:
+
+        current_number_of_bakers = len(old_create_values["nodes"][BAKER_NODE_TYPE])
+        if current_number_of_bakers != args.number_of_bakers:
             print("ERROR: the number of bakers must not change on a pre-existing chain")
+            print(f"Current number of bakers: {current_number_of_bakers}")
+            print(f"Attempted change to {args.number_of_bakers} bakers")
             exit(1)
 
         if os.path.isfile(f"{files_path}_invite_values.yaml"):
@@ -230,6 +234,7 @@ def main():
                 old_invite_values = yaml.safe_load(yaml_file)
 
     if old_create_values.get("node_config_network", {}).get("genesis"):
+        print("Using existing genesis parameters")
         base_constants["node_config_network"]["genesis"] = old_create_values[
             "node_config_network"
         ]["genesis"]
@@ -245,14 +250,10 @@ def main():
 
     accounts = {"secret": {}, "public": {}}
     if old_create_values.get("accounts"):
+        print("Using existing secret keys")
         accounts["secret"] = old_create_values["accounts"]
-        # If accounts were not gend locally via tezos-client, then there are no
-        # public keys, hence no invite. Also if there is not zerotier config
-        # there is not invite.
-        if (
-            old_invite_values.get("accounts")
-            and not args.should_generate_unsafe_deterministic_data
-        ):
+        if old_invite_values.get("accounts"):
+            print("Using existing public keys")
             accounts["public"] = old_invite_values["accounts"]
     elif not args.should_generate_unsafe_deterministic_data:
         baking_accounts = {f"baker{n}": {} for n in range(args.number_of_bakers)}
@@ -269,6 +270,7 @@ def main():
 
     # First 2 bakers are acting as bootstrap nodes for the others, and run in
     # archive mode. Any other bakers will be in rolling mode.
+    regular_node_config = {"config": {"shell": {"history_mode": "rolling"}}}
     creation_nodes = {
         BAKER_NODE_TYPE: {
             f"{BAKER_NODE_NAME}-{n}": {
@@ -280,21 +282,16 @@ def main():
             }
             for n in range(args.number_of_bakers)
         },
+        REGULAR_NODE_TYPE: None,
     }
-
-    regular_nodes = {
-        f"{REGULAR_NODE_NAME}-{n}": {
-            "config": {"shell": {"history_mode": "rolling"}},
+    if args.number_of_nodes:
+        creation_nodes[REGULAR_NODE_TYPE] = {
+            f"{REGULAR_NODE_NAME}-{n}": regular_node_config
+            for n in range(args.number_of_nodes)
         }
-        for n in range(args.number_of_nodes)
-    }
-
-    creation_nodes[REGULAR_NODE_TYPE] = regular_nodes
-    first_regular_node_name = next(iter(regular_nodes))
-    invitation_nodes = {first_regular_node_name: regular_nodes[first_regular_node_name]}
 
     first_baker_node_name = next(iter(creation_nodes[BAKER_NODE_TYPE]))
-    activation_account_name = creation_nodes["baking"][first_baker_node_name][
+    activation_account_name = creation_nodes[BAKER_NODE_TYPE][first_baker_node_name][
         "bake_using_account"
     ]
     base_constants["node_config_network"][
@@ -321,30 +318,32 @@ def main():
         "expected_proof_of_work": args.expected_proof_of_work,
         **base_constants,
         "bootstrap_peers": bootstrap_peers,
+        "accounts": accounts["secret"],
         "nodes": creation_nodes,
         **activation,
     }
-    if len(accounts["secret"]):
-        creation_constants["accounts"] = accounts["secret"]
 
     with open(f"{files_path}_values.yaml", "w") as yaml_file:
         yaml.dump(creation_constants, yaml_file)
         print(f"Wrote chain creation constants to {files_path}_values.yaml")
 
-    if base_constants.get("zerotier_config", {}).get("zerotier_network"):
+    # If there is a Zerotier configuration, create an invite file.
+    if not args.should_generate_unsafe_deterministic_data and base_constants.get(
+        "zerotier_config", {}
+    ).get("zerotier_network"):
+        invite_nodes = {
+            REGULAR_NODE_TYPE: {f"{REGULAR_NODE_NAME}-0": regular_node_config},
+            BAKER_NODE_TYPE: {},
+        }
         invitation_constants = {
             "is_invitation": True,
-            "should_generate_unsafe_deterministic_data": args.should_generate_unsafe_deterministic_data,
             "expected_proof_of_work": args.expected_proof_of_work,
             **base_constants,
             "accounts": accounts["public"],
             "bootstrap_peers": bootstrap_peers,
-            "nodes": invitation_nodes,
+            "nodes": invite_nodes,
         }
         invitation_constants.pop("rpc_auth")
-
-        if len(accounts["public"]):
-            invitation_constants["accounts"] = accounts["public"]
 
         with open(f"{files_path}_invite_values.yaml", "w") as yaml_file:
             print(
