@@ -5,7 +5,8 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   podManagementPolicy: Parallel
-  replicas: {{ .Values.nodes.regular | len }}
+{{- $regular_nodes := .Values.nodes.regular | default list }}
+  replicas: {{ $regular_nodes | len }}
   selector:
     matchLabels:
       app: {{ .Values.regular_node_statefulset.name }}
