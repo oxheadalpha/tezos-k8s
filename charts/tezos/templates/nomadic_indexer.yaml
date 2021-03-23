@@ -1,4 +1,4 @@
-{{- if eq .Values.index.indexer "nomadic" }}
+{{- if eq (include "tezos.indexer" .) "nomadic" }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:

@@ -1,4 +1,4 @@
-{{- if eq .Values.index.indexer "bcd" }}
+{{- if eq (include "tezos.indexer" .) "bcd" }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
