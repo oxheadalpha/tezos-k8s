@@ -111,19 +111,27 @@ cli_args = {
     },
 }
 
+# python versions < 3.8 doesn't have "extend" action
+class ExtendAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        items = getattr(namespace, self.dest) or []
+        items.extend(values)
+        setattr(namespace, self.dest, items)
+
 
 def get_args():
     parser = argparse.ArgumentParser(
         description="Generate helm values for use with the tezos-chain helm chart"
     )
+
+    parser.register("action", "extend", ExtendAction)
+    parser.add_argument("chain_name", action="store", help="Name of your chain")
     parser.add_argument(
         "-v",
         "--version",
         action="version",
         version="%(prog)s {version}".format(version=__version__),
     )
-
-    parser.add_argument("chain_name", action="store", help="Name of your chain")
 
     for k, v in cli_args.items():
         parser.add_argument(*["--" + k.replace("_", "-")], **v)
