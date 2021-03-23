@@ -192,3 +192,4 @@ protocol:
 # * "bcd": Better Call Dev indexer: https://better-call.dev/
 #index:
 #  indexer: nomadic
+#  target: tezos-baking-node-0.tezos-baking-node

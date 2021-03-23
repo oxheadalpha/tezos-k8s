@@ -41,7 +41,7 @@ spec:
             - name: RABBITMQ_DEFAULT_PASS
               value: guest
             - name: SANDBOX_NODE_URI
-              value: http://tezos-node-0.tezos-node:8732 
+              value: http://{{ .Values.index.target }}:8732
         - image: "{{ .Values.tezos_k8s_images.bcd_indexer }}"
           name: indexer
           env:
