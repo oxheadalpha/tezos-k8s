@@ -1,3 +1,4 @@
+{{- if eq .Values.index.indexer "bcd" }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -5,11 +6,6 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   podManagementPolicy: Parallel
-  {{ if eq .Values.indexer.type "bcd" }}
-  replicas: 1
-  {{ else }}
-  replicas: 0
-  {{ end }}
   selector:
     matchLabels:
       app: {{ .Values.bcd_indexer_statefulset.name }}
@@ -147,3 +143,4 @@ data:
     db:
       conn_string: "host=127.0.0.1 port=5432 user=${POSTGRES_USER} dbname=${POSTGRES_DB} password=${POSTGRES_PASSWORD} sslmode=disable"
       timeout: 10
+{{- end }}

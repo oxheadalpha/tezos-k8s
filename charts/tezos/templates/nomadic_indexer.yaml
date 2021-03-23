@@ -1,3 +1,4 @@
+{{- if eq .Values.index.indexer "nomadic" }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -5,11 +6,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   podManagementPolicy: Parallel
-  {{ if eq .Values.indexer.type "nomadic" }}
   replicas: 1
-  {{ else }}
-  replicas: 0
-  {{ end }}
   selector:
     matchLabels:
       app: {{ .Values.nomadic_indexer_statefulset.name }}
@@ -63,3 +60,4 @@ spec:
         resources:
           requests:
             storage: "5Gi"
+{{- end }}
