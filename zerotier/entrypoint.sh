@@ -28,18 +28,16 @@ do
     -d '{"hidden":"false","config":{"authorized":true}}' \
     "https://my.zerotier.com/api/network/$NETWORK_ID/member/$HOST_ID"
 
-
   echo "Waiting for a ZeroTier IP on $ZTDEV interface... Accept the new host on my.zerotier.com"
 done
 
 echo "Set zerotier name"
-POD_INDEX=$(echo $POD_NAME | sed -e s/tezos-baking-node-// | sed -e s/tezos-node-//)
-if grep baking <<< $POD_NAME && [ "$(echo $NODES | jq -r ".baking[${POD_INDEX}].bootstrap")" == "true" ]; then
-    zerotier_name="${CHAIN_NAME}_bootstrap"
-    zerotier_description="Bootstrap node ${POD_NAME} for chain ${CHAIN_NAME}"
+if [ "$(echo $NODES | jq -r ".${MY_NODE_TYPE}.\"${MY_POD_NAME}\".is_bootstrap_node")" == "true" ]; then
+  zerotier_name="${CHAIN_NAME}_bootstrap"
+  zerotier_description="Bootstrap node ${MY_POD_NAME} for chain ${CHAIN_NAME}"
 else
-    zerotier_name="${CHAIN_NAME}_node"
-    zerotier_description="Node ${POD_NAME} of chain ${CHAIN_NAME}"
+  zerotier_name="${CHAIN_NAME}_node"
+  zerotier_description="Node ${MY_POD_NAME} of chain ${CHAIN_NAME}"
 fi
 curl -s -XPOST \
   -H "Authorization: Bearer $ZTAUTHTOKEN" \
