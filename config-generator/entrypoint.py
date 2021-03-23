@@ -77,7 +77,7 @@ def main():
 
     # Create config.json
     if main_args.generate_config_json:
-        print("Starting config.json file generation")
+        print("\nStarting config.json file generation")
         bootstrap_peers = CHAIN_PARAMS.get("bootstrap_peers", [])
 
         my_zerotier_ip = None
@@ -225,7 +225,7 @@ def import_keys(all_accounts):
     public_key_hashs = []
 
     for account_name, account_values in all_accounts.items():
-        print("  \nImporting keys for account: " + account_name)
+        print("\n  Importing keys for account: " + account_name)
         account_key_type = account_values.get("type")
         account_key = account_values.get("key")
         sk = pk = None
@@ -303,15 +303,15 @@ def import_keys(all_accounts):
             }
         )
 
-        print(f"    Appending public key hash: {pkh_b58}")
+        print(f"  Appending public key hash: {pkh_b58}")
         public_key_hashs.append({"name": account_name, "value": pkh_b58})
 
-        print(f"    Account key type: {account_values.get('type')}")
+        print(f"  Account key type: {account_values.get('type')}")
         print(
-            f"    Account bootstrap balance: {account_values.get('bootstrap_balance')}"
+            f"  Account bootstrap balance: {account_values.get('bootstrap_balance')}"
         )
         print(
-            f"    Is account a bootstrap baker: {account_values.get('is_bootstrap_baker_account', False)}"
+            f"  Is account a bootstrap baker: {account_values.get('is_bootstrap_baker_account', False)}"
         )
 
     print("\n  Writing " + tezdir + "/secret_keys")
