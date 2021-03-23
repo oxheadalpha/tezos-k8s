@@ -12,11 +12,12 @@ proto_command=$(echo $CHAIN_PARAMS | jq -r '.proto_command')
 if [ "${DAEMON}" == "baker" ]; then
     extra_args="with local node $NODE_DATA_DIR"
 fi
-POD_INDEX=$(echo $POD_NAME | sed -e s/tezos-baking-node-//)
-baker_account=$(echo $NODES | jq -r ".baking[${POD_INDEX}].bake_for")
 
-if [ "$baker_account" = null ]; then
-    baker_account="baker$POD_INDEX"
+my_baker_account=$(echo $NODES | jq -r ".${MY_NODE_TYPE}.\"${MY_POD_NAME}\".bake_using_account")
+# If no account to bake for was specified in the node's settings,
+# config-generator defaults the account name to the pod's name.
+if [ "$my_baker_account" = null ]; then
+    my_baker_account="$MY_POD_NAME"
 fi
 
 CLIENT="$TEZ_BIN/tezos-client -d $CLIENT_DIR"
@@ -32,4 +33,4 @@ done
 #
 # And, obviously, we need to actually bake:
 
-$CMD run ${extra_args} ${baker_account}
+$CMD run ${extra_args} ${my_baker_account}

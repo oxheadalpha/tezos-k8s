@@ -13,17 +13,17 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: tezos-node
+  name: {{ .Values.regular_node_statefulset.name }}
 spec:
   clusterIP: None
   selector:
-    app: tezos-node
+    app: {{ .Values.regular_node_statefulset.name }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: tezos-baking-node
+  name: {{ .Values.baker_statefulset.name }}
 spec:
   clusterIP: None
   selector:
-    app: tezos-baking-node
+    app: {{ .Values.baker_statefulset.name }}

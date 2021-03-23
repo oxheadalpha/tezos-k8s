@@ -5,11 +5,12 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   podManagementPolicy: Parallel
-  replicas: {{ .Values.nodes.regular | len }}
+{{- $regular_nodes := .Values.nodes.regular | default list }}
+  replicas: {{ $regular_nodes | len }}
   selector:
     matchLabels:
       app: {{ .Values.regular_node_statefulset.name }}
-  serviceName: tezos-node
+  serviceName: {{ .Values.regular_node_statefulset.name }}
   template:
     metadata:
       labels:
@@ -36,7 +37,7 @@ spec:
               name: config-volume
             - mountPath: /var/tezos
               name: var-volume
-{{- if eq .Values.chain_type "private" }}
+{{- if (include "tezos.doesZerotierConfigExist" .) }}
         - args:
             - "-c"
             - "echo 'starting zerotier' && zerotier-one /var/tezos/zerotier"
@@ -63,7 +64,7 @@ spec:
               name: var-volume
 {{- end }}
       initContainers:
-{{- if not .Values.is_invitation }}
+{{- if include "tezos.shouldWaitForBootstrapNode" . }}
         - image: {{ .Values.tezos_k8s_images.wait_for_bootstrap }}
           imagePullPolicy: IfNotPresent
           name: wait-for-bootstrap
@@ -71,7 +72,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume
 {{- end }}
-{{- if eq .Values.chain_type "private" }}
+{{- if (include "tezos.doesZerotierConfigExist" .) }}
         - envFrom:
             - configMapRef:
                 name: zerotier-config
@@ -91,10 +92,12 @@ spec:
             - mountPath: /dev/net/tun
               name: dev-net-tun
           env:
-          - name: POD_NAME
+          - name: MY_POD_NAME
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
+          - name: MY_NODE_TYPE
+            value: {{ .Values.regular_node_statefulset.node_type }}
 {{- end }}
         - image: {{ .Values.tezos_k8s_images.config_generator }}
           imagePullPolicy: IfNotPresent
@@ -115,12 +118,14 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: MY_NODE_TYPE
+              value: {{ .Values.regular_node_statefulset.node_type }}
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
               name: var-volume
-{{- if eq .Values.chain_type "public" }}
+{{- if include "tezos.shouldDownloadSnapshot" . }}
         - image: "{{ .Values.tezos_k8s_images.snapshot_downloader }}"
           imagePullPolicy: IfNotPresent
           name: snapshot-downloader
@@ -132,6 +137,13 @@ spec:
           envFrom:
             - configMapRef:
                 name: tezos-config
+          env:
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_NODE_TYPE
+              value: {{ .Values.regular_node_statefulset.node_type }}
 {{- end }}
       securityContext:
         fsGroup: 100

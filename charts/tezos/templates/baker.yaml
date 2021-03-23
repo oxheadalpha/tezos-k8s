@@ -1,4 +1,4 @@
-{{- if and (not .Values.is_invitation) (not (eq .Values.chain_type "public")) }}
+{{- if (include "tezos.shouldActivateProtocol" .) }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -28,6 +28,11 @@ spec:
                 name: tezos-secret
             - configMapRef:
                 name: tezos-config
+          env:
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -61,7 +66,7 @@ metadata:
 spec:
   podManagementPolicy: Parallel
   replicas: {{ .Values.nodes.baking | len }}
-  serviceName: tezos-baking-node
+  serviceName: {{ .Values.baker_statefulset.name }}
   selector:
     matchLabels:
       app: {{ .Values.baker_statefulset.name }}
@@ -105,10 +110,12 @@ spec:
             - secretRef:
                 name: tezos-secret
           env:
-          - name: POD_NAME
+          - name: MY_POD_NAME
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
+          - name: MY_NODE_TYPE
+            value: {{ .Values.baker_statefulset.node_type }}
           - name: DAEMON
             value: baker
         - image: "{{ .Values.tezos_k8s_images.baker_endorser }}"
@@ -123,13 +130,15 @@ spec:
             - secretRef:
                 name: tezos-secret
           env:
-          - name: POD_NAME
+          - name: MY_POD_NAME
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
+          - name: MY_NODE_TYPE
+            value: {{ .Values.baker_statefulset.node_type }}
           - name: DAEMON
             value: endorser
-{{- if eq .Values.chain_type "private" }}
+{{- if (include "tezos.doesZerotierConfigExist" .) }}
         - args:
             - "-c"
             - "echo 'starting zerotier' && zerotier-one /var/tezos/zerotier"
@@ -150,7 +159,7 @@ spec:
               name: var-volume
 {{- end }}
       initContainers:
-{{- if not .Values.is_invitation }}
+{{- if include "tezos.shouldWaitForBootstrapNode" . }}
         - image: {{ .Values.tezos_k8s_images.wait_for_bootstrap }}
           imagePullPolicy: IfNotPresent
           name: wait-for-bootstrap
@@ -158,7 +167,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume
 {{- end }}
-{{- if eq .Values.chain_type "private" }}
+{{- if (include "tezos.doesZerotierConfigExist" .) }}
         - envFrom:
             - configMapRef:
                 name: zerotier-config
@@ -178,10 +187,12 @@ spec:
             - mountPath: /dev/net/tun
               name: dev-net-tun
           env:
-          - name: POD_NAME
+          - name: MY_POD_NAME
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
+          - name: MY_NODE_TYPE
+            value: {{ .Values.baker_statefulset.node_type }}
 {{- end }}
         - image: {{ .Values.tezos_k8s_images.config_generator }}
           imagePullPolicy: IfNotPresent
@@ -202,12 +213,14 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: MY_NODE_TYPE
+              value: {{ .Values.baker_statefulset.node_type }}
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
               name: var-volume
-{{- if eq .Values.chain_type "public" }}
+{{- if include "tezos.shouldDownloadSnapshot" . }}
         - image: "{{ .Values.tezos_k8s_images.snapshot_downloader }}"
           imagePullPolicy: IfNotPresent
           name: snapshot-downloader
@@ -219,6 +232,13 @@ spec:
           envFrom:
             - configMapRef:
                 name: tezos-config
+          env:
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_NODE_TYPE
+              value: {{ .Values.baker_statefulset.node_type }}
 {{- end }}
       securityContext:
         fsGroup: 100
