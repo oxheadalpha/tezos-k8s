@@ -130,22 +130,12 @@ Set [unbuffered IO](https://docs.python.org/3.6/using/cmdline.html#envvar-PYTHON
 export PYTHONUNBUFFERED=x
 ```
 
-## Chain types
-
-There are 3 types of chains supported:
-
-* **isolated**: self-sufficient private chain. Does not connect to the outside world,
-* **private**: private chain on a zerotier network. Can span multiple clusters,
-* **public**: public chain such as a public testnet or Tezos mainnet.
-
-The `--chain-type` parameter lets you choose between these different types.
-
 ## Start your private chain
 
 Run the following commands to create the Helm values, get the Helm chart repo, and install the Helm chart to start your chain.
 
 ```shell
-mkchain $CHAIN_NAME --zerotier-network $ZT_NET --zerotier-token $ZT_TOKEN --chain-type private
+mkchain $CHAIN_NAME --zerotier-network $ZT_NET --zerotier-token $ZT_TOKEN
 
 helm repo add tqtezos https://tqtezos.github.io/tezos-helm-charts
 
@@ -159,10 +149,11 @@ perform the following tasks:
 
 - get a zerotier ip
 - generate a node identity
+- create a baker account
 - generate a genesis block for your chain
+- start the bootstrap-node baker to bake/validate the chain
 - activate the protocol
 - bake the first block
-- start the bootstrap-node node and a baker to validate the chain
 
 You can find your node in the tqtezos namespace using kubectl.
 
@@ -181,7 +172,7 @@ chain running one node.
 
 ## Adding nodes within the cluster
 
-You can configure the number of nodes in your cluster by passing `--number-of-nodes N` to `mkchain`. Pass this along with your previously used flags (`--zerotier-network` and `--zerotier-token`). You can use this to scale up and down.
+You can spin up a number of regular peer nodes that don't bake in your cluster by passing `--number-of-nodes N` to `mkchain`. Pass this along with your previously used flags (`--zerotier-network` and `--zerotier-token`). You can use this to both scale up and down.
 
 Or if you previously spun up the chain using `mkchain`, you may scale up/down your setup to an arbitrary number of nodes by adding or removing nodes in the `nodes.regular` list in the values yaml file:
 
@@ -189,9 +180,17 @@ Or if you previously spun up the chain using `mkchain`, you may scale up/down yo
 # <CURRENT WORKING DIRECTORY>/${CHAIN_NAME}_values.yaml
 nodes:
   regular:
-  - {} # first non-baking node
-  - {} # second non-baking node
+    tezos-node-0: # first non-baking node
+      config:
+        shell:
+          history_mode: rolling
+    tezos-node-1: # second non-baking node
+      config:
+        shell:
+          history_mode: rolling
 ```
+
+IMPORTANT: If you are manually editing the values yaml file, you must make sure that the names of the nodes follow this format: `tezos-node-N`, where `N` is an integer referring to the index of the node. So the first node is `tezos-node-0`, the second `tezos-node-1`, etc.
 
 To upgrade your Helm release run:
 

@@ -51,10 +51,10 @@ helm upgrade $CHAIN_NAME tqtezos/tezos-chain \
 
    - Run
      ```shell
-     kubectl exec -it -n tqtezos deployment/tezos-bootstrap-node -c tezos-node -- tezos-client rpc get /chains/main/chain_id
+     kubectl exec -it -n tqtezos statefulset/tezos-baking-node -c tezos-node -- tezos-client rpc get /chains/main/chain_id
      ```
    - Use a tool like [Lens](https://k8slens.dev/) to view the logs of the Tezos node. (As well as the rest of your k8s infrastructure)
-   - Manually run the logs command `kubectl logs -n tqtezos deployment/tezos-bootstrap-node -c tezos-node`. The top of the logs should look similar to:
+   - Manually run the logs command `kubectl logs -n tqtezos statefulset/tezos-baking-node -c tezos-node`. The top of the logs should look similar to:
      ```
      Dec 21 19:42:08 - node.main: starting the Tezos node (chain = my-chain)
      Dec 21 19:42:08 - node.main: disabled local peer discovery
