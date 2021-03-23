@@ -34,6 +34,7 @@ SHOULD_GENERATE_UNSAFE_DETERMINISTIC_DATA = CHAIN_PARAMS.get(
 # If there are no genesis params, this is a public chain.
 THIS_IS_A_PUBLIC_NET = True if not NETWORK_CONFIG.get("genesis") else False
 
+
 def main():
     all_accounts = ACCOUNTS
 
