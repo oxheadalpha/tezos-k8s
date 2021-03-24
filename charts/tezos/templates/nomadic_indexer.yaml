@@ -1,0 +1,63 @@
+{{- if eq (include "tezos.indexer" .) "nomadic" }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.nomadic_indexer_statefulset.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.nomadic_indexer_statefulset.name }}
+  serviceName: tezos-node
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.nomadic_indexer_statefulset.name }}
+        appType: tezos
+    spec:
+      initContainers:
+        - image: registry.gitlab.com/nomadic-labs/tezos-indexer/tezos-indexer:v9.1.0
+          command: ["/bin/bash","-c"]
+          args: [ "/home/tezos/tezos-indexer --db-schema | tee /docker-entrypoint-initdb.d/tezos-indexer-schema.sql" ]
+          name: schema-extractor
+          volumeMounts:
+            - mountPath: /docker-entrypoint-initdb.d/
+              name: schema-volume
+      containers:
+        - image: registry.gitlab.com/nomadic-labs/tezos-indexer/tezos-indexer:v9.1.0
+          name: tezos-indexer
+          args:
+            - --debug
+            - --verbosity=1
+            - --no-contract-balances
+            - --db=postgresql://localhost/tezos
+            -  --tezos-url=http://{{ .Values.index.target }}:8732
+        - image: postgres:alpine
+          name: postgres
+          volumeMounts:
+            - mountPath: /docker-entrypoint-initdb.d/
+              name: schema-volume
+            - mountPath: /var/lib/postgresql/data
+              name: indexer-db
+          env:
+            - name: POSTGRES_USER
+              value: tezos
+            - name: POSTGRES_DB
+              value: tezos
+            - name: POSTGRES_PASSWORD
+              value: tezosrocks
+      volumes:
+        - emptyDir: {}
+          name: schema-volume
+  volumeClaimTemplates:
+    - metadata:
+        name: indexer-db
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: "5Gi"
+{{- end }}

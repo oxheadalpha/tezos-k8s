@@ -1,0 +1,146 @@
+{{- if eq (include "tezos.indexer" .) "bcd" }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.bcd_indexer_statefulset.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app: {{ .Values.bcd_indexer_statefulset.name }}
+  serviceName: tezos-node
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.bcd_indexer_statefulset.name }}
+        appType: tezos
+    spec:
+      containers:
+        - image: "{{ .Values.tezos_k8s_images.bcd_api }}"
+          name: api
+          env:
+            - name: BCD_ENV
+              value: sandbox
+            - name: GIN_MODE
+              value: debug
+            - name: POSTGRES_USER
+              value: root
+            - name: POSTGRES_PASSWORD
+              value: root
+            - name: POSTGRES_DB
+              value: bcd
+            - name: ELASTIC_HOSTNAME
+              value: localhost
+            - name: RABBITMQ_HOSTNAME
+              value: localhost
+            - name: DB_HOSTNAME
+              value: 127.0.0.1
+            - name: RABBITMQ_DEFAULT_USER
+              value: guest
+            - name: RABBITMQ_DEFAULT_PASS
+              value: guest
+            - name: SANDBOX_NODE_URI
+              value: http://{{ .Values.index.target }}:8732
+        - image: "{{ .Values.tezos_k8s_images.bcd_indexer }}"
+          name: indexer
+          env:
+            - name: BCD_ENV
+              value: sandbox
+            - name: GIN_MODE
+              value: debug
+            - name: POSTGRES_USER
+              value: root
+            - name: POSTGRES_PASSWORD
+              value: root
+            - name: POSTGRES_DB
+              value: bcd
+            - name: ELASTIC_HOSTNAME
+              value: localhost
+            - name: RABBITMQ_HOSTNAME
+              value: localhost
+            - name: DB_HOSTNAME
+              value: 127.0.0.1
+            - name: RABBITMQ_DEFAULT_USER
+              value: guest
+            - name: RABBITMQ_DEFAULT_PASS
+              value: guest
+            - name: SANDBOX_NODE_URI
+              value: http://tezos-node-0.tezos-node:8732 
+        - image: postgres:alpine
+          name: db
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: indexer-db
+          env:
+            - name: POSTGRES_USER
+              value: root
+            - name: POSTGRES_DB
+              value: bcd
+            - name: POSTGRES_PASSWORD
+              value: root
+        - image: rabbitmq:latest
+          name: mq
+          volumeMounts:
+            - mountPath: /var/lib/rabbitmq
+              name: mq-data
+          env:
+            - name: RABBITMQ_DEFAULT_USER
+              value: guest
+            - name: RABBITMQ_DEFAULT_PASS
+              value: guest
+        - image: bakingbad/bcdhub-elastic:3.4
+          name: elastic
+          volumeMounts:
+            - mountPath: /usr/share/elasticsearch/data
+              name: esdata
+          env:
+            - name: "bootstrap.memory_lock"
+              value: "true"
+            - name: "discovery.type"
+              value: single-node
+            - name: ES_JAVA_OPTS
+              value: "-Xms256m -Xmx256m"
+  volumeClaimTemplates:
+    - metadata:
+        name: esdata
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: "5Gi"
+    - metadata:
+        name: mq-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: "5Gi"
+    - metadata:
+        name: indexer-db
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: "5Gi"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bcd-config
+data:
+  bcd_config.yml: |-
+    storage:
+      uri:
+        - http://localhost:9200
+      timeout: 10
+    rabbitmq:
+      uri: "amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@localhost:5672/"
+      timeout: 10
+    db:
+      conn_string: "host=127.0.0.1 port=5432 user=${POSTGRES_USER} dbname=${POSTGRES_DB} password=${POSTGRES_PASSWORD} sslmode=disable"
+      timeout: 10
+{{- end }}

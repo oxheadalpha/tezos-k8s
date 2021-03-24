@@ -52,3 +52,17 @@
 {{- "" }}
 {{- end }}
 {{- end }}
+
+{{/*
+  Checks if indexer config has an indexer type and target set.
+  This is to make helm linter happy.
+  Returns the indexer type or empty string which is falsey.
+*/}}
+{{- define "tezos.indexer" -}}
+{{- $index_config := .Values.index | default dict }}
+{{- if $index_config.indexer }}
+{{- $index_config.indexer }}
+{{- else }}
+{{- "" }}
+{{- end }}
+{{- end }}

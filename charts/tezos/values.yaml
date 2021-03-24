@@ -20,6 +20,8 @@ tezos_k8s_images:
   snapshot_downloader: tezos-k8s-snapshot-downloader:dev
   wait_for_bootstrap: tezos-k8s-wait-for-bootstrap:dev
   zerotier: tezos-k8s-zerotier:dev
+  bcd_api: tezos-k8s-bcd-api:dev
+  bcd_indexer: tezos-k8s-bcd-indexer:dev
 
 # Properties that are templated in Helm template files
 baker_statefulset: # charts/tezos/templates/baker.yaml
@@ -28,6 +30,10 @@ baker_statefulset: # charts/tezos/templates/baker.yaml
 regular_node_statefulset: # charts/tezos/templates/node.yaml
   name: tezos-node
   node_type: regular
+nomadic_indexer_statefulset:
+  name: nomadic-indexer
+bcd_indexer_statefulset:
+  name: bcd-indexer
 
 # For non-public chains the defualt mutez given to an account if the
 # account is not explicitly set below.
@@ -177,3 +183,13 @@ protocol:
 #     initial_endorsers: 1
 #     delay_per_missing_endorsement: "1"
 #     baking_reward_per_endorsement: ["200000"]
+#
+
+# Deploy an indexer with the chain. An indexer puts the chain
+# contents in a database for efficient indexing. Most dapps need it.
+# Supports two types of indexers:
+# * "nomadic": Tezos nomadic indexer: https://gitlab.com/nomadic-labs/tezos-indexer
+# * "bcd": Better Call Dev indexer: https://better-call.dev/
+#index:
+#  indexer: nomadic
+#  target: tezos-baking-node-0.tezos-baking-node
