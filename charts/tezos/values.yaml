@@ -25,9 +25,11 @@ tezos_k8s_images:
 baker_statefulset: # charts/tezos/templates/baker.yaml
   name: tezos-baking-node
   node_type: baking
+  storage_size: 15Gi
 regular_node_statefulset: # charts/tezos/templates/node.yaml
   name: tezos-node
   node_type: regular
+  storage_size: 15Gi
 nomadic_indexer_statefulset:
   name: nomadic-indexer
 bcd_indexer_statefulset:
