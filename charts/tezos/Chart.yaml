@@ -7,7 +7,3 @@ keywords:
   - tezos
   - blockchain
 home: https://github.com/tqtezos/tezos-k8s
-dependencies:
-  - name: authenticated-rpc-tezos-chain
-    repository: file://../rpc-auth
-    condition: rpc_auth
