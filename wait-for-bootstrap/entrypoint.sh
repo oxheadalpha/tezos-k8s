@@ -1,6 +1,7 @@
 #!/bin/sh
 
-# When the tezos-node boots for the first time and the bootstrap node is not up yet, it will never connect.
+# When the tezos-node boots for the first time, if one of the bootstrap
+# nodes can't be contacted, then tezos-node will give up.
 # So at first boot (when peers.json is empty) we wait for bootstrap node.
 # This is probably a bug in tezos core, though.
 
@@ -9,12 +10,28 @@ if [ -s /var/tezos/node/peers.json ] && [ "$(jq length /var/tezos/node/peers.jso
     exit 0
 fi
 
-FBN=tezos-baking-node-0.tezos-baking-node
-HOST=$(hostname -f)
-if [ "${HOST##$FBN}" != "$HOST" ]; then
-    printf "do not wait for myself\n"
-    exit 0
+BOOTSTRAP_NODES=$(
+	echo "$NODES" | \
+	    jq -r '.baking|to_entries[]
+		  |select(.value.is_bootstrap_node)
+		  |.key+".tezos-baking-node"'
+)
+
+if [ -z "$BOOTSTRAP_NODES" ]; then
+    echo No bootstrap nodes were provided
+    exit 1
 fi
+
+HOST=$(hostname -f)
+for node in $BOOTSTRAP_NODES; do
+    if [ "${HOST##$node}" != "$HOST" ]; then
+	echo "I am $node!"
+	echo "I'm the one of the bootstrap nodes: do not wait for myself"
+	exit 0
+    else
+	echo "I am not $node!"
+    fi
+done
 
 #
 # wait for node to respond to rpc.  We still sleep between nc(1)'s because
@@ -25,7 +42,7 @@ fi
 #
 # We also start off with a bit of a random sleep before we get going under
 # the assumption that the bootstrap node will take some time to get going.
-# Remember: the bootsrap node exit(3)ed above and so this slows down only
+# Remember: the bootstrap nodes exit(3)ed above and so this slows down only
 # those that are likely to need to wait a minute for it to start.
 
 INTERVAL=1
@@ -41,9 +58,14 @@ randomsleep() {
     fi
 }
 
-sleep 10
-randomsleep
-echo "waiting for bootstrap node to accept connections"
-until </dev/null nc -q 0 ${FBN} 8732; do
+echo "waiting for bootstrap nodes to accept connections"
+
+while :; do
+    for node in $BOOTSTRAP_NODES; do
+	if </dev/null nc -q 0 ${node} 8732; then
+	    echo "Bootstrap node: $node is up"
+	    exit 0
+	fi
+    done
     randomsleep
 done
