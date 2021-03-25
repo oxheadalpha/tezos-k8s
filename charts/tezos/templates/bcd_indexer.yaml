@@ -17,7 +17,7 @@ spec:
         appType: tezos
     spec:
       containers:
-        - image: bakingbad/bcdhub-api:3.4
+        - image: bakingbad/bcdhub-api:3.5
           name: api
           env:
             - name: BCD_ENV
@@ -42,7 +42,7 @@ spec:
               value: guest
             - name: SANDBOX_NODE_URI
               value: http://{{ .Values.index.target }}:8732
-        - image: bakingbad/bcdhub-indexer:3.4
+        - image: bakingbad/bcdhub-indexer:3.5
           name: indexer
           env:
             - name: BCD_ENV
@@ -89,7 +89,7 @@ spec:
               value: guest
             - name: RABBITMQ_DEFAULT_PASS
               value: guest
-        - image: bakingbad/bcdhub-elastic:3.4
+        - image: bakingbad/bcdhub-elastic:3.5
           name: elastic
           volumeMounts:
             - mountPath: /usr/share/elasticsearch/data
