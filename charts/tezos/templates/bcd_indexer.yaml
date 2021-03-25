@@ -109,7 +109,7 @@ spec:
           - ReadWriteOnce
         resources:
           requests:
-            storage: "5Gi"
+            storage: "300Gi"
     - metadata:
         name: mq-data
       spec:
@@ -125,7 +125,7 @@ spec:
           - ReadWriteOnce
         resources:
           requests:
-            storage: "5Gi"
+            storage: "300Gi"
 ---
 apiVersion: v1
 kind: ConfigMap
