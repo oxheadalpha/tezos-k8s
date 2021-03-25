@@ -20,8 +20,6 @@ tezos_k8s_images:
   snapshot_downloader: tezos-k8s-snapshot-downloader:dev
   wait_for_bootstrap: tezos-k8s-wait-for-bootstrap:dev
   zerotier: tezos-k8s-zerotier:dev
-  bcd_api: tezos-k8s-bcd-api:dev
-  bcd_indexer: tezos-k8s-bcd-indexer:dev
 
 # Properties that are templated in Helm template files
 baker_statefulset: # charts/tezos/templates/baker.yaml

@@ -17,7 +17,7 @@ spec:
         appType: tezos
     spec:
       containers:
-        - image: "{{ .Values.tezos_k8s_images.bcd_api }}"
+        - image: bakingbad/bcdhub-api:3.4
           name: api
           env:
             - name: BCD_ENV
@@ -42,7 +42,7 @@ spec:
               value: guest
             - name: SANDBOX_NODE_URI
               value: http://{{ .Values.index.target }}:8732
-        - image: "{{ .Values.tezos_k8s_images.bcd_indexer }}"
+        - image: bakingbad/bcdhub-indexer:3.4
           name: indexer
           env:
             - name: BCD_ENV
