@@ -103,5 +103,5 @@ spec:
           - ReadWriteOnce
         resources:
           requests:
-            storage: "15Gi"
+            storage: {{ .Values.baker_statefulset.storage_size }}
 {{- end }}
