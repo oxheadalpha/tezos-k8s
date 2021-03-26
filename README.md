@@ -10,7 +10,6 @@
 - [Tezos k8s Helm Chart](#tezos-k8s-helm-chart)
 - [Joining Mainnet](#joining-mainnet)
   - [Spinning Up a Regular Peer Node](#spinning-up-a-regular-peer-node)
-  - [Spinning Up a Baker](#spinning-up-a-baker)
 - [Creating a Private Blockchain](#creating-a-private-blockchain)
   - [Zerotier](#zerotier)
   - [mkchain](#mkchain)
@@ -135,15 +134,27 @@ helm repo add tqtezos https://tqtezos.github.io/tezos-helm-charts
 
 Connecting to a public net is easy!
 
-Run:
+(See [here](https://tezos.gitlab.io/user/history_modes.html) for info on snapshots and node history modes)
+
+If you'd like to spin up a node that runs with history mode rolling, all you need to do is run:
 
 ```shell
 helm install tezos-mainnet tqtezos/tezos-chain \
 --namespace tqtezos --create-namespace
 ```
 
-- This creates a Helm [release](https://helm.sh/docs/intro/using_helm/#three-big-concepts) named tezos-mainnet in your k8s cluster.
-- k8s will spin up one regular (i.e. non-baking node) which will download and import a mainnet [rolling snapshot](https://tezos.gitlab.io/user/history_modes.html). This will take a few minutes.
+If you'd like to spin up a node with history mode full, run:
+
+```shell
+helm install tezos-mainnet tqtezos/tezos-chain \
+--namespace tqtezos --create-namespace \
+--set nodes.regular.tezos-node-0.config.shell.history_mode=full
+```
+
+Running either of these commands results in:
+
+- Creating a Helm [release](https://helm.sh/docs/intro/using_helm/#three-big-concepts) named tezos-mainnet in your k8s cluster.
+- k8s will spin up one regular (i.e. non-baking node) which will download and import a mainnet snapshot. This will take a few minutes.
 - Once the snapshot step is done, your node will be bootstrapped and syncing with mainnet!
 
 You can find your node in the tqtezos namespace with some status information using `kubectl`.
@@ -164,62 +175,30 @@ You can view logs for your node using the following command:
 kubectl -n tqtezos logs -l appType=tezos -c tezos-node -f --prefix
 ```
 
-## Spinning Up a Baker
+IMPORTANT:
 
-In the previous sections you spun one mainnet regular peer node. Here is how you add an additional mainnet baker node.
-
-- Create a yaml file named `baker.yaml`.
-- In this file you should copy and paste the yaml below.
-
-  ```yaml
-  accounts:
-    tqtezos_baker_0:
-      key: edsk...
-      type: secret
-
-  nodes:
-    baking:
-      tezos-baking-node-0:
-        bake_using_account: tqtezos_baker_0
-        config:
-          shell:
-            history_mode: rolling
-  ```
-
-- Notice the `accounts.tqezos_baker_0.key` field above. You should replace that value with your own secret key you want to bake with. The key should begin with prefix `edsk`.
-- If you'd like, in the `nodes` section of the yaml, you can replace the `history_mode` with either `archive` or `full`. If you use `full`, a `full` snapshot will be downloaded and imported to the node.
-
-- Run:
+- Although spinning up a mainnet baker is possible, we do not recommend running a mainnet baker at this point in time. Secret keys should be handled via an HSM that should remain online, and the keys should be passed through a k8s secret to k8s. This functionality still needs to be implemented.
+- You should be aware of `minikube` VM's allocated memory. Especially if you use `minikube` for other applications. It may run out of virtual memory say due to having large docker images. Being that snapshots are relatively large and increasing in size as the blockchain grows, when downloading one, you can potentially run out of disk space. The snapshot is deleted after import. According to `minikube start --help`, default allocated space is 20000mb. You can modify this via the `--disk-size` flag. To view the memory usage of the VM, you can ssh into `minikube`.
 
   ```shell
-  helm upgrade tezos-mainnet tqtezos/tezos-chain \
-  --namespace tqtezos \
-  --values <LOCATION OF baker.yaml>
+  ❯ minikube ssh
+                          _             _
+              _         _ ( )           ( )
+    ___ ___  (_)  ___  (_)| |/')  _   _ | |_      __
+  /' _ ` _ `\| |/' _ `\| || , <  ( ) ( )| '_`\  /'__`\
+  | ( ) ( ) || || ( ) || || |\`\ | (_) || |_) )(  ___/
+  (_) (_) (_)(_)(_) (_)(_)(_) (_)`\___/'(_,__/'`\____)
+
+  $ df -h
+  Filesystem      Size  Used Avail Use% Mounted on
+  tmpfs           5.2G  593M  4.6G  12% /
+  devtmpfs        2.8G     0  2.8G   0% /dev
+  tmpfs           2.9G     0  2.9G   0% /dev/shm
+  tmpfs           2.9G   50M  2.8G   2% /run
+  tmpfs           2.9G     0  2.9G   0% /sys/fs/cgroup
+  tmpfs           2.9G  8.0K  2.9G   1% /tmp
+  /dev/vda1        17G   12G  4.2G  74% /mnt/vda1
   ```
-
-After the snapshot has been downloaded and imported you should have a baker up and running that is syncing with mainnet! Run the `kubectl` commands mentioned in the above section to view status and logs of your node.
-
-IMPORTANT: You should be aware of `minikube` VM's allocated memory. Especially if you use `minikube` for other applications. It may run out of virtual memory say due to having large docker images. Being that snapshots are relatively large and increasing in size as the blockchain grows, when downloading one, you can potentially run out of disk space. The snapshot is deleted after import. According to `minikube start --help`, default allocated space is 20000mb. You can modify this via the `--disk-size` flag. To view the memory usage of the VM, you can ssh into `minikube`.
-
-```shell
-❯ minikube ssh
-                         _             _
-            _         _ ( )           ( )
-  ___ ___  (_)  ___  (_)| |/')  _   _ | |_      __
-/' _ ` _ `\| |/' _ `\| || , <  ( ) ( )| '_`\  /'__`\
-| ( ) ( ) || || ( ) || || |\`\ | (_) || |_) )(  ___/
-(_) (_) (_)(_)(_) (_)(_)(_) (_)`\___/'(_,__/'`\____)
-
-$ df -h
-Filesystem      Size  Used Avail Use% Mounted on
-tmpfs           5.2G  593M  4.6G  12% /
-devtmpfs        2.8G     0  2.8G   0% /dev
-tmpfs           2.9G     0  2.9G   0% /dev/shm
-tmpfs           2.9G   50M  2.8G   2% /run
-tmpfs           2.9G     0  2.9G   0% /sys/fs/cgroup
-tmpfs           2.9G  8.0K  2.9G   1% /tmp
-/dev/vda1        17G   12G  4.2G  74% /mnt/vda1
-```
 
 # Creating a Private Blockchain
 
