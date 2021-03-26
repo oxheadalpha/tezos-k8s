@@ -199,7 +199,7 @@ In the previous sections you spun one mainnet regular peer node. Here is how you
 
 After the snapshot has been downloaded and imported you should have a baker up and running that is syncing with mainnet! Run the `kubectl` commands mentioned in the above section to view status and logs of your node.
 
-IMPORTANT: Especially if you use `minikube` for other applications and have a lot of docker images in its VM, you should be aware of `minikube` VM's allocated memory. Being that snapshots are relatively large and increasing in size as the blockchain grows, when downloading one, you can potentially run out of disk space. The snapshot is deleted after import. According to `minikube start --help`, default allocated space is 20000mb. You can modify this via the `--disk-size` flag. To view the memory usage of the VM, you can ssh into `minikube`.
+IMPORTANT: You should be aware of `minikube` VM's allocated memory. Especially if you use `minikube` for other applications. It may run out of virtual memory say due to having large docker images. Being that snapshots are relatively large and increasing in size as the blockchain grows, when downloading one, you can potentially run out of disk space. The snapshot is deleted after import. According to `minikube start --help`, default allocated space is 20000mb. You can modify this via the `--disk-size` flag. To view the memory usage of the VM, you can ssh into `minikube`.
 
 ```shell
 ❯ minikube ssh
