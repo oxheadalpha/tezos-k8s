@@ -1,10 +1,19 @@
-# Tezos k8s Private Chain
+# Tezos k8s
 
-This README will walk you through setting up a Tezos based private blockchain where you will spin up one bootstrap node as well as additional peer nodes if you'd like. Using `minikube`, these nodes will be running in a peer-to-peer network via a Zerotier VPN, inside of a Kubernetes cluster.
+This README walks you through:
+
+- spinning up Tezos nodes that will join a public chain, e.g. mainnet.
+- creating your own Tezos based private blockchain.
+
+Using `minikube`, your nodes will be running in a peer-to-peer network inside of a Kubernetes cluster. With your custom private blockchain, your network will be also running over a Zerotier VPN.
+
+Follow the prerequisites step first. Then you can jump to either [joining mainnet](#joining-mainnet) or [creating a private chain](#creating-a-private-blockchain).
+
+NOTE: You do not need to clone this repository! All necessary components will be installed.
 
 ## Prerequisites
 
-- python3
+- python3 (>=3.6)
 - [docker](https://docs.docker.com/get-docker/)
 - [kubectl](https://kubernetes.io/docs/reference/kubectl/kubectl/)
 - [minikube](https://minikube.sigs.k8s.io/docs/)
@@ -88,6 +97,106 @@ If you want to unset your shell from using minikube's docker daemon:
 eval $(minikube docker-env -u)
 ```
 
+## Tezos k8s Helm Chart
+
+To add the Tezos k8s Helm chart to your local Helm chart repo, run:
+
+```shell
+helm repo add tqtezos https://tqtezos.github.io/tezos-helm-charts
+```
+
+# Joining Mainnet
+
+Connecting to a public net is easy!
+
+Run:
+
+```shell
+helm install tezos-mainnet tqtezos/tezos-chain \
+--namespace tqtezos --create-namespace
+```
+
+- This creates a Helm [release](https://helm.sh/docs/intro/using_helm/#three-big-concepts) named tezos-mainnet in your k8s cluster.
+- k8s will spin up one regular (i.e. non-baking node) which will download and import a mainnet [rolling snapshot](https://tezos.gitlab.io/user/history_modes.html). This will take a few minutes.
+- Once the snapshot step is done, your node will be bootstrapped and syncing with mainnet!
+
+You can find your node in the tqtezos namespace with some status information using `kubectl`.
+
+```shell
+kubectl -n tqtezos get pods -l appType=tezos
+```
+
+You can monitor (and follow using the `-f` flag) the logs of the snapshot downloader/import container:
+
+```shell
+kubectl logs -n tqtezos statefulset/tezos-node -c snapshot-downloader -f
+```
+
+You can view logs for your node using the following command:
+
+```shell
+kubectl -n tqtezos logs -l appType=tezos -c tezos-node -f --prefix
+```
+
+## Spinning Up a Baker
+
+In the previous sections you spun one mainnet regular peer node. Here is how you add an additional mainnet baker node.
+
+- Create a yaml file named `baker.yaml`.
+- In this file you should copy and paste the yaml below.
+
+  ```yaml
+  accounts:
+    tqtezos_baker_0:
+      key: edsk...
+      type: secret
+
+  nodes:
+    baking:
+      tezos-baking-node-0:
+        bake_using_account: tqtezos_baker_0
+        config:
+          shell:
+            history_mode: rolling
+  ```
+
+- Notice the `accounts.tqezos_baker_0.key` field above. You should replace that value with your own secret key you want to bake with. The key should begin with prefix `edsk`.
+- If you'd like, in the `nodes` section of the yaml, you can replace the `history_mode` with either `archive` or `full`. If you use `full`, a `full` snapshot will be downloaded and imported to the node.
+
+- Run:
+
+  ```shell
+  helm upgrade tezos-mainnet tqtezos/tezos-chain \
+  --namespace tqtezos \
+  --values <LOCATION OF baker.yaml>
+  ```
+
+After the snapshot has been downloaded and imported you should have a baker up and running that is syncing with mainnet! Run the the `kubectl` commands mentioned in the above section to view status and logs of your node.
+
+IMPORTANT: Especially if you use `minikube` for other applications or have a lot of docker images, you should be aware of `minikube's` virtual machine's allocated memory. Being that snapshots are relatively large and increasing in size as the blockchain grows, you can potentially run out of disk space. According to `minikube start --help`, default allocated space is 20000mb. You can modify this via the `--disk-size` flag. To view the memory usage of the VM, you can ssh into `minikube`.
+
+```shell
+❯ minikube ssh
+                         _             _
+            _         _ ( )           ( )
+  ___ ___  (_)  ___  (_)| |/')  _   _ | |_      __
+/' _ ` _ `\| |/' _ `\| || , <  ( ) ( )| '_`\  /'__`\
+| ( ) ( ) || || ( ) || || |\`\ | (_) || |_) )(  ___/
+(_) (_) (_)(_)(_) (_)(_)(_) (_)`\___/'(_,__/'`\____)
+
+$ df -h
+Filesystem      Size  Used Avail Use% Mounted on
+tmpfs           5.2G  593M  4.6G  12% /
+devtmpfs        2.8G     0  2.8G   0% /dev
+tmpfs           2.9G     0  2.9G   0% /dev/shm
+tmpfs           2.9G   50M  2.8G   2% /run
+tmpfs           2.9G     0  2.9G   0% /sys/fs/cgroup
+tmpfs           2.9G  8.0K  2.9G   1% /tmp
+/dev/vda1        17G   12G  4.2G  74% /mnt/vda1
+```
+
+# Creating a Private Blockchain
+
 ## Zerotier
 
 Zerotier is a VPN service that the Tezos nodes in your cluster will use to communicate with each other.
@@ -132,12 +241,10 @@ export PYTHONUNBUFFERED=x
 
 ## Start your private chain
 
-Run the following commands to create the Helm values, get the Helm chart repo, and install the Helm chart to start your chain.
+Run the following commands to create the Helm values, and create a Helm release that will start your chain.
 
 ```shell
 mkchain $CHAIN_NAME --zerotier-network $ZT_NET --zerotier-token $ZT_TOKEN
-
-helm repo add tqtezos https://tqtezos.github.io/tezos-helm-charts
 
 helm install $CHAIN_NAME tqtezos/tezos-chain \
 --values ./${CHAIN_NAME}_values.yaml \
@@ -155,16 +262,16 @@ perform the following tasks:
 - activate the protocol
 - bake the first block
 
-You can find your node in the tqtezos namespace using kubectl.
+You can find your node in the tqtezos namespace with some status information using kubectl.
 
 ```shell
-kubectl -n tqtezos get pods
+kubectl -n tqtezos get pods -l appType=tezos
 ```
 
-You can view logs for your node using the following command:
+You can view (and follow using the `-f` flag) logs for your node using the following command:
 
 ```shell
-kubectl -n tqtezos logs -l appType=tezos -c tezos-node -f
+kubectl -n tqtezos logs -l appType=tezos -c tezos-node -f --prefix
 ```
 
 Congratulations! You now have an operational Tezos based permissioned
@@ -252,7 +359,7 @@ Follow the steps [here](./rpc-auth/README.md).
 
 # Notes
 
-We recommend using a very nice GUI for your k8s Tezos chain infrastructure called [Lens](https://k8slens.dev/). This allows you to easily see all of the k8s resources that have been spun up as well as to view the logs for your Tezos nodes.
+- We recommend using a very nice GUI for your k8s Tezos chain infrastructure called [Lens](https://k8slens.dev/). This allows you to easily see all of the k8s resources that have been spun up as well as to view the logs for your Tezos nodes.
 
 # Development
 
