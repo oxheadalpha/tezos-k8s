@@ -107,6 +107,8 @@ helm repo add tqtezos https://tqtezos.github.io/tezos-helm-charts
 
 # Joining Mainnet
 
+## Spinning Up a Regular Peer Node
+
 Connecting to a public net is easy!
 
 Run:
@@ -171,9 +173,9 @@ In the previous sections you spun one mainnet regular peer node. Here is how you
   --values <LOCATION OF baker.yaml>
   ```
 
-After the snapshot has been downloaded and imported you should have a baker up and running that is syncing with mainnet! Run the the `kubectl` commands mentioned in the above section to view status and logs of your node.
+After the snapshot has been downloaded and imported you should have a baker up and running that is syncing with mainnet! Run the `kubectl` commands mentioned in the above section to view status and logs of your node.
 
-IMPORTANT: Especially if you use `minikube` for other applications or have a lot of docker images, you should be aware of `minikube's` virtual machine's allocated memory. Being that snapshots are relatively large and increasing in size as the blockchain grows, you can potentially run out of disk space. According to `minikube start --help`, default allocated space is 20000mb. You can modify this via the `--disk-size` flag. To view the memory usage of the VM, you can ssh into `minikube`.
+IMPORTANT: Especially if you use `minikube` for other applications and have a lot of docker images in its VM, you should be aware of `minikube` VM's allocated memory. Being that snapshots are relatively large and increasing in size as the blockchain grows, when downloading one, you can potentially run out of disk space. The snapshot is deleted after import. According to `minikube start --help`, default allocated space is 20000mb. You can modify this via the `--disk-size` flag. To view the memory usage of the VM, you can ssh into `minikube`.
 
 ```shell
 ❯ minikube ssh
@@ -241,11 +243,22 @@ export PYTHONUNBUFFERED=x
 
 ## Start your private chain
 
-Run the following commands to create the Helm values, and create a Helm release that will start your chain.
+Run `mkchain` to create your Helm values
 
 ```shell
 mkchain $CHAIN_NAME --zerotier-network $ZT_NET --zerotier-token $ZT_TOKEN
+```
 
+This will create two files:
+
+1. `./${CHAIN_NAME}_values.yaml`
+2. `./${CHAIN_NAME}_invite_values.yaml`
+
+The former is what you will use to create your chain, and the latter is for invitees to join your chain.
+
+Create a Helm release that will start your chain:
+
+```shell
 helm install $CHAIN_NAME tqtezos/tezos-chain \
 --values ./${CHAIN_NAME}_values.yaml \
 --namespace tqtezos --create-namespace
