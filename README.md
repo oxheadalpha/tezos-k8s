@@ -1,3 +1,27 @@
+- [Prerequisites](#prerequisites)
+- [Installing prerequisites](#installing-prerequisites)
+  - [Mac](#mac)
+  - [Arch Linux](#arch-linux)
+  - [Other Operating Systems](#other-operating-systems)
+- [Configuring Minikube](#configuring-minikube)
+  - [Mac](#mac-1)
+  - [Other Operating Systems](#other-operating-systems-1)
+- [Starting Minikube](#starting-minikube)
+- [Tezos k8s Helm Chart](#tezos-k8s-helm-chart)
+- [Joining Mainnet](#joining-mainnet)
+  - [Spinning Up a Regular Peer Node](#spinning-up-a-regular-peer-node)
+  - [Spinning Up a Baker](#spinning-up-a-baker)
+- [Creating a Private Blockchain](#creating-a-private-blockchain)
+  - [Zerotier](#zerotier)
+  - [mkchain](#mkchain)
+  - [Start your private chain](#start-your-private-chain)
+  - [Adding nodes within the cluster](#adding-nodes-within-the-cluster)
+  - [Adding external nodes to the cluster](#adding-external-nodes-to-the-cluster)
+    - [On the computer of the joining node](#on-the-computer-of-the-joining-node)
+  - [RPC Authentication](#rpc-authentication)
+- [Notes](#notes)
+- [Development](#development)
+
 # Tezos k8s
 
 This README walks you through:

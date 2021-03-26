@@ -1,3 +1,12 @@
+- [Prerequisites](#prerequisites)
+- [Using devspace](#using-devspace)
+  - [Notes](#notes)
+- [Helm Charts](#helm-charts)
+  - [Creating Charts](#creating-charts)
+  - [Notes](#notes-1)
+- [Creating Docker Images](#creating-docker-images)
+- [Releases](#releases)
+
 # Helm Chart Development
 
 ## Prerequisites

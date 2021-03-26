@@ -1,3 +1,8 @@
+- [Install mkchain](#install-mkchain)
+- [Generate Helm Values](#generate-helm-values)
+  - [mkchain parameters](#mkchain-parameters)
+- [Create Tezos Chain](#create-tezos-chain)
+
 # mkchain
 
 Helper program to generate values for the Tezos chain Helm chart
