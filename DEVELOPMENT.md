@@ -1,3 +1,12 @@
+- [Prerequisites](#prerequisites)
+- [Using devspace](#using-devspace)
+  - [Notes](#notes)
+- [Helm Charts](#helm-charts)
+  - [Creating Charts](#creating-charts)
+  - [Notes](#notes-1)
+- [Creating Docker Images](#creating-docker-images)
+- [Releases](#releases)
+
 # Helm Chart Development
 
 ## Prerequisites
@@ -32,7 +41,7 @@
 
 - Run `devspace dev --var CHAIN_NAME=$CHAIN_NAME` (you can leave out the `--var` flag if you used `export CHAIN_NAME=my-chain`).
 
-- You may add the `rpc-auth` devspace [profile](https://devspace.sh/cli/docs/configuration/profiles/basics) by using the `-p rpc-auth` flag in the `devspace dev` command. This tells devspace deploy `rpc-auth` and to redeploy it if its files change. You can also pass another `--var` flag for `rpc-auth` like so: `--var FLASK_ENV=<development|production>`. Devpsace defaults it to `development`. Running with `development` will allow the the python server to hot reload on file changes. Devspace does not need to restart the pod on file changes as the python server file is [synced](https://devspace.sh/cli/docs/configuration/development/file-synchronization) to the container.
+- You may add the `rpc-auth` devspace [profile](https://devspace.sh/cli/docs/configuration/profiles/basics) by using the `-p rpc-auth` flag in the `devspace dev` command. This tells devspace deploy `rpc-auth` and to redeploy it if its files change. You can also pass another `--var` flag for `rpc-auth` like so: `--var FLASK_ENV=<development|production>`. Devpsace defaults it to `development`. Running with `development` will allow the python server to hot reload on file changes. Devspace does not need to restart the pod on file changes as the python server file is [synced](https://devspace.sh/cli/docs/configuration/development/file-synchronization) to the container.
 
 Devspace will now do a few things:
 
@@ -74,7 +83,7 @@ If you use `helm install|upgrade` (instead of devspace) for local charts, make s
 
 # Creating Docker Images
 
-Currently, we are placing all docker images in the the root level directory. The name of the folder is treated as the name of the image being created.
+Currently, we are placing all docker images in the root level directory. The name of the folder is treated as the name of the image being created.
 
 Here is an example of the flow for creating new images and how they are published to Docker Hub via the CI:
 
