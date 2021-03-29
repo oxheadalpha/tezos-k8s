@@ -4,8 +4,7 @@
   - [Notes](#notes)
 - [Helm Charts](#helm-charts)
   - [Creating Charts](#creating-charts)
-  - [Update charts for local mainnet](#update-charts-for-local-mainnet)
-  - [Run charts for local mainnet](#run-charts-for-local-mainnet)
+  - [Run local development chart](#run-local-development-chart)
   - [Notes](#notes-1)
 - [Creating Docker Images](#creating-docker-images)
 - [Releases](#releases)
@@ -80,13 +79,9 @@ Regarding chart dependencies, Chart.yaml should not specify a dependency version
 
 Being that all charts are bumped to the same version on release, the parent chart will get the latest version of the dependency by default (which is the same as its own version) when installing via our Helm chart [repo](https://github.com/tqtezos/tezos-helm-charts).
 
-## Update charts for local mainnet
+## Run local development chart
 
-```
-helm dependency update charts/tezos
-```
-
-## Run charts for local mainnet
+Instructions as per README install the latest release of tezos-k8s helm chart from a helm repository. To install a development version of a tezos chart in the charts/tezos directory instead, run:
 
 ```
 helm install tezos-mainnet charts/tezos --namespace tqtezos --create-namespace
