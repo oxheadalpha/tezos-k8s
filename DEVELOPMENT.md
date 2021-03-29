@@ -1,8 +1,12 @@
-- [Prerequisites](#prerequisites)
+- [Helm Chart Development](#helm-chart-development)
+  - [Prerequisites](#prerequisites)
 - [Using devspace](#using-devspace)
   - [Notes](#notes)
+  - [Building images](#building-images)
 - [Helm Charts](#helm-charts)
   - [Creating Charts](#creating-charts)
+  - [Update charts for local mainnet](#update-charts-for-local-mainnet)
+  - [Run charts for local mainnet](#run-charts-for-local-mainnet)
   - [Notes](#notes-1)
 - [Creating Docker Images](#creating-docker-images)
 - [Releases](#releases)
@@ -65,6 +69,13 @@ Devspace will now do a few things:
 
 - If you find that you have images built but Devspace is having a hard time getting them and/or is producing errors that don't seem to make sense, you can try `rm -rf .devspace` to remove any potentially wrong state.
 
+## Building images
+
+Build Images with devspace
+
+```devspace build -t dev -b --skip-push```
+
+
 # Helm Charts
 
 ## Creating Charts
@@ -76,6 +87,18 @@ Chart.yaml does not require an `appVersion`. So we are not using it as it doesn'
 Regarding chart dependencies, Chart.yaml should not specify a dependency version for another _local_ chart.
 
 Being that all charts are bumped to the same version on release, the parent chart will get the latest version of the dependency by default (which is the same as its own version) when installing via our Helm chart [repo](https://github.com/tqtezos/tezos-helm-charts).
+
+## Update charts for local mainnet
+
+```
+helm dependency update charts/tezos
+```
+
+## Run charts for local mainnet
+
+```
+helm install tezos-mainnet charts/tezos --namespace tqtezos --create-namespace
+```
 
 ## Notes
 
