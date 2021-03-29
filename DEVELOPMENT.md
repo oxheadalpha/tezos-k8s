@@ -2,7 +2,6 @@
   - [Prerequisites](#prerequisites)
 - [Using devspace](#using-devspace)
   - [Notes](#notes)
-  - [Building images](#building-images)
 - [Helm Charts](#helm-charts)
   - [Creating Charts](#creating-charts)
   - [Update charts for local mainnet](#update-charts-for-local-mainnet)
@@ -68,13 +67,6 @@ Devspace will now do a few things:
 - Due to a current limitation of devspace, multiple profiles cannot be used at one time. Therefore, devspace will watch `zerotier` files even if tezos nodes are not configured to use it via `mkchain`. Preferably `zerotier` would also be a profile in addition to `rpc-auth` being one.
 
 - If you find that you have images built but Devspace is having a hard time getting them and/or is producing errors that don't seem to make sense, you can try `rm -rf .devspace` to remove any potentially wrong state.
-
-## Building images
-
-Build Images with devspace
-
-```devspace build -t dev -b --skip-push```
-
 
 # Helm Charts
 
