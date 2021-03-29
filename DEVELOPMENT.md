@@ -62,7 +62,7 @@ Devspace will now do a few things:
 
 - Devspace recommends to run [devspace purge](https://devspace.sh/cli/docs/commands/devspace_purge) to delete deployments. Keep in mind though that it currently does not delete persistent volumes and claims. They currently don't mention this in their docs. If you want to delete all resources including persistent volumes and claims, run `kubectl delete namespace <NAMESPACE>`. Even with this command, there are times where PV's/PVC's do not get deleted. This is important to know because you may be spinning up nodes that get old volumes attached with old state, and you may encounter Tezos pod errors. I have experienced this in situations where I left my cluster running for a long time, say overnight, and I shut my laptop and/or it went to sleep. After logging back in and deleting the namespace, the PV's/PVC's are still there and need to be manually deleted.
 
-- If you would like to build all of our images without using Devspace to deploy (you might want to do a `helm install` instead), you can run `devspace build -t dev`.
+- If you would like to build all of our images without using Devspace to deploy (you might want to do a `helm install` instead), you can run `devspace build -t dev --skip-push`.
 
 - Due to a current limitation of devspace, multiple profiles cannot be used at one time. Therefore, devspace will watch `zerotier` files even if tezos nodes are not configured to use it via `mkchain`. Preferably `zerotier` would also be a profile in addition to `rpc-auth` being one.
 
