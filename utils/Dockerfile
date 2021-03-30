@@ -7,10 +7,11 @@ RUN apk add --no-cache --virtual .build-deps gcc py3-pip python3-dev musl-dev li
      && pip install base58 pynacl \
      && apk del .build-deps gcc musl-dev libffi-dev make \
      && apk add --no-cache --virtual install jq gcc python3 py3-pip \
-     && apk add jq curl
+     && apk add jq curl netcat-openbsd
 
 COPY commitment-params.json /
 COPY entrypoint.py /
 COPY entrypoint.sh /
+COPY wait-for-bootstrap.sh /
 ENTRYPOINT ["/entrypoint.sh"]
 CMD []

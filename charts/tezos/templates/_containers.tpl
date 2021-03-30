@@ -42,7 +42,7 @@
 {{- end }}
 
 {{- define "tezos.init_container.config_generator" }}
-- image: {{ .Values.tezos_k8s_images.config_generator }}
+- image: {{ .Values.tezos_k8s_images.utils }}
   imagePullPolicy: IfNotPresent
   name: config-generator
   args:
@@ -63,7 +63,7 @@
 
 {{- define "tezos.init_container.wait_for_bootstrap" }}
 {{- if include "tezos.shouldWaitForBootstrapNode" . }}
-- image: {{ .Values.tezos_k8s_images.wait_for_bootstrap }}
+- image: {{ .Values.tezos_k8s_images.utils }}
   imagePullPolicy: IfNotPresent
   name: wait-for-bootstrap
   envFrom:

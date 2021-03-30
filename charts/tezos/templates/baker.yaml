@@ -27,7 +27,7 @@ spec:
             - configMapRef:
                 name: tezos-config
       initContainers:
-        - image: {{ .Values.tezos_k8s_images.config_generator }}
+        - image: {{ .Values.tezos_k8s_images.utils }}
           imagePullPolicy: IfNotPresent
           name: config-generator
           args:
