@@ -52,3 +52,18 @@
 {{- "" }}
 {{- end }}
 {{- end }}
+
+{{/*
+  Checks if we need to run tezos-node config init to help
+  config-generator obtain the appropriate parameters to run
+  a network.
+  Returns a string "true" or empty string which is falsey.
+*/}}
+*/}}
+{{- define "tezos.shouldConfigInit" }}
+{{- if not (.Values.node_config_network.genesis) }}
+{{- "true" }}
+{{- else }}
+{{- "" }}
+{{- end }}
+{{- end }}

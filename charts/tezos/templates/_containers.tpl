@@ -15,6 +15,32 @@
 {{- end }}
 {{- end }}
 
+{{- define "tezos.init_container.config_init" }}
+{{- if include "tezos.shouldConfigInit" . }}
+- image: "{{ .Values.images.tezos }}"
+  command:
+    - /bin/sh
+  args:
+    - "-c"
+    - |
+{{ tpl (.Files.Get "scripts/config-init.sh") . | indent 6 }}
+  imagePullPolicy: IfNotPresent
+  name: config-init
+  volumeMounts:
+    - mountPath: /etc/tezos
+      name: config-volume
+    - mountPath: /var/tezos
+      name: var-volume
+  envFrom:
+    - configMapRef:
+        name: tezos-config
+    - secretRef:
+        name: tezos-secret
+  env:
+{{- include "tezos.localvars.pod_envvars" . | indent 4 }}
+{{- end }}
+{{- end }}
+
 {{- define "tezos.init_container.config_generator" }}
 - image: {{ .Values.tezos_k8s_images.config_generator }}
   imagePullPolicy: IfNotPresent
@@ -51,9 +77,15 @@
 
 {{- define "tezos.init_container.snapshot_downloader" }}
 {{- if include "tezos.shouldDownloadSnapshot" . }}
-- image: "{{ .Values.tezos_k8s_images.snapshot_downloader }}"
+- image: "{{ .Values.images.tezos }}"
   imagePullPolicy: IfNotPresent
   name: snapshot-downloader
+  command:
+    - /bin/sh
+  args:
+    - "-c"
+    - |
+{{ tpl (.Files.Get "scripts/snapshot-downloader.sh") . | indent 6 }}
   volumeMounts:
     - mountPath: /var/tezos
       name: var-volume
@@ -92,12 +124,20 @@
 {{- end }}
 
 {{- define "tezos.container.baker" }}
-- image: "{{ .Values.tezos_k8s_images.baker_endorser }}"
+- image: "{{ .Values.images.tezos }}"
+  command:
+    - /bin/sh
+  args:
+    - "-c"
+    - |
+{{ tpl (.Files.Get "scripts/baker-endorser.sh") . | indent 6 }}
   imagePullPolicy: IfNotPresent
   name: baker
   volumeMounts:
-  - mountPath: /var/tezos
-    name: var-volume
+    - mountPath: /etc/tezos
+      name: config-volume
+    - mountPath: /var/tezos
+      name: var-volume
   envFrom:
     - configMapRef:
         name: tezos-config
@@ -110,12 +150,20 @@
 {{- end }}
 
 {{- define "tezos.container.endorser" }}
-- image: "{{ .Values.tezos_k8s_images.baker_endorser }}"
+- image: "{{ .Values.images.tezos }}"
+  command:
+    - /bin/sh
+  args:
+    - "-c"
+    - |
+{{ tpl (.Files.Get "scripts/baker-endorser.sh") . | indent 6 }}
   imagePullPolicy: IfNotPresent
   name: endorser
   volumeMounts:
-  - mountPath: /var/tezos
-    name: var-volume
+    - mountPath: /etc/tezos
+      name: config-volume
+    - mountPath: /var/tezos
+      name: var-volume
   envFrom:
     - configMapRef:
         name: tezos-config
