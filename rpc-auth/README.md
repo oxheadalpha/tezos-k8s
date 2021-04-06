@@ -1,3 +1,8 @@
+- [Deploy RPC Auth Backend](#deploy-rpc-auth-backend)
+- [Client Authentication](#client-authentication)
+  - [Prerequisites](#prerequisites)
+- [Authentication flow](#authentication-flow)
+
 # Tezos RPC Authentication
 
 `rpc-auth` provides a mechanism where a user authenticates themselves and will receive a secret url that they then use to make RPC calls.
