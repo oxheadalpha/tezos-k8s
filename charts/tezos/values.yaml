@@ -11,7 +11,7 @@ rpc_auth: false
 
 # Images not part of the tezos-k8s repo go here
 images:
-  tezos: tezos/tezos:v8-release
+  tezos: tezos/tezos:v9.0-rc1
 # Images that are part of the tezos-k8s repo go here with 'dev' tag
 tezos_k8s_images:
   baker_endorser: tezos-k8s-baker-endorser:dev
@@ -138,13 +138,13 @@ expected_proof_of_work: 26
 #   activation_account_name: tqtezos_baker_0
 #
 # For joining a public network. The network must be recognized by the
-# tezos/tezos:v8-release docker image.
+# tezos/tezos:v9.0-rc1 docker image.
 node_config_network:
   chain_name: mainnet
 
 protocol:
   # Set the protocol binary. The protocol must be recognized by the
-  # tezos/tezos:v8-release docker image.
+  # tezos/tezos:v9.0-rc1 docker image.
   command: 008-PtEdo2Zk
 
 # # Activate a new chain from genesis. Note, this is only for when your chain does
