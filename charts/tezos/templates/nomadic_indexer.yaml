@@ -10,7 +10,7 @@ spec:
   selector:
     matchLabels:
       app: {{ .Values.nomadic_indexer_statefulset.name }}
-  serviceName: tezos-node
+  serviceName: {{ .Values.nomadic_indexer_statefulset.name }}
   template:
     metadata:
       labels:
@@ -41,13 +41,9 @@ spec:
               name: schema-volume
             - mountPath: /var/lib/postgresql/data
               name: indexer-db
-          env:
-            - name: POSTGRES_USER
-              value: tezos
-            - name: POSTGRES_DB
-              value: tezos
-            - name: POSTGRES_PASSWORD
-              value: tezosrocks
+          envFrom:
+          - configMapRef:
+              name: db-creds
       volumes:
         - emptyDir: {}
           name: schema-volume
@@ -60,4 +56,13 @@ spec:
         resources:
           requests:
             storage: "5Gi"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-creds
+data:
+  POSTGRES_USER: tezos
+  POSTGRES_PASSWORD: tezosrocks
+  POSTGRES_DB: tezos
 {{- end }}

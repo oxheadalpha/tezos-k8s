@@ -9,7 +9,7 @@ spec:
   selector:
     matchLabels:
       app: {{ .Values.bcd_indexer_statefulset.name }}
-  serviceName: tezos-node
+  serviceName: {{ .Values.bcd_indexer_statefulset.name }}
   template:
     metadata:
       labels:
@@ -19,66 +19,24 @@ spec:
       containers:
         - image: bakingbad/bcdhub-api:3.5
           name: api
-          env:
-            - name: BCD_ENV
-              value: sandbox
-            - name: GIN_MODE
-              value: debug
-            - name: POSTGRES_USER
-              value: root
-            - name: POSTGRES_PASSWORD
-              value: root
-            - name: POSTGRES_DB
-              value: bcd
-            - name: ELASTIC_HOSTNAME
-              value: localhost
-            - name: RABBITMQ_HOSTNAME
-              value: localhost
-            - name: DB_HOSTNAME
-              value: 127.0.0.1
-            - name: RABBITMQ_DEFAULT_USER
-              value: guest
-            - name: RABBITMQ_DEFAULT_PASS
-              value: guest
-            - name: SANDBOX_NODE_URI
-              value: http://{{ .Values.index.target }}:8732
+          envFrom:
+          - configMapRef:
+              name: bcd-env
+          - configMapRef:
+              name: db-creds
         - image: bakingbad/bcdhub-indexer:3.5
           name: indexer
-          env:
-            - name: BCD_ENV
-              value: sandbox
-            - name: GIN_MODE
-              value: debug
-            - name: POSTGRES_USER
-              value: root
-            - name: POSTGRES_PASSWORD
-              value: root
-            - name: POSTGRES_DB
-              value: bcd
-            - name: ELASTIC_HOSTNAME
-              value: localhost
-            - name: RABBITMQ_HOSTNAME
-              value: localhost
-            - name: DB_HOSTNAME
-              value: 127.0.0.1
-            - name: RABBITMQ_DEFAULT_USER
-              value: guest
-            - name: RABBITMQ_DEFAULT_PASS
-              value: guest
-            - name: SANDBOX_NODE_URI
-              value: http://tezos-node-0.tezos-node:8732 
+          envFrom:
+          - configMapRef:
+              name: bcd-env
         - image: postgres:alpine
           name: db
           volumeMounts:
             - mountPath: /var/lib/postgresql/
               name: indexer-db
-          env:
-            - name: POSTGRES_USER
-              value: root
-            - name: POSTGRES_DB
-              value: bcd
-            - name: POSTGRES_PASSWORD
-              value: root
+          envFrom:
+          - configMapRef:
+              name: db-creds
         - image: rabbitmq:latest
           name: mq
           volumeMounts:
@@ -143,4 +101,27 @@ data:
     db:
       conn_string: "host=127.0.0.1 port=5432 user=${POSTGRES_USER} dbname=${POSTGRES_DB} password=${POSTGRES_PASSWORD} sslmode=disable"
       timeout: 10
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bcd-env
+data:
+  BCD_ENV: sandbox
+  GIN_MODE: debug
+  ELASTIC_HOSTNAME: localhost
+  RABBITMQ_HOSTNAME: localhost
+  DB_HOSTNAME: 127.0.0.1
+  RABBITMQ_DEFAULT_USER: guest
+  RABBITMQ_DEFAULT_PASS: guest
+  SANDBOX_NODE_URI: "http://{{ .Values.index.target }}:8732"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-creds
+data:
+  POSTGRES_USER: root
+  POSTGRES_PASSWORD: root
+  POSTGRES_DB: bcd
 {{- end }}
