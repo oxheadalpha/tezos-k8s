@@ -6,6 +6,7 @@ metadata:
 spec:
   ports:
     - port: 8732
+      name: rpc
   selector:
     app: tezos-baking-node
   type: NodePort
