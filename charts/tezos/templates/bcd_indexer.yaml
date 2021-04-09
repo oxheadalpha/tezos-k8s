@@ -42,7 +42,7 @@ spec:
         - image: rabbitmq:latest
           name: mq
           volumeMounts:
-            - mountPath: /var/lib/rabbitmq
+            - mountPath: /var/lib/rabbitmq/mnesia
               name: mq-data
           env:
             - name: RABBITMQ_DEFAULT_USER
