@@ -10,7 +10,7 @@ spec:
   selector:
     matchLabels:
       app: {{ .Values.nomadic_indexer_statefulset.name }}
-  serviceName: {{ .Values.nomadic_indexer_statefulset.name }}
+  serviceName: ""
   template:
     metadata:
       labels:
