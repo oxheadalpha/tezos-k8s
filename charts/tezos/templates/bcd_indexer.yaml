@@ -19,14 +19,14 @@ spec:
       securityContext:
         fsGroup: 1000
       containers:
-        - image: bakingbad/bcdhub-api:3.5
+        - image: bakingbad/bcdhub-api:3.5.2
           name: api
           envFrom:
           - configMapRef:
               name: bcd-env
           - configMapRef:
               name: db-creds
-        - image: bakingbad/bcdhub-indexer:3.5
+        - image: bakingbad/bcdhub-indexer:3.5.2
           name: indexer
           envFrom:
           - configMapRef:
@@ -49,7 +49,7 @@ spec:
               value: guest
             - name: RABBITMQ_DEFAULT_PASS
               value: guest
-        - image: bakingbad/bcdhub-elastic:3.5
+        - image: bakingbad/bcdhub-elastic:3.5.2
           name: elastic
           volumeMounts:
             - mountPath: /usr/share/elasticsearch/data
