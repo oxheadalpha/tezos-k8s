@@ -27,6 +27,34 @@
 {{- end }}
 
 {{/*
+  Don't deploy the baker statefulset and its headless service if
+  there are no bakers specified.
+  Returns a string "true" or empty string which is falsey.
+*/}}
+{{- define "tezos.shouldDeployBakerStatefulset" -}}
+{{- $baking_nodes := .Values.nodes.baking | default dict }}
+{{- if and (not .Values.is_invitation) ($baking_nodes | len) }}
+{{- "true" }}
+{{- else }}
+{{- "" }}
+{{- end }}
+{{- end }}
+
+{{/*
+  Don't deploy the regular node statefulset and its headless service if
+  there are no regular nodes specified.
+  Returns a string "true" or empty string which is falsey.
+*/}}
+{{- define "tezos.shouldDeployRegularNodeStatefulset" -}}
+{{- $regular_nodes := .Values.nodes.regular | default dict }}
+{{- if ($regular_nodes | len) }}
+{{- "true" }}
+{{- else }}
+{{- "" }}
+{{- end }}
+{{- end }}
+
+{{/*
   Checks if a protocol should be activated. There needs to be a protocol_hash
   and protocol_parameters.
   Returns a string "true" or empty string which is falsey.
