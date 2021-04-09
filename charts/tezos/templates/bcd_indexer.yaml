@@ -16,6 +16,8 @@ spec:
         app: {{ .Values.bcd_indexer_statefulset.name }}
         appType: tezos
     spec:
+      securityContext:
+        fsGroup: 1000
       containers:
         - image: bakingbad/bcdhub-api:3.5
           name: api
