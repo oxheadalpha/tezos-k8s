@@ -1,3 +1,4 @@
+{{- if (include "tezos.shouldDeployRegularNodeStatefulset" .) }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -43,3 +44,4 @@ spec:
         resources:
           requests:
             storage: {{ .Values.regular_node_statefulset.storage_size }}
+{{- end }}
