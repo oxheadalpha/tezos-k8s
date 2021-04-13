@@ -63,9 +63,11 @@ echo "waiting for bootstrap nodes to accept connections"
 while :; do
     for node in $BOOTSTRAP_NODES; do
 	if </dev/null nc -q 0 ${node} 8732; then
-	    echo "Bootstrap node: $node is up"
+	    echo "$node is up"
+	    echo "Found bootstrap node, exiting"
 	    exit 0
 	fi
+	echo "$node is down"
     done
     randomsleep
 done

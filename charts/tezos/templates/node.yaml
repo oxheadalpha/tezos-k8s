@@ -26,6 +26,7 @@ spec:
 {{- include "tezos.init_container.zerotier"            . | indent 8 }}
 {{- include "tezos.init_container.config_generator"    . | indent 8 }}
 {{- include "tezos.init_container.snapshot_downloader" . | indent 8 }}
+{{- include "tezos.init_container.snapshot_importer"   . | indent 8 }}
       securityContext:
         fsGroup: 100
       volumes:
