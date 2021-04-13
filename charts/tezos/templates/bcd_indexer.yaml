@@ -9,7 +9,7 @@ spec:
   selector:
     matchLabels:
       app: {{ .Values.bcd_indexer_statefulset.name }}
-  serviceName: {{ .Values.bcd_indexer_statefulset.name }}
+  serviceName: ""
   template:
     metadata:
       labels:
