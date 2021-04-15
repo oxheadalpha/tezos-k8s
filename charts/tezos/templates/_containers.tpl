@@ -121,14 +121,12 @@
 {{- end }}
 
 {{- define "tezos.container.node" }}
-- args:
-    - run
-    - "--bootstrap-threshold"
-    - '0'
-    - "--config-file"
-    - /etc/tezos/config.json
-  command:
-    - /usr/local/bin/tezos-node
+- command:
+    - /bin/sh
+  args:
+    - "-c"
+    - |
+{{ tpl (.Files.Get "scripts/tezos-node.sh") . | indent 6 }}
   image: "{{ .Values.images.tezos }}"
   imagePullPolicy: IfNotPresent
   name: tezos-node
