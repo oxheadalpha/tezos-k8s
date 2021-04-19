@@ -212,6 +212,8 @@
         - SYS_ADMIN
     privileged: true
   volumeMounts:
+    - mountPath: /etc/tezos
+      name: config-volume
     - mountPath: /var/tezos
       name: var-volume
     - mountPath: /dev/net/tun
