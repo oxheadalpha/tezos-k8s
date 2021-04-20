@@ -34,6 +34,13 @@ spec:
           envFrom:
           - configMapRef:
               name: bcd-env
+        - image: bakingbad/bcdhub-metrics:3.5
+          name: metrics
+          envFrom:
+          - configMapRef:
+              name: bcd-env
+          - configMapRef:
+              name: db-creds
         - image: postgres:alpine
           name: db
           volumeMounts:
