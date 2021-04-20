@@ -190,6 +190,6 @@ protocol:
 # Supports two types of indexers:
 # * "nomadic": Tezos nomadic indexer: https://gitlab.com/nomadic-labs/tezos-indexer
 # * "bcd": Better Call Dev indexer: https://better-call.dev/
-#index:
-#  indexer: nomadic
-#  target: tezos-baking-node-0.tezos-baking-node
+# indexer:
+#  name: nomadic
+#  rpc_url: http://tezos-node-0.tezos-node:8732

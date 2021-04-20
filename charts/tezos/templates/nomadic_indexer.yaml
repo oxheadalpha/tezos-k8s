@@ -33,7 +33,7 @@ spec:
             - --verbosity=1
             - --no-contract-balances
             - --db=postgresql://localhost/tezos
-            -  --tezos-url=http://{{ .Values.index.target }}:8732
+            -  --tezos-url={{ .Values.indexer.rpc_url }}
         - image: postgres:alpine
           name: postgres
           volumeMounts:

@@ -87,9 +87,9 @@
   Returns the indexer type or empty string which is falsey.
 */}}
 {{- define "tezos.indexer" -}}
-{{- $index_config := .Values.index | default dict }}
-{{- if $index_config.indexer }}
-{{- $index_config.indexer }}
+{{- $index_config := .Values.indexer | default dict }}
+{{- if and $index_config.name $index_config.rpc_url }}
+{{- $index_config.name }}
 {{- else }}
 {{- "" }}
 {{- end }}

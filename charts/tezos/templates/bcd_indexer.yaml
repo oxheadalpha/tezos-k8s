@@ -127,7 +127,7 @@ data:
   DB_HOSTNAME: 127.0.0.1
   RABBITMQ_DEFAULT_USER: guest
   RABBITMQ_DEFAULT_PASS: guest
-  SANDBOX_NODE_URI: "http://{{ .Values.index.target }}:8732"
+  SANDBOX_NODE_URI: {{ .Values.indexer.rpc_url }}
 ---
 apiVersion: v1
 kind: ConfigMap
