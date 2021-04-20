@@ -8,7 +8,7 @@ spec:
     - port: 8732
       name: rpc
   selector:
-    app: tezos-node
+    appType: tezos-node
   type: NodePort
 ---
 {{- if (include "tezos.shouldDeployRegularNodeStatefulset" .) }}
