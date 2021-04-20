@@ -16,7 +16,7 @@ spec:
     metadata:
       labels:
         app: {{ .Values.regular_node_statefulset.name }}
-        appType: tezos
+        appType: tezos-node
     spec:
       containers:
 {{- include "tezos.container.node"     . | indent 8 }}
