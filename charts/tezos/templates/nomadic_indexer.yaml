@@ -15,7 +15,6 @@ spec:
     metadata:
       labels:
         app: {{ .Values.nomadic_indexer_statefulset.name }}
-        appType: tezos
     spec:
       initContainers:
         - image: registry.gitlab.com/nomadic-labs/tezos-indexer/tezos-indexer:v9.1.0
