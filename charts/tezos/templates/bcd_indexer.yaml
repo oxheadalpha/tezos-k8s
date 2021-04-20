@@ -21,6 +21,9 @@ spec:
       containers:
         - image: bakingbad/bcdhub-api:3.5
           name: api
+          ports:
+            - containerPort: 14000
+              name: bcd
           envFrom:
           - configMapRef:
               name: bcd-env
