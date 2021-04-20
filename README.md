@@ -160,7 +160,7 @@ Running either of these commands results in:
 You can find your node in the tqtezos namespace with some status information using `kubectl`.
 
 ```shell
-kubectl -n tqtezos get pods -l appType=tezos
+kubectl -n tqtezos get pods -l appType=tezos-node
 ```
 
 You can monitor (and follow using the `-f` flag) the logs of the snapshot downloader/import container:
@@ -172,7 +172,7 @@ kubectl logs -n tqtezos statefulset/tezos-node -c snapshot-downloader -f
 You can view logs for your node using the following command:
 
 ```shell
-kubectl -n tqtezos logs -l appType=tezos -c tezos-node -f --prefix
+kubectl -n tqtezos logs -l appType=tezos-node -c tezos-node -f --prefix
 ```
 
 IMPORTANT:
@@ -281,13 +281,13 @@ perform the following tasks:
 You can find your node in the tqtezos namespace with some status information using kubectl.
 
 ```shell
-kubectl -n tqtezos get pods -l appType=tezos
+kubectl -n tqtezos get pods -l appType=tezos-node
 ```
 
 You can view (and follow using the `-f` flag) logs for your node using the following command:
 
 ```shell
-kubectl -n tqtezos logs -l appType=tezos -c tezos-node -f --prefix
+kubectl -n tqtezos logs -l appType=tezos-node -c tezos-node -f --prefix
 ```
 
 Congratulations! You now have an operational Tezos based permissioned
@@ -325,7 +325,7 @@ helm upgrade $CHAIN_NAME tqtezos/tezos-chain \
 
 The nodes will start up and establish peer-to-peer connections in a full mesh topology.
 
-List all of your running nodes: `kubectl -n tqtezos get pods -l appType=tezos`
+List all of your running nodes: `kubectl -n tqtezos get pods -l appType=tezos-node`
 
 ## Adding external nodes to the cluster
 
@@ -361,7 +361,7 @@ Congratulations! You now have a multi-node Tezos based permissioned chain.
 On each computer, run this command to check that the nodes have matching heads by comparing their hashes (it may take a minute for the nodes to sync up):
 
 ```shell
-kubectl get pod -n tqtezos -l appType=tezos -o name |
+kubectl get pod -n tqtezos -l appType=tezos-node -o name |
 while read line;
   do kubectl -n tqtezos exec $line -c tezos-node -- /usr/local/bin/tezos-client rpc get /chains/main/blocks/head/hash;
 done
