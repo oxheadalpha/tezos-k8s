@@ -24,6 +24,9 @@ spec:
           ports:
             - containerPort: 14000
               name: bcd
+          volumeMounts:
+            - mountPath: /etc/bcd
+              name: shared-volume
           envFrom:
           - configMapRef:
               name: bcd-env
@@ -31,11 +34,17 @@ spec:
               name: db-creds
         - image: bakingbad/bcdhub-indexer:3.5
           name: indexer
+          volumeMounts:
+            - mountPath: /etc/bcd
+              name: shared-volume
           envFrom:
           - configMapRef:
               name: bcd-env
         - image: bakingbad/bcdhub-metrics:3.5
           name: metrics
+          volumeMounts:
+            - mountPath: /etc/bcd
+              name: shared-volume
           envFrom:
           - configMapRef:
               name: bcd-env
@@ -96,6 +105,15 @@ spec:
         resources:
           requests:
             storage: "300Gi"
+    - metadata:
+        name: shared-volume
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: "1Gi"
+
 ---
 apiVersion: v1
 kind: ConfigMap
