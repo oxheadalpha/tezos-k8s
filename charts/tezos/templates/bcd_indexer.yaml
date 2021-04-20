@@ -118,23 +118,6 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: bcd-config
-data:
-  bcd_config.yml: |-
-    storage:
-      uri:
-        - http://localhost:9200
-      timeout: 10
-    rabbitmq:
-      uri: "amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@localhost:5672/"
-      timeout: 10
-    db:
-      conn_string: "host=127.0.0.1 port=5432 user=${POSTGRES_USER} dbname=${POSTGRES_DB} password=${POSTGRES_PASSWORD} sslmode=disable"
-      timeout: 10
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
   name: bcd-env
 data:
   BCD_ENV: sandbox
