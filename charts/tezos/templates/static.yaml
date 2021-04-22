@@ -33,3 +33,18 @@ spec:
   selector:
     app: {{ .Values.baker_statefulset.name }}
 {{- end }}
+---
+{{- if (include "tezos.shouldDeployBcdIndexer" .) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: bcd
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+    - port: 14000
+      name: bcd
+  selector:
+    app: {{ .Values.bcd_indexer_statefulset.name }}
+  type: NodePort
+{{- end }}
