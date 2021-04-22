@@ -1,4 +1,4 @@
-{{- if eq (include "tezos.indexer" .) "bcd" }}
+{{- if (include "tezos.shouldDeployBcdIndexer" .) }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -14,13 +14,18 @@ spec:
     metadata:
       labels:
         app: {{ .Values.bcd_indexer_statefulset.name }}
-        appType: tezos
     spec:
       securityContext:
         fsGroup: 1000
       containers:
         - image: bakingbad/bcdhub-api:3.5
           name: api
+          ports:
+            - containerPort: 14000
+              name: bcd
+          volumeMounts:
+            - mountPath: /etc/bcd
+              name: shared-volume
           envFrom:
           - configMapRef:
               name: bcd-env
@@ -28,11 +33,25 @@ spec:
               name: db-creds
         - image: bakingbad/bcdhub-indexer:3.5
           name: indexer
+          volumeMounts:
+            - mountPath: /etc/bcd
+              name: shared-volume
           envFrom:
           - configMapRef:
               name: bcd-env
+        - image: bakingbad/bcdhub-metrics:3.5
+          name: metrics
+          volumeMounts:
+            - mountPath: /etc/bcd
+              name: shared-volume
+          envFrom:
+          - configMapRef:
+              name: bcd-env
+          - configMapRef:
+              name: db-creds
         - image: postgres:alpine
           name: db
+          imagePullPolicy: IfNotPresent
           volumeMounts:
             - mountPath: /var/lib/postgresql/
               name: indexer-db
@@ -41,6 +60,7 @@ spec:
               name: db-creds
         - image: rabbitmq:latest
           name: mq
+          imagePullPolicy: IfNotPresent
           volumeMounts:
             - mountPath: /var/lib/rabbitmq/mnesia
               name: mq-data
@@ -86,23 +106,15 @@ spec:
         resources:
           requests:
             storage: "300Gi"
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: bcd-config
-data:
-  bcd_config.yml: |-
-    storage:
-      uri:
-        - http://localhost:9200
-      timeout: 10
-    rabbitmq:
-      uri: "amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@localhost:5672/"
-      timeout: 10
-    db:
-      conn_string: "host=127.0.0.1 port=5432 user=${POSTGRES_USER} dbname=${POSTGRES_DB} password=${POSTGRES_PASSWORD} sslmode=disable"
-      timeout: 10
+    - metadata:
+        name: shared-volume
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: "1Gi"
+
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -116,7 +128,7 @@ data:
   DB_HOSTNAME: 127.0.0.1
   RABBITMQ_DEFAULT_USER: guest
   RABBITMQ_DEFAULT_PASS: guest
-  SANDBOX_NODE_URI: "http://{{ .Values.index.target }}:8732"
+  SANDBOX_NODE_URI: {{ .Values.indexer.rpc_url }}
 ---
 apiVersion: v1
 kind: ConfigMap

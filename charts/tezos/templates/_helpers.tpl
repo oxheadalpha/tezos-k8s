@@ -82,15 +82,32 @@
 {{- end }}
 
 {{/*
-  Checks if indexer config has an indexer type and target set.
-  This is to make helm linter happy.
-  Returns the indexer type or empty string which is falsey.
+  BCD indexer
+  Checks if indexer config has an indexer and rpc_url set.
+  Then checks if indexer name is "bcd".
+  Returns the true type or empty string which is falsey.
 */}}
-{{- define "tezos.indexer" -}}
-{{- $index_config := .Values.index | default dict }}
-{{- if $index_config.indexer }}
-{{- $index_config.indexer }}
+{{- define "tezos.shouldDeployBcdIndexer" -}}
+{{- $index_config := .Values.indexer | default dict }}
+{{- if and $index_config.name $index_config.rpc_url }}
+{{- if eq $index_config.name "bcd" }}
+{{- "true" }}
 {{- else }}
 {{- "" }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
+  Nomadic indexer
+*/}}
+{{- define "tezos.shouldDeployNomadicIndexer" -}}
+{{- $index_config := .Values.indexer | default dict }}
+{{- if and $index_config.name $index_config.rpc_url }}
+{{- if eq $index_config.name "nomadic" }}
+{{- "true" }}
+{{- else }}
+{{- "" }}
+{{- end }}
 {{- end }}
 {{- end }}

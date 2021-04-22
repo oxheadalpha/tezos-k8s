@@ -8,7 +8,7 @@ spec:
     - port: 8732
       name: rpc
   selector:
-    app: tezos-node
+    appType: tezos-node
   type: NodePort
 ---
 {{- if (include "tezos.shouldDeployRegularNodeStatefulset" .) }}
@@ -32,4 +32,19 @@ spec:
   clusterIP: None
   selector:
     app: {{ .Values.baker_statefulset.name }}
+{{- end }}
+---
+{{- if (include "tezos.shouldDeployBcdIndexer" .) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: bcd
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+    - port: 14000
+      name: bcd
+  selector:
+    app: {{ .Values.bcd_indexer_statefulset.name }}
+  type: NodePort
 {{- end }}

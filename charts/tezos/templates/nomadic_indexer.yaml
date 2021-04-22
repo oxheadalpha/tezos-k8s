@@ -1,4 +1,4 @@
-{{- if eq (include "tezos.indexer" .) "nomadic" }}
+{{- if (include "tezos.shouldDeployNomadicIndexer" .) }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -15,7 +15,6 @@ spec:
     metadata:
       labels:
         app: {{ .Values.nomadic_indexer_statefulset.name }}
-        appType: tezos
     spec:
       initContainers:
         - image: registry.gitlab.com/nomadic-labs/tezos-indexer/tezos-indexer:v9.1.0
@@ -33,9 +32,10 @@ spec:
             - --verbosity=1
             - --no-contract-balances
             - --db=postgresql://localhost/tezos
-            -  --tezos-url=http://{{ .Values.index.target }}:8732
+            -  --tezos-url={{ .Values.indexer.rpc_url }}
         - image: postgres:alpine
           name: postgres
+          imagePullPolicy: IfNotPresent
           volumeMounts:
             - mountPath: /docker-entrypoint-initdb.d/
               name: schema-volume
