@@ -191,5 +191,5 @@ protocol:
 # * "nomadic": Tezos nomadic indexer: https://gitlab.com/nomadic-labs/tezos-indexer
 # * "bcd": Better Call Dev indexer: https://better-call.dev/
 # indexer:
-#  name: nomadic
+#  name: bcd
 #  rpc_url: http://tezos-node-0.tezos-node:8732
