@@ -35,6 +35,7 @@ spec:
             -  --tezos-url={{ .Values.indexer.rpc_url }}
         - image: postgres:alpine
           name: postgres
+          imagePullPolicy: IfNotPresent
           volumeMounts:
             - mountPath: /docker-entrypoint-initdb.d/
               name: schema-volume

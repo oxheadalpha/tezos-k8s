@@ -51,6 +51,7 @@ spec:
               name: db-creds
         - image: postgres:alpine
           name: db
+          imagePullPolicy: IfNotPresent
           volumeMounts:
             - mountPath: /var/lib/postgresql/
               name: indexer-db
@@ -59,6 +60,7 @@ spec:
               name: db-creds
         - image: rabbitmq:latest
           name: mq
+          imagePullPolicy: IfNotPresent
           volumeMounts:
             - mountPath: /var/lib/rabbitmq/mnesia
               name: mq-data
