@@ -87,6 +87,7 @@ spec:
       spec:
         accessModes:
           - ReadWriteOnce
+        storageClassName: {{ .Values.bcd_indexer_statefulset.storageClassName }}
         resources:
           requests:
             storage: "300Gi"
@@ -95,6 +96,7 @@ spec:
       spec:
         accessModes:
           - ReadWriteOnce
+        storageClassName: {{ .Values.bcd_indexer_statefulset.storageClassName }}
         resources:
           requests:
             storage: "5Gi"
@@ -103,6 +105,7 @@ spec:
       spec:
         accessModes:
           - ReadWriteOnce
+        storageClassName: {{ .Values.bcd_indexer_statefulset.storageClassName }}
         resources:
           requests:
             storage: "300Gi"
@@ -111,9 +114,10 @@ spec:
       spec:
         accessModes:
           - ReadWriteOnce
+        storageClassName: {{ .Values.bcd_indexer_statefulset.storageClassName }}
         resources:
           requests:
-            storage: "1Gi"
+            storage: "100Gi"
 
 ---
 apiVersion: v1
