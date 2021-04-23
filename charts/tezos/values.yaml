@@ -34,6 +34,7 @@ nomadic_indexer_statefulset:
   name: nomadic-indexer
 bcd_indexer_statefulset:
   name: bcd-indexer
+  storageClassName: ""
 
 # For non-public chains the defualt mutez given to an account if the
 # account is not explicitly set below.
