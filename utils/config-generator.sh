@@ -15,13 +15,15 @@ python3 /config-generator.py "$@"
 # variables and we are not guaranteed to have jq available on an arbitrary
 # tezos docker image.
 
-my_baker_account=$(echo $NODES | \
-	jq -r ".${MY_NODE_TYPE}.\"${MY_POD_NAME}\".bake_using_account")
+if [ "$MY_NODE_TYPE" = "baking" ]; then
+    my_baker_account=$(echo $NODES | \
+	    jq -r ".${MY_NODE_TYPE}.\"${MY_POD_NAME}\".bake_using_account")
 
-# If no account to bake for was specified in the node's settings,
-# config-generator defaults the account name to the pod's name.
-if [ "$my_baker_account" = null ]; then
-    my_baker_account="$MY_POD_NAME"
+    # If no account to bake for was specified in the node's settings,
+    # config-generator defaults the account name to the pod's name.
+    if [ "$my_baker_account" = null ]; then
+	my_baker_account="$MY_POD_NAME"
+    fi
+
+    echo "$my_baker_account" > /etc/tezos/baker-account
 fi
-
-echo "$my_baker_account" > /etc/tezos/baker-account
