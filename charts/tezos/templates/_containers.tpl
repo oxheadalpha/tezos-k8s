@@ -200,6 +200,8 @@
 {{- if (include "tezos.doesZerotierConfigExist" .) }}
 - envFrom:
     - configMapRef:
+        name: tezos-config
+    - configMapRef:
         name: zerotier-config
   image: "{{ .Values.tezos_k8s_images.zerotier }}"
   imagePullPolicy: IfNotPresent
