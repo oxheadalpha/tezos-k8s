@@ -21,6 +21,7 @@ tezos_k8s_images:
 baker_statefulset: # charts/tezos/templates/baker.yaml
   name: tezos-baking-node
   node_type: baking
+  include_private_node: false
   storage_size: 15Gi
 regular_node_statefulset: # charts/tezos/templates/node.yaml
   name: tezos-node

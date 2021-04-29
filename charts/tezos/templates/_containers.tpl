@@ -148,9 +148,43 @@
   env:
 {{- include "tezos.localvars.pod_envvars" . | indent 4 }}
     - name: DAEMON
-      value: baker
+      value: public-node
+{{- if .Values.baker_statefulset.include_private_node }}
+    - name: HAS_PRIVATE_NODE
+      value: "1"
+{{- end }}
     - name: TEZOS_EVENTS_CONFIG
       value: "file-descriptor-path:/dev/stdout?level-at-least=notice"
+{{- end }}
+
+{{- define "tezos.container.private_node" }}
+{{- if .Values.baker_statefulset.include_private_node }}
+- command:
+    - /bin/sh
+  args:
+    - "-c"
+    - |
+{{ tpl (.Files.Get "scripts/tezos-node.sh") . | indent 6 }}
+  image: "{{ .Values.images.tezos }}"
+  imagePullPolicy: IfNotPresent
+  name: private-node
+  volumeMounts:
+    - mountPath: /etc/tezos
+      name: config-volume
+    - mountPath: /var/tezos
+      name: var-volume
+  envFrom:
+    - configMapRef:
+        name: tezos-config
+  env:
+{{- include "tezos.localvars.pod_envvars" . | indent 4 }}
+    - name: DAEMON
+      value: private-node
+    - name: HAS_PRIVATE_NODE
+      value: "1"
+    - name: TEZOS_EVENTS_CONFIG
+      value: "file-descriptor-path:/dev/stdout?level-at-least=notice"
+{{- end }}
 {{- end }}
 
 {{- define "tezos.container.baker" }}
