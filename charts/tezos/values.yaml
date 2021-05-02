@@ -131,10 +131,13 @@ expected_proof_of_work: 26
 node_config_network:
   chain_name: mainnet
 
-protocol:
-  # Set the protocol binary. The protocol must be recognized by the
-  # tezos/tezos:v8-release docker image.
-  command: 008-PtEdo2Zk
+protocols:
+  # Tezos builds baker and endorser binaries for every supported protocol.
+  # List here the protocols that you wish to run bakers and endorsers for.
+  # These binaries must be present in the docker image specified.
+  # You may want to run two or more if you are expecting an on-chain upgrade.
+  - command: 009-PsFLoren
+  #- command: alpha
 
 # # Activate a new chain from genesis. Note, this is only for when your chain does
 # # not exist yet. For subsequent deploys, remove this.
