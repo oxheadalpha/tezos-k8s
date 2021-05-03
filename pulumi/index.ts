@@ -40,8 +40,8 @@ const vpc = new awsx.ec2.Vpc(chainName + "-vpc", {});
 // we should experiment a little to get a better number.  We add
 // three because that's the minimum.
 
-const numBakers = helmValues.nodes?.baking?.length || 0
-const numRegularNodes  = helmValues.nodes?.regular?.length || 0
+const numBakers       = Object.keys(helmValues.nodes?.baking  || {}).length
+const numRegularNodes = Object.keys(helmValues.nodes?.regular || {}).length
 
 const totalTezosNodes = numBakers + numRegularNodes
 const desiredClusterCapacity = Math.round(totalTezosNodes / 12 + 3);
