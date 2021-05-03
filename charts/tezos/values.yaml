@@ -143,6 +143,12 @@ protocol:
   # tezos/tezos:v8-release docker image.
   command: 008-PtEdo2Zk
 
+#
+# Pulumi values:
+
+pulumi:
+  vms_per_node: 12
+
 # # Activate a new chain from genesis. Note, this is only for when your chain does
 # # not exist yet. For subsequent deploys, remove this.
 #

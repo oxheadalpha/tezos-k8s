@@ -35,16 +35,23 @@ helmValues["tezos_k8s_images"] = pulumiTaggedImages
 const vpc = new awsx.ec2.Vpc(chainName + "-vpc", {});
 
 // For now, we set the number of EKS nodes to be the number of
-// Tezos bakers/nodes divided by 12.  We should fix this to
-// be a little more automagic.  Why 12?  It's a guess currently,
-// we should experiment a little to get a better number.  We add
-// three because that's the minimum.
+// Tezos bakers/nodes divided by helmValues.pulumi.vms_per_node.
+// The value defaults to 12.  We should fix this to be a little more
+// automagic.  Why 12?  It's a guess currently, we should experiment
+// a little to get a better number.  Notably, changing the log levels
+// can radically alter the amount of work that a node does and cause
+// the need to provision more VMs.  We add three because that's the
+// minimum---and to provide space for the kubes services.
 
+const defVmsPerNode   = defaultHelmValues.pulumi.vms_per_node
+const vmsPerNode      = helmValues.pulumi?.vms_per_node || defVmsPerNode
 const numBakers       = Object.keys(helmValues.nodes?.baking  || {}).length
 const numRegularNodes = Object.keys(helmValues.nodes?.regular || {}).length
 
 const totalTezosNodes = numBakers + numRegularNodes
-const desiredClusterCapacity = Math.round(totalTezosNodes / 12 + 3);
+const desiredClusterCapacity = Math.round(totalTezosNodes / vmsPerNode + 3);
+
+console.log("We will provision " + desiredClusterCapacity + " nodes");
 
 // Create an EKS cluster.
 const cluster = new eks.Cluster(chainName + "-chain", {
@@ -53,7 +60,7 @@ const cluster = new eks.Cluster(chainName + "-chain", {
     instanceType: "t3.xlarge",
     desiredCapacity: desiredClusterCapacity,
     minSize: 3,
-    maxSize: 100,
+    maxSize: 250,
 })
 
 const ns = new k8s.core.v1.Namespace("tezos", {metadata: {name:"tezos",}},
