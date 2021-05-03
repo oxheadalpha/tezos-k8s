@@ -104,11 +104,6 @@ cli_args = {
         "help": "Version of the Tezos docker image",
         "default": "tezos/tezos:v8-release",
     },
-    "rpc_auth": {
-        "help": "Should spin up an RPC authentication server",
-        "action": "store_true",
-        "default": False,
-    },
 }
 
 # python versions < 3.8 doesn't have "extend" action
@@ -214,7 +209,6 @@ def main():
         # Custom chains should not pull snapshots
         "full_snapshot_url": None,
         "rolling_snapshot_url": None,
-        "rpc_auth": args.rpc_auth,
     }
 
     # preserve pre-existing values, if any (in case of scale-up)
@@ -351,7 +345,6 @@ def main():
             "bootstrap_peers": bootstrap_peers,
             "nodes": invite_nodes,
         }
-        invitation_constants.pop("rpc_auth")
 
         with open(f"{files_path}_invite_values.yaml", "w") as yaml_file:
             print(
