@@ -69,7 +69,6 @@ You can explicitly specify some values by:
 | bootstrap_peers                  | --bootstrap-peers        | Peer ips to connect to                                                      | []                     |
 | expected_proof_of_work           | --expected-proof-of-work | Node identity generation difficulty                                         | 0                      |
 | images.tezos                     | --tezos-docker-image     | Version of the Tezos docker image to run                                    | tezos/tezos:v8-release |
-| rpc_auth                         | --rpc-auth               | Whether or not an [RPC auth](../rpc-auth/README.md) backend will be spun up | False                  |
 | zerotier_config.zerotier_network | --zerotier-network       | Zerotier network id for external chain access                               |                        |
 | zerotier_config.zerotier_token   | --zerotier-token         | Zerotier token for external chain access                                    |                        |
 

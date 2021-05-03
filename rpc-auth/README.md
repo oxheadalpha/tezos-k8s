@@ -9,17 +9,9 @@
 
 ## Deploy RPC Auth Backend
 
+Install this chart to deploy an RPC Authentication backend for your private chain.
+
 This assumes that you have followed the steps [here](../README.md) necessary to deploy a Tezos private chain.
-
-To deploy an RPC Authentication backend for your private chain, do either:
-
-- Run your original `mkchain` command with the flags you used (i.e. Zerotier flags), adding in the `--rpc-auth` flag:
-
-  ```shell
-  mkchain $CHAIN_NAME ... --rpc-auth
-  ```
-
-- Or manually add the field `rpc_auth: true` in your generated Helm values file `./${CHAIN_NAME}_values.yaml`.
 
 Make sure you have the Tezos Helm chart repo:
 
