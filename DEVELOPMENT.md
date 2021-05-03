@@ -37,8 +37,6 @@
 
 - Run `mkchain` to generate your Helm values. (Note: Devspace will only deploy `rpc-auth` if you use the `rpc-auth` profile, regardless if you set it in mkchain. This is to avoid devspace deployment issues. See more below.)
 
-- Run `helm dependency update charts/tezos`. This grabs all the Tezos chart dependencies and packages them inside the chart's `charts/` directory. Currently this is just the `rpc-auth` chart. You'll need to run this for all charts that have dependencies in the future.
-
 - Set a `CHAIN_NAME` env var.
 
 - Run `devspace dev --var CHAIN_NAME=$CHAIN_NAME` (you can leave out the `--var` flag if you used `export CHAIN_NAME=my-chain`).
