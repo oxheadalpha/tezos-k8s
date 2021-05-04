@@ -136,6 +136,8 @@ protocols:
   # List here the protocols that you wish to run bakers and endorsers for.
   # These binaries must be present in the docker image specified.
   # You may want to run two or more if you are expecting an on-chain upgrade.
+  # Be mindful that running more protocols will start more containers in your
+  # pods which may consume more memory.
   - command: 009-PsFLoren
   #- command: alpha
 
