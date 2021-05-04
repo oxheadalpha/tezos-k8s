@@ -1,19 +1,18 @@
 apiVersion: v1
 data:
+  CHAIN_NAME: "{{ .Values.node_config_network.chain_name }}"
   CHAIN_PARAMS: |
     {
       "bootstrap_peers": {{ toJson .Values.bootstrap_peers }},
       "default_bootstrap_mutez": "{{ .Values.bootstrap_mutez }}",
       "expected-proof-of-work": {{ toJson .Values.expected_proof_of_work }},
 
-      "full_snapshot_url": {{ toJson .Values.full_snapshot_url }},
-      "rolling_snapshot_url": {{ toJson .Values.rolling_snapshot_url }},
-
       "should_generate_unsafe_deterministic_data": {{ toJson .Values.should_generate_unsafe_deterministic_data }},
       "network": {{ mustToPrettyJson .Values.node_config_network | indent 8 | trim }},
-      "proto_command": "{{ .Values.protocol.command }}",
       "protocol_activation": {{ .Values.activation | mustToPrettyJson | indent 8 | trim }}
     }
+  FULL_SNAPSHOT_URL: "{{ .Values.full_snapshot_url }}"
+  ROLLING_SNAPSHOT_URL: "{{ .Values.rolling_snapshot_url }}"
   NODES: |
 {{ .Values.nodes | mustToPrettyJson | indent 4 }}
 kind: ConfigMap
@@ -24,7 +23,6 @@ metadata:
 {{- if (include "tezos.doesZerotierConfigExist" .) }}
 apiVersion: v1
 data:
-  CHAIN_NAME: "{{ .Values.node_config_network.chain_name }}"
   NETWORK_ID: "{{ .Values.zerotier_config.zerotier_network }}"
   ZTAUTHTOKEN: "{{ .Values.zerotier_config.zerotier_token }}"
   NODES: |

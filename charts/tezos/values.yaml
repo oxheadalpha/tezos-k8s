@@ -11,11 +11,7 @@ images:
   tezos: tezos/tezos:v8-release
 # Images that are part of the tezos-k8s repo go here with 'dev' tag
 tezos_k8s_images:
-  baker_endorser: tezos-k8s-baker-endorser:dev
-  chain_initiator: tezos-k8s-chain-initiator:dev
-  config_generator: tezos-k8s-config-generator:dev
-  snapshot_downloader: tezos-k8s-snapshot-downloader:dev
-  wait_for_bootstrap: tezos-k8s-wait-for-bootstrap:dev
+  utils: tezos-k8s-utils:dev
   zerotier: tezos-k8s-zerotier:dev
 
 # Properties that are templated in Helm template files

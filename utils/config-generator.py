@@ -88,7 +88,7 @@ def main():
                 bootstrap_peers.extend(get_zerotier_bootstrap_peer_ips())
 
         if THIS_IS_A_PUBLIC_NET:
-            with open("/tmp/data/config.json", "r") as f:
+            with open("/etc/tezos/data/config.json", "r") as f:
                 bootstrap_peers.extend(json.load(f)["p2p"]["bootstrap-peers"])
         else:
             local_bootstrap_peers = []
