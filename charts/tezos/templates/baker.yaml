@@ -77,10 +77,10 @@ spec:
         appType: tezos-node
     spec:
       containers:
-{{- include "tezos.container.node"     . | indent 8 }}
-{{- include "tezos.container.baker"    . | indent 8 }}
-{{- include "tezos.container.endorser" . | indent 8 }}
-{{- include "tezos.container.zerotier" . | indent 8 }}
+{{- include "tezos.container.node"      . | indent 8 }}
+{{- include "tezos.container.bakers"    . | indent 8 }}
+{{- include "tezos.container.endorsers" . | indent 8 }}
+{{- include "tezos.container.zerotier"  . | indent 8 }}
       initContainers:
 {{- include "tezos.init_container.config_init"         . | indent 8 }}
 {{- include "tezos.init_container.wait_for_bootstrap"  . | indent 8 }}

@@ -18,7 +18,7 @@ TEMPLATING
     Because the templating system is used, you can use any of the
     features provided.  Mostly, variable expansion, i.e.
 
-	{{ .Values.protocol.command }}
+	{{ .Values.expected_proof_of_work }}
 
     If you use braces within the file, you will have to escape them,
     though:

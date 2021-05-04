@@ -473,15 +473,12 @@ def create_node_config_json(
                 "expected-proof-of-work"
             ]
 
-        node_config["network"] = {
-            "chain_name": NETWORK_CONFIG["chain_name"],
-            "sandboxed_chain_name": "SANDBOXED_TEZOS",
-            "default_bootstrap_peers": [],
-            "genesis": NETWORK_CONFIG["genesis"],
-            "genesis_parameters": {
-                "values": {"genesis_pubkey": get_genesis_pubkey()},
-            },
-        }
+        node_config["network"] = NETWORK_CONFIG
+        node_config["network"]["sandboxed_chain_name"] = "SANDBOXED_TEZOS"
+        node_config["network"]["default_bootstrap_peers"] = []
+        node_config["network"]["genesis_parameters"] = {
+                "values": {"genesis_pubkey": get_genesis_pubkey()} }
+        node_config["network"].pop("activation_account_name")
 
     return node_config
 

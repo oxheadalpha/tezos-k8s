@@ -6,7 +6,7 @@ CLIENT_DIR="$TEZ_VAR/client"
 NODE_DIR="$TEZ_VAR/node"
 NODE_DATA_DIR="$TEZ_VAR/node/data"
 
-proto_command="{{ .Values.protocol.command }}"
+proto_command="{{ .command_in_tpl }}"
 
 if [ "${DAEMON}" == "baker" ]; then
     extra_args="with local node $NODE_DATA_DIR"
