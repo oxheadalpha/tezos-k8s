@@ -1,9 +1,5 @@
 #!/bin/sh
 
-#
-# If we are snapshotting, we download the snapshot here because the snapshot
-# container is not guaranteed to have curl.
-
 data_dir="/var/tezos"
 node_dir="$data_dir/node"
 node_data_dir="$node_dir/data"
