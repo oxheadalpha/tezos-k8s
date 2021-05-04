@@ -142,7 +142,7 @@
       name: var-volume
 {{- end }}
 
-{{- define "tezos.container.baker" }}
+{{- define "tezos.container.bakers" }}
 {{- range .Values.protocols }}
 - image: "{{ $.Values.images.tezos }}"
   command:
@@ -173,7 +173,7 @@ https://github.com/helm/helm/issues/5979#issuecomment-518231758
 {{- end }}
 {{- end }}
 
-{{- define "tezos.container.endorser" }}
+{{- define "tezos.container.endorsers" }}
 {{- range .Values.protocols }}
 - image: "{{ $.Values.images.tezos }}"
   command:
