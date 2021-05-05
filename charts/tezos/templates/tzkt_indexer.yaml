@@ -1,0 +1,139 @@
+{{- if (include "tezos.shouldDeployTzktIndexer" .) }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.tzkt_indexer_statefulset.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app: {{ .Values.tzkt_indexer_statefulset.name }}
+  serviceName: ""
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.tzkt_indexer_statefulset.name }}
+    spec:
+      containers:
+        - image: bakingbad/tzkt-api:latest
+          name: api
+          ports:
+            - containerPort: 5000
+          volumeMounts:
+            - name: appsettings-config
+              mountPath: /app/appsettings.json
+              subPath: api-appsettings.json
+        - image: bakingbad/tzkt-sync:latest
+          name: sync
+          volumeMounts:
+            - name: appsettings-config
+              mountPath: /app/appsettings.json
+              subPath: sync-appsettings.json
+        - image: postgres:13
+          name: db
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/
+              name: indexer-db
+          envFrom:
+          - configMapRef:
+              name: db-creds
+      volumes:
+        - name: appsettings-config
+          configMap:
+            name: appsettings
+            items:
+              - key: api-appsettings.json
+                path: api-appsettings.json
+              - key: sync-appsettings.json
+                path: sync-appsettings.json
+  volumeClaimTemplates:
+    - metadata:
+        name: indexer-db
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: {{ .Values.tzkt_indexer_statefulset.storageClassName }}
+        resources:
+          requests:
+            storage: "300Gi"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-creds
+data:
+  POSTGRES_USER: tzkt
+  POSTGRES_PASSWORD: qwerty
+  POSTGRES_DB: tzkt_db
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: appsettings
+data:
+  sync-appsettings.json: |
+    {
+      "Protocols": {
+        "Diagnostics": false,
+        "Validation": true
+      },
+      "TezosNode": {
+        "ChainId": "NetXfc5qJsdZSTG",
+        "Endpoint": "{{ .Values.indexer.rpc_url }}",
+        "Timeout": 60
+      },
+      "Quotes": {
+        "Async": true,
+        "Provider": {
+          "Name": "TzktQuotes"
+        }
+      },
+      "ConnectionStrings": {
+        "DefaultConnection": "server=localhost;port=5432;database=tzkt_db;username=tzkt;password=qwerty;"
+      },
+      "Logging": {
+        "LogLevel": {
+          "Default": "Information",
+          "Microsoft": "Warning",
+          "Microsoft.Hosting.Lifetime": "Information"
+        }
+      }
+    }
+  api-appsettings.json: |
+    {
+      "Metadata": {
+        "AccountsPath": "*",
+        "ProposalsPath": "*",
+        "ProtocolsPath": "*"
+      },
+      "Cache": {
+        "LoadRate": 0.75,
+        "MaxAccounts": 32000
+      },
+      "Websocket": {
+        "Enabled": true,
+        "MaxConnections": 1000,
+        "MaxAccountSubscriptions": 50,
+        "MaxBigMapSubscriptions": 50
+      },
+      "ConnectionStrings": {
+        "DefaultConnection": "server=localhost;port=5432;database=tzkt_db;username=tzkt;password=qwerty;"
+      },
+      "Logging": {
+        "LogLevel": {
+          "Default": "Information",
+          "Microsoft": "Warning",
+          "Microsoft.Hosting.Lifetime": "Information"
+        }
+      },
+      "AllowedHosts": "*"
+    }
+
+
+{{- end }}
+
+

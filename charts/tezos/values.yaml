@@ -23,6 +23,9 @@ regular_node_statefulset: # charts/tezos/templates/node.yaml
   name: tezos-node
   node_type: regular
   storage_size: 15Gi
+tzkt_indexer_statefulset:
+  name: tzkt-indexer
+  storageClassName: ""
 
 # For non-public chains the defualt mutez given to an account if the
 # account is not explicitly set below.
@@ -177,3 +180,11 @@ protocols:
 #     initial_endorsers: 1
 #     delay_per_missing_endorsement: "1"
 #     baking_reward_per_endorsement: ["200000", "20000"]
+
+# # Deploy an indexer with the chain. An indexer puts the chain
+# # contents in a database for efficient indexing. Most dapps need it.
+# # Supports indexers:
+# # * tzkt
+# indexer:
+#   name: tzkt
+#   rpc_url: http://tezos-node-rpc:8732

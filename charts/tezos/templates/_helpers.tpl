@@ -41,6 +41,20 @@
 {{- end }}
 
 {{/*
+  Should deploy TZKT indexer
+*/}}
+{{- define "tezos.shouldDeployTzktIndexer" -}}
+{{- $index_config := .Values.indexer | default dict }}
+{{- if and $index_config.name $index_config.rpc_url }}
+{{- if eq $index_config.name "tzkt" }}
+{{- "true" }}
+{{- else }}
+{{- "" }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
   Don't deploy the regular node statefulset and its headless service if
   there are no regular nodes specified.
   Returns a string "true" or empty string which is falsey.
