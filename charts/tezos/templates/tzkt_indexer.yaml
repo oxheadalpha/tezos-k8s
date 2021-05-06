@@ -15,6 +15,27 @@ spec:
       labels:
         app: {{ .Values.tzkt_indexer_statefulset.name }}
     spec:
+      initContainers:
+        - image: {{ .Values.images.tezos }}
+          name: set-tzkt-env-vars
+          volumeMounts:
+            - name: tzkt-env
+              mountPath: /tzkt
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              ENV_FILE="/tzkt/tzkt.env"
+              touch "$ENV_FILE"
+
+              # Get the chain id
+              CLIENT="/usr/local/bin/tezos-client -E {{ .Values.indexer.rpc_url }}"
+              until $CLIENT rpc get /version; do sleep 2; done
+              CHAIN_ID=$($CLIENT rpc get /chains/main/chain_id)
+              echo "export TZKT_TezosNode__ChainId=$CHAIN_ID" >> "$ENV_FILE"
+
+              exit 0
       containers:
         - image: bakingbad/tzkt-api:latest
           name: api
@@ -30,6 +51,18 @@ spec:
             - name: appsettings-config
               mountPath: /app/appsettings.json
               subPath: sync-appsettings.json
+            - name: tzkt-env
+              mountPath: /app/data
+          command:
+            - /bin/bash
+          args:
+            - "-c"
+            - |
+              export TZKT_TezosNode__Endpoint={{ .Values.indexer.rpc_url }}
+              . /app/data/tzkt.env
+              echo "ChainId $TZKT_TezosNode__ChainId"
+              echo "Endpoint $TZKT_TezosNode__Endpoint"
+              dotnet Tzkt.Sync.dll
         - image: postgres:13
           name: db
           imagePullPolicy: IfNotPresent
@@ -42,6 +75,8 @@ spec:
           - configMapRef:
               name: db-creds
       volumes:
+        - name: tzkt-env
+          emptyDir: {}
         - name: appsettings-config
           configMap:
             name: appsettings
@@ -82,8 +117,7 @@ data:
         "Validation": true
       },
       "TezosNode": {
-        "ChainId": "NetXfc5qJsdZSTG",
-        "Endpoint": "{{ .Values.indexer.rpc_url }}",
+{{/* ChainId and Endpoint will be used as env vars */}}
         "Timeout": 60
       },
       "Quotes": {
