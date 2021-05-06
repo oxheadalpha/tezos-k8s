@@ -181,10 +181,18 @@ protocols:
 #     delay_per_missing_endorsement: "1"
 #     baking_reward_per_endorsement: ["200000", "20000"]
 
-# # Deploy an indexer with the chain. An indexer puts the chain
-# # contents in a database for efficient indexing. Most dapps need it.
-# # Supports indexers:
-# # * tzkt
+# Deploy an indexer with the chain. An indexer puts the chain
+# contents in a database for efficient indexing. Most dapps need it.
+# Supports indexers:
+# * tzkt
+#
+# Templatized indexer configuration values go in the config field.
 # indexer:
 #   name: tzkt
 #   rpc_url: http://tezos-node-rpc:8732
+  # Configurable tzkt fields
+  # config:
+  #   db_user: foo
+  #   db_password: bar
+  #   db_name: db
+

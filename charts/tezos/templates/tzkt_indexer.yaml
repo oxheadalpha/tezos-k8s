@@ -97,13 +97,13 @@ spec:
             storage: "300Gi"
 ---
 apiVersion: v1
-kind: ConfigMap
+kind: Secret
 metadata:
   name: db-creds
 data:
-  POSTGRES_USER: tzkt
-  POSTGRES_PASSWORD: qwerty
-  POSTGRES_DB: tzkt_db
+  POSTGRES_USER: {{ b64enc .Values.indexer.config.db_user }}
+  POSTGRES_PASSWORD: {{ b64enc .Values.indexer.config.db_password }}
+  POSTGRES_DB: {{ b64enc .Values.indexer.config.db_name }}
 ---
 apiVersion: v1
 kind: ConfigMap
