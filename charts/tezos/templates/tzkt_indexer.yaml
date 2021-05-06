@@ -1,3 +1,7 @@
+{{- define "tezos.tzkt.setDbConnectionEnvVar" }}
+export TZKT_ConnectionStrings__DefaultConnection="server=localhost;port=5432;database=$POSTGRES_DB;username=$POSTGRES_USER;password=$POSTGRES_PASSWORD;"
+{{- end }}
+
 {{- if (include "tezos.shouldDeployTzktIndexer" .) }}
 apiVersion: apps/v1
 kind: StatefulSet
@@ -17,7 +21,7 @@ spec:
     spec:
       initContainers:
         - image: {{ .Values.images.tezos }}
-          name: set-tzkt-env-vars
+          name: get-chain-id
           volumeMounts:
             - name: tzkt-env
               mountPath: /tzkt
@@ -41,27 +45,36 @@ spec:
           name: api
           ports:
             - containerPort: 5000
-          volumeMounts:
-            - name: appsettings-config
-              mountPath: /app/appsettings.json
-              subPath: api-appsettings.json
-        - image: bakingbad/tzkt-sync:latest
-          name: sync
-          volumeMounts:
-            - name: appsettings-config
-              mountPath: /app/appsettings.json
-              subPath: sync-appsettings.json
-            - name: tzkt-env
-              mountPath: /app/data
+          envFrom:
+          - secretRef:
+              name: db-creds
           command:
             - /bin/bash
           args:
             - "-c"
             - |
-              export TZKT_TezosNode__Endpoint={{ .Values.indexer.rpc_url }}
+              {{- /* tzkt-api image needs the TZKT_ prefix stripped from the env var */}}
+              {{- include "tezos.tzkt.setDbConnectionEnvVar" . | replace "TZKT_" "" | indent 14 }}
+              dotnet Tzkt.Api.dll
+        - image: bakingbad/tzkt-sync:latest
+          name: sync
+          volumeMounts:
+            - name: tzkt-env
+              mountPath: /app/data
+          env:
+          - name: TZKT_TezosNode__Endpoint
+            value: {{ .Values.indexer.rpc_url }}
+          envFrom:
+          - secretRef:
+              name: db-creds
+          command:
+            - /bin/bash
+          args:
+            - "-c"
+            - |
+              # Set TZKT_TezosNode__ChainId env var
               . /app/data/tzkt.env
-              echo "ChainId $TZKT_TezosNode__ChainId"
-              echo "Endpoint $TZKT_TezosNode__Endpoint"
+              {{- include "tezos.tzkt.setDbConnectionEnvVar" . | indent 14 }}
               dotnet Tzkt.Sync.dll
         - image: postgres:13
           name: db
@@ -72,19 +85,11 @@ spec:
             - mountPath: /var/lib/postgresql/
               name: indexer-db
           envFrom:
-          - configMapRef:
+          - secretRef:
               name: db-creds
       volumes:
         - name: tzkt-env
           emptyDir: {}
-        - name: appsettings-config
-          configMap:
-            name: appsettings
-            items:
-              - key: api-appsettings.json
-                path: api-appsettings.json
-              - key: sync-appsettings.json
-                path: sync-appsettings.json
   volumeClaimTemplates:
     - metadata:
         name: indexer-db
@@ -104,70 +109,5 @@ data:
   POSTGRES_USER: {{ b64enc .Values.indexer.config.db_user }}
   POSTGRES_PASSWORD: {{ b64enc .Values.indexer.config.db_password }}
   POSTGRES_DB: {{ b64enc .Values.indexer.config.db_name }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: appsettings
-data:
-  sync-appsettings.json: |
-    {
-      "Protocols": {
-        "Diagnostics": false,
-        "Validation": true
-      },
-      "TezosNode": {
-{{/* ChainId and Endpoint will be used as env vars */}}
-        "Timeout": 60
-      },
-      "Quotes": {
-        "Async": true,
-        "Provider": {
-          "Name": "TzktQuotes"
-        }
-      },
-      "ConnectionStrings": {
-        "DefaultConnection": "server=localhost;port=5432;database=tzkt_db;username=tzkt;password=qwerty;"
-      },
-      "Logging": {
-        "LogLevel": {
-          "Default": "Information",
-          "Microsoft": "Warning",
-          "Microsoft.Hosting.Lifetime": "Information"
-        }
-      }
-    }
-  api-appsettings.json: |
-    {
-      "Metadata": {
-        "AccountsPath": "*",
-        "ProposalsPath": "*",
-        "ProtocolsPath": "*"
-      },
-      "Cache": {
-        "LoadRate": 0.75,
-        "MaxAccounts": 32000
-      },
-      "Websocket": {
-        "Enabled": true,
-        "MaxConnections": 1000,
-        "MaxAccountSubscriptions": 50,
-        "MaxBigMapSubscriptions": 50
-      },
-      "ConnectionStrings": {
-        "DefaultConnection": "server=localhost;port=5432;database=tzkt_db;username=tzkt;password=qwerty;"
-      },
-      "Logging": {
-        "LogLevel": {
-          "Default": "Information",
-          "Microsoft": "Warning",
-          "Microsoft.Hosting.Lifetime": "Information"
-        }
-      },
-      "AllowedHosts": "*"
-    }
-
 
 {{- end }}
-
-
