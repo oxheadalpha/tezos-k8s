@@ -10,6 +10,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   podManagementPolicy: Parallel
+  replicas: 1
   selector:
     matchLabels:
       app: {{ .Values.tzkt_indexer_statefulset.name }}
@@ -99,7 +100,7 @@ spec:
         storageClassName: {{ .Values.tzkt_indexer_statefulset.storageClassName }}
         resources:
           requests:
-            storage: "300Gi"
+            storage: "50Gi"
 ---
 apiVersion: v1
 kind: Secret
