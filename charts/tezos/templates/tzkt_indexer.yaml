@@ -21,6 +21,28 @@ spec:
         app: {{ .Values.tzkt_indexer_statefulset.name }}
     spec:
       initContainers:
+      {{- if .Values.indexer.config.db_snapshot_url }}
+        - image: {{ .Values.tezos_k8s_images.utils }}
+          name: download-db-snapshot
+          volumeMounts:
+            - name: tzkt-db-snapshot
+              mountPath: /tmp/db-snapshot
+            - name: indexer-db
+              mountPath: /tmp/indexer-db
+          command:
+            - /bin/sh
+          args:
+          - "-c"
+          - |
+            CHAIN_NAME="{{ .Values.node_config_network.chain_name }}"
+            if [ ! -d "/tmp/indexer-db/pgdata" ]; then
+              echo "Downloading $CHAIN_NAME db snapshot..."
+              curl -Lfs -o "/tmp/db-snapshot/$CHAIN_NAME.backup" {{ .Values.indexer.config.db_snapshot_url }}
+              echo "Successfully downloaded snapshot"
+            else
+              echo "Database '{{ .Values.indexer.config.db_name }}' already exists. Skipping download."
+            fi
+      {{- end }}
         - image: {{ .Values.images.tezos }}
           name: get-chain-id
           volumeMounts:
@@ -38,9 +60,8 @@ spec:
               CLIENT="/usr/local/bin/tezos-client -E {{ .Values.indexer.rpc_url }}"
               until $CLIENT rpc get /version; do sleep 2; done
               CHAIN_ID=$($CLIENT rpc get /chains/main/chain_id)
+              echo "Got chain id: $CHAIN_ID"
               echo "export TZKT_TezosNode__ChainId=$CHAIN_ID" >> "$ENV_FILE"
-
-              exit 0
       containers:
         - image: bakingbad/tzkt-api:latest
           name: api
@@ -83,14 +104,30 @@ spec:
           ports:
             - containerPort: 5432
           volumeMounts:
-            - mountPath: /var/lib/postgresql/
-              name: indexer-db
+            - name: indexer-db
+              mountPath: /var/lib/postgresql/data
+            {{- if .Values.indexer.config.db_snapshot_url }}
+            - name: tzkt-db-snapshot
+              mountPath: /tmp
+            - name: import-db-script
+              mountPath: /docker-entrypoint-initdb.d
+            {{- end }}
+          env:
+          - name: PGDATA
+            value: /var/lib/postgresql/data/pgdata
           envFrom:
           - secretRef:
               name: db-creds
       volumes:
         - name: tzkt-env
           emptyDir: {}
+        {{- if .Values.indexer.config.db_snapshot_url }}
+        - name: tzkt-db-snapshot
+          emptyDir: {}
+        - name: import-db-script
+          configMap:
+            name: import-db-script
+        {{- end }}
   volumeClaimTemplates:
     - metadata:
         name: indexer-db
@@ -110,5 +147,36 @@ data:
   POSTGRES_USER: {{ b64enc .Values.indexer.config.db_user }}
   POSTGRES_PASSWORD: {{ b64enc .Values.indexer.config.db_password }}
   POSTGRES_DB: {{ b64enc .Values.indexer.config.db_name }}
+
+{{- if .Values.indexer.config.db_snapshot_url }}
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: import-db-script
+  namespace: {{ .Release.Namespace }}
+data:
+  import-db-snapshot.sh: |
+    #!/bin/bash
+
+    SNAPSHOT_FILE="/tmp/{{ .Values.node_config_network.chain_name }}.backup"
+
+    # After the first import, the snapshot file is deleted.
+    if [ ! -f "$SNAPSHOT_FILE" ]; then
+      echo "A snapshot was already imported."
+
+      # This script is being sourced instead of executed by postgres's
+      # entrypoint. Exiting stops the whole postgres init process. Use return instead.
+      # https://github.com/docker-library/postgres/blob/master/13/docker-entrypoint.sh#L162-L163
+      return
+    fi
+
+    pg_restore -U "$POSTGRES_USER" -v \
+    --no-owner --clean --if-exists \
+    --dbname "$POSTGRES_DB" \
+    -1 "$SNAPSHOT_FILE"
+
+    rm -fv "$SNAPSHOT_FILE"
+{{- end }}
 
 {{- end }}

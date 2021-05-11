@@ -183,16 +183,19 @@ protocols:
 
 # Deploy an indexer with the chain. An indexer puts the chain
 # contents in a database for efficient indexing. Most dapps need it.
-# Supports indexers:
-# * tzkt
+# Supported indexers:
+# * tzkt https://github.com/baking-bad/tzkt
 #
 # Templatized indexer configuration values go in the config field.
+#
 # indexer:
 #   name: tzkt
 #   rpc_url: http://tezos-node-rpc:8732
-  # Configurable tzkt fields
-  # config:
-  #   db_user: foo
-  #   db_password: bar
-  #   db_name: db
+#   # Configurable tzkt fields
+#   config:
+#     db_name: db
+#     db_user: foo
+#     db_password: bar
+#     # See tzkt's readme for public networks' db snapshot urls.
+#     db_snapshot_url: https://tzkt-snapshots.s3.eu-central-1.amazonaws.com/tzkt_v1.5.backup
 
