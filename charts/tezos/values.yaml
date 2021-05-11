@@ -196,6 +196,11 @@ protocols:
 #     db_name: db
 #     db_user: foo
 #     db_password: bar
-#     # See tzkt's readme for public networks' db snapshot urls.
-#     db_snapshot_url: https://tzkt-snapshots.s3.eu-central-1.amazonaws.com/tzkt_v1.5.backup
+#     # api_log_level: Debug
+#     # indexer_log_level: Debug
+
+#     ## See tzkt's readme for public networks' db snapshot urls.
+#     ## If you want to index a brand new archive node you are spinning up, just let
+#     ## the indexer start syncing with it from scratch.
+#     # db_snapshot_url: https://tzkt-snapshots.s3.eu-central-1.amazonaws.com/tzkt_v1.5.backup
 

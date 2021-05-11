@@ -35,9 +35,10 @@ spec:
           - "-c"
           - |
             CHAIN_NAME="{{ .Values.node_config_network.chain_name }}"
+            SNAPSHOT_URL="{{ .Values.indexer.config.db_snapshot_url }}"
             if [ ! -d "/tmp/indexer-db/pgdata" ]; then
-              echo "Downloading $CHAIN_NAME db snapshot..."
-              curl -Lfs -o "/tmp/db-snapshot/$CHAIN_NAME.backup" {{ .Values.indexer.config.db_snapshot_url }}
+              echo "Downloading $CHAIN_NAME db snapshot from $SNAPSHOT_URL ..."
+              curl -Lfs -o "/tmp/db-snapshot/$CHAIN_NAME.backup" $SNAPSHOT_URL
               echo "Successfully downloaded snapshot"
             else
               echo "Database '{{ .Values.indexer.config.db_name }}' already exists. Skipping download."
@@ -67,6 +68,9 @@ spec:
           name: api
           ports:
             - containerPort: 5000
+          env:
+          - name: Logging__LogLevel__Default
+            value: {{ .Values.indexer.config.api_log_level }}
           envFrom:
           - secretRef:
               name: db-creds
@@ -79,13 +83,15 @@ spec:
               {{- include "tezos.tzkt.setDbConnectionEnvVar" . | replace "TZKT_" "" | indent 14 }}
               dotnet Tzkt.Api.dll
         - image: bakingbad/tzkt-sync:latest
-          name: sync
+          name: indexer
           volumeMounts:
             - name: tzkt-env
               mountPath: /app/data
           env:
           - name: TZKT_TezosNode__Endpoint
             value: {{ .Values.indexer.rpc_url }}
+          - name: TZKT_Logging__LogLevel__Default
+            value: {{ .Values.indexer.config.indexer_log_level }}
           envFrom:
           - secretRef:
               name: db-creds
@@ -113,6 +119,7 @@ spec:
               mountPath: /docker-entrypoint-initdb.d
             {{- end }}
           env:
+          {{/* https://github.com/docker-library/docs/blob/master/postgres/README.md#pgdata */}}
           - name: PGDATA
             value: /var/lib/postgresql/data/pgdata
           envFrom:
@@ -150,6 +157,10 @@ data:
 
 {{- if .Values.indexer.config.db_snapshot_url }}
 ---
+{{/*
+This script is mounted into postgres's /docker-entrypoint-initdb.d directory
+where it is run on db initialization.
+*/}}
 kind: ConfigMap
 apiVersion: v1
 metadata:
@@ -160,16 +171,6 @@ data:
     #!/bin/bash
 
     SNAPSHOT_FILE="/tmp/{{ .Values.node_config_network.chain_name }}.backup"
-
-    # After the first import, the snapshot file is deleted.
-    if [ ! -f "$SNAPSHOT_FILE" ]; then
-      echo "A snapshot was already imported."
-
-      # This script is being sourced instead of executed by postgres's
-      # entrypoint. Exiting stops the whole postgres init process. Use return instead.
-      # https://github.com/docker-library/postgres/blob/master/13/docker-entrypoint.sh#L162-L163
-      return
-    fi
 
     pg_restore -U "$POSTGRES_USER" -v \
     --no-owner --clean --if-exists \
