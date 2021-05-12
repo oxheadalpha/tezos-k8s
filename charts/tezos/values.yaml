@@ -198,7 +198,7 @@ protocols:
 #     # Configurable tzkt fields
 #     config:
 #       # url of the archive node to index
-#       rpc_url: http://tezos-node-rpc:8732
+#       rpc_url: http://tezos-node-0.tezos-node:8732
 #       db_name: db
 #       db_user: foo
 #       db_password: bar
