@@ -41,20 +41,6 @@
 {{- end }}
 
 {{/*
-  Should deploy TZKT indexer
-*/}}
-{{- define "tezos.shouldDeployTzktIndexer" -}}
-{{- $index_config := .Values.indexer | default dict }}
-{{- if and $index_config.name $index_config.rpc_url }}
-{{- if eq $index_config.name "tzkt" }}
-{{- "true" }}
-{{- else }}
-{{- "" }}
-{{- end }}
-{{- end }}
-{{- end }}
-
-{{/*
   Don't deploy the regular node statefulset and its headless service if
   there are no regular nodes specified.
   Returns a string "true" or empty string which is falsey.
@@ -101,11 +87,27 @@
   a network.
   Returns a string "true" or empty string which is falsey.
 */}}
-*/}}
 {{- define "tezos.shouldConfigInit" }}
 {{- if not (.Values.node_config_network.genesis) }}
 {{- "true" }}
 {{- else }}
 {{- "" }}
 {{- end }}
+{{- end }}
+
+{{/*
+  Should deploy TZKT indexer?
+*/}}
+{{- define "tezos.shouldDeployTzktIndexer" -}}
+
+  {{- $indexers := .Values.indexers | default dict }}
+  {{- if $indexers.tzkt }}
+    {{- $tzkt_config := $indexers.tzkt.config | default dict }}
+    {{- if $tzkt_config.rpc_url }}
+      {{- "true" }}
+    {{- else }}
+      {{- "" }}
+    {{- end }}
+  {{- end }}
+
 {{- end }}

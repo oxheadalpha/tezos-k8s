@@ -188,19 +188,19 @@ protocols:
 #
 # Templatized indexer configuration values go in the config field.
 #
-# indexer:
-#   name: tzkt
-#   rpc_url: http://tezos-node-rpc:8732
-#   # Configurable tzkt fields
-#   config:
-#     db_name: db
-#     db_user: foo
-#     db_password: bar
-#     # api_log_level: Debug
-#     # indexer_log_level: Debug
-
+# indexers:
+#   tzkt:
 #     ## See tzkt's readme for public networks' db snapshot urls.
 #     ## If you want to index a brand new archive node you are spinning up, just let
 #     ## the indexer start syncing with it from scratch.
 #     # db_snapshot_url: https://tzkt-snapshots.s3.eu-central-1.amazonaws.com/tzkt_v1.5.backup
 
+#     # Configurable tzkt fields
+#     config:
+#       # url of the archive node to index
+#       rpc_url: http://tezos-node-rpc:8732
+#       db_name: db
+#       db_user: foo
+#       db_password: bar
+#       # api_log_level: Debug
+#       # indexer_log_level: Debug
