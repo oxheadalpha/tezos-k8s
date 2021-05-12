@@ -64,7 +64,7 @@ spec:
               echo "Got chain id: $CHAIN_ID"
               echo "export TZKT_TezosNode__ChainId=$CHAIN_ID" >> "$ENV_FILE"
       containers:
-        - image: bakingbad/tzkt-api:latest
+        - image: bakingbad/tzkt-api:1.5
           name: api
           ports:
             - containerPort: 5000
@@ -82,7 +82,7 @@ spec:
               {{- /* tzkt-api image needs the TZKT_ prefix stripped from the env var */}}
               {{- include "tezos.tzkt.setDbConnectionEnvVar" . | replace "TZKT_" "" | indent 14 }}
               dotnet Tzkt.Api.dll
-        - image: bakingbad/tzkt-sync:latest
+        - image: bakingbad/tzkt-sync:1.5
           name: indexer
           volumeMounts:
             - name: tzkt-env
