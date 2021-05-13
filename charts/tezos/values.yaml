@@ -148,7 +148,7 @@ protocols:
 # # not exist yet. For subsequent deploys, remove this.
 #
 # activation:
-#   protocol_hash: PtEdo2ZkT9oKpimTah6x2embF25oss54njMuPzkJTEi5RqfdZFA
+#   protocol_hash: PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i
 #   # Should the commitments data in
 #   # tezos-k8s/config-generator/commitment-params.json be part of parameters.json.
 #   should_include_commitments: false
