@@ -8,7 +8,7 @@ is_invitation: false
 
 # Images not part of the tezos-k8s repo go here
 images:
-  tezos: tezos/tezos:v8-release
+  tezos: tezos/tezos:v9-release
 # Images that are part of the tezos-k8s repo go here with 'dev' tag
 tezos_k8s_images:
   utils: tezos-k8s-utils:dev
@@ -130,7 +130,7 @@ expected_proof_of_work: 26
 #   activation_account_name: tqtezos_baker_0
 #
 # For joining a public network. The network must be recognized by the
-# tezos/tezos:v8-release docker image.
+# docker image passed as .Values.images.tezos above.
 node_config_network:
   chain_name: mainnet
 

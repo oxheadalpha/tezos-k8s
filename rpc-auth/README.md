@@ -75,7 +75,7 @@ helm upgrade $CHAIN_NAME tqtezos/tezos-chain \
 
 5. Client can then make RPC requests:
    - `curl http://192.168.64.51/tezos-node-rpc/ffff3eb3d7dd4f6bbff3f2fd096722ae/chains/main/chain_id`
-   - As of docker image `tezos/tezos:v8-release`:
+   - As of docker image `tezos/tezos:v9-release`:
      ```shell
      tezos-client --endpoint http://192.168.64.51/tezos-node-rpc/ffff3eb3d7dd4f6bbff3f2fd096722ae/ rpc get chains/main/chain_id
      ```
