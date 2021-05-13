@@ -12,9 +12,9 @@ fi
 
 BAKING_BOOTSTRAP_NODES=$(
 	echo "$NODES" | \
-	    jq -r '.baking|to_entries[]
+	    jq -r '[.[]|to_entries]|flatten[]
 		  |select(.value.is_bootstrap_node)
-		  |.key+".tezos-baking-node"'
+		  |.key + "." + (.key|sub("-[\\d]+$"; ""))'
 )
 REGULAR_BOOTSTRAP_NODES=$(
 	echo "$NODES" | \
