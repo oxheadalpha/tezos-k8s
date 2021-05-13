@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import requests
 import socket
 from hashlib import blake2b
 from json.decoder import JSONDecodeError
@@ -409,6 +410,14 @@ def create_protocol_parameters_json(bootstrap_accounts, bootstrap_baker_accounts
                     pass
         except OSError:
             print("No commitment-params.json found")
+
+    # genesis contracts are downloaded from a http location (like a bucket)
+    # they are typically too big to be passed directly to helm
+    if protocol_activation.get("bootstrap_contract_urls"):
+        protocol_params["bootstrap_contracts"] = []
+        for url in protocol_activation["bootstrap_contract_urls"]:
+            print(f"Injecting bootstrap contract from {url}")
+            protocol_params["bootstrap_contracts"].append(requests.get(url).json())
 
     return protocol_params
 

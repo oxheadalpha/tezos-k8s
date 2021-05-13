@@ -180,6 +180,10 @@ protocols:
 #     initial_endorsers: 1
 #     delay_per_missing_endorsement: "1"
 #     baking_reward_per_endorsement: ["200000", "20000"]
+#
+#   # Pass url pointing to additional contracts that you want injected at activation.
+#   # This data is typically too large to pass it directly inside helm chart.
+#   bootstrap_contract_urls: []
 
 # Deploy an indexer with the chain. An indexer puts the chain
 # contents in a database for efficient indexing. Most dapps need it.

@@ -4,7 +4,7 @@ ENV PYTHONUNBUFFERED=1
 # Note: we install build deps for pip, then remove everything after pip install.
 RUN     apk add --no-cache --virtual .build-deps gcc python3-dev	\
 				libffi-dev musl-dev make		\
-     && pip install base58 pynacl					\
+     && pip install base58 pynacl requests				\
      && apk del .build-deps						\
      && apk add jq netcat-openbsd curl
 
