@@ -10,20 +10,26 @@ if [ -s /var/tezos/node/peers.json ] && [ "$(jq length /var/tezos/node/peers.jso
     exit 0
 fi
 
-BOOTSTRAP_NODES=$(
+BAKING_BOOTSTRAP_NODES=$(
 	echo "$NODES" | \
 	    jq -r '.baking|to_entries[]
 		  |select(.value.is_bootstrap_node)
 		  |.key+".tezos-baking-node"'
 )
+REGULAR_BOOTSTRAP_NODES=$(
+	echo "$NODES" | \
+	    jq -r '.regular|to_entries[]
+		  |select(.value.is_bootstrap_node)
+		  |.key+".tezos-node"'
+)
 
-if [ -z "$BOOTSTRAP_NODES" ]; then
+if [ -z "$BAKING_BOOTSTRAP_NODES" ] && [ -z "$REGULAR_BOOTSTRAP_NODES" ]; then
     echo No bootstrap nodes were provided
     exit 1
 fi
 
 HOST=$(hostname -f)
-for node in $BOOTSTRAP_NODES; do
+for node in $BAKING_BOOTSTRAP_NODES $REGULAR_BOOTSTRAP_NODES; do
     if [ "${HOST##$node}" != "$HOST" ]; then
 	echo "I am $node!"
 	echo "I'm the one of the bootstrap nodes: do not wait for myself"
@@ -61,7 +67,7 @@ randomsleep() {
 echo "waiting for bootstrap nodes to accept connections"
 
 while :; do
-    for node in $BOOTSTRAP_NODES; do
+    for node in $BAKING_BOOTSTRAP_NODES $REGULAR_BOOTSTRAP_NODES; do
 	if </dev/null nc -q 0 ${node} 8732; then
 	    echo "$node is up"
 	    echo "Found bootstrap node, exiting"

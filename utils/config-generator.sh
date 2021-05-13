@@ -7,7 +7,9 @@ echo ------------------------------------------------------------
 
 mkdir -p /var/tezos/client
 chmod -R 777 /var/tezos
+set -e
 python3 /config-generator.py "$@"
+set +e
 
 #
 # Next we write the current baker ccount into /etc/tezos/baking-account.
