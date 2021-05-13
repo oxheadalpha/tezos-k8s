@@ -24,6 +24,7 @@ if os.environ.get("MY_NODE_TYPE"):
     MY_NODE = NODES[MY_NODE_TYPE][MY_POD_NAME]
 
 
+ALL_NODES = { **NODES.get("baking", {}), **NODES.get("regular", {}) }
 BAKING_NODES = NODES["baking"]
 NETWORK_CONFIG = CHAIN_PARAMS["network"]
 
@@ -92,16 +93,18 @@ def main():
                 bootstrap_peers.extend(json.load(f)["p2p"]["bootstrap-peers"])
         else:
             local_bootstrap_peers = []
-            for baker_name, baker_settings in BAKING_NODES.items():
+            for name, settings in ALL_NODES.items():
+                print(" -- is " + name + " a bootstrap peer?\n");
                 my_pod_fqdn_with_port = f"{socket.getfqdn()}:9732"
                 if (
-                    baker_settings.get("is_bootstrap_node", False)
-                    and baker_name not in my_pod_fqdn_with_port
+                    settings.get("is_bootstrap_node", False)
+                    and name not in my_pod_fqdn_with_port
                 ):
                     # Construct the FBN of the bootstrap node for all node's bootstrap_peers
-                    bootstrap_peer_domain = sub(r"-\d+$", "", baker_name)
+                    print(" -- YES!\n")
+                    bootstrap_peer_domain = sub(r"-\d+$", "", name)
                     bootstrap_peer_fbn_with_port = (
-                        f"{baker_name}.{bootstrap_peer_domain}:9732"
+                        f"{name}.{bootstrap_peer_domain}:9732"
                     )
                     local_bootstrap_peers.append(bootstrap_peer_fbn_with_port)
             bootstrap_peers.extend(local_bootstrap_peers)
