@@ -109,5 +109,21 @@
       {{- "" }}
     {{- end }}
   {{- end }}
+{{- end }}
 
+
+{{/*
+  Should deploy nomadic indexer?
+*/}}
+{{- define "tezos.shouldDeployNomadicIndexer" -}}
+
+  {{- $indexers := .Values.indexers | default dict }}
+  {{- if $indexers.nomadic }}
+    {{- $nomadic_config := $indexers.nomadic.config | default dict }}
+    {{- if $nomadic_config.rpc_url }}
+      {{- "true" }}
+    {{- else }}
+      {{- "" }}
+    {{- end }}
+  {{- end }}
 {{- end }}
