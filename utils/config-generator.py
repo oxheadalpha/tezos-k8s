@@ -15,6 +15,7 @@ from nacl.signing import SigningKey
 ACCOUNTS = json.loads(os.environ["ACCOUNTS"])
 CHAIN_PARAMS = json.loads(os.environ["CHAIN_PARAMS"])
 NODES = json.loads(os.environ["NODES"])
+LINKS = json.loads(os.environ["LINKS"])
 
 MY_POD_NAME = os.environ["MY_POD_NAME"]
 MY_NODE_TYPE = MY_NODE = None
@@ -80,40 +81,8 @@ def main():
     # Create config.json
     if main_args.generate_config_json:
         print("\nStarting config.json file generation")
-        bootstrap_peers = CHAIN_PARAMS.get("bootstrap_peers", [])
 
-        my_zerotier_ip = None
-        zerotier_data_file_path = Path("/var/tezos/zerotier_data.json")
-        if is_chain_running_on_zerotier_net(zerotier_data_file_path):
-            my_zerotier_ip = get_my_pods_zerotier_ip(zerotier_data_file_path)
-            if bootstrap_peers == []:
-                bootstrap_peers.extend(get_zerotier_bootstrap_peer_ips())
-
-        if THIS_IS_A_PUBLIC_NET:
-            with open("/etc/tezos/data/config.json", "r") as f:
-                bootstrap_peers.extend(json.load(f)["p2p"]["bootstrap-peers"])
-        else:
-            local_bootstrap_peers = []
-            for name, settings in ALL_NODES.items():
-                print(" -- is " + name + " a bootstrap peer?\n");
-                my_pod_fqdn_with_port = f"{socket.getfqdn()}:9732"
-                if (
-                    settings.get("is_bootstrap_node", False)
-                    and name not in my_pod_fqdn_with_port
-                ):
-                    # Construct the FBN of the bootstrap node for all node's bootstrap_peers
-                    print(" -- YES!\n")
-                    bootstrap_peer_domain = sub(r"-\d+$", "", name)
-                    bootstrap_peer_fbn_with_port = (
-                        f"{name}.{bootstrap_peer_domain}:9732"
-                    )
-                    local_bootstrap_peers.append(bootstrap_peer_fbn_with_port)
-            bootstrap_peers.extend(local_bootstrap_peers)
-
-        if not bootstrap_peers and not MY_NODE.get("is_bootstrap_node", False):
-            raise Exception(
-                "ERROR: No bootstrap peers found for this non-bootstrap node"
-            )
+        bootstrap_peers, my_zerotier_ip = create_bootstrap_peer_list()
 
         config_json = json.dumps(
             create_node_config_json(
@@ -462,6 +431,68 @@ def recursive_update(d, u):
         else:
             d[k] = v
     return d
+
+def create_bootstrap_peer_list():
+    '''
+    Defining the list of bootstrap peers for a tezos node is complicated.
+    If the node is in private mode, then we set it to the list of peers
+    explicitly passed in the links.
+    If this is a zerotier network, then we get the list of bootstrap peers
+    from zerotier.
+    If this is a public network, the list of bootstrap peers may be
+    hardcoded in the tezos binary.
+    Otherwise, we define nodes as bootstrap nodes in the values file.
+    Plus, we can add extra bootstrap nodes to the global configuration
+    by just passing values.
+    '''
+    bootstrap_peers = CHAIN_PARAMS.get("bootstrap_peers", [])
+
+    my_zerotier_ip = None
+    zerotier_data_file_path = Path("/var/tezos/zerotier_data.json")
+    if is_chain_running_on_zerotier_net(zerotier_data_file_path):
+        my_zerotier_ip = get_my_pods_zerotier_ip(zerotier_data_file_path)
+        if bootstrap_peers == []:
+            bootstrap_peers.extend(get_zerotier_bootstrap_peer_ips())
+
+    my_pod_fqdn_with_port = f"{socket.getfqdn()}:9732"
+    explicit_peers = []
+    # add explicit links from config
+    for link in LINKS:
+        if link[0] in my_pod_fqdn_with_port:
+            explicit_peers.append(link[1])
+        elif link[1] in my_pod_fqdn_with_port:
+            explicit_peers.append(link[0])
+
+    if MY_NODE.get("config", {}).get("p2p", {}).get("private-mode", False):
+        # nodes configured in private mode ONLY peer with explicit peers from config
+        return explicit_peers, my_zerotier_ip
+
+    bootstrap_peers.extend(explicit_peers)
+    if THIS_IS_A_PUBLIC_NET:
+        with open("/etc/tezos/data/config.json", "r") as f:
+            bootstrap_peers.extend(json.load(f)["p2p"]["bootstrap-peers"])
+    else:
+        local_bootstrap_peers = []
+        for name, settings in ALL_NODES.items():
+            print(" -- is " + name + " a bootstrap peer?\n");
+            if (
+                settings.get("is_bootstrap_node", False)
+                and name not in my_pod_fqdn_with_port
+            ):
+                # Construct the FBN of the bootstrap node for all node's bootstrap_peers
+                print(" -- YES!\n")
+                bootstrap_peer_domain = sub(r"-\d+$", "", name)
+                bootstrap_peer_fbn_with_port = (
+                    f"{name}.{bootstrap_peer_domain}:9732"
+                )
+                local_bootstrap_peers.append(bootstrap_peer_fbn_with_port)
+        bootstrap_peers.extend(local_bootstrap_peers)
+
+    if not bootstrap_peers and not MY_NODE.get("is_bootstrap_node", False):
+        raise Exception(
+            "ERROR: No bootstrap peers found for this non-bootstrap node"
+        )
+    return bootstrap_peers, my_zerotier_ip
 
 def create_node_config_json(
     bootstrap_peers,
