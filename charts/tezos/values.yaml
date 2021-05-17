@@ -101,12 +101,12 @@ nodes:
     #       history_mode: full
 
   # Non-baking nodes
-  regular:
-    tezos-node-0:
-      is_bootstrap_node: false
-      config:
-        shell:
-          history_mode: rolling
+  regular: {}
+    #  tezos-node-0:
+    #    is_bootstrap_node: false
+    #    config:
+    #      shell:
+    #        history_mode: rolling
 
 # Where full and rolling history mode nodes will get their snapshots from
 full_snapshot_url: https://mainnet.xtz-shots.io/full
