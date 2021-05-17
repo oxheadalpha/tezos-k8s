@@ -8,7 +8,7 @@ is_invitation: false
 
 # Images not part of the tezos-k8s repo go here
 images:
-  tezos: tezos/tezos:v8-release
+  tezos: tezos/tezos:v9-release
 # Images that are part of the tezos-k8s repo go here with 'dev' tag
 tezos_k8s_images:
   utils: tezos-k8s-utils:dev
@@ -71,11 +71,13 @@ accounts: {}
 # https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/
 #
 # Params for for non-public chains:
-# - `bake_using_account`: The name of the account that should be used for baking.
+# - `bake_using_account`: The name of the account that should be used
+#                         for baking.
 # - `is_bootstrap_node`: Is this node a bootstrap peer.
 #
 # The `config` property should mimic the structure of a node's config.json.
 # Run `tezos-node config --help` for more info.
+
 nodes:
   baking: {}
     # tezos-baking-node-0:
@@ -101,6 +103,7 @@ nodes:
   # Non-baking nodes
   regular:
     tezos-node-0:
+      is_bootstrap_node: false
       config:
         shell:
           history_mode: rolling
@@ -130,7 +133,7 @@ expected_proof_of_work: 26
 #   activation_account_name: tqtezos_baker_0
 #
 # For joining a public network. The network must be recognized by the
-# tezos/tezos:v8-release docker image.
+# docker image passed as .Values.images.tezos above.
 node_config_network:
   chain_name: mainnet
 
@@ -148,7 +151,7 @@ protocols:
 # # not exist yet. For subsequent deploys, remove this.
 #
 # activation:
-#   protocol_hash: PtEdo2ZkT9oKpimTah6x2embF25oss54njMuPzkJTEi5RqfdZFA
+#   protocol_hash: PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i
 #   # Should the commitments data in
 #   # tezos-k8s/config-generator/commitment-params.json be part of parameters.json.
 #   should_include_commitments: false
