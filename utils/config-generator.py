@@ -41,6 +41,7 @@ def main():
     if SHOULD_GENERATE_UNSAFE_DETERMINISTIC_DATA:
         fill_in_missing_genesis_block()
         all_accounts = fill_in_missing_baker_accounts()
+        fill_in_missing_keys(all_accounts)
 
     import_keys(all_accounts)
 
@@ -219,6 +220,27 @@ edsk = b"\x0d\x0f\x3a\x07"
 edpk = b"\x0d\x0f\x25\xd9"
 tz1 = b"\x06\xa1\x9f"
 
+def fill_in_missing_keys(all_accounts):
+    print("\nFill in missing keys")
+
+    for account_name, account_values in all_accounts.items():
+        account_key_type = account_values.get("type")
+        account_key = account_values.get("key")
+
+        if account_key == None and account_key_type != None:
+            raise Exception(f"ERROR: {account_name} specifies " +
+                            f"type {account_key_type} without " +
+                            f"a key")
+
+        if account_key == None:
+            print(f"  Deriving secret key for account " +
+                  f"{account_name} from genesis_block")
+            seed = account_name + ":" + NETWORK_CONFIG["genesis"]["block"]
+            sk = blake2b(seed.encode(), digest_size=32).digest()
+            sk_b58 = b58encode_check(edsk + sk).decode("utf-8")
+            account_values["key"] = sk_b58
+            account_values["type"] = "secret"
+
 
 def import_keys(all_accounts):
     print("\nImporting keys")
@@ -246,14 +268,6 @@ def import_keys(all_accounts):
             if pk[0:4] != edpk:
                 print("WARNING: unrecognised public key prefix")
             pk = pk[4:]
-
-        if SHOULD_GENERATE_UNSAFE_DETERMINISTIC_DATA:
-            if sk == None and pk == None:
-                print(
-                    f"    Deriving secret key for account {account_name} from genesis_block"
-                )
-                seed = account_name + ":" + NETWORK_CONFIG["genesis"]["block"]
-                sk = blake2b(seed.encode(), digest_size=32).digest()
 
         # If we have a secret key, whether provided or was generated above.
         if sk:
@@ -285,18 +299,6 @@ def import_keys(all_accounts):
             print("    Appending secret key")
             sk_b58 = b58encode_check(edsk + sk).decode("utf-8")
             secret_keys.append({"name": account_name, "value": "unencrypted:" + sk_b58})
-
-        if SHOULD_GENERATE_UNSAFE_DETERMINISTIC_DATA and not account_values.get("key"):
-            # If it is not a bootstrap baker
-            # account, set the public key on the account.
-            if pk_b58 and not account_values.get("is_bootstrap_baker_account"):
-                account_values["key"] = pk_b58
-                account_values["type"] = "public"
-                # If it is a bootstrap baker
-                # account, set the secret key on the account.
-            elif sk_b58 and account_values.get("is_bootstrap_baker_account"):
-                account_values["key"] = sk_b58
-                account_values["type"] = "secret"
 
         print(f"    Appending public key: {pk_b58}")
         public_keys.append(
