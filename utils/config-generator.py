@@ -8,6 +8,7 @@ from operator import itemgetter
 from pathlib import Path
 from re import sub
 
+from pytezos import pytezos
 from base58 import b58decode_check, b58encode_check
 from nacl.signing import SigningKey
 
@@ -217,8 +218,6 @@ def verify_this_bakers_account(accounts):
 # specified in the _values.yaml file in the seed used to generate them.
 
 edsk = b"\x0d\x0f\x3a\x07"
-edpk = b"\x0d\x0f\x25\xd9"
-tz1 = b"\x06\xa1\x9f"
 
 def fill_in_missing_keys(all_accounts):
     print("\nFill in missing keys")
@@ -253,53 +252,31 @@ def import_keys(all_accounts):
         print("\n  Importing keys for account: " + account_name)
         account_key_type = account_values.get("type")
         account_key = account_values.get("key")
-        sk = pk = None
 
-        # If a key is specified in the account
-        if account_key_type == "secret":
-            print("    Secret key specified")
-            sk = b58decode_check(account_key)
-            if sk[0:4] != edsk:
-                print("WARNING: unrecognised secret key prefix")
-            sk = sk[4:]
-        if account_key_type == "public":
-            print("    Public key specified")
-            pk = b58decode_check(account_key)
-            if pk[0:4] != edpk:
-                print("WARNING: unrecognised public key prefix")
-            pk = pk[4:]
+        if account_key == None:
+            raise Exception(f"{account_name} defined w/o a key")
 
-        # If we have a secret key, whether provided or was generated above.
-        if sk:
-            # Verify the pk is derived from sk, and derive it from the sk in the
-            # case where the sk was generated.
-            if not pk:
-                print("    Deriving public key from secret key")
-            tmp_pk = SigningKey(sk).verify_key.encode()
-            if pk and pk != tmp_pk:
-                raise Exception("ERROR: secret/public key mismatch for " + account_name)
-            pk = tmp_pk
-        # Since there is no sk or pk for this account, log a warning that this
-        # account will not be imported.
-        elif not pk:
-            print(
-                f"WARNING: No keys were provided for account {account_name}. Nothing to import"
-            )
-            continue
+        key = pytezos.key.from_encoded_key(account_key)
+        try:
+            key.secret_key()
+        except ValueError:
+            if account_key_type == "secret":
+                raise ValueError(account_name + "'s key marked as " +
+                                 "secret, but it is public")
+        else:
+            if account_key_type == "public":
+                raise ValueError(account_name + "'s key marked as " +
+                                 "public, but it is secret")
 
-        # At this point there is a pubkey. Every node will import it.
-
-        pkh = blake2b(pk, digest_size=20).digest()
-
-        pk_b58 = b58encode_check(edpk + pk).decode("utf-8")
-        pkh_b58 = b58encode_check(tz1 + pkh).decode("utf-8")
-
-        sk_b58 = None
-        if sk:
+        try:
+            sk_b58 = key.secret_key()
             print("    Appending secret key")
-            sk_b58 = b58encode_check(edsk + sk).decode("utf-8")
-            secret_keys.append({"name": account_name, "value": "unencrypted:" + sk_b58})
+            secret_keys.append({"name": account_name,
+                                "value": "unencrypted:" + sk_b58})
+        except ValueError:
+            pass
 
+        pk_b58 = key.public_key()
         print(f"    Appending public key: {pk_b58}")
         public_keys.append(
             {
@@ -308,15 +285,20 @@ def import_keys(all_accounts):
             }
         )
 
+        pkh_b58 = key.public_key_hash()
         print(f"  Appending public key hash: {pkh_b58}")
         public_key_hashs.append({"name": account_name, "value": pkh_b58})
 
+        # XXXrcd: fix this print!
+
         print(f"  Account key type: {account_values.get('type')}")
         print(
-            f"  Account bootstrap balance: {account_values.get('bootstrap_balance')}"
+            f"  Account bootstrap balance: " +
+            f"{account_values.get('bootstrap_balance')}"
         )
         print(
-            f"  Is account a bootstrap baker: {account_values.get('is_bootstrap_baker_account', False)}"
+            f"  Is account a bootstrap baker: " +
+            f"{account_values.get('is_bootstrap_baker_account', False)}"
         )
 
     print("\n  Writing " + tezdir + "/secret_keys")

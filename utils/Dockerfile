@@ -1,12 +1,21 @@
 FROM python:3.9-alpine
 ENV PYTHONUNBUFFERED=1
 
-# Note: we install build deps for pip, then remove everything after pip install.
-RUN     apk add --no-cache --virtual .build-deps gcc python3-dev	\
+#
+# Note: we install build deps for pip, then remove everything after
+# pip install.
+#
+# We re-install binutils at the end because Python execve(2)s ld(1) to
+# load zeromq.
+
+RUN     apk add --no-cache --virtual .build-deps gcc g++ python3-dev	\
 				libffi-dev musl-dev make		\
+     && apk add libsodium-dev libsecp256k1-dev gmp-dev			\
+     && apk add zeromq-dev						\
      && pip install base58 pynacl					\
+     && pip install pytezos						\
      && apk del .build-deps						\
-     && apk add jq netcat-openbsd curl
+     && apk add jq netcat-openbsd curl binutils
 
 COPY commitment-params.json /
 COPY config-generator.py /
