@@ -8,7 +8,6 @@ RUN     apk add --no-cache --virtual .build-deps gcc python3-dev	\
      && apk del .build-deps						\
      && apk add jq netcat-openbsd curl
 
-COPY commitment-params.json /
 COPY config-generator.py /
 COPY config-generator.sh /
 COPY entrypoint.sh /
