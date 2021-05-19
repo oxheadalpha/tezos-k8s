@@ -401,19 +401,6 @@ def create_protocol_parameters_json(bootstrap_accounts, bootstrap_baker_accounts
 
     print(json.dumps(protocol_activation, indent=4))
 
-    if protocol_activation.get("should_include_commitments"):
-        try:
-            with open("/commitment-params.json", "r") as f:
-                try:
-                    commitments = json.load(f)
-                    protocol_params["commitments"] = commitments
-                    print("Commitments added to parameters.json")
-                except JSONDecodeError:
-                    print("No JSON found in /commitment-params.json")
-                    pass
-        except OSError:
-            print("No commitment-params.json found")
-
     # genesis contracts and commitments are downloaded from a http location (like a bucket)
     # they are typically too big to be passed directly to helm
     if protocol_activation.get("bootstrap_contract_urls"):
@@ -424,7 +411,7 @@ def create_protocol_parameters_json(bootstrap_accounts, bootstrap_baker_accounts
 
     if protocol_activation.get("commitments_url"):
         print(f"Injecting commitments (faucet account precursors) from {url}")
-        protocol_params["commitments"].append(requests.get(protocol_activation["commitments_url"]).json())
+        protocol_params["commitments"] = requests.get(protocol_activation["commitments_url"]).json()
 
     return protocol_params
 

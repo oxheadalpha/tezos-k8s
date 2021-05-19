@@ -152,9 +152,6 @@ protocols:
 #
 # activation:
 #   protocol_hash: PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i
-#   # Should the commitments data in
-#   # tezos-k8s/config-generator/commitment-params.json be part of parameters.json.
-#   should_include_commitments: false
 #   # parameters.json
 #   protocol_parameters:
 #     preserved_cycles: 2
