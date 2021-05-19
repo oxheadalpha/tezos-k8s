@@ -1,4 +1,5 @@
 import argparse
+import collections
 import json
 import os
 import socket
@@ -432,6 +433,19 @@ def get_genesis_pubkey():
             raise Exception("ERROR: Couldn't find the genesis_pubkey")
         return genesis_pubkey
 
+def recursive_update(d, u):
+    '''
+    Recursive dict update
+    Used to merge node's config passed as chart values
+    and computed values
+    https://stackoverflow.com/a/3233356/207209
+    '''
+    for k, v in u.items():
+        if isinstance(v, collections.abc.Mapping):
+            d[k] = recursive_update(d.get(k, {}), v)
+        else:
+            d[k] = v
+    return d
 
 def create_node_config_json(
     bootstrap_peers,
@@ -439,7 +453,8 @@ def create_node_config_json(
 ):
     """ Create the node's config.json file """
 
-    node_config = {
+    values_node_config = MY_NODE.get("config", {})
+    computed_node_config = {
         "data-dir": "/var/tezos/node/data",
         "rpc": {
             "listen-addrs": [f"{os.getenv('MY_POD_IP')}:8732", "127.0.0.1:8732"],
@@ -448,9 +463,9 @@ def create_node_config_json(
             "bootstrap-peers": bootstrap_peers,
             "listen-addr": (net_addr + ":9732" if net_addr else "[::]:9732"),
         },
-        "shell": MY_NODE.get("config", {}).get("shell", {}),
         # "log": {"level": "debug"},
     }
+    node_config = recursive_update(values_node_config, computed_node_config)
 
     if THIS_IS_A_PUBLIC_NET:
         node_config["network"] = NETWORK_CONFIG["chain_name"]
