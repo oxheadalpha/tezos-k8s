@@ -410,7 +410,7 @@ def create_protocol_parameters_json(bootstrap_accounts, bootstrap_baker_accounts
             protocol_params["bootstrap_contracts"].append(requests.get(url).json())
 
     if protocol_activation.get("commitments_url"):
-        print(f"Injecting commitments (faucet account precursors) from {url}")
+        print(f"Injecting commitments (faucet account precursors) from {protocol_activation['commitments_url']}")
         protocol_params["commitments"] = requests.get(protocol_activation["commitments_url"]).json()
 
     return protocol_params
