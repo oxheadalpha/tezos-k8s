@@ -9,6 +9,7 @@ from operator import itemgetter
 from pathlib import Path
 from re import sub
 
+from pytezos import pytezos
 from base58 import b58decode_check, b58encode_check
 from nacl.signing import SigningKey
 
@@ -42,6 +43,7 @@ def main():
     if SHOULD_GENERATE_UNSAFE_DETERMINISTIC_DATA:
         fill_in_missing_genesis_block()
         all_accounts = fill_in_missing_baker_accounts()
+        fill_in_missing_keys(all_accounts)
 
     import_keys(all_accounts)
 
@@ -217,8 +219,27 @@ def verify_this_bakers_account(accounts):
 # specified in the _values.yaml file in the seed used to generate them.
 
 edsk = b"\x0d\x0f\x3a\x07"
-edpk = b"\x0d\x0f\x25\xd9"
-tz1 = b"\x06\xa1\x9f"
+
+def fill_in_missing_keys(all_accounts):
+    print("\nFill in missing keys")
+
+    for account_name, account_values in all_accounts.items():
+        account_key_type = account_values.get("type")
+        account_key = account_values.get("key")
+
+        if account_key == None and account_key_type != None:
+            raise Exception(f"ERROR: {account_name} specifies " +
+                            f"type {account_key_type} without " +
+                            f"a key")
+
+        if account_key == None:
+            print(f"  Deriving secret key for account " +
+                  f"{account_name} from genesis_block")
+            seed = account_name + ":" + NETWORK_CONFIG["genesis"]["block"]
+            sk = blake2b(seed.encode(), digest_size=32).digest()
+            sk_b58 = b58encode_check(edsk + sk).decode("utf-8")
+            account_values["key"] = sk_b58
+            account_values["type"] = "secret"
 
 
 def import_keys(all_accounts):
@@ -232,73 +253,31 @@ def import_keys(all_accounts):
         print("\n  Importing keys for account: " + account_name)
         account_key_type = account_values.get("type")
         account_key = account_values.get("key")
-        sk = pk = None
 
-        # If a key is specified in the account
-        if account_key_type == "secret":
-            print("    Secret key specified")
-            sk = b58decode_check(account_key)
-            if sk[0:4] != edsk:
-                print("WARNING: unrecognised secret key prefix")
-            sk = sk[4:]
-        if account_key_type == "public":
-            print("    Public key specified")
-            pk = b58decode_check(account_key)
-            if pk[0:4] != edpk:
-                print("WARNING: unrecognised public key prefix")
-            pk = pk[4:]
+        if account_key == None:
+            raise Exception(f"{account_name} defined w/o a key")
 
-        if SHOULD_GENERATE_UNSAFE_DETERMINISTIC_DATA:
-            if sk == None and pk == None:
-                print(
-                    f"    Deriving secret key for account {account_name} from genesis_block"
-                )
-                seed = account_name + ":" + NETWORK_CONFIG["genesis"]["block"]
-                sk = blake2b(seed.encode(), digest_size=32).digest()
+        key = pytezos.key.from_encoded_key(account_key)
+        try:
+            key.secret_key()
+        except ValueError:
+            if account_key_type == "secret":
+                raise ValueError(account_name + "'s key marked as " +
+                                 "secret, but it is public")
+        else:
+            if account_key_type == "public":
+                raise ValueError(account_name + "'s key marked as " +
+                                 "public, but it is secret")
 
-        # If we have a secret key, whether provided or was generated above.
-        if sk:
-            # Verify the pk is derived from sk, and derive it from the sk in the
-            # case where the sk was generated.
-            if not pk:
-                print("    Deriving public key from secret key")
-            tmp_pk = SigningKey(sk).verify_key.encode()
-            if pk and pk != tmp_pk:
-                raise Exception("ERROR: secret/public key mismatch for " + account_name)
-            pk = tmp_pk
-        # Since there is no sk or pk for this account, log a warning that this
-        # account will not be imported.
-        elif not pk:
-            print(
-                f"WARNING: No keys were provided for account {account_name}. Nothing to import"
-            )
-            continue
-
-        # At this point there is a pubkey. Every node will import it.
-
-        pkh = blake2b(pk, digest_size=20).digest()
-
-        pk_b58 = b58encode_check(edpk + pk).decode("utf-8")
-        pkh_b58 = b58encode_check(tz1 + pkh).decode("utf-8")
-
-        sk_b58 = None
-        if sk:
+        try:
+            sk_b58 = key.secret_key()
             print("    Appending secret key")
-            sk_b58 = b58encode_check(edsk + sk).decode("utf-8")
-            secret_keys.append({"name": account_name, "value": "unencrypted:" + sk_b58})
+            secret_keys.append({"name": account_name,
+                                "value": "unencrypted:" + sk_b58})
+        except ValueError:
+            pass
 
-        if SHOULD_GENERATE_UNSAFE_DETERMINISTIC_DATA and not account_values.get("key"):
-            # If it is not a bootstrap baker
-            # account, set the public key on the account.
-            if pk_b58 and not account_values.get("is_bootstrap_baker_account"):
-                account_values["key"] = pk_b58
-                account_values["type"] = "public"
-                # If it is a bootstrap baker
-                # account, set the secret key on the account.
-            elif sk_b58 and account_values.get("is_bootstrap_baker_account"):
-                account_values["key"] = sk_b58
-                account_values["type"] = "secret"
-
+        pk_b58 = key.public_key()
         print(f"    Appending public key: {pk_b58}")
         public_keys.append(
             {
@@ -307,15 +286,20 @@ def import_keys(all_accounts):
             }
         )
 
+        pkh_b58 = key.public_key_hash()
         print(f"  Appending public key hash: {pkh_b58}")
         public_key_hashs.append({"name": account_name, "value": pkh_b58})
 
+        # XXXrcd: fix this print!
+
         print(f"  Account key type: {account_values.get('type')}")
         print(
-            f"  Account bootstrap balance: {account_values.get('bootstrap_balance')}"
+            f"  Account bootstrap balance: " +
+            f"{account_values.get('bootstrap_balance')}"
         )
         print(
-            f"  Is account a bootstrap baker: {account_values.get('is_bootstrap_baker_account', False)}"
+            f"  Is account a bootstrap baker: " +
+            f"{account_values.get('is_bootstrap_baker_account', False)}"
         )
 
     print("\n  Writing " + tezdir + "/secret_keys")
@@ -448,6 +432,19 @@ def get_genesis_pubkey():
             raise Exception("ERROR: Couldn't find the genesis_pubkey")
         return genesis_pubkey
 
+def recursive_update(d, u):
+    '''
+    Recursive dict update
+    Used to merge node's config passed as chart values
+    and computed values
+    https://stackoverflow.com/a/3233356/207209
+    '''
+    for k, v in u.items():
+        if isinstance(v, collections.abc.Mapping):
+            d[k] = recursive_update(d.get(k, {}), v)
+        else:
+            d[k] = v
+    return d
 
 def create_node_config_json(
     bootstrap_peers,
@@ -455,7 +452,8 @@ def create_node_config_json(
 ):
     """ Create the node's config.json file """
 
-    node_config = {
+    values_node_config = MY_NODE.get("config", {})
+    computed_node_config = {
         "data-dir": "/var/tezos/node/data",
         "rpc": {
             "listen-addrs": [f"{os.getenv('MY_POD_IP')}:8732", "127.0.0.1:8732"],
@@ -464,9 +462,9 @@ def create_node_config_json(
             "bootstrap-peers": bootstrap_peers,
             "listen-addr": (net_addr + ":9732" if net_addr else "[::]:9732"),
         },
-        "shell": MY_NODE.get("config", {}).get("shell", {}),
         # "log": {"level": "debug"},
     }
+    node_config = recursive_update(values_node_config, computed_node_config)
 
     if THIS_IS_A_PUBLIC_NET:
         node_config["network"] = NETWORK_CONFIG["chain_name"]
