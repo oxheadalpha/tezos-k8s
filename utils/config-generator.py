@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import requests
 import socket
 from hashlib import blake2b
 from json.decoder import JSONDecodeError
