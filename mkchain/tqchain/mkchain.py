@@ -1,12 +1,11 @@
 import argparse
 import os
-import random
-import string
-import subprocess
 import sys
 from datetime import datetime, timezone
 
 import yaml
+
+from tqchain.keys import gen_key, get_genesis_vanity_chain_id, set_use_docker
 
 from ._version import get_versions
 
@@ -20,52 +19,6 @@ BAKER_NODE_TYPE = "baking"
 # charts/tezos/templates/node.yaml
 REGULAR_NODE_NAME = "tezos-node"
 REGULAR_NODE_TYPE = "regular"
-
-
-def run_docker(image, entrypoint, *args):
-    return subprocess.check_output(
-        "docker run --entrypoint %s --rm %s %s" % (entrypoint, image, " ".join(args)),
-        stderr=subprocess.STDOUT,
-        shell=True,
-    )
-
-
-def extract_key(keys, index: int) -> bytes:
-    return keys[index].split(b":")[index].strip().decode("ascii")
-
-
-def gen_key(image):
-    keys = run_docker(
-        image,
-        "sh",
-        "-c",
-        "'/usr/local/bin/tezos-client --protocol PsDELPH1Kxsx gen keys mykey && /usr/local/bin/tezos-client --protocol PsDELPH1Kxsx show address mykey -S'",
-    ).split(b"\n")
-
-    return {"public": extract_key(keys, 1), "secret": extract_key(keys, 2)}
-
-
-def get_genesis_vanity_chain_id(docker_image, seed_len=16):
-    print("Generating vanity chain id")
-    seed = "".join(
-        random.choice(string.ascii_uppercase + string.digits) for _ in range(seed_len)
-    )
-
-    return (
-        run_docker(
-            docker_image,
-            "flextesa",
-            "vani",
-            '""',
-            "--seed",
-            seed,
-            "--first",
-            "--machine-readable",
-            "csv",
-        )
-        .decode("utf-8")
-        .split(",")[1]
-    )
 
 
 cli_args = {
@@ -104,6 +57,14 @@ cli_args = {
         "help": "Version of the Tezos docker image",
         "default": "tezos/tezos:v9-release",
     },
+    "use_docker": {
+        "action": "store_true",
+        "default": None,
+    },
+    "no_use_docker": {
+        "dest": "use_docker",
+        "action": "store_false",
+    },
 }
 
 # python versions < 3.8 doesn't have "extend" action
@@ -132,19 +93,6 @@ def get_args():
         parser.add_argument(*["--" + k.replace("_", "-")], **v)
 
     return parser.parse_args()
-
-
-def pull_docker_images(images):
-    for image in images:
-        has_image_return_code = subprocess.run(
-            f"docker inspect --type=image {image} > /dev/null 2>&1", shell=True
-        ).returncode
-        if has_image_return_code != 0:
-            print(f"Pulling docker image {image}")
-            subprocess.check_output(
-                f"docker pull {image}", shell=True, stderr=subprocess.STDOUT
-            )
-            print(f"Done pulling docker image {image}")
 
 
 def validate_args(args):
@@ -187,15 +135,7 @@ def main():
     args = get_args()
 
     validate_args(args)
-
-    # Dirty fix. If tezos image doesn't exist, pull it before `docker run` can
-    # pull it. This is to avoid parsing extra output. Preferably, we want to get
-    # rid of docker dependency from mkchain.
-    FLEXTESA = "registry.gitlab.com/tezos/flextesa:01e3f596-run"
-    images = [args.tezos_docker_image]
-    if not args.should_generate_unsafe_deterministic_data:
-        images.append(FLEXTESA)
-    pull_docker_images(images)
+    set_use_docker(args.use_docker)
 
     base_constants = {
         "images": {
@@ -243,7 +183,7 @@ def main():
     else:
         # create new chain genesis params if brand new chain
         base_constants["node_config_network"]["genesis"] = {
-            "block": get_genesis_vanity_chain_id(FLEXTESA)
+            "block": get_genesis_vanity_chain_id()
             if not args.should_generate_unsafe_deterministic_data
             else "YOUR_GENESIS_BLOCK_HASH_HERE",
             "protocol": "PtYuensgYBb3G3x1hLLbCmcav8ue8Kyd2khADcL5LsT5R1hcXex",
