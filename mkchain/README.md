@@ -7,15 +7,33 @@
 
 Helper program to generate values for the Tezos chain Helm chart
 
-This assumes you have [docker](https://docs.docker.com/get-docker/), [minikube](https://minikube.sigs.k8s.io/docs/), [helm](https://helm.sh/), and `python3` installed.
+## Prerequisites
 
-Start minikube and configure your shell environment to use minikube’s Docker daemon:
+To run `mkchain`, you must either have docker or pytezos installed.
+
+### Installing Docker
+
+To be consistent with other documentation in this project, we describe
+how to install docker with minikube. We need to install:
+
+    - [docker](https://docs.docker.com/get-docker/),
+    - [minikube](https://minikube.sigs.k8s.io/docs/),
+    - [helm](https://helm.sh/),
+    - and `python3`.
+
+Start minikube and configure your shell environment to use minikube's
+Docker daemon:
 
 ```shell
 minikube start
 
 eval $(minikube docker-env)
 ```
+
+### Installing pytezos
+
+This is documented at:
+https://pytezos.org/quick_start.html#requirements
 
 ## Install mkchain
 
@@ -69,6 +87,7 @@ You can explicitly specify some values by:
 | bootstrap_peers                  | --bootstrap-peers        | Peer ips to connect to                                                      | []                     |
 | expected_proof_of_work           | --expected-proof-of-work | Node identity generation difficulty                                         | 0                      |
 | images.tezos                     | --tezos-docker-image     | Version of the Tezos docker image to run                                    | tezos/tezos:v9-release |
+|                                  | --use-docker (--no...)   | Use (or don't use) docker to generate keys rather than pytezos              | autodetect             |
 | zerotier_config.zerotier_network | --zerotier-network       | Zerotier network id for external chain access                               |                        |
 | zerotier_config.zerotier_token   | --zerotier-token         | Zerotier token for external chain access                                    |                        |
 
