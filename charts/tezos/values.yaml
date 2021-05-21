@@ -152,9 +152,6 @@ protocols:
 #
 # activation:
 #   protocol_hash: PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i
-#   # Should the commitments data in
-#   # tezos-k8s/config-generator/commitment-params.json be part of parameters.json.
-#   should_include_commitments: false
 #   # parameters.json
 #   protocol_parameters:
 #     preserved_cycles: 2
@@ -183,6 +180,13 @@ protocols:
 #     initial_endorsers: 1
 #     delay_per_missing_endorsement: "1"
 #     baking_reward_per_endorsement: ["200000", "20000"]
+#
+#   # Pass url pointing to additional contracts that you want injected at activation.
+#   # This data is typically too large to pass it directly inside helm chart.
+#   bootstrap_contract_urls: []
+#   # Pass url pointing to a json file listing commitments (precursor to faucet accounts).
+#   # This data is typically too large to pass it directly inside helm chart.
+#   commitments_url: "https://bucket/commitments.json"
 
 # Deploy an indexer with the chain. An indexer puts the chain
 # contents in a database for efficient indexing. Most dapps need it.

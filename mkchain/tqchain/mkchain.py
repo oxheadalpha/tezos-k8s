@@ -307,7 +307,6 @@ def main():
         activation = {
             "activation": {
                 "protocol_hash": "PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i",
-                "should_include_commitments": False,
                 "protocol_parameters": parametersYaml,
             },
         }

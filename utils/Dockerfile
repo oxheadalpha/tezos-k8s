@@ -13,11 +13,10 @@ RUN     apk add --no-cache --virtual .build-deps gcc g++ python3-dev	\
      && apk add libsodium-dev libsecp256k1-dev gmp-dev			\
      && apk add zeromq-dev						\
      && pip install base58 pynacl					\
-     && pip install pytezos						\
+     && pip install pytezos requests                                    \
      && apk del .build-deps						\
      && apk add jq netcat-openbsd curl binutils
 
-COPY commitment-params.json /
 COPY config-generator.py /
 COPY config-generator.sh /
 COPY entrypoint.sh /

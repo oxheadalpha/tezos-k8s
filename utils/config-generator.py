@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import requests
 import socket
 from hashlib import blake2b
 from json.decoder import JSONDecodeError
@@ -382,20 +383,19 @@ def create_protocol_parameters_json(bootstrap_accounts, bootstrap_baker_accounts
     protocol_params = protocol_activation["protocol_parameters"]
     protocol_params["bootstrap_accounts"] = pubkeys_with_balances
 
-    print(json.dumps(protocol_params, indent=4))
+    print(json.dumps(protocol_activation, indent=4))
 
-    if protocol_activation.get("should_include_commitments"):
-        try:
-            with open("/commitment-params.json", "r") as f:
-                try:
-                    commitments = json.load(f)
-                    protocol_params["commitments"] = commitments
-                    print("Commitments added to parameters.json")
-                except JSONDecodeError:
-                    print("No JSON found in /commitment-params.json")
-                    pass
-        except OSError:
-            print("No commitment-params.json found")
+    # genesis contracts and commitments are downloaded from a http location (like a bucket)
+    # they are typically too big to be passed directly to helm
+    if protocol_activation.get("bootstrap_contract_urls"):
+        protocol_params["bootstrap_contracts"] = []
+        for url in protocol_activation["bootstrap_contract_urls"]:
+            print(f"Injecting bootstrap contract from {url}")
+            protocol_params["bootstrap_contracts"].append(requests.get(url).json())
+
+    if protocol_activation.get("commitments_url"):
+        print(f"Injecting commitments (faucet account precursors) from {protocol_activation['commitments_url']}")
+        protocol_params["commitments"] = requests.get(protocol_activation["commitments_url"]).json()
 
     return protocol_params
 
