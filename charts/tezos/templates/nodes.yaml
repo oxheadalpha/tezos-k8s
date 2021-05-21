@@ -1,0 +1,61 @@
+{{- range $key, $val := .Values.nodes }}
+{{- $_ := set $ "pod_type" $key }}
+{{- if eq $key "baking" }}
+{{- $_ := set $ "pod_name" $.Values.baker_statefulset.name }}
+{{- $_ := set $ "pod_stor" $.Values.baker_statefulset.storage_size }}
+{{- else }}
+{{- $_ := set $ "pod_name" $.Values.regular_node_statefulset.name }}
+{{- $_ := set $ "pod_stor" $.Values.regular_node_statefulset.storage_size }}
+{{- end }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $.pod_name }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  podManagementPolicy: Parallel
+  replicas: {{ $val | len }}
+  serviceName: {{ $.pod_name }}
+  selector:
+    matchLabels:
+      app: {{ $.pod_name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $.pod_name }}
+        appType: tezos-node
+    spec:
+      containers:
+{{- include "tezos.container.node"      $ | indent 8 }}
+{{- if eq $key "baking" }}
+{{- include "tezos.container.bakers"    $ | indent 8 }}
+{{- include "tezos.container.endorsers" $ | indent 8 }}
+{{- end }}
+{{- include "tezos.container.zerotier"  $ | indent 8 }}
+      initContainers:
+{{- include "tezos.init_container.config_init"         $ | indent 8 }}
+{{- include "tezos.init_container.wait_for_bootstrap"  $ | indent 8 }}
+{{- include "tezos.init_container.zerotier"            $ | indent 8 }}
+{{- include "tezos.init_container.config_generator"    $ | indent 8 }}
+{{- include "tezos.init_container.snapshot_downloader" $ | indent 8 }}
+{{- include "tezos.init_container.snapshot_importer"   $ | indent 8 }}
+      securityContext:
+        fsGroup: 100
+      volumes:
+        - hostPath:
+            path: /dev/net/tun
+          name: dev-net-tun
+        - emptyDir: {}
+          name: config-volume
+  volumeClaimTemplates:
+    - metadata:
+        name: var-volume
+        namespace: {{ $.Release.Namespace }}
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ $.pod_stor }}
+---
+{{- end }}
