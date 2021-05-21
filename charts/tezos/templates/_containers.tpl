@@ -8,11 +8,7 @@
     fieldRef:
       fieldPath: metadata.name
 - name: MY_NODE_TYPE
-{{- if contains "baker" .Template.Name }}
-  value: {{ .Values.baker_statefulset.node_type }}
-{{- else }}
-  value: {{ .Values.regular_node_statefulset.node_type }}
-{{- end }}
+  value: {{ .node_type }}
 {{- end }}
 
 {{- define "tezos.init_container.config_init" }}
