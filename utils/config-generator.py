@@ -20,15 +20,25 @@ SIGNERS = json.loads(os.environ["SIGNERS"])
 
 MY_POD_NAME = os.environ["MY_POD_NAME"]
 MY_POD_TYPE = os.environ["MY_POD_TYPE"]
+
 MY_POD_CONFIG = None
+ALL_NODES = {}
+BAKING_NODES = {}
+
+for cl, val in NODES.items():
+    if val != None:
+        for i, inst in enumerate(val["instances"]):
+            name = f"{cl}-{i}"
+            ALL_NODES[name] = inst
+            if name == MY_POD_NAME:
+                MY_POD_CONFIG = inst
+            if "runs" in val:
+                if "baker" in val["runs"]:
+                    BAKING_NODES[name] = inst
+
 if MY_POD_TYPE == "signing":
     MY_POD_CONFIG = SIGNERS[MY_POD_NAME]
-elif MY_POD_TYPE in ["baking", "regular"]:
-    MY_POD_CONFIG = NODES[MY_POD_TYPE][MY_POD_NAME]
 
-
-ALL_NODES = {**NODES.get("baking", {}), **NODES.get("regular", {})}
-BAKING_NODES = NODES["baking"]
 NETWORK_CONFIG = CHAIN_PARAMS["network"]
 
 SHOULD_GENERATE_UNSAFE_DETERMINISTIC_DATA = CHAIN_PARAMS.get(

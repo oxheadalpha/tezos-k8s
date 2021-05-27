@@ -13,12 +13,8 @@ sys.path.insert(0, "tqchain")
 
 __version__ = get_versions()["version"]
 
-# charts/tezos/templates/baker.yaml
 BAKER_NODE_NAME = "tezos-baking-node"
-BAKER_NODE_TYPE = "baking"
-# charts/tezos/templates/node.yaml
 REGULAR_NODE_NAME = "tezos-node"
-REGULAR_NODE_TYPE = "regular"
 
 
 cli_args = {
@@ -131,6 +127,21 @@ def validate_args(args):
         exit(1)
 
 
+def node_config(name, n, is_baker):
+    ret = {
+        "is_bootstrap_node": False,
+        "config": {
+            "shell": {"history_mode": "rolling"},
+        },
+    }
+    if is_baker:
+        ret["bake_using_account"] = f"{name}-{n}"
+        if n < 2:
+            ret["is_bootstrap_node"] = True
+            ret["config"]["shell"]["history_mode"] = "archive"
+    return ret
+
+
 def main():
     args = get_args()
 
@@ -157,14 +168,16 @@ def main():
     files_path = f"{os.getcwd()}/{args.chain_name}"
     if os.path.isfile(f"{files_path}_values.yaml"):
         print(
-            "Found old values file. Some pre-existing values might remain the "
-            "same, e.g. public/private keys, and genesis block. Please delete the "
-            "values file to generate all new values.\n"
+            "Found old values file. Some pre-existing values might remain\n"
+            "the same, e.g. public/private keys, and genesis block. Please\n"
+            "delete the values file to generate all new values.\n"
         )
         with open(f"{files_path}_values.yaml", "r") as yaml_file:
             old_create_values = yaml.safe_load(yaml_file)
 
-        current_number_of_bakers = len(old_create_values["nodes"][BAKER_NODE_TYPE])
+        current_number_of_bakers = len(
+            old_create_values["nodes"][BAKER_NODE_NAME]["instances"]
+        )
         if current_number_of_bakers != args.number_of_bakers:
             print("ERROR: the number of bakers must not change on a pre-existing chain")
             print(f"Current number of bakers: {current_number_of_bakers}")
@@ -198,7 +211,9 @@ def main():
             print("Using existing public keys")
             accounts["public"] = old_invite_values["accounts"]
     elif not args.should_generate_unsafe_deterministic_data:
-        baking_accounts = {f"baker{n}": {} for n in range(args.number_of_bakers)}
+        baking_accounts = {
+            f"{BAKER_NODE_NAME}-{n}": {} for n in range(args.number_of_bakers)
+        }
         for account in baking_accounts:
             print(f"Generating keys for account {account}")
             keys = gen_key(args.tezos_docker_image)
@@ -212,36 +227,35 @@ def main():
 
     # First 2 bakers are acting as bootstrap nodes for the others, and run in
     # archive mode. Any other bakers will be in rolling mode.
-    regular_node_config = {"config": {"shell": {"history_mode": "rolling"}}}
     creation_nodes = {
-        BAKER_NODE_TYPE: {
-            f"{BAKER_NODE_NAME}-{n}": {
-                "bake_using_account": f"baker{n}",
-                "is_bootstrap_node": n < 2,
-                "config": {
-                    "shell": {"history_mode": "archive" if n < 2 else "rolling"}
-                },
-            }
-            for n in range(args.number_of_bakers)
+        BAKER_NODE_NAME: {
+            "runs": ["baker", "endorser"],
+            "storage_size": "15Gi",
+            "instances": [
+                node_config(BAKER_NODE_NAME, n, is_baker=True)
+                for n in range(args.number_of_bakers)
+            ],
         },
-        REGULAR_NODE_TYPE: None,
+        REGULAR_NODE_NAME: None,
     }
     if args.number_of_nodes:
-        creation_nodes[REGULAR_NODE_TYPE] = {
-            f"{REGULAR_NODE_NAME}-{n}": regular_node_config
-            for n in range(args.number_of_nodes)
+        creation_nodes[REGULAR_NODE_NAME] = {
+            "storage_size": "15Gi",
+            "instances": [
+                node_config(REGULAR_NODE_NAME, n, is_baker=False)
+                for n in range(args.number_of_nodes)
+            ],
         }
 
     signers = {
         "tezos-signer-0": {
-            "sign_for_accounts": [f"baker{n}" for n in range(args.number_of_bakers)]
+            "sign_for_accounts": [
+                f"{BAKER_NODE_NAME}-{n}" for n in range(args.number_of_bakers)
+            ]
         }
     }
 
-    first_baker_node_name = next(iter(creation_nodes[BAKER_NODE_TYPE]))
-    activation_account_name = creation_nodes[BAKER_NODE_TYPE][first_baker_node_name][
-        "bake_using_account"
-    ]
+    activation_account_name = f"{BAKER_NODE_NAME}-0"
     base_constants["node_config_network"][
         "activation_account_name"
     ] = activation_account_name
@@ -280,8 +294,11 @@ def main():
         "zerotier_config", {}
     ).get("zerotier_network"):
         invite_nodes = {
-            REGULAR_NODE_TYPE: {f"{REGULAR_NODE_NAME}-0": regular_node_config},
-            BAKER_NODE_TYPE: {},
+            REGULAR_NODE_NAME: {
+                "storage_size": "15Gi",
+                "instances": [node_config(REGULAR_NODE_NAME, 0, is_baker=False)],
+            },
+            BAKER_NODE_NAME: None,
         }
         invitation_constants = {
             "is_invitation": True,

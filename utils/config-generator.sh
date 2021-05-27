@@ -17,9 +17,13 @@ set +e
 # variables and we are not guaranteed to have jq available on an arbitrary
 # tezos docker image.
 
-if [ "$MY_POD_TYPE" = "baking" ]; then
-    my_baker_account=$(echo $NODES | \
-	    jq -r ".${MY_POD_TYPE}.\"${MY_POD_NAME}\".bake_using_account")
+MY_CLASS=$(echo $NODES | jq -r ".\"${MY_NODE_CLASS}\"")
+AM_I_BAKER=$(echo $MY_CLASS | jq -r '.runs|map(select(. == "baker"))|length')
+
+if [ "$AM_I_BAKER" -eq 1 ]; then
+    my_baker_account=$(echo $MY_CLASS | \
+	    jq -r ".instances[${MY_POD_NAME#$MY_NODE_CLASS-}]
+		   .bake_using_account")
 
     # If no account to bake for was specified in the node's settings,
     # config-generator defaults the account name to the pod's name.
