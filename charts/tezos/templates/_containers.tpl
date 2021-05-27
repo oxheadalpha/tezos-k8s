@@ -7,8 +7,8 @@
   valueFrom:
     fieldRef:
       fieldPath: metadata.name
-- name: MY_NODE_TYPE
-  value: {{ .node_type }}
+- name: MY_NODE_CLASS
+  value: {{ .node_class }}
 {{- end }}
 
 {{- define "tezos.init_container.config_init" }}

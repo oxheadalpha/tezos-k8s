@@ -1,34 +1,29 @@
 {{- range $key, $val := .Values.nodes }}
-{{- $_ := set $ "node_type" $key }}
-{{- if eq $key "baking" }}
-{{- $_ := set $ "node_name" $.Values.baker_statefulset.name }}
-{{- $_ := set $ "node_stor" $.Values.baker_statefulset.storage_size }}
-{{- else }}
-{{- $_ := set $ "node_name" $.Values.regular_node_statefulset.name }}
-{{- $_ := set $ "node_stor" $.Values.regular_node_statefulset.storage_size }}
-{{- end }}
+{{- $_ := set $ "node_class" $key }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ $.node_name }}
+  name: {{ $key }}
   namespace: {{ $.Release.Namespace }}
 spec:
   podManagementPolicy: Parallel
-  replicas: {{ $val | len }}
-  serviceName: {{ $.node_name }}
+  replicas: {{ $val.instances | len }}
+  serviceName: {{ $key }}
   selector:
     matchLabels:
-      app: {{ $.node_name }}
+      app: {{ $key }}
   template:
     metadata:
       labels:
-        app: {{ $.node_name }}
+        app: {{ $key }}
         appType: tezos-node
     spec:
       containers:
 {{- include "tezos.container.node"      $ | indent 8 }}
-{{- if eq $key "baking" }}
+{{- if has "baker" $val.runs }}
 {{- include "tezos.container.bakers"    $ | indent 8 }}
+{{- end }}
+{{- if has "endorser" $val.runs }}
 {{- include "tezos.container.endorsers" $ | indent 8 }}
 {{- end }}
 {{- include "tezos.container.zerotier"  $ | indent 8 }}
@@ -56,6 +51,6 @@ spec:
           - ReadWriteOnce
         resources:
           requests:
-            storage: {{ $.node_stor }}
+            storage: {{ default "15Gi" $val.storage_size }}
 ---
 {{- end }}

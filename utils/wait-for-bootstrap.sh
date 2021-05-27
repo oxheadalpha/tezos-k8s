@@ -11,11 +11,18 @@ if [ -s /var/tezos/node/peers.json ] && [ "$(jq length /var/tezos/node/peers.jso
 fi
 
 BOOTSTRAP_NODES=$(
-	echo "$NODES" | \
-	    jq -r '[.[]|to_entries]|flatten[]
-		  |select(.value.is_bootstrap_node)
-		  |.key + "." + (.key|sub("-[\\d]+$"; ""))'
+echo $NODES | \
+    jq -r '
+	def name_nodes(a):
+		reduce (a|.value.instances[]) as $f ([0,{}];
+		 [.[0] + 1, .[1] + { ((a|.key) + "-" + (.[0]|tostring)) : $f}])
+		|.[1];
+
+	to_entries|reduce .[] as $inp ({}; . + name_nodes($inp))
+	|to_entries[]|select(.value.is_bootstrap_node)
+	|.key + "." + (.key|sub("-[\\d]+$"; ""))'
 )
+
 
 if [ -z "$BOOTSTRAP_NODES" ]; then
     echo No bootstrap nodes were provided

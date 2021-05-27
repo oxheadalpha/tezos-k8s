@@ -23,12 +23,27 @@ MY_NODE_TYPE = MY_NODE = None
 # The chain initiator job does not have a MY_NODE_TYPE or MY_NODE. Only
 # statefulsets.
 if os.environ.get("MY_NODE_TYPE"):
-    MY_NODE_TYPE = os.environ["MY_NODE_TYPE"]
+    MY_NODE_CLASS = os.environ["MY_NODE_TYPE"]
     MY_NODE = NODES[MY_NODE_TYPE][MY_POD_NAME]
 
+ALL_NODES = {}
+BAKING_NODES = {}
 
-ALL_NODES = { **NODES.get("baking", {}), **NODES.get("regular", {}) }
-BAKING_NODES = NODES["baking"]
+for cl, val in NODES.items():
+    i = 0
+    for inst in val["instances"]:
+        name = f"{cl}-{i}"
+        ALL_NODES[name] = inst
+        if name == MY_POD_NAME:
+            MY_NODE = inst
+        if "runs" in val:
+            if "baker" in val["runs"]:
+                BAKING_NODES[name] = inst
+        i += 1
+
+print(ALL_NODES)
+print(BAKING_NODES)
+
 NETWORK_CONFIG = CHAIN_PARAMS["network"]
 
 SHOULD_GENERATE_UNSAFE_DETERMINISTIC_DATA = CHAIN_PARAMS.get(
