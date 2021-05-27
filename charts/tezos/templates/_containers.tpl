@@ -8,7 +8,9 @@
     fieldRef:
       fieldPath: metadata.name
 - name: MY_POD_TYPE
-  value: {{ .pod_type }}
+  value: node
+- name: MY_NODE_CLASS
+  value: {{ .node_class }}
 {{- end }}
 
 {{- define "tezos.init_container.config_init" }}
@@ -139,6 +141,7 @@
 {{- end }}
 
 {{- define "tezos.container.bakers" }}
+{{- if has "baker" $.node_vals.runs }}
 {{- range .Values.protocols }}
 - image: "{{ $.Values.images.tezos }}"
   command:
@@ -168,8 +171,10 @@ https://github.com/helm/helm/issues/5979#issuecomment-518231758
       value: baker
 {{- end }}
 {{- end }}
+{{- end }}
 
 {{- define "tezos.container.endorsers" }}
+{{- if has "endorser" $.node_vals.runs }}
 {{- range .Values.protocols }}
 - image: "{{ $.Values.images.tezos }}"
   command:
@@ -199,6 +204,7 @@ https://github.com/helm/helm/issues/5979#issuecomment-518231758
 {{- include "tezos.localvars.pod_envvars" $ | indent 4 }}
     - name: DAEMON
       value: endorser
+{{- end }}
 {{- end }}
 {{- end }}
 

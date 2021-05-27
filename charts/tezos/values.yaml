@@ -15,14 +15,6 @@ tezos_k8s_images:
   zerotier: tezos-k8s-zerotier:dev
 
 # Properties that are templated in Helm template files
-baker_statefulset: # charts/tezos/templates/baker.yaml
-  name: tezos-baking-node
-  pod_type: baking
-  storage_size: 15Gi
-regular_node_statefulset: # charts/tezos/templates/node.yaml
-  name: tezos-node
-  pod_type: regular
-  storage_size: 15Gi
 tzkt_indexer_statefulset:
   name: tzkt-indexer
   storageClassName: ""
@@ -69,50 +61,55 @@ accounts: {}
 #     bootstrap_balance: "4000000000000"
 
 # # NODES
-# Names of nodes should be consistent with their statefulset names but with
-# an added suffix being the index of the node.
-# Example: `baker_statefulset.name: tezos-baking-node` -> `nodes.baking.tezos-baking-node-0`
-# These names with suffix are the
-# `metadata.name` of the downward k8s API. They should be kebab case.
+#
+# nodes is a dictionary where each k/v pair defines a statefulset and
+# a number of instances thereof.  The name (key) defines the name of the
+# statefulset and will be the base of the pod names.  The instances are
+# defined as a list because their names are simply -N appended to the
+# statefulsetname.  Said names are typically kebab case.
+#
 # https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/
 #
-# Params for for non-public chains:
-# - `bake_using_account`: The name of the account that should be used
+# Params at the statefulset level:
+# - storage_size: the size of the PV
+# - runs: a list of containers to run, e.g. "baker", "endorser"
+# - instances: a list of nodes to fire up, each is a dictionary
+#   defining:
+#   - `bake_using_account`: The name of the account that should be used
 #                         for baking.
-# - `is_bootstrap_node`: Is this node a bootstrap peer.
+#   - `is_bootstrap_node`: Is this node a bootstrap peer.
+#   - config: The `config` property should mimic the structure
+#             of a node's config.json.
+#             Run `tezos-node config --help` for more info.
 #
-# The `config` property should mimic the structure of a node's config.json.
-# Run `tezos-node config --help` for more info.
+# defaults are filled in for most values.
+#
+# E.g.:
+#
+# nodes:
+#  tezos-baking-node:
+#    storage_size: 15Gi
+#    runs:
+#      - baker
+#      - endorser
+#    instances:
+#      - bake_using_account: baker0
+#        is_bootstrap_node: true
+#        config:
+#          shell:
+#   tezos-node:
+#     instances:
+#       - {}
+#       - {}
 
 nodes:
-  baking: {}
-    # tezos-baking-node-0:
-      # bake_using_account: tqtezos_baker_0
-      # is_bootstrap_node: true
-      # config:
-      #   shell:
-      #     history_mode: rolling
-
-    # Non-public chains: An account with deterministic keys will
-    # automatically be created for this baker, as no account named
-    # tqtezos_baker_1 is specified in accounts.
-    #
-    # Public chain: This baker will fail to boot as it doesn't have a secret key.
-    #
-    # tezos-baking-node-1:
-    #   bake_using_account: tqtezos_baker_1
-    #   is_bootstrap_node: true
-    #   config:
-    #     shell:
-    #       history_mode: full
-
-  # Non-baking nodes
-  regular:
-    tezos-node-0:
-      is_bootstrap_node: false
-      config:
-        shell:
-          history_mode: rolling
+  tezos-node:
+    storage_size: 15Gi
+    instances:
+      - is_bootstrap_node: false
+        config:
+          shell:
+            history_mode: rolling
 
 # Define and use external remote signers.
 # Bakers automatically use signers when configured.
