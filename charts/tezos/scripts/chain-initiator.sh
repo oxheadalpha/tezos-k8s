@@ -4,9 +4,14 @@ until $CLIENT rpc get /version; do
     sleep 2
 done
 
-echo Activating chain:
 set -x
 set -o pipefail
+if ! $CLIENT rpc get /chains/main/blocks/head/header | grep '"level": 0,'; then
+    echo "Chain already activated, considering activation successful and exiting"
+    exit 0
+fi
+
+echo Activating chain:
 $CLIENT -d /var/tezos/client --block					\
 	genesis activate protocol					\
 	{{ .Values.activation.protocol_hash }}				\
