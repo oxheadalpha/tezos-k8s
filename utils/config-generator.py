@@ -468,7 +468,13 @@ def create_node_config_json(
     node_config = recursive_update(values_node_config, computed_node_config)
 
     if THIS_IS_A_PUBLIC_NET:
-        node_config["network"] = NETWORK_CONFIG["chain_name"]
+      # `tezos-node config --network ...` will have been run in config-init.sh
+      #  producing a config.json. The value passed to the `--network` flag may
+      #  have been the chain name or a url to the config.json of the chain.
+      #  Either way, set the `network` field here as the `network` object of the
+      #  produced config.json.
+      with open("/etc/tezos/data/config.json", "r") as f:
+          node_config["network"] = json.load(f)["network"]
     else:
         if CHAIN_PARAMS.get("expected-proof-of-work") != None:
             node_config["p2p"]["expected-proof-of-work"] = CHAIN_PARAMS[
