@@ -26,6 +26,9 @@ spec:
 {{- if has "endorser" $val.runs }}
 {{- include "tezos.container.endorsers" $ | indent 8 }}
 {{- end }}
+{{- if has "logger" $val.runs }}
+{{- include "tezos.container.logger"    $ | indent 8 }}
+{{- end }}
 {{- include "tezos.container.zerotier"  $ | indent 8 }}
       initContainers:
 {{- include "tezos.init_container.config_init"         $ | indent 8 }}
