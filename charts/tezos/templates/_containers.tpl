@@ -222,6 +222,28 @@ https://github.com/helm/helm/issues/5979#issuecomment-518231758
       name: var-volume
 {{- end }}
 
+{{- define "tezos.container.metrics" }}
+- image: "registry.gitlab.com/nomadic-labs/tezos-metrics"
+  args:
+    - "--listen-prometheus=6666"
+  imagePullPolicy: IfNotPresent
+  name: metrics
+  volumeMounts:
+    - mountPath: /etc/tezos
+      name: config-volume
+    - mountPath: /var/tezos
+      name: var-volume
+  envFrom:
+    - configMapRef:
+        name: tezos-config
+    - secretRef:
+        name: tezos-secret
+  env:
+{{- include "tezos.localvars.pod_envvars" . | indent 4 }}
+    - name: DAEMON
+      value: tezos-metrics
+{{- end }}
+
 {{/*
 // * The zerotier containers:
 */}}
