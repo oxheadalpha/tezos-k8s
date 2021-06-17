@@ -208,6 +208,28 @@ https://github.com/helm/helm/issues/5979#issuecomment-518231758
 {{- end }}
 {{- end }}
 
+{{- define "tezos.container.logger" }}
+{{- if has "logger" $.node_vals.runs }}
+- image: "{{ $.Values.tezos_k8s_images.utils }}"
+  imagePullPolicy: IfNotPresent
+  name: logger
+  args:
+    - "logger"
+  envFrom:
+    - secretRef:
+        name: tezos-secret
+    - configMapRef:
+        name: tezos-config
+  env:
+{{- include "tezos.localvars.pod_envvars" . | indent 4 }}
+  volumeMounts:
+    - mountPath: /etc/tezos
+      name: config-volume
+    - mountPath: /var/tezos
+      name: var-volume
+{{- end }}
+{{- end }}
+
 {{/*
 // * The zerotier containers:
 */}}
