@@ -78,7 +78,7 @@ while :; do
 
     REORG=false
     PREV=
-    for BLOCK in $(find_last_block $LAST); do
+    for BLOCK in $(find_next_blocks $LAST); do
 	if [ -z "$PREV" ]; then
 	    if [ "$BLOCK" != "$LAST" ]; then
 		REORG=true
