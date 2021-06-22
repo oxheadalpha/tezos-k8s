@@ -1,0 +1,65 @@
+{{- range  $key, $val := .Values.signers }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $.Values.signer_deployment.name }}-{{ $key }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ $.Values.signer_deployment.name }}-{{ $key }}
+  template:
+    metadata:
+      labels:
+        app: {{ $.Values.signer_deployment.name }}-{{ $key }}
+    spec:
+      containers:
+      - name: tezos-signer
+        image: "{{ $.Values.images.tezos }}"
+        ports:
+        - containerPort: 6732
+          name: signer
+        command:
+          - /bin/sh
+        volumeMounts:
+        - mountPath: /var/tezos
+          name: var-volume
+        args:
+          - "-c"
+          - |
+{{ tpl ($.Files.Get "scripts/remote-signer.sh") $ | indent 12 }}
+      initContainers:
+      - image: {{ $.Values.tezos_k8s_images.utils }}
+        imagePullPolicy: IfNotPresent
+        name: config-generator
+        args:
+          - "config-generator"
+        envFrom:
+          - secretRef:
+              name: tezos-secret
+          - configMapRef:
+              name: tezos-config
+        env:
+        volumeMounts:
+          - mountPath: /var/tezos
+            name: var-volume
+      securityContext:
+        fsGroup: 100
+      volumes:
+        - emptyDir: {}
+          name: var-volume
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $.Values.signer_deployment.name }}-{{ $key }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  clusterIP: None
+  ports:
+    - port: 6732
+      name: signer
+  selector:
+    app: {{ $.Values.signer_deployment.name }}-{{ $key }}
+---
+{{- end }}

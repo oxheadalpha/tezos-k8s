@@ -18,8 +18,10 @@ ACCOUNTS = json.loads(os.environ["ACCOUNTS"])
 CHAIN_PARAMS = json.loads(os.environ["CHAIN_PARAMS"])
 NODES = json.loads(os.environ["NODES"])
 
-MY_POD_NAME = os.environ["MY_POD_NAME"]
-MY_NODE_TYPE = MY_NODE = None
+MY_POD_NAME = None
+if os.environ.get("MY_POD_NAME"):
+    MY_POD_NAME = os.environ["MY_POD_NAME"]
+    MY_NODE_TYPE = MY_NODE = None
 # The chain initiator job does not have a MY_NODE_TYPE or MY_NODE. Only
 # statefulsets.
 if os.environ.get("MY_NODE_TYPE"):
@@ -46,7 +48,16 @@ def main():
         all_accounts = fill_in_missing_baker_accounts()
         fill_in_missing_keys(all_accounts)
 
-    import_keys(all_accounts)
+    if MY_POD_NAME in BAKING_NODES and \
+            BAKING_NODES[MY_POD_NAME].get("bake_using_signer"):
+        # this pod is configured to use a remote signer.
+        # importing public keys only and pointing to signer for priv keys
+        import_keys(all_accounts, BAKING_NODES[MY_POD_NAME]["bake_using_signer"])
+
+    else:
+        # no remote signer configured, or I am the remote signer, so importing
+        # public and private keys
+        import_keys(all_accounts, None)
 
     if MY_POD_NAME in BAKING_NODES:
         # If this node is a baker, it must have an account with a secret key.
@@ -159,8 +170,9 @@ def fill_in_missing_baker_accounts():
     new_accounts = {}
     for baker_name, baker_values in BAKING_NODES.items():
         baker_account_name = baker_values.get("bake_using_account")
+        signer_name = baker_values.get("bake_using_signer")
 
-        if not baker_account_name or baker_account_name not in ACCOUNTS:
+        if not signer_name and (not baker_account_name or baker_account_name not in ACCOUNTS):
             new_baker_account_name = None
             if not baker_account_name:
                 print(f"A new account named {baker_name} will be created")
@@ -243,7 +255,7 @@ def fill_in_missing_keys(all_accounts):
             account_values["type"] = "secret"
 
 
-def import_keys(all_accounts):
+def import_keys(all_accounts, remote_signer = None):
     print("\nImporting keys")
     tezdir = "/var/tezos/client"
     secret_keys = []
@@ -259,6 +271,8 @@ def import_keys(all_accounts):
             raise Exception(f"{account_name} defined w/o a key")
 
         key = pytezos.key.from_encoded_key(account_key)
+        if remote_signer:
+            remote_signer_url = f"http://tezos-signer-{remote_signer}:6732/{key.public_key_hash()}"
         try:
             key.secret_key()
         except ValueError:
@@ -271,19 +285,28 @@ def import_keys(all_accounts):
                                  "public, but it is secret")
 
         try:
-            sk_b58 = key.secret_key()
+            if remote_signer:
+                sk = remote_signer_url
+            else:
+                sk = "unencrypted:" + key.secret_key()
+
             print("    Appending secret key")
             secret_keys.append({"name": account_name,
-                                "value": "unencrypted:" + sk_b58})
+                                "value": sk })
         except ValueError:
             pass
 
         pk_b58 = key.public_key()
+        if remote_signer:
+            locator = remote_signer_url
+        else:
+            locator = "unencrypted:" + pk_b58
+
         print(f"    Appending public key: {pk_b58}")
         public_keys.append(
             {
                 "name": account_name,
-                "value": {"locator": "unencrypted:" + pk_b58, "key": pk_b58},
+                "value": {"locator": locator, "key": pk_b58},
             }
         )
 

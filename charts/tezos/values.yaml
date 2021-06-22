@@ -26,6 +26,8 @@ regular_node_statefulset: # charts/tezos/templates/node.yaml
 tzkt_indexer_statefulset:
   name: tzkt-indexer
   storageClassName: ""
+signer_deployment:
+  name: tezos-signer
 
 # For non-public chains the defualt mutez given to an account if the
 # account is not explicitly set below.
@@ -82,6 +84,9 @@ nodes:
   baking: {}
     # tezos-baking-node-0:
       # bake_using_account: tqtezos_baker_0
+      # # bake_using_signer instructs the baker to connect to an external signing endpoint
+      # # (see "signers" object below)
+      # bake_using_signer: signer0
       # is_bootstrap_node: true
       # config:
       #   shell:
@@ -107,6 +112,10 @@ nodes:
       config:
         shell:
           history_mode: rolling
+
+# Define and use external remote signers.
+#signers:
+#  signer0: {}
 
 # Where full and rolling history mode nodes will get their snapshots from
 full_snapshot_url: https://mainnet.xtz-shots.io/full

@@ -12,7 +12,7 @@ python3 /config-generator.py "$@"
 set +e
 
 #
-# Next we write the current baker ccount into /etc/tezos/baking-account.
+# Next we write the current baker account into /etc/tezos/baking-account.
 # We do it here because we shall use jq to process some of the environment
 # variables and we are not guaranteed to have jq available on an arbitrary
 # tezos docker image.

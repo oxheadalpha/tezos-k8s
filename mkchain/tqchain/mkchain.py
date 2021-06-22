@@ -217,6 +217,7 @@ def main():
         BAKER_NODE_TYPE: {
             f"{BAKER_NODE_NAME}-{n}": {
                 "bake_using_account": f"baker{n}",
+                "bake_using_signer": "signer0",
                 "is_bootstrap_node": n < 2,
                 "config": {
                     "shell": {"history_mode": "archive" if n < 2 else "rolling"}
@@ -261,6 +262,7 @@ def main():
         "bootstrap_peers": bootstrap_peers,
         "accounts": accounts["secret"],
         "nodes": creation_nodes,
+        "signers": { "signer0": {} },
         **activation,
     }
 
