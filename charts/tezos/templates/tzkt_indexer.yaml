@@ -1,6 +1,6 @@
-{{- define "tezos.tzkt.setDbConnectionEnvVar" }}
-export TZKT_ConnectionStrings__DefaultConnection="server=localhost;port=5432;database=$POSTGRES_DB;username=$POSTGRES_USER;password=$POSTGRES_PASSWORD;"
-{{- end }}
+{{- define "tezos.tzkt.setDbConnectionEnvVar" -}}
+{{ print " " "server=localhost;port=5432;database=$(POSTGRES_DB);username=$(POSTGRES_USER);password=$(POSTGRES_PASSWORD);" }}
+{{- end -}}
 
 {{- if (include "tezos.shouldDeployTzktIndexer" .) }}
 apiVersion: apps/v1
@@ -71,17 +71,11 @@ spec:
           env:
           - name: Logging__LogLevel__Default
             value: {{ .Values.indexers.tzkt.config.api_log_level }}
+          - name: ConnectionStrings__DefaultConnection
+            value: {{- include "tezos.tzkt.setDbConnectionEnvVar" . }}
           envFrom:
           - secretRef:
               name: db-creds
-          command:
-            - /bin/bash
-          args:
-            - "-c"
-            - |
-              {{- /* tzkt-api image needs the TZKT_ prefix stripped from the env var */}}
-              {{- include "tezos.tzkt.setDbConnectionEnvVar" . | replace "TZKT_" "" | indent 14 }}
-              dotnet Tzkt.Api.dll
         - image: bakingbad/tzkt-sync:1.5
           name: indexer
           volumeMounts:
@@ -92,6 +86,8 @@ spec:
             value: {{ .Values.indexers.tzkt.config.rpc_url }}
           - name: TZKT_Logging__LogLevel__Default
             value: {{ .Values.indexers.tzkt.config.indexer_log_level }}
+          - name: TZKT_ConnectionStrings__DefaultConnection
+            value: {{- include "tezos.tzkt.setDbConnectionEnvVar" . }}
           envFrom:
           - secretRef:
               name: db-creds
@@ -102,7 +98,6 @@ spec:
             - |
               # Set TZKT_TezosNode__ChainId env var
               . /app/data/tzkt.env
-              {{- include "tezos.tzkt.setDbConnectionEnvVar" . | indent 14 }}
               dotnet Tzkt.Sync.dll
         - image: postgres:13
           name: db
