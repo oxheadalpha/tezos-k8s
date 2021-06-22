@@ -6,7 +6,7 @@ node_data_dir="$node_dir/data"
 snapshot_file=$node_dir/chain.snapshot
 
 my_nodes_history_mode=$(echo $NODES |
-	jq -r ".$MY_NODE_TYPE.\"$MY_POD_NAME\".config.shell.history_mode")
+	jq -r ".$MY_POD_TYPE.\"$MY_POD_NAME\".config.shell.history_mode")
 
 case "$my_nodes_history_mode" in
         full)           snapshot_url="$FULL_SNAPSHOT_URL"       ;;

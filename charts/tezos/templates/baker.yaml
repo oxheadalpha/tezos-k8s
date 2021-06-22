@@ -18,7 +18,7 @@ spec:
             - |
 {{ tpl (.Files.Get "scripts/chain-initiator.sh") . | indent 14 }}
           imagePullPolicy: IfNotPresent
-          name: chain-initiator
+          name: {{ .Values.chain_initiator_job.name }}
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -44,6 +44,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: {{ .Values.chain_initiator_job.pod_type }}
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume

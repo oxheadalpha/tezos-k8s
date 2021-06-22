@@ -17,17 +17,18 @@ from nacl.signing import SigningKey
 ACCOUNTS = json.loads(os.environ["ACCOUNTS"])
 CHAIN_PARAMS = json.loads(os.environ["CHAIN_PARAMS"])
 NODES = json.loads(os.environ["NODES"])
+SIGNERS = json.loads(os.environ["SIGNERS"])
 
 MY_POD_NAME = os.environ["MY_POD_NAME"]
-MY_NODE_TYPE = MY_NODE = None
-# The chain initiator job does not have a MY_NODE_TYPE or MY_NODE. Only
-# statefulsets.
-if os.environ.get("MY_NODE_TYPE"):
-    MY_NODE_TYPE = os.environ["MY_NODE_TYPE"]
-    MY_NODE = NODES[MY_NODE_TYPE][MY_POD_NAME]
+MY_POD_TYPE = os.environ["MY_POD_TYPE"]
+MY_NODE = None
+if MY_POD_TYPE == "signing":
+    MY_NODE = SIGNERS[MY_POD_NAME]
+elif MY_POD_TYPE in ["baking", "regular"]:
+    MY_NODE = NODES[MY_POD_TYPE][MY_POD_NAME]
 
 
-ALL_NODES = { **NODES.get("baking", {}), **NODES.get("regular", {}) }
+ALL_NODES = {**NODES.get("baking", {}), **NODES.get("regular", {})}
 BAKING_NODES = NODES["baking"]
 NETWORK_CONFIG = CHAIN_PARAMS["network"]
 
@@ -37,6 +38,7 @@ SHOULD_GENERATE_UNSAFE_DETERMINISTIC_DATA = CHAIN_PARAMS.get(
 
 # If there are no genesis params, this is a public chain.
 THIS_IS_A_PUBLIC_NET = True if not NETWORK_CONFIG.get("genesis") else False
+
 
 def main():
     all_accounts = ACCOUNTS
@@ -98,7 +100,7 @@ def main():
         else:
             local_bootstrap_peers = []
             for name, settings in ALL_NODES.items():
-                print(" -- is " + name + " a bootstrap peer?\n");
+                print(" -- is " + name + " a bootstrap peer?\n")
                 my_pod_fqdn_with_port = f"{socket.getfqdn()}:9732"
                 if (
                     settings.get("is_bootstrap_node", False)
@@ -221,6 +223,7 @@ def verify_this_bakers_account(accounts):
 
 edsk = b"\x0d\x0f\x3a\x07"
 
+
 def fill_in_missing_keys(all_accounts):
     print("\nFill in missing keys")
 
@@ -229,13 +232,17 @@ def fill_in_missing_keys(all_accounts):
         account_key = account_values.get("key")
 
         if account_key == None and account_key_type != None:
-            raise Exception(f"ERROR: {account_name} specifies " +
-                            f"type {account_key_type} without " +
-                            f"a key")
+            raise Exception(
+                f"ERROR: {account_name} specifies "
+                + f"type {account_key_type} without "
+                + f"a key"
+            )
 
         if account_key == None:
-            print(f"  Deriving secret key for account " +
-                  f"{account_name} from genesis_block")
+            print(
+                f"  Deriving secret key for account "
+                + f"{account_name} from genesis_block"
+            )
             seed = account_name + ":" + NETWORK_CONFIG["genesis"]["block"]
             sk = blake2b(seed.encode(), digest_size=32).digest()
             sk_b58 = b58encode_check(edsk + sk).decode("utf-8")
@@ -259,31 +266,62 @@ def import_keys(all_accounts):
             raise Exception(f"{account_name} defined w/o a key")
 
         key = pytezos.key.from_encoded_key(account_key)
+        remote_signer_url = None
+        remote_signers_for_account = [
+            k for k, v in SIGNERS.items() if account_name in v["sign_for_accounts"]
+        ]
+        if MY_POD_TYPE == "baking" and len(remote_signers_for_account) > 0:
+            remote_signer_url = f"http://{remote_signers_for_account[0]}.tezos-signer:6732/{key.public_key_hash()}"
         try:
             key.secret_key()
         except ValueError:
             if account_key_type == "secret":
-                raise ValueError(account_name + "'s key marked as " +
-                                 "secret, but it is public")
+                raise ValueError(
+                    account_name + "'s key marked as " + "secret, but it is public"
+                )
         else:
             if account_key_type == "public":
-                raise ValueError(account_name + "'s key marked as " +
-                                 "public, but it is secret")
+                raise ValueError(
+                    account_name + "'s key marked as " + "public, but it is secret"
+                )
 
-        try:
-            sk_b58 = key.secret_key()
-            print("    Appending secret key")
-            secret_keys.append({"name": account_name,
-                                "value": "unencrypted:" + sk_b58})
-        except ValueError:
-            pass
+        # restrict which private key is exposed to which pod
+        if (
+            (
+                MY_POD_TYPE == "activating"
+                and NETWORK_CONFIG["activation_account_name"] == account_name
+            )
+            or (
+                MY_POD_TYPE == "baking"
+                and MY_NODE.get("bake_using_account") == account_name
+            )
+            or (
+                MY_POD_TYPE == "signing"
+                and account_name in MY_NODE.get("sign_for_accounts")
+            )
+        ):
+            try:
+                if remote_signer_url:
+                    sk = remote_signer_url
+                else:
+                    sk = "unencrypted:" + key.secret_key()
+
+                print("    Appending secret key")
+                secret_keys.append({"name": account_name, "value": sk})
+            except ValueError:
+                pass
 
         pk_b58 = key.public_key()
+        if remote_signer_url:
+            locator = remote_signer_url
+        else:
+            locator = "unencrypted:" + pk_b58
+
         print(f"    Appending public key: {pk_b58}")
         public_keys.append(
             {
                 "name": account_name,
-                "value": {"locator": "unencrypted:" + pk_b58, "key": pk_b58},
+                "value": {"locator": locator, "key": pk_b58},
             }
         )
 
@@ -295,12 +333,12 @@ def import_keys(all_accounts):
 
         print(f"  Account key type: {account_values.get('type')}")
         print(
-            f"  Account bootstrap balance: " +
-            f"{account_values.get('bootstrap_balance')}"
+            f"  Account bootstrap balance: "
+            + f"{account_values.get('bootstrap_balance')}"
         )
         print(
-            f"  Is account a bootstrap baker: " +
-            f"{account_values.get('is_bootstrap_baker_account', False)}"
+            f"  Is account a bootstrap baker: "
+            + f"{account_values.get('is_bootstrap_baker_account', False)}"
         )
 
     print("\n  Writing " + tezdir + "/secret_keys")
@@ -375,7 +413,7 @@ def get_genesis_accounts_pubkey_and_balance(accounts):
 # too large to load from Helm to k8s. So we are mounting a file containing them.
 # bootstrap accounts always needs massaging so they are passed as arguments.
 def create_protocol_parameters_json(bootstrap_accounts, bootstrap_baker_accounts):
-    """ Create the protocol's parameters.json file """
+    """Create the protocol's parameters.json file"""
 
     accounts = {**bootstrap_accounts, **bootstrap_baker_accounts}
     pubkeys_with_balances = get_genesis_accounts_pubkey_and_balance(accounts)
@@ -395,8 +433,12 @@ def create_protocol_parameters_json(bootstrap_accounts, bootstrap_baker_accounts
             protocol_params["bootstrap_contracts"].append(requests.get(url).json())
 
     if protocol_activation.get("commitments_url"):
-        print(f"Injecting commitments (faucet account precursors) from {protocol_activation['commitments_url']}")
-        protocol_params["commitments"] = requests.get(protocol_activation["commitments_url"]).json()
+        print(
+            f"Injecting commitments (faucet account precursors) from {protocol_activation['commitments_url']}"
+        )
+        protocol_params["commitments"] = requests.get(
+            protocol_activation["commitments_url"]
+        ).json()
 
     return protocol_params
 
@@ -433,13 +475,14 @@ def get_genesis_pubkey():
             raise Exception("ERROR: Couldn't find the genesis_pubkey")
         return genesis_pubkey
 
+
 def recursive_update(d, u):
-    '''
+    """
     Recursive dict update
     Used to merge node's config passed as chart values
     and computed values
     https://stackoverflow.com/a/3233356/207209
-    '''
+    """
     for k, v in u.items():
         if isinstance(v, collections.abc.Mapping):
             d[k] = recursive_update(d.get(k, {}), v)
@@ -447,11 +490,12 @@ def recursive_update(d, u):
             d[k] = v
     return d
 
+
 def create_node_config_json(
     bootstrap_peers,
     net_addr=None,
 ):
-    """ Create the node's config.json file """
+    """Create the node's config.json file"""
 
     values_node_config = MY_NODE.get("config", {})
     computed_node_config = {
@@ -468,13 +512,13 @@ def create_node_config_json(
     node_config = recursive_update(values_node_config, computed_node_config)
 
     if THIS_IS_A_PUBLIC_NET:
-      # `tezos-node config --network ...` will have been run in config-init.sh
-      #  producing a config.json. The value passed to the `--network` flag may
-      #  have been the chain name or a url to the config.json of the chain.
-      #  Either way, set the `network` field here as the `network` object of the
-      #  produced config.json.
-      with open("/etc/tezos/data/config.json", "r") as f:
-          node_config["network"] = json.load(f)["network"]
+        # `tezos-node config --network ...` will have been run in config-init.sh
+        #  producing a config.json. The value passed to the `--network` flag may
+        #  have been the chain name or a url to the config.json of the chain.
+        #  Either way, set the `network` field here as the `network` object of the
+        #  produced config.json.
+        with open("/etc/tezos/data/config.json", "r") as f:
+            node_config["network"] = json.load(f)["network"]
     else:
         if CHAIN_PARAMS.get("expected-proof-of-work") != None:
             node_config["p2p"]["expected-proof-of-work"] = CHAIN_PARAMS[
@@ -485,7 +529,8 @@ def create_node_config_json(
         node_config["network"]["sandboxed_chain_name"] = "SANDBOXED_TEZOS"
         node_config["network"]["default_bootstrap_peers"] = []
         node_config["network"]["genesis_parameters"] = {
-                "values": {"genesis_pubkey": get_genesis_pubkey()} }
+            "values": {"genesis_pubkey": get_genesis_pubkey()}
+        }
         node_config["network"].pop("activation_account_name")
 
     return node_config

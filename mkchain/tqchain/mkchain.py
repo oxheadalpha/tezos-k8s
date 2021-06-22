@@ -232,6 +232,12 @@ def main():
             for n in range(args.number_of_nodes)
         }
 
+    signers = {
+        "tezos-signer-0": {
+            "sign_for_accounts": [f"baker{n}" for n in range(args.number_of_bakers)]
+        }
+    }
+
     first_baker_node_name = next(iter(creation_nodes[BAKER_NODE_TYPE]))
     activation_account_name = creation_nodes[BAKER_NODE_TYPE][first_baker_node_name][
         "bake_using_account"
@@ -260,6 +266,7 @@ def main():
         **base_constants,
         "bootstrap_peers": bootstrap_peers,
         "accounts": accounts["secret"],
+        "signers": signers,
         "nodes": creation_nodes,
         **activation,
     }
