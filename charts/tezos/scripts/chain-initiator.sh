@@ -1,4 +1,4 @@
-CLIENT="/usr/local/bin/tezos-client -A tezos-node-rpc -P 8732"
+CLIENT="/usr/local/bin/tezos-client --endpoint http://tezos-node-rpc:8732"
 
 until $CLIENT rpc get /version; do
     sleep 2
