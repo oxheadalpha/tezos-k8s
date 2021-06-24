@@ -19,13 +19,7 @@ CHAIN_PARAMS = json.loads(os.environ["CHAIN_PARAMS"])
 NODES = json.loads(os.environ["NODES"])
 
 MY_POD_NAME = os.environ["MY_POD_NAME"]
-MY_NODE_TYPE = MY_NODE = None
-# The chain initiator job does not have a MY_NODE_TYPE or MY_NODE. Only
-# statefulsets.
-if os.environ.get("MY_NODE_TYPE"):
-    MY_NODE_CLASS = os.environ["MY_NODE_TYPE"]
-    MY_NODE = NODES[MY_NODE_TYPE][MY_POD_NAME]
-
+MY_NODE = None
 ALL_NODES = {}
 BAKING_NODES = {}
 
@@ -40,9 +34,6 @@ for cl, val in NODES.items():
             if "baker" in val["runs"]:
                 BAKING_NODES[name] = inst
         i += 1
-
-print(ALL_NODES)
-print(BAKING_NODES)
 
 NETWORK_CONFIG = CHAIN_PARAMS["network"]
 
