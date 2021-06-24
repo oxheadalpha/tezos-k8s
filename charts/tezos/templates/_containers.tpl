@@ -139,6 +139,7 @@
 {{- end }}
 
 {{- define "tezos.container.bakers" }}
+{{- if has "baker" $.node_vals.runs }}
 {{- range .Values.protocols }}
 - image: "{{ $.Values.images.tezos }}"
   command:
@@ -168,8 +169,10 @@ https://github.com/helm/helm/issues/5979#issuecomment-518231758
       value: baker
 {{- end }}
 {{- end }}
+{{- end }}
 
 {{- define "tezos.container.endorsers" }}
+{{- if has "endorser" $.node_vals.runs }}
 {{- range .Values.protocols }}
 - image: "{{ $.Values.images.tezos }}"
   command:
@@ -199,6 +202,7 @@ https://github.com/helm/helm/issues/5979#issuecomment-518231758
 {{- include "tezos.localvars.pod_envvars" $ | indent 4 }}
     - name: DAEMON
       value: endorser
+{{- end }}
 {{- end }}
 {{- end }}
 

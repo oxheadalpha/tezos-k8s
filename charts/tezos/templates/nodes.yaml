@@ -1,5 +1,6 @@
 {{- range $key, $val := .Values.nodes }}
 {{- $_ := set $ "node_class" $key }}
+{{- $_ := set $ "node_vals" $val }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -20,12 +21,8 @@ spec:
     spec:
       containers:
 {{- include "tezos.container.node"      $ | indent 8 }}
-{{- if has "baker" $val.runs }}
 {{- include "tezos.container.bakers"    $ | indent 8 }}
-{{- end }}
-{{- if has "endorser" $val.runs }}
 {{- include "tezos.container.endorsers" $ | indent 8 }}
-{{- end }}
 {{- if has "logger" $val.runs }}
 {{- include "tezos.container.logger"    $ | indent 8 }}
 {{- end }}
