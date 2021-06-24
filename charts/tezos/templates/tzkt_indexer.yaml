@@ -2,7 +2,10 @@
 {{ print " " "server=localhost;port=5432;database=$(POSTGRES_DB);username=$(POSTGRES_USER);password=$(POSTGRES_PASSWORD);" }}
 {{- end -}}
 
+
 {{- if (include "tezos.shouldDeployTzktIndexer" .) }}
+{{- $tzkt_indexer := get (.Values.indexers | default dict) "tzkt" }}
+
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -21,7 +24,7 @@ spec:
         app: {{ .Values.tzkt_indexer_statefulset.name }}
     spec:
       initContainers:
-      {{- if .Values.indexers.tzkt.db_snapshot_url }}
+      {{- if $tzkt_indexer.db_snapshot_url }}
         - image: {{ .Values.tezos_k8s_images.utils }}
           name: download-db-snapshot
           volumeMounts:
@@ -41,7 +44,7 @@ spec:
               curl -Lfs -o "/tmp/db-snapshot/$CHAIN_NAME.backup" $SNAPSHOT_URL
               echo "Successfully downloaded snapshot"
             else
-              echo "Database '{{ .Values.indexers.tzkt.config.db_name }}' already exists. Skipping download."
+              echo "Database '{{ $tzkt_indexer.config.db_name }}' already exists. Skipping download."
             fi
       {{- end }}
         - image: {{ .Values.images.tezos }}
@@ -58,7 +61,7 @@ spec:
               touch "$ENV_FILE"
 
               # Get the chain id
-              CLIENT="/usr/local/bin/tezos-client -E {{ .Values.indexers.tzkt.config.rpc_url }}"
+              CLIENT="/usr/local/bin/tezos-client -E {{ $tzkt_indexer.config.rpc_url }}"
               until $CLIENT rpc get /version; do sleep 2; done
               CHAIN_ID=$($CLIENT rpc get /chains/main/chain_id)
               echo "Got chain id: $CHAIN_ID"
@@ -70,7 +73,7 @@ spec:
             - containerPort: 5000
           env:
           - name: Logging__LogLevel__Default
-            value: {{ .Values.indexers.tzkt.config.api_log_level }}
+            value: {{ $tzkt_indexer.config.api_log_level }}
           - name: ConnectionStrings__DefaultConnection
             value: {{- include "tezos.tzkt.setDbConnectionEnvVar" . }}
           envFrom:
@@ -83,9 +86,9 @@ spec:
               mountPath: /app/data
           env:
           - name: TZKT_TezosNode__Endpoint
-            value: {{ .Values.indexers.tzkt.config.rpc_url }}
+            value: {{ $tzkt_indexer.config.rpc_url }}
           - name: TZKT_Logging__LogLevel__Default
-            value: {{ .Values.indexers.tzkt.config.indexer_log_level }}
+            value: {{ $tzkt_indexer.config.indexer_log_level }}
           - name: TZKT_ConnectionStrings__DefaultConnection
             value: {{- include "tezos.tzkt.setDbConnectionEnvVar" . }}
           envFrom:
@@ -146,11 +149,11 @@ kind: Secret
 metadata:
   name: db-creds
 data:
-  POSTGRES_USER: {{ b64enc .Values.indexers.tzkt.config.db_user }}
-  POSTGRES_PASSWORD: {{ b64enc .Values.indexers.tzkt.config.db_password }}
-  POSTGRES_DB: {{ b64enc .Values.indexers.tzkt.config.db_name }}
+  POSTGRES_USER: {{ b64enc $tzkt_indexer.config.db_user }}
+  POSTGRES_PASSWORD: {{ b64enc $tzkt_indexer.config.db_password }}
+  POSTGRES_DB: {{ b64enc $tzkt_indexer.config.db_name }}
 
-{{- if .Values.indexers.tzkt.db_snapshot_url }}
+{{- if $tzkt_indexer.db_snapshot_url }}
 ---
 {{/*
 This script is mounted into postgres's /docker-entrypoint-initdb.d directory
