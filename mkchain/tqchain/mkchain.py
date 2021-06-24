@@ -262,7 +262,7 @@ def main():
         "bootstrap_peers": bootstrap_peers,
         "accounts": accounts["secret"],
         "nodes": creation_nodes,
-        "signers": { "signer0": {} },
+        "signers": {"signer0": {}},
         **activation,
     }
 
