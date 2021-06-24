@@ -67,7 +67,7 @@ find_next_blocks() {
     done
 
     if [ ! -z "$STOP_AT_BLOCK" -a "$HASH" != "$STOP_AT_BLOCK" ]; then
-	echo "$BLOCKS" | sed 's/^.* \([^ ]* [^ ]*\)/\1/'
+	echo "$BLOCKS" | sed -E 's/.* ([^ ]* )/\1/'
     else
 	echo "$BLOCKS"
     fi
