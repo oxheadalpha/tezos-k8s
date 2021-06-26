@@ -26,6 +26,9 @@ regular_node_statefulset: # charts/tezos/templates/node.yaml
 tzkt_indexer_statefulset:
   name: tzkt-indexer
   storageClassName: ""
+nomadic_indexer_statefulset:
+  name: nomadic-indexer
+  storageClassName: ""
 
 # For non-public chains the defualt mutez given to an account if the
 # account is not explicitly set below.
@@ -195,6 +198,7 @@ protocols:
 # contents in a database for efficient indexing. Most dapps need it.
 # Supported indexers:
 # * tzkt https://github.com/baking-bad/tzkt
+# * nomadic https://gitlab.com/nomadic-labs/tezos-indexer
 #
 # Templatized indexer configuration values go in the config field.
 #
@@ -214,3 +218,9 @@ protocols:
 #       db_password: bar
 #       # api_log_level: Debug
 #       # indexer_log_level: Debug
+#
+#   nomadic:
+#     # Configurable nomadic fields
+#     config:
+#       # url of the archive node to index
+#       rpc_url: http://tezos-node-0.tezos-node:8732

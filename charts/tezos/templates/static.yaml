@@ -47,3 +47,17 @@ spec:
     app: {{ .Values.tzkt_indexer_statefulset.name }}
   type: NodePort
 {{- end }}
+{{- if (include "tezos.shouldDeployNomadicIndexer" .) }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.nomadic_indexer_statefulset.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+    - port: 5000
+  selector:
+    app: {{ .Values.nomadic_indexer_statefulset.name }}
+  type: NodePort
+{{- end }}
