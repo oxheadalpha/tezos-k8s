@@ -28,10 +28,12 @@ spec:
         - image: {{ .Values.tezos_k8s_images.utils }}
           name: download-db-snapshot
           volumeMounts:
-            - name: db-snapshot
-              mountPath: /tmp/db-snapshot
             - name: indexer-db
-              mountPath: /tmp/indexer-db
+              mountPath: /etc/db-snapshot
+              subPath: db-snapshot
+            - name: indexer-db
+              mountPath: /etc/indexer-db
+              subPath: data
           env:
             - name: CHAIN_NAME
               value: {{ .Values.node_config_network.chain_name }}
@@ -44,9 +46,9 @@ spec:
           - |
             set -ex
 
-            if [ ! -d "/tmp/indexer-db/pgdata" ]; then
+            if [ ! -d "/etc/indexer-db/pgdata" ]; then
               echo "Downloading $CHAIN_NAME db snapshot from $SNAPSHOT_URL ..."
-              curl -LSsf -o "/tmp/db-snapshot/$CHAIN_NAME.backup" $SNAPSHOT_URL
+              curl -LSsf -o "/etc/db-snapshot/$CHAIN_NAME.backup" $SNAPSHOT_URL
               echo "Successfully downloaded snapshot"
             else
               echo "Database '{{ $tzkt_indexer.config.db_name }}' already exists. Skipping download."
@@ -115,9 +117,11 @@ spec:
           volumeMounts:
             - name: indexer-db
               mountPath: /var/lib/postgresql/data
-            {{- if .Values.indexers.tzkt.db_snapshot_url }}
-            - name: db-snapshot
-              mountPath: /tmp/db-snapshot
+              subPath: data
+            {{- if $tzkt_indexer.db_snapshot_url }}
+            - name: indexer-db
+              mountPath: /etc/db-snapshot
+              subPath: db-snapshot
             - name: import-db-script
               mountPath: /docker-entrypoint-initdb.d
             {{- end }}
@@ -131,9 +135,7 @@ spec:
       volumes:
         - name: tzkt-env
           emptyDir: {}
-        {{- if .Values.indexers.tzkt.db_snapshot_url }}
-        - name: db-snapshot
-          emptyDir: {}
+        {{- if $tzkt_indexer.db_snapshot_url }}
         - name: import-db-script
           configMap:
             name: import-db-script
@@ -173,7 +175,7 @@ data:
   import-db-snapshot.sh: |
     #!/bin/bash
 
-    SNAPSHOT_FILE="/tmp/db-snapshot/{{ .Values.node_config_network.chain_name }}.backup"
+    SNAPSHOT_FILE="/etc/db-snapshot/{{ .Values.node_config_network.chain_name }}.backup"
 
     pg_restore -U "$POSTGRES_USER" -v \
     --no-owner --clean --if-exists \
