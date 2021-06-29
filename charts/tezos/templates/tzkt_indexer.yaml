@@ -5,6 +5,7 @@
 
 {{- if (include "tezos.shouldDeployTzktIndexer" .) }}
 {{- $tzkt_indexer := get (.Values.indexers | default dict) "tzkt" }}
+{{- $snapshot_file := print "/etc/db-snapshot/" .Values.node_config_network.chain_name "-" $tzkt_indexer.indexer_image_tag ".backup" }}
 
 apiVersion: apps/v1
 kind: StatefulSet
@@ -35,10 +36,10 @@ spec:
               mountPath: /etc/indexer-db
               subPath: data
           env:
-            - name: CHAIN_NAME
-              value: {{ .Values.node_config_network.chain_name }}
             - name: SNAPSHOT_URL
               value: {{ .Values.indexers.tzkt.db_snapshot_url }}
+            - name: SNAPSHOT_FILE
+              value: {{ $snapshot_file }}
           command:
             - /bin/sh
           args:
@@ -46,10 +47,18 @@ spec:
           - |
             set -ex
 
+            # If there is no db
             if [ ! -d "/etc/indexer-db/pgdata" ]; then
-              echo "Downloading $CHAIN_NAME db snapshot from $SNAPSHOT_URL ..."
-              curl -LSsf -o "/etc/db-snapshot/$CHAIN_NAME.backup" $SNAPSHOT_URL
-              echo "Successfully downloaded snapshot"
+
+              if [ ! -f "$SNAPSHOT_FILE" ];
+              then
+                echo "Downloading db snapshot from $SNAPSHOT_URL ..."
+                curl -LfSs -o "$SNAPSHOT_FILE" "$SNAPSHOT_URL"
+                echo "Successfully downloaded snapshot"
+              else
+                echo "Snapshot already exists. Not downloading."
+              fi
+
             else
               echo "Database '{{ $tzkt_indexer.config.db_name }}' already exists. Skipping download."
             fi
@@ -127,8 +136,12 @@ spec:
             {{- end }}
           env:
           {{- /* https://github.com/docker-library/docs/blob/master/postgres/README.md#pgdata */}}
-          - name: PGDATA
-            value: /var/lib/postgresql/data/pgdata
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+            {{- if $tzkt_indexer.db_snapshot_url }}
+            - name: SNAPSHOT_FILE
+              value: {{ $snapshot_file }}
+            {{- end }}
           envFrom:
           - secretRef:
               name: db-creds
@@ -175,14 +188,13 @@ data:
   import-db-snapshot.sh: |
     #!/bin/bash
 
-    SNAPSHOT_FILE="/etc/db-snapshot/{{ .Values.node_config_network.chain_name }}.backup"
-
     pg_restore -U "$POSTGRES_USER" -v \
     --no-owner --clean --if-exists \
     --dbname "$POSTGRES_DB" \
     -1 "$SNAPSHOT_FILE"
-
+  {{ if not $tzkt_indexer.keep_snapshot_after_import }}
     rm -fv "$SNAPSHOT_FILE"
+  {{ end }}
 {{- end }}
 
 {{- end }}
