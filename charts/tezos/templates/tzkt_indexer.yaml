@@ -74,7 +74,7 @@ spec:
               echo "Got chain id: $CHAIN_ID"
               echo "export TZKT_TezosNode__ChainId=$CHAIN_ID" >> "$ENV_FILE"
       containers:
-        - image: bakingbad/tzkt-api:1.5
+        - image: "{{ $tzkt_indexer.api_image }}:{{ $tzkt_indexer.api_image_tag }}"
           name: api
           ports:
             - containerPort: 5000
@@ -86,7 +86,7 @@ spec:
           envFrom:
           - secretRef:
               name: db-creds
-        - image: bakingbad/tzkt-sync:1.5
+        - image: "{{ $tzkt_indexer.indexer_image }}:{{ $tzkt_indexer.indexer_image_tag }}"
           name: indexer
           volumeMounts:
             - name: tzkt-env
