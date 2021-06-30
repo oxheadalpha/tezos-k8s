@@ -270,6 +270,8 @@ def import_keys(all_accounts):
         remote_signers_for_account = [
             k for k, v in SIGNERS.items() if account_name in v["sign_for_accounts"]
         ]
+        # pick the signer for the account, if any.
+        # if several signers sign for this account, pick the first one
         if MY_POD_TYPE == "baking" and len(remote_signers_for_account) > 0:
             remote_signer_url = f"http://{remote_signers_for_account[0]}.tezos-signer:6732/{key.public_key_hash()}"
         try:
