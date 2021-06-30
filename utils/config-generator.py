@@ -21,11 +21,11 @@ SIGNERS = json.loads(os.environ["SIGNERS"])
 
 MY_POD_NAME = os.environ["MY_POD_NAME"]
 MY_POD_TYPE = os.environ["MY_POD_TYPE"]
-MY_NODE = None
+MY_POD_CONFIG = None
 if MY_POD_TYPE == "signing":
-    MY_NODE = SIGNERS[MY_POD_NAME]
+    MY_SIGNER = SIGNERS[MY_POD_NAME]
 elif MY_POD_TYPE in ["baking", "regular"]:
-    MY_NODE = NODES[MY_POD_TYPE][MY_POD_NAME]
+    MY_POD_CONFIG = NODES[MY_POD_TYPE][MY_POD_NAME]
 
 
 ALL_NODES = {**NODES.get("baking", {}), **NODES.get("regular", {})}
@@ -115,7 +115,7 @@ def main():
                     local_bootstrap_peers.append(bootstrap_peer_fbn_with_port)
             bootstrap_peers.extend(local_bootstrap_peers)
 
-        if not bootstrap_peers and not MY_NODE.get("is_bootstrap_node", False):
+        if not bootstrap_peers and not MY_POD_CONFIG.get("is_bootstrap_node", False):
             raise Exception(
                 "ERROR: No bootstrap peers found for this non-bootstrap node"
             )
@@ -185,7 +185,7 @@ def fill_in_missing_baker_accounts():
 
 # Verify that the current baker has a baker account with secret key
 def verify_this_bakers_account(accounts):
-    account_using_to_bake = MY_NODE.get("bake_using_account")
+    account_using_to_bake = MY_POD_CONFIG.get("bake_using_account")
     if not account_using_to_bake:
         raise Exception(f"ERROR: No account specified for baker {MY_POD_NAME}")
 
@@ -295,11 +295,11 @@ def import_keys(all_accounts):
             )
             or (
                 MY_POD_TYPE == "baking"
-                and MY_NODE.get("bake_using_account") == account_name
+                and MY_POD_CONFIG.get("bake_using_account") == account_name
             )
             or (
                 MY_POD_TYPE == "signing"
-                and account_name in MY_NODE.get("sign_for_accounts")
+                and account_name in MY_POD_CONFIG.get("sign_for_accounts")
             )
         ):
             try:
@@ -499,7 +499,7 @@ def create_node_config_json(
 ):
     """Create the node's config.json file"""
 
-    values_node_config = MY_NODE.get("config", {})
+    values_node_config = MY_POD_CONFIG.get("config", {})
     computed_node_config = {
         "data-dir": "/var/tezos/node/data",
         "rpc": {
