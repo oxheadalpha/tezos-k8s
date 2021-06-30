@@ -117,7 +117,7 @@ nodes:
 # Define and use external remote signers.
 # Bakers automatically use signers when configured.
 signers: {}
-#  signer0:
+#  tezos-signer-0:
 #    sign_for_accounts:
 #    - baker0
 
