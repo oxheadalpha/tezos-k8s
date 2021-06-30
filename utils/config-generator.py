@@ -23,7 +23,7 @@ MY_POD_NAME = os.environ["MY_POD_NAME"]
 MY_POD_TYPE = os.environ["MY_POD_TYPE"]
 MY_POD_CONFIG = None
 if MY_POD_TYPE == "signing":
-    MY_SIGNER = SIGNERS[MY_POD_NAME]
+    MY_POD_CONFIG = SIGNERS[MY_POD_NAME]
 elif MY_POD_TYPE in ["baking", "regular"]:
     MY_POD_CONFIG = NODES[MY_POD_TYPE][MY_POD_NAME]
 
@@ -266,14 +266,6 @@ def import_keys(all_accounts):
             raise Exception(f"{account_name} defined w/o a key")
 
         key = pytezos.key.from_encoded_key(account_key)
-        remote_signer_url = None
-        remote_signers_for_account = [
-            k for k, v in SIGNERS.items() if account_name in v["sign_for_accounts"]
-        ]
-        # pick the signer for the account, if any.
-        # if several signers sign for this account, pick the first one
-        if MY_POD_TYPE == "baking" and len(remote_signers_for_account) > 0:
-            remote_signer_url = f"http://{remote_signers_for_account[0]}.tezos-signer:6732/{key.public_key_hash()}"
         try:
             key.secret_key()
         except ValueError:
@@ -303,8 +295,13 @@ def import_keys(all_accounts):
             )
         ):
             try:
-                if remote_signer_url:
-                    sk = remote_signer_url
+                # pick the signer for the account, if any.
+                # if several signers sign for this account, pick the first one
+                remote_signers_for_account = [
+                    k for k, v in SIGNERS.items() if account_name in v["sign_for_accounts"]
+                ]
+                if MY_POD_TYPE == "baking" and len(remote_signers_for_account) > 0:
+                    sk = f"http://{remote_signers_for_account[0]}.tezos-signer:6732/{key.public_key_hash()}"
                 else:
                     sk = "unencrypted:" + key.secret_key()
 
@@ -314,16 +311,11 @@ def import_keys(all_accounts):
                 pass
 
         pk_b58 = key.public_key()
-        if remote_signer_url:
-            locator = remote_signer_url
-        else:
-            locator = "unencrypted:" + pk_b58
-
         print(f"    Appending public key: {pk_b58}")
         public_keys.append(
             {
                 "name": account_name,
-                "value": {"locator": locator, "key": pk_b58},
+                "value": {"locator": "unencrypted:" + pk_b58, "key": pk_b58},
             }
         )
 
