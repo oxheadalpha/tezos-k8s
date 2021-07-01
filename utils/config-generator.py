@@ -11,8 +11,7 @@ from pathlib import Path
 from re import sub
 
 from pytezos import pytezos
-from base58 import b58decode_check, b58encode_check
-from nacl.signing import SigningKey
+from base58 import b58encode_check
 
 ACCOUNTS = json.loads(os.environ["ACCOUNTS"])
 CHAIN_PARAMS = json.loads(os.environ["CHAIN_PARAMS"])
