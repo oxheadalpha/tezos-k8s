@@ -9,6 +9,7 @@ is_invitation: false
 # Images not part of the tezos-k8s repo go here
 images:
   tezos: tezos/tezos:v9-release
+  tezedge: simplestakingcom/tezedge:latest-release
 # Images that are part of the tezos-k8s repo go here with 'dev' tag
 tezos_k8s_images:
   utils: tezos-k8s-utils:dev

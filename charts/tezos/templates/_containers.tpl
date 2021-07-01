@@ -119,6 +119,7 @@
 {{- end }}
 
 {{- define "tezos.container.node" }}
+{{- if has "tezedge" $.node_vals.runs | not }}
 - command:
     - /bin/sh
   args:
@@ -138,6 +139,29 @@
       name: config-volume
     - mountPath: /var/tezos
       name: var-volume
+{{- end }}
+{{- end }}
+
+{{- define "tezos.container.tezedge" }}
+{{- if has "tezedge" $.node_vals.runs }}
+- name: tezedge
+  command:
+    - /light-node
+  args:
+    - "--config-file=/etc/tezos/tezedge.conf"
+  image: "{{ .Values.images.tezedge }}"
+  imagePullPolicy: IfNotPresent
+  ports:
+    - containerPort: 8732
+      name: tezos-rpc
+    - containerPort: 9732
+      name: tezos-net
+  volumeMounts:
+    - mountPath: /etc/tezos
+      name: config-volume
+    - mountPath: /var/tezos
+      name: var-volume
+{{- end }}
 {{- end }}
 
 {{- define "tezos.container.bakers" }}
