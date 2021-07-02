@@ -71,15 +71,7 @@ def main():
     # Create parameters.json
     if main_args.generate_parameters_json:
         print("Starting parameters.json file generation")
-        bootstrap_accounts_pubkey_hashes = get_bootstrap_accounts_pubkey_hashes(
-            all_accounts
-        )
-        baker_bootstrap_accounts_pubkeys = get_bootstrap_baker_accounts_pubkeys(
-            all_accounts
-        )
-        protocol_parameters = create_protocol_parameters_json(
-            bootstrap_accounts_pubkey_hashes, baker_bootstrap_accounts_pubkeys
-        )
+        protocol_parameters = create_protocol_parameters_json(all_accounts)
 
         protocol_params_json = json.dumps(protocol_parameters, indent=2)
         with open("/etc/tezos/parameters.json", "w") as json_file:
@@ -223,6 +215,9 @@ def verify_this_bakers_account(accounts):
 # files.  The specified keys for obvious reasons.  The generated keys
 # are stable because we take care not to use any information that is not
 # specified in the _values.yaml file in the seed used to generate them.
+#
+# import_keys() also fills in "pk" and "pkh" as the public key and
+# public key hash as a side-effect.  These are used later.
 
 edsk = b"\x0d\x0f\x3a\x07"
 
@@ -291,10 +286,12 @@ def import_keys(all_accounts):
                 "value": {"locator": "unencrypted:" + pk_b58, "key": pk_b58},
             }
         )
+        account_values["pk"] = pk_b58
 
         pkh_b58 = key.public_key_hash()
         print(f"  Appending public key hash: {pkh_b58}")
         public_key_hashs.append({"name": account_name, "value": pkh_b58})
+        account_values["pkh"] = pkh_b58
 
         # XXXrcd: fix this print!
 
@@ -316,60 +313,12 @@ def import_keys(all_accounts):
     json.dump(public_key_hashs, open(tezdir + "/public_key_hashs", "w"), indent=4)
 
 
-def get_bootstrap_accounts(accounts, keys_list, is_getting_accounts_for_bakers):
-    keys = {}
-    for key in keys_list:
-        key_name = key["name"]
-        bootstrap_balance = accounts[key_name].get("bootstrap_balance", "0")
-        # Don't add accounts with 0 tez to parameters.json
-        if bootstrap_balance == "0":
-            continue
-
-        # If we are handling pubkeys for baker accounts
-        if is_getting_accounts_for_bakers and accounts[key_name].get(
-            "is_bootstrap_baker_account", False
-        ):
-            keys[key_name] = {
-                "key": key["value"]["key"],
-                "bootstrap_balance": bootstrap_balance,
-            }
-        elif (  # We are handling pubkey hashes for regular accounts
-            not is_getting_accounts_for_bakers
-            and not accounts[key_name].get("is_bootstrap_baker_account", True)
-        ):
-            keys[key_name] = {
-                "key": key["value"],
-                "bootstrap_balance": bootstrap_balance,
-            }
-
-    return keys
-
-
-# Get baking account's pubkeys for parameters.json bootstrap_accounts
-def get_bootstrap_baker_accounts_pubkeys(accounts):
-    with open("/var/tezos/client/public_keys", "r") as f:
-        pubkey_list = json.load(f)
-    return get_bootstrap_accounts(
-        accounts, pubkey_list, is_getting_accounts_for_bakers=True
-    )
-
-
-# Get non-baking account's pubkey hashes for parameters.json bootstrap_accounts
-def get_bootstrap_accounts_pubkey_hashes(accounts):
-    with open("/var/tezos/client/public_key_hashs", "r") as f:
-        pubkey_hash_list = json.load(f)
-    return get_bootstrap_accounts(
-        accounts, pubkey_hash_list, is_getting_accounts_for_bakers=False
-    )
-
-
 def get_genesis_accounts_pubkey_and_balance(accounts):
     pubkey_and_balance_pairs = []
 
-    for account_values in accounts.values():
-        pubkey_and_balance_pairs.append(
-            [account_values["key"], account_values["bootstrap_balance"]]
-        )
+    for v in accounts.values():
+        if "bootstrap_balance" in v:
+            pubkey_and_balance_pairs.append([v["pk"], v["bootstrap_balance"]])
 
     return pubkey_and_balance_pairs
 
@@ -379,10 +328,9 @@ def get_genesis_accounts_pubkey_and_balance(accounts):
 # `CHAIN_PARAMS["protocol_parameters"]`. The commitment size for Florence was
 # too large to load from Helm to k8s. So we are mounting a file containing them.
 # bootstrap accounts always needs massaging so they are passed as arguments.
-def create_protocol_parameters_json(bootstrap_accounts, bootstrap_baker_accounts):
+def create_protocol_parameters_json(accounts):
     """ Create the protocol's parameters.json file """
 
-    accounts = {**bootstrap_accounts, **bootstrap_baker_accounts}
     pubkeys_with_balances = get_genesis_accounts_pubkey_and_balance(accounts)
 
     protocol_activation = CHAIN_PARAMS["protocol_activation"]
