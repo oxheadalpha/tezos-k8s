@@ -7,11 +7,11 @@
   valueFrom:
     fieldRef:
       fieldPath: metadata.name
-- name: MY_NODE_TYPE
+- name: MY_POD_TYPE
 {{- if contains "baker" .Template.Name }}
-  value: {{ .Values.baker_statefulset.node_type }}
+  value: {{ .Values.baker_statefulset.pod_type }}
 {{- else }}
-  value: {{ .Values.regular_node_statefulset.node_type }}
+  value: {{ .Values.regular_node_statefulset.pod_type }}
 {{- end }}
 {{- end }}
 

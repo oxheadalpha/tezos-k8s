@@ -17,15 +17,21 @@ tezos_k8s_images:
 # Properties that are templated in Helm template files
 baker_statefulset: # charts/tezos/templates/baker.yaml
   name: tezos-baking-node
-  node_type: baking
+  pod_type: baking
   storage_size: 15Gi
 regular_node_statefulset: # charts/tezos/templates/node.yaml
   name: tezos-node
-  node_type: regular
+  pod_type: regular
   storage_size: 15Gi
 tzkt_indexer_statefulset:
   name: tzkt-indexer
   storageClassName: ""
+signer_statefulset:
+  name: tezos-signer
+  pod_type: signing
+chain_initiator_job:
+  name: chain-initiator
+  pod_type: activating
 
 # For non-public chains the defualt mutez given to an account if the
 # account is not explicitly set below.
@@ -107,6 +113,13 @@ nodes:
       config:
         shell:
           history_mode: rolling
+
+# Define and use external remote signers.
+# Bakers automatically use signers when configured.
+signers: {}
+#  tezos-signer-0:
+#    sign_for_accounts:
+#    - baker0
 
 # Where full and rolling history mode nodes will get their snapshots from
 full_snapshot_url: https://mainnet.xtz-shots.io/full

@@ -32,7 +32,7 @@ do
 done
 
 echo "Set zerotier name"
-if [ "$(echo $NODES | jq -r ".${MY_NODE_TYPE}.\"${MY_POD_NAME}\".is_bootstrap_node")" == "true" ]; then
+if [ "$(echo $NODES | jq -r ".${MY_POD_TYPE}.\"${MY_POD_NAME}\".is_bootstrap_node")" == "true" ]; then
   zerotier_name="${CHAIN_NAME}_bootstrap"
   zerotier_description="Bootstrap node ${MY_POD_NAME} for chain ${CHAIN_NAME}"
 else

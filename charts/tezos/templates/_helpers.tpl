@@ -54,6 +54,15 @@
 {{- end }}
 {{- end }}
 
+{{- define "tezos.shouldDeploySignerStatefulset" -}}
+{{- $signers := .Values.signers | default dict }}
+{{- if and (not .Values.is_invitation) ($signers | len) }}
+{{- "true" }}
+{{- else }}
+{{- "" }}
+{{- end }}
+{{- end }}
+
 {{/*
   Checks if a protocol should be activated. There needs to be a protocol_hash
   and protocol_parameters.

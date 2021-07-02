@@ -12,14 +12,14 @@ python3 /config-generator.py "$@"
 set +e
 
 #
-# Next we write the current baker ccount into /etc/tezos/baking-account.
+# Next we write the current baker account into /etc/tezos/baking-account.
 # We do it here because we shall use jq to process some of the environment
 # variables and we are not guaranteed to have jq available on an arbitrary
 # tezos docker image.
 
-if [ "$MY_NODE_TYPE" = "baking" ]; then
+if [ "$MY_POD_TYPE" = "baking" ]; then
     my_baker_account=$(echo $NODES | \
-	    jq -r ".${MY_NODE_TYPE}.\"${MY_POD_NAME}\".bake_using_account")
+	    jq -r ".${MY_POD_TYPE}.\"${MY_POD_NAME}\".bake_using_account")
 
     # If no account to bake for was specified in the node's settings,
     # config-generator defaults the account name to the pod's name.
