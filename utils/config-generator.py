@@ -317,8 +317,11 @@ def get_genesis_accounts_pubkey_and_balance(accounts):
     pubkey_and_balance_pairs = []
 
     for v in accounts.values():
-        if "bootstrap_balance" in v:
-            pubkey_and_balance_pairs.append([v["pk"], v["bootstrap_balance"]])
+        if "bootstrap_balance" in v and v["bootstrap_balance"] != "0":
+            key = v.get("pk")
+            if key == None:
+                key = v.get("pkh")
+            pubkey_and_balance_pairs.append([key, v["bootstrap_balance"]])
 
     return pubkey_and_balance_pairs
 
