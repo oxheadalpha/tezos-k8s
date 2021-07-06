@@ -5,7 +5,16 @@
 
 {{- if (include "tezos.shouldDeployTzktIndexer" .) }}
 {{- $tzkt_indexer := get (.Values.indexers | default dict) "tzkt" }}
+{{- /*
+ The path of a downloaded snapshot.
+ The file's name format is "{CHAIN_NAME}-{indexer_image_tag}.backup"
+*/}}
 {{- $snapshot_file := print "/etc/db-snapshot/" .Values.node_config_network.chain_name "-" $tzkt_indexer.indexer_image_tag ".backup" }}
+{{- /*
+ A file every pod uses to remember its imported snapshot.
+ By keeping track, pods won't try to re-upgrade their db on restarts.
+*/}}
+{{- $MY_CURRENT_SNAPSHOT_FILE := print "/etc/db-snapshot/current-snapshot.txt" }}
 
 apiVersion: apps/v1
 kind: StatefulSet
@@ -43,25 +52,75 @@ spec:
           command:
             - /bin/sh
           args:
-          - "-c"
-          - |
-            set -ex
+            - "-c"
+            - |
+              set -ex
+              SHOULD_UPGRADE_INDEXER={{ $tzkt_indexer.upgrade_indexer }}
 
-            # If there is no db
-            if [ ! -d "/etc/indexer-db/pgdata" ]; then
+              # If there is no db
+              if [ ! -d "/etc/indexer-db/pgdata" -o "$SHOULD_UPGRADE_INDEXER" ]; then
 
-              if [ ! -f "$SNAPSHOT_FILE" ];
-              then
-                echo "Downloading db snapshot from $SNAPSHOT_URL ..."
-                curl -LfSs -o "$SNAPSHOT_FILE" "$SNAPSHOT_URL"
-                echo "Successfully downloaded snapshot"
+                if [ ! -f "$SNAPSHOT_FILE" ];
+                then
+                  echo "Downloading db snapshot from $SNAPSHOT_URL ..."
+                  curl -LfSs -o "$SNAPSHOT_FILE" "$SNAPSHOT_URL"
+                  echo "Successfully downloaded snapshot"
+                else
+                  echo "Snapshot already exists. Not downloading."
+                fi
+
               else
-                echo "Snapshot already exists. Not downloading."
+                echo "Database '{{ $tzkt_indexer.config.db_name }}' already exists. Skipping download."
+              fi
+        {{- if $tzkt_indexer.upgrade_indexer }}
+        - name: upgrade-db
+          image: postgres:13
+          volumeMounts:
+            - name: indexer-db
+              mountPath: /var/lib/postgresql/data
+              subPath: data
+            - name: indexer-db
+              mountPath: /etc/db-snapshot
+              subPath: db-snapshot
+            - name: import-db-script
+              mountPath: /etc/import-script
+          env:
+          {{- /* https://github.com/docker-library/docs/blob/master/postgres/README.md#pgdata */}}
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+            - name: SNAPSHOT_URL
+              value: {{ .Values.indexers.tzkt.db_snapshot_url }}
+            - name: SNAPSHOT_FILE
+              value: {{ $snapshot_file }}
+          envFrom:
+            - secretRef:
+                name: db-creds
+          securityContext:
+          {{- /* The postgres server needs to be run by a non-root user */}}
+            runAsUser: 999
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              if [ ! -d "$PGDATA" ]; then
+                echo "No db exists to upgrade. Exiting."
+                exit 0
               fi
 
-            else
-              echo "Database '{{ $tzkt_indexer.config.db_name }}' already exists. Skipping download."
-            fi
+              MY_CURRENT_SNAPSHOT_FILE={{ $MY_CURRENT_SNAPSHOT_FILE }}
+              if [ -f "$MY_CURRENT_SNAPSHOT_FILE" ]; then
+                current_snapshot=$(cat "$MY_CURRENT_SNAPSHOT_FILE")
+                if [ "$current_snapshot" = "$SNAPSHOT_URL" ]; then
+                  echo "Already upgraded to $current_snapshot. Exiting."
+                  exit 0
+                fi
+              fi
+
+              pg_ctl start
+              /etc/import-script/import-db-snapshot.sh
+              pg_ctl stop
+        {{- end }}
       {{- end }}
         - image: {{ .Values.images.tezos }}
           name: get-chain-id
@@ -139,6 +198,8 @@ spec:
             - name: PGDATA
               value: /var/lib/postgresql/data/pgdata
             {{- if $tzkt_indexer.db_snapshot_url }}
+            - name: SNAPSHOT_URL
+              value: {{ .Values.indexers.tzkt.db_snapshot_url }}
             - name: SNAPSHOT_FILE
               value: {{ $snapshot_file }}
             {{- end }}
@@ -152,6 +213,10 @@ spec:
         - name: import-db-script
           configMap:
             name: import-db-script
+            {{- if $tzkt_indexer.upgrade_indexer }}
+            {{- /* The upgrade container needs to execute the file as non root */}}
+            defaultMode: 0777
+            {{- end }}
         {{- end }}
   volumeClaimTemplates:
     - metadata:
@@ -188,13 +253,25 @@ data:
   import-db-snapshot.sh: |
     #!/bin/bash
 
-    pg_restore -U "$POSTGRES_USER" -v \
-    --no-owner --clean --if-exists \
+    echo "Importing snapshot $SNAPSHOT_URL"
+    pg_restore -U "$POSTGRES_USER" \
+    -v --no-owner --clean \
+    --if-exists --exit-on-error \
     --dbname "$POSTGRES_DB" \
     -1 "$SNAPSHOT_FILE"
+
+    MY_CURRENT_SNAPSHOT_FILE={{ $MY_CURRENT_SNAPSHOT_FILE }}
+    if [ ! -f "$MY_CURRENT_SNAPSHOT_FILE" ]; then
+      touch "$MY_CURRENT_SNAPSHOT_FILE"
+    fi
+
+    echo "$SNAPSHOT_URL" > "$MY_CURRENT_SNAPSHOT_FILE"
+
+    echo "Snapshot imported"
   {{ if not $tzkt_indexer.keep_snapshot_after_import }}
     rm -fv "$SNAPSHOT_FILE"
   {{ end }}
 {{- end }}
+
 
 {{- end }}

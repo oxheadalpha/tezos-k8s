@@ -232,6 +232,13 @@ protocols:
 #     ## the indexer start syncing with it from scratch.
 #     # db_snapshot_url: https://tzkt-snapshots.s3.eu-central-1.amazonaws.com/tzkt_v1.5.2.backup
 #
+#     ## Tzkt provides new snapshots as they update their code. Update your
+#     ## indexers by specifying new docker image tags and by using a new
+#     ## db_snapshot_url. Then set this field to true to trigger a rolling update
+#     ## of your indexers. Spin up an additional replica if you only have one to
+#     ## avoid downtime. You can set this back to false on subsequent deployments.
+#     # upgrade_indexer: false
+#
 #     ## For developing: you can choose to persist the snapshot file after it's
 #     ## imported so that the pod would never have to re-download it. The files
 #     ## name format is "{CHAIN_NAME}-{indexer_image_tag}.backup"
