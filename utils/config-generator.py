@@ -244,6 +244,46 @@ def fill_in_missing_keys(all_accounts):
             account_values["type"] = "secret"
 
 
+#
+# expose_secret_key() decides if an account needs to have its secret
+# key exposed on the current pod.  It returns the obvious Boolean.
+
+
+def expose_secret_key(account_name):
+    if MY_POD_TYPE == "activating":
+        return NETWORK_CONFIG["activation_account_name"] == account_name
+
+    if MY_POD_TYPE == "signing":
+        return account_name in MY_POD_CONFIG.get("sign_for_accounts")
+
+    if MY_POD_TYPE == "node":
+        return MY_POD_CONFIG.get("bake_using_account") == account_name
+
+    return False
+
+
+#
+# pod_requires_secret_key() decides if a pod requires the secret key,
+# regardless of a remote_signer being present.  E.g. the remote signer
+# needs to have the keys not a URL to itself.
+
+
+def pod_requires_secret_key(account_name):
+    return MY_POD_TYPE in ["activating", "signing"]
+
+
+#
+# remote_signer() picks the first signer, if any, that claims to sign
+# for account_name and returns a URL to locate it.
+
+
+def remote_signer(account_name, key):
+    for k, v in SIGNERS.items():
+        if account_name in v["sign_for_accounts"]:
+            return f"http://{k}.tezos-signer:6732/{key.public_key_hash()}"
+    return None
+
+
 def import_keys(all_accounts):
     print("\nImporting keys")
     tezdir = "/var/tezos/client"
@@ -274,35 +314,18 @@ def import_keys(all_accounts):
                 )
 
         # restrict which private key is exposed to which pod
-        if (
-            (
-                MY_POD_TYPE == "activating"
-                and NETWORK_CONFIG["activation_account_name"] == account_name
-            )
-            or (
-                MY_POD_TYPE == "baking"
-                and MY_POD_CONFIG.get("bake_using_account") == account_name
-            )
-            or (
-                MY_POD_TYPE == "signing"
-                and account_name in MY_POD_CONFIG.get("sign_for_accounts")
-            )
-        ):
-            try:
-                # pick the signer for the account, if any.
-                # if several signers sign for this account, pick the first one
-                remote_signers_for_account = [
-                    k for k, v in SIGNERS.items() if account_name in v["sign_for_accounts"]
-                ]
-                if MY_POD_TYPE == "baking" and len(remote_signers_for_account) > 0:
-                    sk = f"http://{remote_signers_for_account[0]}.tezos-signer:6732/{key.public_key_hash()}"
-                else:
+        if expose_secret_key(account_name):
+            sk = remote_signer(account_name, key)
+            if sk == None or pod_requires_secret_key(account_name):
+                try:
                     sk = "unencrypted:" + key.secret_key()
+                except ValueError:
+                    raise ("Secret key required but not provided.")
 
                 print("    Appending secret key")
-                secret_keys.append({"name": account_name, "value": sk})
-            except ValueError:
-                pass
+            else:
+                print("    Using remote signer: " + sk)
+            secret_keys.append({"name": account_name, "value": sk})
 
         pk_b58 = key.public_key()
         print(f"    Appending public key: {pk_b58}")
