@@ -1,0 +1,4 @@
+-e git+https://github.com/vbuterin/pybitcointools.git@aeb0a2bbb8bbfe421432d776c649650eaeb882a5#egg=bitcoin
+pyblake2
+pysodium==0.6.11
+numpy

@@ -426,6 +426,10 @@ def create_protocol_parameters_json(bootstrap_accounts, bootstrap_baker_accounts
             print(f"Injecting bootstrap contract from {url}")
             protocol_params["bootstrap_contracts"].append(requests.get(url).json())
 
+    if protocol_activation.get("commitments_url") and protocol_activation.get("deterministic_faucet"):
+        print("ERROR: cannot have both external commitment file and deterministic faucet set at the same time, please fix your activation parameters")
+        exit(1)
+
     if protocol_activation.get("commitments_url"):
         print(
             f"Injecting commitments (faucet account precursors) from {protocol_activation['commitments_url']}"
@@ -433,6 +437,10 @@ def create_protocol_parameters_json(bootstrap_accounts, bootstrap_baker_accounts
         protocol_params["commitments"] = requests.get(
             protocol_activation["commitments_url"]
         ).json()
+    elif protocol_activation.get("deterministic_faucet"):
+        with open("/secret-seeds/commitments.json", "r") as f:
+            commitments = json.load(f)
+        protocol_params["commitments"] = commitments
 
     return protocol_params
 
