@@ -381,6 +381,7 @@ def import_keys(all_accounts):
 # use a public key if the property "is_bootstrap_baker_account" is
 # either absent or true.
 
+
 def get_genesis_accounts_pubkey_and_balance(accounts):
     pubkey_and_balance_pairs = []
 
@@ -401,7 +402,7 @@ def get_genesis_accounts_pubkey_and_balance(accounts):
 # too large to load from Helm to k8s. So we are mounting a file containing them.
 # bootstrap accounts always needs massaging so they are passed as arguments.
 def create_protocol_parameters_json(accounts):
-    """ Create the protocol's parameters.json file """
+    """Create the protocol's parameters.json file"""
 
     pubkeys_with_balances = get_genesis_accounts_pubkey_and_balance(accounts)
 
