@@ -28,6 +28,14 @@ spec:
             - configMapRef:
                 name: tezos-config
       initContainers:
+{{- if (include "tezos.shouldInitializeDeterministicFaucet" .) }}
+        - image: {{ .Values.tezos_k8s_images.account_gen }}
+          name: faucet-account-gen
+          args: [ "{{ .Values.activation.deterministic_faucet.seed }}", "{{ .Values.activation.deterministic_faucet.number_of_accounts }}" ]
+          volumeMounts:
+          - name: faucet-commitments
+            mountPath: "/secret-seeds"
+{{ end }}
         - image: {{ .Values.tezos_k8s_images.utils }}
           imagePullPolicy: IfNotPresent
           name: config-generator
@@ -51,12 +59,16 @@ spec:
               name: config-volume
             - mountPath: /var/tezos
               name: var-volume
+            - name: faucet-commitments
+              mountPath: "/secret-seeds"
       restartPolicy: Never
       volumes:
         - emptyDir: {}
           name: config-volume
         - emptyDir: {}
           name: var-volume
+        - name: faucet-commitments
+          emptyDir: {}
 {{ end }}
 ---
 {{- if (include "tezos.shouldDeployBakerStatefulset" .) }}
