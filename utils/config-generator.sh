@@ -19,7 +19,6 @@ cat > /etc/tezos/tezedge.conf <<EOM
 --custom-network-file=/etc/tezos/config.json
 --p2p-port=9732
 --rpc-port=8732
---websocket-address=0.0.0.0:4927
 --init-sapling-spend-params-file=/sapling-spend.params
 --init-sapling-output-params-file=/sapling-output.params
 --tezos-data-dir=/var/tezos/node/data
@@ -32,21 +31,9 @@ cat > /etc/tezos/tezedge.conf <<EOM
 --peer-thresh-low=10
 --peer-thresh-high=15
 --protocol-runner=/protocol-runner
---ffi-pool-max-connections=10
---ffi-trpap-pool-max-connections=10
---ffi-twcap-pool-max-connections=10
---ffi-pool-connection-timeout-in-secs=60
---ffi-trpap-pool-connection-timeout-in-secs=60
---ffi-twcap-pool-connection-timeout-in-secs=60
---ffi-pool-max-lifetime-in-secs=21600
---ffi-trpap-pool-max-lifetime-in-secs=21600
---ffi-twcap-pool-max-lifetime-in-secs=21600
---ffi-pool-idle-timeout-in-secs=1800
---ffi-trpap-pool-idle-timeout-in-secs=1800
---ffi-twcap-pool-idle-timeout-in-secs=1800
---compute-context-action-tree-hashes=false
 --tokio-threads=0
 --enable-testchain=false
+--log=terminal
 EOM
 
 < /etc/tezos/config.json jq -r '.p2p."bootstrap-peers"[]'	| \
