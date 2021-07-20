@@ -153,6 +153,21 @@ def fill_in_missing_genesis_block():
         genesis_config["block"] = gbk_b58
 
 
+def get_baking_accounts(baker_values):
+    acct = baker_values.get("bake_using_account")
+    accts = baker_values.get("bake_using_accounts")
+
+    if acct and accts:
+        raise ValueError(
+            'Mustn\'t specify both "bake_using_account" and "bake_using_accounts"'
+        )
+
+    if acct:
+        accts = [acct]
+
+    return accts
+
+
 # Secret and public keys are matches and need be processed together. Neither key
 # must be specified, as later code will fill in the details if they are not.
 #
@@ -161,47 +176,43 @@ def fill_in_missing_genesis_block():
 def fill_in_missing_baker_accounts():
     print("\nFilling in any missing baker accounts...")
     new_accounts = {}
+    init_balance = CHAIN_PARAMS["default_bootstrap_mutez"]
     for baker_name, baker_values in BAKING_NODES.items():
-        baker_account_name = baker_values.get("bake_using_account")
+        accts = get_baking_accounts(baker_values)
 
-        if not baker_account_name or baker_account_name not in ACCOUNTS:
-            new_baker_account_name = None
-            if not baker_account_name:
-                print(f"A new account named {baker_name} will be created")
-                new_baker_account_name = baker_name
-            else:
-                print(
-                    f"Specified account named {baker_account_name} is missing and will be created"
-                )
-                new_baker_account_name = baker_account_name
+        if not accts:
+            print(f"Defaulting to baking with account: {baker_name}")
+            accts = [baker_name]
 
-            new_accounts[new_baker_account_name] = {
-                "bootstrap_balance": CHAIN_PARAMS["default_bootstrap_mutez"],
-                "is_bootstrap_baker_account": True,
-            }
-            # Add to the baker the account name it will use to bake
-            baker_values["bake_using_account"] = new_baker_account_name
+        baker_values["bake_using_account"] = None
+        baker_values["bake_using_accounts"] = accts
+
+        for acct in accts:
+            if acct not in ACCOUNTS:
+                print(f"Creating account: {acct}")
+                new_accounts[acct] = {
+                    "bootstrap_balance": init_balance,
+                    "is_bootstrap_baker_account": True,
+                }
 
     return {**new_accounts, **ACCOUNTS}
 
 
 # Verify that the current baker has a baker account with secret key
 def verify_this_bakers_account(accounts):
-    account_using_to_bake = MY_POD_CONFIG.get("bake_using_account")
-    if not account_using_to_bake:
-        raise Exception(f"ERROR: No account specified for baker {MY_POD_NAME}")
+    accts = get_baking_accounts(MY_POD_CONFIG)
 
-    account = accounts.get(account_using_to_bake)
-    if not account:
-        raise Exception(
-            f"ERROR: No account named {account_using_to_bake} found for baker {MY_POD_NAME}"
-        )
+    if not accts or len(accts) < 1:
+        raise Exception("ERROR: No baker accounts specified")
 
-    if account.get("type") != "secret" or not account.get("key"):
-        raise Exception(
-            "ERROR: Either a secret key was not provided or the key type not specified"
-            f", for account {account_using_to_bake} for baker {MY_POD_NAME}"
-        )
+    for acct in accts:
+        if not accounts.get(acct):
+            raise Exception(f"ERROR: No account named {acct} found.")
+
+        # We can count on accounts[acct]["type"] because import_keys will
+        # fill it in when it is missing.
+        if accounts[acct]["type"] != "secret":
+            raise Exception(f"ERROR: Either a secret key was not provided for {acct}")
 
 
 #
@@ -268,7 +279,9 @@ def expose_secret_key(account_name):
         return account_name in MY_POD_CONFIG.get("sign_for_accounts")
 
     if MY_POD_TYPE == "node":
-        return MY_POD_CONFIG.get("bake_using_account") == account_name
+        if MY_POD_CONFIG.get("bake_using_account", "") == account_name:
+            return True
+        return account_name in MY_POD_CONFIG.get("bake_using_accounts", {})
 
     return False
 
@@ -314,11 +327,13 @@ def import_keys(all_accounts):
         try:
             key.secret_key()
         except ValueError:
+            account_values["type"] = "public"
             if account_key_type == "secret":
                 raise ValueError(
                     account_name + "'s key marked as " + "secret, but it is public"
                 )
         else:
+            account_values["type"] = "secret"
             if account_key_type == "public":
                 raise ValueError(
                     account_name + "'s key marked as " + "public, but it is secret"
