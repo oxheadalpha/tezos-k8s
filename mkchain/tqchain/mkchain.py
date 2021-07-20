@@ -135,7 +135,7 @@ def node_config(name, n, is_baker):
         },
     }
     if is_baker:
-        ret["bake_using_account"] = f"{name}-{n}"
+        ret["bake_using_accounts"] = [f"{name}-{n}"]
         if n < 2:
             ret["is_bootstrap_node"] = True
             ret["config"]["shell"]["history_mode"] = "archive"
