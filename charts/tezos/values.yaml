@@ -15,6 +15,14 @@ tezos_k8s_images:
   utils: tezos-k8s-utils:dev
   zerotier: tezos-k8s-zerotier:dev
 
+# octez v11 or superior requires explicitly opening up ACLs for other
+# containers to be able to do sentitive RPC operations to it
+# for example chain activation
+#
+# But v10 or less does not recognize the argument.
+# Set this toggle to true when using octez v11.
+open_acls: false
+
 # Properties that are templated in Helm template files
 tzkt_indexer_statefulset:
   name: tzkt-indexer

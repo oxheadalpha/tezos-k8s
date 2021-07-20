@@ -17,6 +17,7 @@ ACCOUNTS = json.loads(os.environ["ACCOUNTS"])
 CHAIN_PARAMS = json.loads(os.environ["CHAIN_PARAMS"])
 NODES = json.loads(os.environ["NODES"])
 SIGNERS = json.loads(os.environ["SIGNERS"])
+OPEN_ACLS = os.environ["OPEN_ACLS"]
 
 MY_POD_NAME = os.environ["MY_POD_NAME"]
 MY_POD_TYPE = os.environ["MY_POD_TYPE"]
@@ -497,6 +498,8 @@ def create_node_config_json(
         },
         # "log": {"level": "debug"},
     }
+    if OPEN_ACLS == "true":
+        computed_node_config["rpc"]["acl"] = [ { "address": os.getenv('MY_POD_IP'), "blacklist": [] } ]
     node_config = recursive_update(values_node_config, computed_node_config)
 
     if THIS_IS_A_PUBLIC_NET:
