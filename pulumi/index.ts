@@ -36,16 +36,16 @@ helmValues["tezos_k8s_images"] = pulumiTaggedImages
 const vpc = new awsx.ec2.Vpc(chainName + "-vpc", {});
 
 // For now, we set the number of EKS nodes to be the number of
-// Tezos bakers/nodes divided by 12.  We should fix this to
-// be a little more automagic.  Why 12?  It's a guess currently,
-// we should experiment a little to get a better number.  We add
-// three because that's the minimum.
+// Tezos bakers/nodes divided by 7.  We should fix this to
+// be a little more automagic.  Why 7?  We are assuming that
+// we need about 2GB RAM per node and the t3.xlarge has 16GB.
+// We add three because that's the minimum.
 
-const numBakers = helmValues.nodes?.baking?.length || 0
-const numRegularNodes  = helmValues.nodes?.regular?.length || 0
-
-const totalTezosNodes = numBakers + numRegularNodes
-const desiredClusterCapacity = Math.round(totalTezosNodes / 12 + 3);
+let numNodes: number = 0
+for (const key in helmValues.nodes) {
+    numNodes += helmValues.nodes[key].instances.length;
+}
+const desiredClusterCapacity = Math.round(numNodes / 7 + 3);
 
 function createWorkerNodeRole(name: string): aws.iam.Role {
     const managedPolicyArns: string[] = [
