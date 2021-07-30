@@ -41,9 +41,6 @@ spec:
             - name: indexer-db
               mountPath: /etc/db-snapshot
               subPath: db-snapshot
-            - name: indexer-db
-              mountPath: /etc/indexer-db
-              subPath: data
           env:
             - name: SNAPSHOT_URL
               value: {{ .Values.indexers.tzkt.db_snapshot_url }}
