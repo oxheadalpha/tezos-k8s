@@ -139,6 +139,23 @@ spec:
               echo "Got chain id: $CHAIN_ID"
               echo "export TZKT_TezosNode__ChainId=$CHAIN_ID" >> "$ENV_FILE"
       containers:
+        - image: {{ .Values.tezos_k8s_images.utils }}
+          name: readiness
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              while :
+              do
+                [ "$(curl -s http://localhost:5000/v1/head | jq '.synced')" = true ] \
+                  && { touch /tmp/synced; echo "Synced"; } \
+                  || { echo "Syncing..."; rm -f /tmp/synced; }
+                sleep 8s
+              done
+          readinessProbe:
+            periodSeconds: 10
+            timeoutSeconds: 5
+            exec:
+              command: ["cat", "/tmp/synced"]
         - image: "{{ $tzkt_indexer.api_image }}:{{ $tzkt_indexer.api_image_tag }}"
           name: api
           ports:
