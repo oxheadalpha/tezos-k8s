@@ -14,7 +14,7 @@
  A file every pod uses to remember its imported snapshot.
  By keeping track, pods won't try to re-upgrade their db on restarts.
 */}}
-{{- $MY_CURRENT_SNAPSHOT_FILE := print "/etc/db-snapshot/current-snapshot.txt" }}
+{{- $MY_CURRENT_SNAPSHOTS_URL := print "/etc/db-snapshot/current-snapshots-url.txt" }}
 
 apiVersion: apps/v1
 kind: StatefulSet
