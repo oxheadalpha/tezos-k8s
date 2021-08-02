@@ -262,10 +262,8 @@ spec:
         - name: import-db-script
           configMap:
             name: import-db-script
-            {{- if $tzkt_indexer.upgrade_indexer }}
-            {{- /* The upgrade container needs to execute the file as non root */}}
-            defaultMode: 0777
-            {{- end }}
+            {{- /* Execute permissions */}}
+            defaultMode: 111
         {{- end }}
   volumeClaimTemplates:
     - metadata:
