@@ -46,28 +46,17 @@ spec:
               value: {{ .Values.indexers.tzkt.db_snapshot_url }}
             - name: SNAPSHOT_FILE
               value: {{ $snapshot_file }}
-          command:
-            - /bin/sh
+          command: ["/bin/sh", "-c"]
           args:
-            - "-c"
             - |
               set -ex
-              SHOULD_UPGRADE_INDEXER={{ $tzkt_indexer.upgrade_indexer }}
-
-              # If there is no db
-              if [ ! -d "/etc/indexer-db/pgdata" -o "$SHOULD_UPGRADE_INDEXER" ]; then
-
-                if [ ! -f "$SNAPSHOT_FILE" ];
-                then
-                  echo "Downloading db snapshot from $SNAPSHOT_URL ..."
-                  curl -LfSs -o "$SNAPSHOT_FILE" "$SNAPSHOT_URL"
-                  echo "Successfully downloaded snapshot"
-                else
-                  echo "Snapshot already exists. Not downloading."
-                fi
-
+              if [ ! -f "$SNAPSHOT_FILE" ];
+              then
+                echo "Downloading db snapshot from $SNAPSHOT_URL ..."
+                curl -LfSs -o "$SNAPSHOT_FILE" "$SNAPSHOT_URL"
+                echo "Successfully downloaded snapshot"
               else
-                echo "Database '{{ $tzkt_indexer.config.db_name }}' already exists. Skipping download."
+                echo "Snapshot already exists. Not downloading."
               fi
         {{- if $tzkt_indexer.upgrade_indexer }}
         - name: upgrade-db
