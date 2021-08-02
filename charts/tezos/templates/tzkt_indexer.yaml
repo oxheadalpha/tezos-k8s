@@ -104,7 +104,27 @@ spec:
               else
                 echo "Snapshot already exists. Not downloading."
               fi
-        {{- if $tzkt_indexer.upgrade_indexer }}
+
+        - image: {{ .Values.tezos_k8s_images.utils }}
+          name: create-snapshot-tracker-file
+          volumeMounts:
+            - name: indexer-db
+              mountPath: /etc/db-snapshot
+              subPath: db-snapshot
+          env:
+            - name: MY_CURRENT_SNAPSHOTS_URL
+              value: {{ $MY_CURRENT_SNAPSHOTS_URL }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -ex
+              if [ ! -f "$MY_CURRENT_SNAPSHOTS_URL" ];
+              then
+                touch "$MY_CURRENT_SNAPSHOTS_URL"
+                # The 999(postgres) user needs write permissions for this file
+                chmod 666 "$MY_CURRENT_SNAPSHOTS_URL"
+              fi
+              cat "$MY_CURRENT_SNAPSHOTS_URL"
         - name: upgrade-db
           image: postgres:13
           volumeMounts:
@@ -124,40 +144,43 @@ spec:
               value: {{ .Values.indexers.tzkt.db_snapshot_url }}
             - name: SNAPSHOT_FILE
               value: {{ $snapshot_file }}
+            - name: MY_CURRENT_SNAPSHOTS_URL
+              value: {{ $MY_CURRENT_SNAPSHOTS_URL }}
           envFrom:
             - secretRef:
                 name: db-creds
           command: ["/bin/sh", "-c"]
           args:
             - |
+              set -x
+
               if [ ! -d "$PGDATA" ]; then
                 echo "No db exists to upgrade. Exiting."
                 exit 0
               fi
 
-              MY_CURRENT_SNAPSHOT_FILE={{ $MY_CURRENT_SNAPSHOT_FILE }}
-              if [ -f "$MY_CURRENT_SNAPSHOT_FILE" ]; then
-                current_snapshot=$(cat "$MY_CURRENT_SNAPSHOT_FILE")
+              if [ -f "$MY_CURRENT_SNAPSHOTS_URL" ]; then
+                current_snapshot=$(cat "$MY_CURRENT_SNAPSHOTS_URL")
                 if [ "$current_snapshot" = "$SNAPSHOT_URL" ]; then
-                  echo "Already upgraded to $current_snapshot. Exiting."
+                  echo "Already imported $current_snapshot. Exiting."
                   exit 0
                 fi
               fi
 
-              pg_ctl start
+              # Postgres requires the server to be run as non-root
+              su postgres -c "pg_ctl start"
               /etc/import-script/import-db-snapshot.sh
-              pg_ctl stop
-        {{- end }}
+              import_exit_code="$?"
+              su postgres -c "pg_ctl stop"
+              [ "$import_exit_code" != 0 ] && exit 1 || exit 0
       {{- end }}
         - image: {{ .Values.images.tezos }}
           name: get-chain-id
           volumeMounts:
             - name: tzkt-env
               mountPath: /tzkt
-          command:
-            - /bin/sh
+          command: ["/bin/sh", "-c"]
           args:
-            - "-c"
             - |
               ENV_FILE="/tzkt/tzkt.env"
               touch "$ENV_FILE"
@@ -213,10 +236,8 @@ spec:
           envFrom:
           - secretRef:
               name: db-creds
-          command:
-            - /bin/bash
+          command: ["/bin/bash", "-c"]
           args:
-            - "-c"
             - |
               # Set TZKT_TezosNode__ChainId env var
               . /app/data/tzkt.env
@@ -246,6 +267,8 @@ spec:
               value: {{ .Values.indexers.tzkt.db_snapshot_url }}
             - name: SNAPSHOT_FILE
               value: {{ $snapshot_file }}
+            - name: MY_CURRENT_SNAPSHOTS_URL
+              value: {{ $MY_CURRENT_SNAPSHOTS_URL }}
             {{- end }}
           envFrom:
           - secretRef:
