@@ -127,13 +127,8 @@ spec:
           envFrom:
             - secretRef:
                 name: db-creds
-          securityContext:
-          {{- /* The postgres server needs to be run by a non-root user */}}
-            runAsUser: 999
-          command:
-            - /bin/sh
+          command: ["/bin/sh", "-c"]
           args:
-            - "-c"
             - |
               if [ ! -d "$PGDATA" ]; then
                 echo "No db exists to upgrade. Exiting."
