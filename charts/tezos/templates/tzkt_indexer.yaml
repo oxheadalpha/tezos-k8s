@@ -104,7 +104,6 @@ spec:
               else
                 echo "Snapshot already exists. Not downloading."
               fi
-
         - image: {{ .Values.tezos_k8s_images.utils }}
           name: create-snapshot-tracker-file
           volumeMounts:
@@ -178,11 +177,11 @@ spec:
           name: get-chain-id
           volumeMounts:
             - name: tzkt-env
-              mountPath: /tzkt
+              mountPath: /etc/tzkt
           command: ["/bin/sh", "-c"]
           args:
             - |
-              ENV_FILE="/tzkt/tzkt.env"
+              ENV_FILE="/etc/tzkt/tzkt.env"
               touch "$ENV_FILE"
 
               # Get the chain id
@@ -225,7 +224,7 @@ spec:
           name: indexer
           volumeMounts:
             - name: tzkt-env
-              mountPath: /app/data
+              mountPath: /etc/tzkt
           env:
           - name: TZKT_TezosNode__Endpoint
             value: {{ $tzkt_indexer.config.rpc_url }}
@@ -240,7 +239,7 @@ spec:
           args:
             - |
               # Set TZKT_TezosNode__ChainId env var
-              . /app/data/tzkt.env
+              . /etc/tzkt/tzkt.env
               dotnet Tzkt.Sync.dll
         - image: postgres:13
           name: db
