@@ -16,6 +16,52 @@
 */}}
 {{- $MY_CURRENT_SNAPSHOTS_URL := print "/etc/db-snapshot/current-snapshots-url.txt" }}
 
+apiVersion: v1
+kind: Secret
+metadata:
+  name: db-creds
+data:
+  POSTGRES_USER: {{ b64enc $tzkt_indexer.config.db_user }}
+  POSTGRES_PASSWORD: {{ b64enc $tzkt_indexer.config.db_password }}
+  POSTGRES_DB: {{ b64enc $tzkt_indexer.config.db_name }}
+
+{{- if $tzkt_indexer.db_snapshot_url }}
+---
+{{/*
+This script is mounted into postgres's /docker-entrypoint-initdb.d directory
+where it is run on db initialization.
+*/}}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: import-db-script
+  namespace: {{ .Release.Namespace }}
+data:
+  import-db-snapshot.sh: |
+    #!/bin/bash
+    set -ex
+
+    # The first execution of this file is done by user 999(postgres) via
+    # postgres docker-entrypoint-initdb.d, as postgres can't run as root. When
+    # upgrading the db the upgrade-db initContainer runs it as root. The file is
+    # given group rw permissions via create-snapshot-tracker-file initContainer.
+    # This way 999(postgres)  can write to it.
+
+    echo "Importing snapshot $SNAPSHOT_URL"
+    pg_restore -U "$POSTGRES_USER" \
+    -v --no-owner --clean \
+    --if-exists --exit-on-error \
+    --dbname "$POSTGRES_DB" \
+    -1 "$SNAPSHOT_FILE"
+
+    echo "Snapshot imported"
+    echo "$SNAPSHOT_URL" > "$MY_CURRENT_SNAPSHOTS_URL"
+  {{ if not $tzkt_indexer.keep_snapshot_after_import }}
+    rm -fv "$SNAPSHOT_FILE"
+  {{ end }}
+{{- end }}
+
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -231,50 +277,5 @@ spec:
         resources:
           requests:
             storage: "50Gi"
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: db-creds
-data:
-  POSTGRES_USER: {{ b64enc $tzkt_indexer.config.db_user }}
-  POSTGRES_PASSWORD: {{ b64enc $tzkt_indexer.config.db_password }}
-  POSTGRES_DB: {{ b64enc $tzkt_indexer.config.db_name }}
-
-{{- if $tzkt_indexer.db_snapshot_url }}
----
-{{/*
-This script is mounted into postgres's /docker-entrypoint-initdb.d directory
-where it is run on db initialization.
-*/}}
-kind: ConfigMap
-apiVersion: v1
-metadata:
-  name: import-db-script
-  namespace: {{ .Release.Namespace }}
-data:
-  import-db-snapshot.sh: |
-    #!/bin/bash
-
-    echo "Importing snapshot $SNAPSHOT_URL"
-    pg_restore -U "$POSTGRES_USER" \
-    -v --no-owner --clean \
-    --if-exists --exit-on-error \
-    --dbname "$POSTGRES_DB" \
-    -1 "$SNAPSHOT_FILE"
-
-    MY_CURRENT_SNAPSHOT_FILE={{ $MY_CURRENT_SNAPSHOT_FILE }}
-    if [ ! -f "$MY_CURRENT_SNAPSHOT_FILE" ]; then
-      touch "$MY_CURRENT_SNAPSHOT_FILE"
-    fi
-
-    echo "$SNAPSHOT_URL" > "$MY_CURRENT_SNAPSHOT_FILE"
-
-    echo "Snapshot imported"
-  {{ if not $tzkt_indexer.keep_snapshot_after_import }}
-    rm -fv "$SNAPSHOT_FILE"
-  {{ end }}
-{{- end }}
-
 
 {{- end }}
