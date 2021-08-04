@@ -58,13 +58,13 @@ should_generate_unsafe_deterministic_data: false
 #   balance, it will default to the `bootstrap_mutez` field above.
 #
 accounts: {}
-#   tqtezos_baker_0:
+#   oxheadalpha_baker_0:
 #     key: edsk...
 #     type: secret
 #     is_bootstrap_baker_account: true
 #     bootstrap_balance: "50000000000000"
 
-#   tqtezos_regular_account_0:
+#   oxheadalpha_regular_account_0:
 #     key: edpk...
 #     type: public
 #     is_bootstrap_baker_account: false
@@ -149,7 +149,7 @@ expected_proof_of_work: 26
 #     protocol: PtYuensgYBb3G3x1hLLbCmcav8ue8Kyd2khADcL5LsT5R1hcXex
 #   # The name of the account who's public key will be set downstream in
 #   # config.json at `network.genesis_parameters.values.genesis_pubkey`.
-#   activation_account_name: tqtezos_baker_0
+#   activation_account_name: oxheadalpha_baker_0
 #
 ## For joining a public network:
 ## - If specifying the name of the network, the network's name must be

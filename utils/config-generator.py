@@ -58,6 +58,7 @@ def main():
         all_accounts = fill_in_missing_baker_accounts()
         fill_in_missing_keys(all_accounts)
 
+    fill_in_activation_account(all_accounts)
     import_keys(all_accounts)
 
     if MY_POD_NAME in BAKING_NODES:
@@ -83,6 +84,9 @@ def main():
         protocol_params_json = json.dumps(protocol_parameters, indent=2)
         with open("/etc/tezos/parameters.json", "w") as json_file:
             print(protocol_params_json, file=json_file)
+
+        with open("/etc/tezos/activation_account_name", "w") as file:
+            print(NETWORK_CONFIG["activation_account_name"], file=file)
 
     # Create config.json
     if main_args.generate_config_json:
@@ -151,6 +155,17 @@ def fill_in_missing_genesis_block():
         gbk = blake2b(seed.encode(), digest_size=32).digest()
         gbk_b58 = b58encode_check(b"\x01\x34" + gbk).decode("utf-8")
         genesis_config["block"] = gbk_b58
+
+
+def fill_in_activation_account(accts):
+    if "activation_account_name" not in NETWORK_CONFIG:
+        print("Activation account missing:")
+        for name, val in accts.items():
+            if val.get("is_bootstrap_baker_account", False):
+                print(f"    Setting activation account to {name}")
+                NETWORK_CONFIG["activation_account_name"] = name
+                return
+        print("    failed to find one")
 
 
 def get_baking_accounts(baker_values):

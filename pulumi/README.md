@@ -76,9 +76,38 @@ mkchain --number-of-bakers 10 $CHAIN_NAME
 
 ## Use Pulumi to "make it so"
 
+First you must set up a Pulumi "stack".  You can define multiple
+stacks and switch between them for deploying different sets of nodes.
+
 ```shell
 pulumi stack init my_name
+```
+
+We look for the values file as `${STACK_NAME}_values.yaml`.
+
+### Configure Pulumi
+
+Pulumi has the ability to set configuration parameters for each stack
+that it maintains.  Some of the parameters are generic and some are
+specific to tezos-k8s.  It is required to set an AWS region, when
+deploying to AWS:
+
+```shell
 pulumi config set aws:region us-east-2
+```
+
+We also defined a number of parameters for tezos-k8s:
+
+```shell
+pulumi config set max-cluster-capacity 100
+pulumi config set nodes-per-vm 8
+pulumi config set cloudwatch true
+pulumi config set rpc-auth true
+```
+
+## Actually "make it so" this time
+
+```shell
 pulumi up
 ```
 

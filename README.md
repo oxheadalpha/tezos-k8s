@@ -1,13 +1,14 @@
-- [Prerequisites](#prerequisites)
-- [Installing prerequisites](#installing-prerequisites)
-  - [Mac](#mac)
-  - [Arch Linux](#arch-linux)
-  - [Other Operating Systems](#other-operating-systems)
-- [Configuring Minikube](#configuring-minikube)
-  - [Mac](#mac-1)
-  - [Other Operating Systems](#other-operating-systems-1)
-- [Starting Minikube](#starting-minikube)
-- [Tezos k8s Helm Chart](#tezos-k8s-helm-chart)
+- [Tezos k8s](#tezos-k8s)
+  - [Prerequisites](#prerequisites)
+  - [Installing prerequisites](#installing-prerequisites)
+    - [Mac](#mac)
+    - [Arch Linux](#arch-linux)
+    - [Other Operating Systems](#other-operating-systems)
+  - [Configuring Minikube](#configuring-minikube)
+    - [Mac](#mac-1)
+    - [Other Operating Systems](#other-operating-systems-1)
+  - [Starting Minikube](#starting-minikube)
+  - [Tezos k8s Helm Chart](#tezos-k8s-helm-chart)
 - [Joining Mainnet](#joining-mainnet)
   - [Spinning Up a Regular Peer Node](#spinning-up-a-regular-peer-node)
 - [Creating a Private Blockchain](#creating-a-private-blockchain)
@@ -126,7 +127,7 @@ eval $(minikube docker-env -u)
 To add the Tezos k8s Helm chart to your local Helm chart repo, run:
 
 ```shell
-helm repo add tqtezos https://tqtezos.github.io/tezos-helm-charts
+helm repo add oxheadalpha https://oxheadalpha.github.io/tezos-helm-charts/
 ```
 
 # Joining Mainnet
@@ -140,15 +141,15 @@ Connecting to a public net is easy!
 If you'd like to spin up a node that runs with history mode rolling, all you need to do is run:
 
 ```shell
-helm install tezos-mainnet tqtezos/tezos-chain \
---namespace tqtezos --create-namespace
+helm install tezos-mainnet oxheadalpha/tezos-chain \
+--namespace oxheadalpha --create-namespace
 ```
 
 If you'd like to spin up a node with history mode full, run:
 
 ```shell
-helm install tezos-mainnet tqtezos/tezos-chain \
---namespace tqtezos --create-namespace \
+helm install tezos-mainnet oxheadalpha/tezos-chain \
+--namespace oxheadalpha --create-namespace \
 --set nodes.regular.tezos-node-0.config.shell.history_mode=full
 ```
 
@@ -158,22 +159,22 @@ Running either of these commands results in:
 - k8s will spin up one regular (i.e. non-baking node) which will download and import a mainnet snapshot. This will take a few minutes.
 - Once the snapshot step is done, your node will be bootstrapped and syncing with mainnet!
 
-You can find your node in the tqtezos namespace with some status information using `kubectl`.
+You can find your node in the oxheadalpha namespace with some status information using `kubectl`.
 
 ```shell
-kubectl -n tqtezos get pods -l appType=tezos-node
+kubectl -n oxheadalpha get pods -l appType=tezos-node
 ```
 
 You can monitor (and follow using the `-f` flag) the logs of the snapshot downloader/import container:
 
 ```shell
-kubectl logs -n tqtezos statefulset/tezos-node -c snapshot-downloader -f
+kubectl logs -n oxheadalpha statefulset/tezos-node -c snapshot-downloader -f
 ```
 
 You can view logs for your node using the following command:
 
 ```shell
-kubectl -n tqtezos logs -l appType=tezos-node -c tezos-node -f --prefix
+kubectl -n oxheadalpha logs -l appType=tezos-node -c tezos-node -f --prefix
 ```
 
 IMPORTANT:
@@ -263,9 +264,9 @@ The former is what you will use to create your chain, and the latter is for invi
 Create a Helm release that will start your chain:
 
 ```shell
-helm install $CHAIN_NAME tqtezos/tezos-chain \
+helm install $CHAIN_NAME oxheadalpha/tezos-chain \
 --values ./${CHAIN_NAME}_values.yaml \
---namespace tqtezos --create-namespace
+--namespace oxheadalpha --create-namespace
 ```
 
 Your kubernetes cluster will now be running a series of jobs to
@@ -279,16 +280,16 @@ perform the following tasks:
 - activate the protocol
 - bake the first block
 
-You can find your node in the tqtezos namespace with some status information using kubectl.
+You can find your node in the oxheadalpha namespace with some status information using kubectl.
 
 ```shell
-kubectl -n tqtezos get pods -l appType=tezos-node
+kubectl -n oxheadalpha get pods -l appType=tezos-node
 ```
 
 You can view (and follow using the `-f` flag) logs for your node using the following command:
 
 ```shell
-kubectl -n tqtezos logs -l appType=tezos-node -c tezos-node -f --prefix
+kubectl -n oxheadalpha logs -l appType=tezos-node -c tezos-node -f --prefix
 ```
 
 Congratulations! You now have an operational Tezos based permissioned
@@ -319,14 +320,14 @@ IMPORTANT: If you are manually editing the values yaml file, you must make sure 
 To upgrade your Helm release run:
 
 ```shell
-helm upgrade $CHAIN_NAME tqtezos/tezos-chain \
+helm upgrade $CHAIN_NAME oxheadalpha/tezos-chain \
 --values ./${CHAIN_NAME}_values.yaml \
---namespace tqtezos
+--namespace oxheadalpha
 ```
 
 The nodes will start up and establish peer-to-peer connections in a full mesh topology.
 
-List all of your running nodes: `kubectl -n tqtezos get pods -l appType=tezos-node`
+List all of your running nodes: `kubectl -n oxheadalpha get pods -l appType=tezos-node`
 
 ## Adding external nodes to the cluster
 
@@ -347,11 +348,11 @@ The member needs to:
 Then run:
 
 ```shell
-helm repo add tqtezos https://tqtezos.github.io/tezos-helm-charts
+helm repo add oxheadalpha https://oxheadalpha.github.io/tezos-helm-charts
 
-helm install $CHAIN_NAME tqtezos/tezos-chain \
+helm install $CHAIN_NAME oxheadalpha/tezos-chain \
 --values <LOCATION OF ${CHAIN_NAME}_invite_values.yaml> \
---namespace tqtezos --create-namespace
+--namespace oxheadalpha --create-namespace
 ```
 
 At this point additional nodes will be added in a full mesh
@@ -362,9 +363,9 @@ Congratulations! You now have a multi-node Tezos based permissioned chain.
 On each computer, run this command to check that the nodes have matching heads by comparing their hashes (it may take a minute for the nodes to sync up):
 
 ```shell
-kubectl get pod -n tqtezos -l appType=tezos-node -o name |
+kubectl get pod -n oxheadalpha -l appType=tezos-node -o name |
 while read line;
-  do kubectl -n tqtezos exec $line -c tezos-node -- /usr/local/bin/tezos-client rpc get /chains/main/blocks/head/hash;
+  do kubectl -n oxheadalpha exec $line -c tezos-node -- /usr/local/bin/tezos-client rpc get /chains/main/blocks/head/hash;
 done
 ```
 
@@ -382,7 +383,7 @@ Current supported indexers:
 
 - [TzKT](https://github.com/baking-bad/tzkt)
 
-Look [here](https://github.com/tqtezos/tezos-k8s/blob/master/charts/tezos/values.yaml#L184-L205) in the Tezos Helm chart's values.yaml `indexer` section for how to deploy an indexer.
+Look [here](https://github.com/oxheadalpha/tezos-k8s/blob/master/charts/tezos/values.yaml#L184-L205) in the Tezos Helm chart's values.yaml `indexer` section for how to deploy an indexer.
 
 You must spin up an archive node in your cluster if you want to your indexer to index it. You would do so by configuring a new node's `history_mode` to be `archive`.
 
