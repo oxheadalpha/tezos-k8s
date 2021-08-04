@@ -26,34 +26,6 @@
 {{- end }}
 {{- end }}
 
-{{/*
-  Don't deploy the baker statefulset and its headless service if
-  there are no bakers specified.
-  Returns a string "true" or empty string which is falsey.
-*/}}
-{{- define "tezos.shouldDeployBakerStatefulset" -}}
-{{- $baking_nodes := .Values.nodes.baking | default dict }}
-{{- if and (not .Values.is_invitation) ($baking_nodes | len) }}
-{{- "true" }}
-{{- else }}
-{{- "" }}
-{{- end }}
-{{- end }}
-
-{{/*
-  Don't deploy the regular node statefulset and its headless service if
-  there are no regular nodes specified.
-  Returns a string "true" or empty string which is falsey.
-*/}}
-{{- define "tezos.shouldDeployRegularNodeStatefulset" -}}
-{{- $regular_nodes := .Values.nodes.regular | default dict }}
-{{- if ($regular_nodes | len) }}
-{{- "true" }}
-{{- else }}
-{{- "" }}
-{{- end }}
-{{- end }}
-
 {{- define "tezos.shouldDeploySignerStatefulset" -}}
 {{- $signers := .Values.signers | default dict }}
 {{- if and (not .Values.is_invitation) ($signers | len) }}

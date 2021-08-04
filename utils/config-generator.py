@@ -11,25 +11,35 @@ from pathlib import Path
 from re import sub
 
 from pytezos import pytezos
-from base58 import b58decode_check, b58encode_check
-from nacl.signing import SigningKey
+from base58 import b58encode_check
 
 ACCOUNTS = json.loads(os.environ["ACCOUNTS"])
 CHAIN_PARAMS = json.loads(os.environ["CHAIN_PARAMS"])
 NODES = json.loads(os.environ["NODES"])
 SIGNERS = json.loads(os.environ["SIGNERS"])
+OPEN_ACLS = os.environ["OPEN_ACLS"]
 
 MY_POD_NAME = os.environ["MY_POD_NAME"]
 MY_POD_TYPE = os.environ["MY_POD_TYPE"]
+
 MY_POD_CONFIG = None
+ALL_NODES = {}
+BAKING_NODES = {}
+
+for cl, val in NODES.items():
+    if val != None:
+        for i, inst in enumerate(val["instances"]):
+            name = f"{cl}-{i}"
+            ALL_NODES[name] = inst
+            if name == MY_POD_NAME:
+                MY_POD_CONFIG = inst
+            if "runs" in val:
+                if "baker" in val["runs"]:
+                    BAKING_NODES[name] = inst
+
 if MY_POD_TYPE == "signing":
     MY_POD_CONFIG = SIGNERS[MY_POD_NAME]
-elif MY_POD_TYPE in ["baking", "regular"]:
-    MY_POD_CONFIG = NODES[MY_POD_TYPE][MY_POD_NAME]
 
-
-ALL_NODES = {**NODES.get("baking", {}), **NODES.get("regular", {})}
-BAKING_NODES = NODES["baking"]
 NETWORK_CONFIG = CHAIN_PARAMS["network"]
 
 SHOULD_GENERATE_UNSAFE_DETERMINISTIC_DATA = CHAIN_PARAMS.get(
@@ -68,15 +78,7 @@ def main():
     # Create parameters.json
     if main_args.generate_parameters_json:
         print("Starting parameters.json file generation")
-        bootstrap_accounts_pubkey_hashes = get_bootstrap_accounts_pubkey_hashes(
-            all_accounts
-        )
-        baker_bootstrap_accounts_pubkeys = get_bootstrap_baker_accounts_pubkeys(
-            all_accounts
-        )
-        protocol_parameters = create_protocol_parameters_json(
-            bootstrap_accounts_pubkey_hashes, baker_bootstrap_accounts_pubkeys
-        )
+        protocol_parameters = create_protocol_parameters_json(all_accounts)
 
         protocol_params_json = json.dumps(protocol_parameters, indent=2)
         with open("/etc/tezos/parameters.json", "w") as json_file:
@@ -151,6 +153,21 @@ def fill_in_missing_genesis_block():
         genesis_config["block"] = gbk_b58
 
 
+def get_baking_accounts(baker_values):
+    acct = baker_values.get("bake_using_account")
+    accts = baker_values.get("bake_using_accounts")
+
+    if acct and accts:
+        raise ValueError(
+            'Mustn\'t specify both "bake_using_account" and "bake_using_accounts"'
+        )
+
+    if acct:
+        accts = [acct]
+
+    return accts
+
+
 # Secret and public keys are matches and need be processed together. Neither key
 # must be specified, as later code will fill in the details if they are not.
 #
@@ -159,47 +176,43 @@ def fill_in_missing_genesis_block():
 def fill_in_missing_baker_accounts():
     print("\nFilling in any missing baker accounts...")
     new_accounts = {}
+    init_balance = CHAIN_PARAMS["default_bootstrap_mutez"]
     for baker_name, baker_values in BAKING_NODES.items():
-        baker_account_name = baker_values.get("bake_using_account")
+        accts = get_baking_accounts(baker_values)
 
-        if not baker_account_name or baker_account_name not in ACCOUNTS:
-            new_baker_account_name = None
-            if not baker_account_name:
-                print(f"A new account named {baker_name} will be created")
-                new_baker_account_name = baker_name
-            else:
-                print(
-                    f"Specified account named {baker_account_name} is missing and will be created"
-                )
-                new_baker_account_name = baker_account_name
+        if not accts:
+            print(f"Defaulting to baking with account: {baker_name}")
+            accts = [baker_name]
 
-            new_accounts[new_baker_account_name] = {
-                "bootstrap_balance": CHAIN_PARAMS["default_bootstrap_mutez"],
-                "is_bootstrap_baker_account": True,
-            }
-            # Add to the baker the account name it will use to bake
-            baker_values["bake_using_account"] = new_baker_account_name
+        baker_values["bake_using_account"] = None
+        baker_values["bake_using_accounts"] = accts
+
+        for acct in accts:
+            if acct not in ACCOUNTS:
+                print(f"Creating account: {acct}")
+                new_accounts[acct] = {
+                    "bootstrap_balance": init_balance,
+                    "is_bootstrap_baker_account": True,
+                }
 
     return {**new_accounts, **ACCOUNTS}
 
 
 # Verify that the current baker has a baker account with secret key
 def verify_this_bakers_account(accounts):
-    account_using_to_bake = MY_POD_CONFIG.get("bake_using_account")
-    if not account_using_to_bake:
-        raise Exception(f"ERROR: No account specified for baker {MY_POD_NAME}")
+    accts = get_baking_accounts(MY_POD_CONFIG)
 
-    account = accounts.get(account_using_to_bake)
-    if not account:
-        raise Exception(
-            f"ERROR: No account named {account_using_to_bake} found for baker {MY_POD_NAME}"
-        )
+    if not accts or len(accts) < 1:
+        raise Exception("ERROR: No baker accounts specified")
 
-    if account.get("type") != "secret" or not account.get("key"):
-        raise Exception(
-            "ERROR: Either a secret key was not provided or the key type not specified"
-            f", for account {account_using_to_bake} for baker {MY_POD_NAME}"
-        )
+    for acct in accts:
+        if not accounts.get(acct):
+            raise Exception(f"ERROR: No account named {acct} found.")
+
+        # We can count on accounts[acct]["type"] because import_keys will
+        # fill it in when it is missing.
+        if accounts[acct]["type"] != "secret":
+            raise Exception(f"ERROR: Either a secret key was not provided for {acct}")
 
 
 #
@@ -220,6 +233,9 @@ def verify_this_bakers_account(accounts):
 # files.  The specified keys for obvious reasons.  The generated keys
 # are stable because we take care not to use any information that is not
 # specified in the _values.yaml file in the seed used to generate them.
+#
+# import_keys() also fills in "pk" and "pkh" as the public key and
+# public key hash as a side-effect.  These are used later.
 
 edsk = b"\x0d\x0f\x3a\x07"
 
@@ -250,6 +266,48 @@ def fill_in_missing_keys(all_accounts):
             account_values["type"] = "secret"
 
 
+#
+# expose_secret_key() decides if an account needs to have its secret
+# key exposed on the current pod.  It returns the obvious Boolean.
+
+
+def expose_secret_key(account_name):
+    if MY_POD_TYPE == "activating":
+        return NETWORK_CONFIG["activation_account_name"] == account_name
+
+    if MY_POD_TYPE == "signing":
+        return account_name in MY_POD_CONFIG.get("sign_for_accounts")
+
+    if MY_POD_TYPE == "node":
+        if MY_POD_CONFIG.get("bake_using_account", "") == account_name:
+            return True
+        return account_name in MY_POD_CONFIG.get("bake_using_accounts", {})
+
+    return False
+
+
+#
+# pod_requires_secret_key() decides if a pod requires the secret key,
+# regardless of a remote_signer being present.  E.g. the remote signer
+# needs to have the keys not a URL to itself.
+
+
+def pod_requires_secret_key(account_name):
+    return MY_POD_TYPE in ["activating", "signing"]
+
+
+#
+# remote_signer() picks the first signer, if any, that claims to sign
+# for account_name and returns a URL to locate it.
+
+
+def remote_signer(account_name, key):
+    for k, v in SIGNERS.items():
+        if account_name in v["sign_for_accounts"]:
+            return f"http://{k}.tezos-signer:6732/{key.public_key_hash()}"
+    return None
+
+
 def import_keys(all_accounts):
     print("\nImporting keys")
     tezdir = "/var/tezos/client"
@@ -269,46 +327,31 @@ def import_keys(all_accounts):
         try:
             key.secret_key()
         except ValueError:
+            account_values["type"] = "public"
             if account_key_type == "secret":
                 raise ValueError(
                     account_name + "'s key marked as " + "secret, but it is public"
                 )
         else:
+            account_values["type"] = "secret"
             if account_key_type == "public":
                 raise ValueError(
                     account_name + "'s key marked as " + "public, but it is secret"
                 )
 
         # restrict which private key is exposed to which pod
-        if (
-            (
-                MY_POD_TYPE == "activating"
-                and NETWORK_CONFIG["activation_account_name"] == account_name
-            )
-            or (
-                MY_POD_TYPE == "baking"
-                and MY_POD_CONFIG.get("bake_using_account") == account_name
-            )
-            or (
-                MY_POD_TYPE == "signing"
-                and account_name in MY_POD_CONFIG.get("sign_for_accounts")
-            )
-        ):
-            try:
-                # pick the signer for the account, if any.
-                # if several signers sign for this account, pick the first one
-                remote_signers_for_account = [
-                    k for k, v in SIGNERS.items() if account_name in v["sign_for_accounts"]
-                ]
-                if MY_POD_TYPE == "baking" and len(remote_signers_for_account) > 0:
-                    sk = f"http://{remote_signers_for_account[0]}.tezos-signer:6732/{key.public_key_hash()}"
-                else:
+        if expose_secret_key(account_name):
+            sk = remote_signer(account_name, key)
+            if sk == None or pod_requires_secret_key(account_name):
+                try:
                     sk = "unencrypted:" + key.secret_key()
+                except ValueError:
+                    raise ("Secret key required but not provided.")
 
                 print("    Appending secret key")
-                secret_keys.append({"name": account_name, "value": sk})
-            except ValueError:
-                pass
+            else:
+                print("    Using remote signer: " + sk)
+            secret_keys.append({"name": account_name, "value": sk})
 
         pk_b58 = key.public_key()
         print(f"    Appending public key: {pk_b58}")
@@ -318,10 +361,12 @@ def import_keys(all_accounts):
                 "value": {"locator": "unencrypted:" + pk_b58, "key": pk_b58},
             }
         )
+        account_values["pk"] = pk_b58
 
         pkh_b58 = key.public_key_hash()
         print(f"  Appending public key hash: {pkh_b58}")
         public_key_hashs.append({"name": account_name, "value": pkh_b58})
+        account_values["pkh"] = pkh_b58
 
         # XXXrcd: fix this print!
 
@@ -343,60 +388,26 @@ def import_keys(all_accounts):
     json.dump(public_key_hashs, open(tezdir + "/public_key_hashs", "w"), indent=4)
 
 
-def get_bootstrap_accounts(accounts, keys_list, is_getting_accounts_for_bakers):
-    keys = {}
-    for key in keys_list:
-        key_name = key["name"]
-        bootstrap_balance = accounts[key_name].get("bootstrap_balance", "0")
-        # Don't add accounts with 0 tez to parameters.json
-        if bootstrap_balance == "0":
-            continue
-
-        # If we are handling pubkeys for baker accounts
-        if is_getting_accounts_for_bakers and accounts[key_name].get(
-            "is_bootstrap_baker_account", False
-        ):
-            keys[key_name] = {
-                "key": key["value"]["key"],
-                "bootstrap_balance": bootstrap_balance,
-            }
-        elif (  # We are handling pubkey hashes for regular accounts
-            not is_getting_accounts_for_bakers
-            and not accounts[key_name].get("is_bootstrap_baker_account", True)
-        ):
-            keys[key_name] = {
-                "key": key["value"],
-                "bootstrap_balance": bootstrap_balance,
-            }
-
-    return keys
-
-
-# Get baking account's pubkeys for parameters.json bootstrap_accounts
-def get_bootstrap_baker_accounts_pubkeys(accounts):
-    with open("/var/tezos/client/public_keys", "r") as f:
-        pubkey_list = json.load(f)
-    return get_bootstrap_accounts(
-        accounts, pubkey_list, is_getting_accounts_for_bakers=True
-    )
-
-
-# Get non-baking account's pubkey hashes for parameters.json bootstrap_accounts
-def get_bootstrap_accounts_pubkey_hashes(accounts):
-    with open("/var/tezos/client/public_key_hashs", "r") as f:
-        pubkey_hash_list = json.load(f)
-    return get_bootstrap_accounts(
-        accounts, pubkey_hash_list, is_getting_accounts_for_bakers=False
-    )
+#
+# get_genesis_accounts_pubkey_and_balance(accounts) returns a list
+# of lists: [ [key1, balance2], [key2, balance2], ... ] for all of
+# the accounts prepopulated on our new chain.  Currently, if a public
+# key is provided then the account is signed up as a baker from the
+# start.  If just a public key hash is provided, then it is not.  We
+# use a public key if the property "is_bootstrap_baker_account" is
+# either absent or true.
 
 
 def get_genesis_accounts_pubkey_and_balance(accounts):
     pubkey_and_balance_pairs = []
 
-    for account_values in accounts.values():
-        pubkey_and_balance_pairs.append(
-            [account_values["key"], account_values["bootstrap_balance"]]
-        )
+    for v in accounts.values():
+        if "bootstrap_balance" in v and v["bootstrap_balance"] != "0":
+            if not v.get("is_bootstrap_baker_account", True):
+                key = v.get("pkh")
+            else:
+                key = v.get("pk")
+            pubkey_and_balance_pairs.append([key, v["bootstrap_balance"]])
 
     return pubkey_and_balance_pairs
 
@@ -406,10 +417,9 @@ def get_genesis_accounts_pubkey_and_balance(accounts):
 # `CHAIN_PARAMS["protocol_parameters"]`. The commitment size for Florence was
 # too large to load from Helm to k8s. So we are mounting a file containing them.
 # bootstrap accounts always needs massaging so they are passed as arguments.
-def create_protocol_parameters_json(bootstrap_accounts, bootstrap_baker_accounts):
+def create_protocol_parameters_json(accounts):
     """Create the protocol's parameters.json file"""
 
-    accounts = {**bootstrap_accounts, **bootstrap_baker_accounts}
     pubkeys_with_balances = get_genesis_accounts_pubkey_and_balance(accounts)
 
     protocol_activation = CHAIN_PARAMS["protocol_activation"]
@@ -511,6 +521,8 @@ def create_node_config_json(
         },
         # "log": {"level": "debug"},
     }
+    if OPEN_ACLS == "true":
+        computed_node_config["rpc"]["acl"] = [ { "address": os.getenv('MY_POD_IP'), "blacklist": [] } ]
     node_config = recursive_update(values_node_config, computed_node_config)
 
     if THIS_IS_A_PUBLIC_NET:

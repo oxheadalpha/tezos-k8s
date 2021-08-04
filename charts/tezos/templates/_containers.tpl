@@ -8,11 +8,9 @@
     fieldRef:
       fieldPath: metadata.name
 - name: MY_POD_TYPE
-{{- if contains "baker" .Template.Name }}
-  value: {{ .Values.baker_statefulset.pod_type }}
-{{- else }}
-  value: {{ .Values.regular_node_statefulset.pod_type }}
-{{- end }}
+  value: node
+- name: MY_NODE_CLASS
+  value: {{ .node_class }}
 {{- end }}
 
 {{- define "tezos.init_container.config_init" }}
@@ -121,6 +119,7 @@
 {{- end }}
 
 {{- define "tezos.container.node" }}
+{{- if has "tezedge" $.node_vals.runs | not }}
 - command:
     - /bin/sh
   args:
@@ -141,8 +140,32 @@
     - mountPath: /var/tezos
       name: var-volume
 {{- end }}
+{{- end }}
+
+{{- define "tezos.container.tezedge" }}
+{{- if has "tezedge" $.node_vals.runs }}
+- name: tezedge
+  command:
+    - /light-node
+  args:
+    - "--config-file=/etc/tezos/tezedge.conf"
+  image: "{{ .Values.images.tezedge }}"
+  imagePullPolicy: IfNotPresent
+  ports:
+    - containerPort: 8732
+      name: tezos-rpc
+    - containerPort: 9732
+      name: tezos-net
+  volumeMounts:
+    - mountPath: /etc/tezos
+      name: config-volume
+    - mountPath: /var/tezos
+      name: var-volume
+{{- end }}
+{{- end }}
 
 {{- define "tezos.container.bakers" }}
+{{- if has "baker" $.node_vals.runs }}
 {{- range .Values.protocols }}
 - image: "{{ $.Values.images.tezos }}"
   command:
@@ -172,8 +195,10 @@ https://github.com/helm/helm/issues/5979#issuecomment-518231758
       value: baker
 {{- end }}
 {{- end }}
+{{- end }}
 
 {{- define "tezos.container.endorsers" }}
+{{- if has "endorser" $.node_vals.runs }}
 {{- range .Values.protocols }}
 - image: "{{ $.Values.images.tezos }}"
   command:
@@ -203,6 +228,53 @@ https://github.com/helm/helm/issues/5979#issuecomment-518231758
 {{- include "tezos.localvars.pod_envvars" $ | indent 4 }}
     - name: DAEMON
       value: endorser
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- define "tezos.container.logger" }}
+{{- if has "logger" $.node_vals.runs }}
+- image: "{{ $.Values.tezos_k8s_images.utils }}"
+  imagePullPolicy: IfNotPresent
+  name: logger
+  args:
+    - "logger"
+  envFrom:
+    - secretRef:
+        name: tezos-secret
+    - configMapRef:
+        name: tezos-config
+  env:
+{{- include "tezos.localvars.pod_envvars" . | indent 4 }}
+  volumeMounts:
+    - mountPath: /etc/tezos
+      name: config-volume
+    - mountPath: /var/tezos
+      name: var-volume
+{{- end }}
+{{- end }}
+
+{{- define "tezos.container.metrics" }}
+{{- if has "metrics" $.node_vals.runs }}
+- image: "registry.gitlab.com/nomadic-labs/tezos-metrics"
+  args:
+    - "--listen-prometheus=6666"
+  imagePullPolicy: IfNotPresent
+  name: metrics
+  volumeMounts:
+    - mountPath: /etc/tezos
+      name: config-volume
+    - mountPath: /var/tezos
+      name: var-volume
+  envFrom:
+    - configMapRef:
+        name: tezos-config
+    - secretRef:
+        name: tezos-secret
+  env:
+{{- include "tezos.localvars.pod_envvars" . | indent 4 }}
+    - name: DAEMON
+      value: tezos-metrics
 {{- end }}
 {{- end }}
 

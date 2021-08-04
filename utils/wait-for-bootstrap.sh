@@ -10,12 +10,53 @@ if [ -s /var/tezos/node/peers.json ] && [ "$(jq length /var/tezos/node/peers.jso
     exit 0
 fi
 
-BOOTSTRAP_NODES=$(
-	echo "$NODES" | \
-	    jq -r '[.[]|to_entries]|flatten[]
-		  |select(.value.is_bootstrap_node)
-		  |.key + "." + (.key|sub("-[\\d]+$"; ""))'
+#
+# BOOTSTRAP_NODES will be a space separated list of all of the bootstrap
+# nodes.  We use jq to extract this list from $NODES which is passed in.
+#
+# In the jq, the function expand_nodes() takes a hash description of a
+# statefulset in the form:
+# {
+#	"key" : "statefulset-name",
+#        value : { "instances" : [ i0, i1, i2, ... ], etc }
+# }
+# and converts it into:
+# {
+#	"statefulsetname-0" : i0,
+#	"statefulsetname-0" : i1,
+#	"statefulsetname-0" : i2,
+#	.
+#	.
+#	.
+# }
+#
+# expand_all_nodes iterates over the input expanding
+# each defined statefulset using expand_nodes(), note
+# that a {} + another {} merges them together and so
+# the output of expand_all_nodes actually has the same
+# schema as that of expand_nodes above.
+
+BOOTSTRAP_NODES=$(echo $NODES | \
+    jq -r '
+	def expand_nodes(a):
+	    reduce (a|(.value.instances // [{}])[] // []) as $f
+		([0,{}];
+		 [ .[0] + 1,
+		   .[1] + { ((a|.key) + "-" + (.[0]|tostring)) : $f}
+		 ])
+	    |.[1];
+
+	def expand_all_nodes:
+	    reduce .[] as $inp ({}; . + expand_nodes($inp));
+
+	 to_entries
+	|expand_all_nodes
+	|to_entries[]
+	|debug
+	|select(.value.is_bootstrap_node)
+	|.key + "." + (.key|sub("-[\\d]+$"; ""))'
 )
+
 
 if [ -z "$BOOTSTRAP_NODES" ]; then
     echo No bootstrap nodes were provided
