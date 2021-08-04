@@ -96,13 +96,13 @@ You can explicitly specify some values by:
 Make sure you have the Tezos Helm chart repo:
 
 ```shell
-helm repo add tqtezos https://tqtezos.github.io/tezos-helm-charts
+helm repo add oxheadalpha https://oxheadalpha.github.io/tezos-helm-charts
 ```
 
 Then install the Tezos Helm chart:
 
 ```shell
-helm install $CHAIN_NAME tqtezos/tezos-chain \
+helm install $CHAIN_NAME oxheadalpha/tezos-chain \
 --values ./${CHAIN_NAME}_values.yaml \
---namespace tqtezos --create-namespace
+--namespace oxheadalpha --create-namespace
 ```

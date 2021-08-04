@@ -1,7 +1,8 @@
-- [Deploy RPC Auth Backend](#deploy-rpc-auth-backend)
-- [Client Authentication](#client-authentication)
-  - [Prerequisites](#prerequisites)
-- [Authentication flow](#authentication-flow)
+- [Tezos RPC Authentication](#tezos-rpc-authentication)
+  - [Deploy RPC Auth Backend](#deploy-rpc-auth-backend)
+  - [Client Authentication](#client-authentication)
+    - [Prerequisites](#prerequisites)
+  - [Authentication flow](#authentication-flow)
 
 # Tezos RPC Authentication
 
@@ -16,30 +17,30 @@ This assumes that you have followed the steps [here](../README.md) necessary to 
 Make sure you have the Tezos Helm chart repo:
 
 ```shell
-helm repo add tqtezos https://tqtezos.github.io/tezos-helm-charts
+helm repo add oxheadalpha https://oxheadalpha.github.io/tezos-helm-charts
 ```
 
 If you don't currently have a chain running, run the following command to start it:
 
 ```shell
-helm install $CHAIN_NAME tqtezos/tezos-chain \
+helm install $CHAIN_NAME oxheadalpha/tezos-chain \
 --values ./${CHAIN_NAME}_values.yaml \
---namespace tqtezos --create-namespace
+--namespace oxheadalpha --create-namespace
 ```
 
 If you already have a chain running, you need to use Helm's `upgrade` cmd instead of `install`:
 
 ```shell
-helm upgrade $CHAIN_NAME tqtezos/tezos-chain \
+helm upgrade $CHAIN_NAME oxheadalpha/tezos-chain \
 --values ./${CHAIN_NAME}_values.yaml \
---namespace tqtezos
+--namespace oxheadalpha
 ```
 
 ## Client Authentication
 
 ### Prerequisites
 
-- [tezos-client](https://assets.tqtezos.com/docs/setup/1-tezos-client/)
+- [tezos-client](https://assets.oxheadalpha.com/docs/setup/1-tezos-client/)
 
 ## Authentication flow
 
@@ -48,10 +49,10 @@ helm upgrade $CHAIN_NAME tqtezos/tezos-chain \
 
    - Run
      ```shell
-     kubectl exec -it -n tqtezos statefulset/tezos-baking-node -c tezos-node -- tezos-client rpc get /chains/main/chain_id
+     kubectl exec -it -n oxheadalpha statefulset/tezos-baking-node -c tezos-node -- tezos-client rpc get /chains/main/chain_id
      ```
    - Use a tool like [Lens](https://k8slens.dev/) to view the logs of the Tezos node. (As well as the rest of your k8s infrastructure)
-   - Manually run the logs command `kubectl logs -n tqtezos statefulset/tezos-baking-node -c tezos-node`. The top of the logs should look similar to:
+   - Manually run the logs command `kubectl logs -n oxheadalpha statefulset/tezos-baking-node -c tezos-node`. The top of the logs should look similar to:
      ```
      Dec 21 19:42:08 - node.main: starting the Tezos node (chain = my-chain)
      Dec 21 19:42:08 - node.main: disabled local peer discovery
