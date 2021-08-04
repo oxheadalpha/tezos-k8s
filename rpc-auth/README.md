@@ -40,7 +40,7 @@ helm upgrade $CHAIN_NAME oxheadalpha/tezos-chain \
 
 ### Prerequisites
 
-- [tezos-client](https://assets.oxheadalpha.com/docs/setup/1-tezos-client/)
+- [tezos-client](https://assets.tqtezos.com/docs/setup/1-tezos-client/)
 
 ## Authentication flow
 
