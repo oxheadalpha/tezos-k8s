@@ -16,10 +16,6 @@ images:
     image: tezos-k8s-utils
     dockerfile: ./utils/Dockerfile
     context: ./utils
-  account-gen:
-    image: tezos-k8s-account-gen
-    dockerfile: ./account-gen/Dockerfile
-    context: ./account-gen
 
 dev:
   ports:

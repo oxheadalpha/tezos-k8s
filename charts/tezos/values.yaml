@@ -14,7 +14,6 @@ images:
 tezos_k8s_images:
   utils: tezos-k8s-utils:dev
   zerotier: tezos-k8s-zerotier:dev
-  account_gen: tezos-k8s-account-gen:dev
 
 # octez v11 or superior requires explicitly opening up ACLs for other
 # containers to be able to do sentitive RPC operations to it

@@ -463,7 +463,7 @@ def create_protocol_parameters_json(accounts):
             protocol_activation["commitments_url"]
         ).json()
     elif protocol_activation.get("deterministic_faucet"):
-        with open("/secret-seeds/commitments.json", "r") as f:
+        with open("/faucet-commitments/commitments.json", "r") as f:
             commitments = json.load(f)
         protocol_params["commitments"] = commitments
 

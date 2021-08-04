@@ -10,14 +10,17 @@ ENV PYTHONUNBUFFERED=1
 
 RUN     apk add --no-cache --virtual .build-deps gcc g++ python3-dev	\
 				libffi-dev musl-dev make		\
-     && apk add libsodium-dev libsecp256k1-dev gmp-dev			\
+     && apk add git libsodium-dev libsecp256k1-dev gmp-dev			\
      && apk add zeromq-dev						\
      && pip install base58 pynacl					\
      && pip install pytezos requests                                    \
-     && apk del .build-deps						\
+     && pip install pyblake2 pysodium numpy \
+     && pip install -e 'git+https://github.com/vbuterin/pybitcointools.git@aeb0a2bbb8bbfe421432d776c649650eaeb882a5#egg=bitcoin' \
+     && apk del .build-deps git \
      && apk add jq netcat-openbsd curl binutils
 
 COPY config-generator.py /
+COPY faucet-gen.py /
 COPY config-generator.sh /
 COPY entrypoint.sh /
 COPY logger.sh /

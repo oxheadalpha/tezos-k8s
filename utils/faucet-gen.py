@@ -75,7 +75,7 @@ def make_dummy_wallets(n, blind):
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        print("Usage: account_gen.py seed [number_of_accounts]")
+        print("Usage: faucet-gen.py seed [number_of_accounts]")
         exit(1)
     print(f"Seed is {sys.argv[1]}")
     blind = sys.argv[1].encode('utf-8')
@@ -89,18 +89,10 @@ if __name__ == '__main__':
     print("numpy seed is %s" % numpy_seed)
     np.random.seed(seed=numpy_seed)
     wallets, secrets = make_dummy_wallets(number_of_accounts, blind)
-    with open('./secret-seeds/secret-seeds.json', 'w') as f:
-        json.dump([ { "pkh" : pkh,
-                      "mnemonic" : mnemonic,
-                      "email" : email,
-                      "password" : password,
-                      "amount" : str(amount),
-                      "activation_code" : secret.decode('utf-8') }
-                    for pkh, (mnemonic, email, password, amount, secret) in secrets.items()], f, indent=1)
 
     commitments = genesis_commitments(wallets, blind)
 
-    with open('./secret-seeds/commitments.json', 'w') as f:
+    with open('./faucet-commitments/commitments.json', 'w') as f:
         json.dump([
                 (commitment['blinded_pkh'], str(commitment['amount']))
                 for commitment in commitments if commitment['amount'] > 0

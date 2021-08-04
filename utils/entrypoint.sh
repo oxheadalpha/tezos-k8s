@@ -8,6 +8,7 @@ case "$CMD" in
 	logger)			exec /logger.sh			"$@"	;;
 	snapshot-downloader)	exec /snapshot-downloader.sh	"$@"	;;
 	wait-for-bootstrap)	exec /wait-for-bootstrap.sh	"$@"	;;
+	faucet-gen)	        exec /faucet-gen.py     	"$@"	;;
 esac
 
 #
@@ -21,3 +22,4 @@ echo "	config-generator"
 echo "	logger"
 echo "	snapshot-downloader"
 echo "	wait-for-bootstrap"
+echo "	faucet-gen"
