@@ -298,23 +298,80 @@ chain running one node.
 
 You can spin up a number of regular peer nodes that don't bake in your cluster by passing `--number-of-nodes N` to `mkchain`. Pass this along with your previously used flags (`--zerotier-network` and `--zerotier-token`). You can use this to both scale up and down.
 
-Or if you previously spun up the chain using `mkchain`, you may scale up/down your setup to an arbitrary number of nodes by adding or removing nodes in the `nodes.regular` list in the values yaml file:
+Or if you previously spun up the chain using `mkchain`, you may adjust
+your setup to an arbitrary number of nodes by updating the "nodes"
+section in the values yaml file.
 
-```yaml
-# <CURRENT WORKING DIRECTORY>/${CHAIN_NAME}_values.yaml
+nodes is a dictionary where each key value pair defines a statefulset
+and a number of instances thereof.  The name (key) defines the name of
+the statefulset and will be the base of the pod names.  The name must be
+DNS compliant or you will get odd errors.  The instances are defined as a
+list because their names are simply `-N` appended to the statefulsetname.
+Said names are traditionally kebab case.
+
+At the statefulset level, the following parameters are allowed:
+
+   - storage_size: the size of the PV
+   - runs: a list of containers to run, e.g. "baker", "endorser", "tezedge"
+   - instances: a list of nodes to fire up, each is a dictionary
+     defining:
+     - `bake_using_account`: The name of the account that should be used
+                             for baking.
+     - `is_bootstrap_node`: Is this node a bootstrap peer.
+     - config: The `config` property should mimic the structure
+               of a node's config.json.
+               Run `tezos-node config --help` for more info.
+
+defaults are filled in for most values.
+
+Each statefulset can run either Nomadic Lab's `tezos-node` or TezEdge's
+`tezedge` node.  Either can support all of the other containers.  If you
+specify `tezedge` as one of the containers to run, then it will be run
+in preference to `tezos-node`.
+
+E.g.:
+
+```
 nodes:
-  regular:
-    tezos-node-0: # first non-baking node
+  tezos-baking-node:
+    storage_size: 15Gi
+    runs:
+    - baker
+    - endorser
+    - logger
+    instances:
+    - bake_using_account: baker0
+      is_bootstrap_node: true
       config:
         shell:
-          history_mode: rolling
-    tezos-node-1: # second non-baking node
-      config:
-        shell:
-          history_mode: rolling
+  tezos-node:
+    instances:
+    - {}
+    - {}
+  private-node:
+    runs:
+    - baker
+    - endorser
+    - logger
+    - tezedge
+    instances:
+    - {}
+    - {}
+    - {}
 ```
 
-IMPORTANT: If you are manually editing the values yaml file, you must make sure that the names of the nodes follow this format: `tezos-node-N`, where `N` is an integer referring to the index of the node. So the first node is `tezos-node-0`, the second `tezos-node-1`, etc.
+This will run the following nodes:
+     - `tezos-baking-node-0`
+     - `tezos-node-0`
+     - `tezos-node-1`
+     - `private-node-0`
+     - `private-node-1`
+     - `private-node-2`
+
+`tezos-baking-node-0` will run baker, endorser, and logger containers
+and will be the only bootstrap node.  `tezos-node-*` are just nodes
+with no extras.  `private-node-*` will be tezedge nodes running baker,
+endorser, and logger containers.
 
 To upgrade your Helm release run:
 
