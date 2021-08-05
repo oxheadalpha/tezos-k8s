@@ -50,6 +50,20 @@
 {{- end }}
 
 {{/*
+  When activating a protocol, check whether faucet commitments
+  should be deterministically generated from a seed.
+  Returns a string "true" or empty string which is falsey.
+*/}}
+{{- define "tezos.shouldInitializeDeterministicFaucet" -}}
+{{ $deterministic_faucet := .Values.activation.deterministic_faucet | default dict }}
+{{- if and ($deterministic_faucet.seed)  ($deterministic_faucet.number_of_accounts) }}
+{{- "true" }}
+{{- else }}
+{{- "" }}
+{{- end }}
+{{- end }}
+
+{{/*
   Checks if a snapshot should be downloaded. Either full_snapshot_url or
   rolling_snapshot_url must not be null.
   Returns a string "true" or empty string which is falsey.

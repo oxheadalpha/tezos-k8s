@@ -209,9 +209,19 @@ protocols:
 #   # Pass url pointing to additional contracts that you want injected at activation.
 #   # This data is typically too large to pass it directly inside helm chart.
 #   bootstrap_contract_urls: []
+#
 #   # Pass url pointing to a json file listing commitments (precursor to faucet accounts).
 #   # This data is typically too large to pass it directly inside helm chart.
 #   commitments_url: "https://bucket/commitments.json"
+#
+#   # Instead of pre-existing commitments file, use the "deteministic_faucet" map
+#   # to predictably create a desired number of faucet accounts.
+#   # The seed can be shared with an instance of the tezos-faucet project
+#   #   https://gitlab.com/nomadic-labs/tezos-faucet
+#   # so you can deploy a website where people get free tez from the faucet.
+#   deterministic_faucet:
+#     seed: "deterministic faucet seed"
+#     number_of_accounts: 100
 
 # Deploy an indexer with the chain. An indexer puts the chain
 # contents in a database for efficient indexing. Most dapps need it.
