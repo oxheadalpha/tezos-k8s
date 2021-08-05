@@ -47,7 +47,11 @@ EOM
 # tezos docker image.
 
 MY_CLASS=$(echo $NODES | jq -r ".\"${MY_NODE_CLASS}\"")
-AM_I_BAKER=$(echo $MY_CLASS | jq -r '.runs|map(select(. == "baker"))|length')
+AM_I_BAKER=0
+if [ "$MY_CLASS" != null ]; then
+    AM_I_BAKER=$(echo $MY_CLASS | \
+		 jq -r '.runs|map(select(. == "baker"))|length')
+fi
 
 if [ "$AM_I_BAKER" -eq 1 ]; then
     my_baker_account=$(echo $MY_CLASS | \
