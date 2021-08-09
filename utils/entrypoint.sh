@@ -23,3 +23,5 @@ echo "	logger"
 echo "	snapshot-downloader"
 echo "	wait-for-bootstrap"
 echo "	faucet-gen"
+
+exit 1
