@@ -470,20 +470,6 @@ def get_genesis_pubkey():
             raise Exception("ERROR: Couldn't find the genesis_pubkey")
         return genesis_pubkey
 
-def recursive_update(d, u):
-    '''
-    Recursive dict update
-    Used to merge node's config passed as chart values
-    and computed values
-    https://stackoverflow.com/a/3233356/207209
-    '''
-    for k, v in u.items():
-        if isinstance(v, collections.abc.Mapping):
-            d[k] = recursive_update(d.get(k, {}), v)
-        else:
-            d[k] = v
-    return d
-
 def create_bootstrap_peer_list():
     '''
     Defining the list of bootstrap peers for a tezos node is complicated.
