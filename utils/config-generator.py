@@ -515,7 +515,7 @@ def create_bootstrap_peer_list():
         elif link[1] in my_pod_fqdn_with_port:
             explicit_peers.append(link[0])
 
-    if MY_NODE.get("config", {}).get("p2p", {}).get("private-mode", False):
+    if MY_POD_CONFIG.get("p2p", {}).get("private-mode", False):
         # nodes configured in private mode ONLY peer with explicit peers from config
         return explicit_peers, my_zerotier_ip
 
@@ -540,7 +540,7 @@ def create_bootstrap_peer_list():
                 local_bootstrap_peers.append(bootstrap_peer_fbn_with_port)
         bootstrap_peers.extend(local_bootstrap_peers)
 
-    if not bootstrap_peers and not MY_NODE.get("is_bootstrap_node", False):
+    if not bootstrap_peers and not MY_POD_CONFIG.get("is_bootstrap_node", False):
         raise Exception(
             "ERROR: No bootstrap peers found for this non-bootstrap node"
         )
