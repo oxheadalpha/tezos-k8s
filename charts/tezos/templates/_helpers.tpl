@@ -26,28 +26,9 @@
 {{- end }}
 {{- end }}
 
-{{/*
-  Don't deploy the baker statefulset and its headless service if
-  there are no bakers specified.
-  Returns a string "true" or empty string which is falsey.
-*/}}
-{{- define "tezos.shouldDeployBakerStatefulset" -}}
-{{- $baking_nodes := .Values.nodes.baking | default dict }}
-{{- if and (not .Values.is_invitation) ($baking_nodes | len) }}
-{{- "true" }}
-{{- else }}
-{{- "" }}
-{{- end }}
-{{- end }}
-
-{{/*
-  Don't deploy the regular node statefulset and its headless service if
-  there are no regular nodes specified.
-  Returns a string "true" or empty string which is falsey.
-*/}}
-{{- define "tezos.shouldDeployRegularNodeStatefulset" -}}
-{{- $regular_nodes := .Values.nodes.regular | default dict }}
-{{- if ($regular_nodes | len) }}
+{{- define "tezos.shouldDeploySignerStatefulset" -}}
+{{- $signers := .Values.signers | default dict }}
+{{- if and (not .Values.is_invitation) ($signers | len) }}
 {{- "true" }}
 {{- else }}
 {{- "" }}
@@ -62,6 +43,20 @@
 {{- define "tezos.shouldActivateProtocol" -}}
 {{ $activation := .Values.activation | default dict }}
 {{- if and ($activation.protocol_hash)  ($activation.protocol_parameters) }}
+{{- "true" }}
+{{- else }}
+{{- "" }}
+{{- end }}
+{{- end }}
+
+{{/*
+  When activating a protocol, check whether faucet commitments
+  should be deterministically generated from a seed.
+  Returns a string "true" or empty string which is falsey.
+*/}}
+{{- define "tezos.shouldInitializeDeterministicFaucet" -}}
+{{ $deterministic_faucet := .Values.activation.deterministic_faucet | default dict }}
+{{- if and ($deterministic_faucet.seed)  ($deterministic_faucet.number_of_accounts) }}
 {{- "true" }}
 {{- else }}
 {{- "" }}

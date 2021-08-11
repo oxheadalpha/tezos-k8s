@@ -1,0 +1,99 @@
+#!/bin/sh -e
+
+usage() {
+
+	(  echo "$1"
+	   echo "usage: $0 [-S] [-b oldbranch] old_values [new_values]"
+	   echo
+	   echo "-S: stash before compare, stash pop after"
+	   echo "-b: checkout oldbranch to compare"
+	) 1>&2
+
+	exit 1
+}
+
+CUR_BRANCH=
+OLD_BRANCH=
+COMPARE_STASHED=0
+I_STASHED_IT=0
+
+while getopts b:n:SU: f; do
+	case $f in
+	b)	OLD_BRANCH=$OPTARG;;
+	n)	NEW_BRANCH=$OPTARG;;
+	S)	COMPARE_STASHED=1;;
+	U)	UNIFIED_DIFFS=$OPTARG;;
+	\?)	usage "Invalid option $f";;
+	esac
+done
+shift $(expr $OPTIND - 1)
+
+if [ $# -lt 1 -o $# -gt 2 ]; then
+	usage "Wrong number of arguments"
+fi
+
+if [ ! -z "$NEW_BRANCH" -a "$COMPARE_STASHED" = 1 ]; then
+	usage "Incompatible flags: -n can't be used with -S"
+fi
+
+if [ ! -z "$UNIFIED_DIFFS" ]; then
+	DIFF_ARGS="-U$UNIFIED_DIFFS"
+fi
+
+OLD_VALUES="$1"
+NEW_VALUES="$2"
+
+if [ -z "$NEW_VALUES" ]; then
+	NEW_VALUES="$OLD_VALUES"
+fi
+
+CHART1=
+CHART2=
+CUR_BRANCH=
+
+cleanup() {
+
+	#
+	# XXXrcd: note that this cleanup is not perfect, it has
+	#         race conditions, especially vis a vis the handling
+	#         of "git stash".  Don't use -S unless you understand
+	#         how git stash works, git reflog, etc...
+
+	trap '' PIPE INT
+
+	[ -f "$CHART1" ] && rm "$CHART1"
+	[ -f "$CHART2" ] && rm "$CHART2"
+	if [ ! -z "$CUR_BRANCH" ]; then
+		git checkout "$CUR_BRANCH"
+	fi
+	if [ "$I_STASHED_IT" = 1 ]; then
+		git stash pop
+	fi
+}
+trap cleanup EXIT INT PIPE
+
+if [ ! -z "$NEW_BRANCH" ]; then
+	CUR_BRANCH=$(git status -sb | head -1 | sed 's/## //')
+	git checkout "$NEW_BRANCH"
+fi
+
+CHART1=$(mktemp /tmp/chartXXXXXX)
+helm template charts/tezos/ --values "$NEW_VALUES" --namespace tez > "$CHART1"
+
+if [ "$COMPARE_STASHED" = 1 ]; then
+	if [ "$(git diff | wc -c)" -gt 0 ]; then
+		git stash
+		I_STASHED_IT=1
+	fi
+fi
+
+CHART2=$(mktemp /tmp/chartXXXXXX)
+if [ ! -z "$OLD_BRANCH" ]; then
+	if [ -z "$CUR_BRANCH" ]; then
+		CUR_BRANCH=$(git status -sb | head -1 | sed 's/## //')
+	fi
+	git checkout "$OLD_BRANCH"
+fi
+helm template charts/tezos/ --values "$OLD_VALUES" --namespace tez > "$CHART2"
+
+diff -u $DIFF_ARGS "$CHART2" "$CHART1"

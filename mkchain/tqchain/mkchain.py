@@ -1,12 +1,11 @@
 import argparse
 import os
-import random
-import string
-import subprocess
 import sys
 from datetime import datetime, timezone
 
 import yaml
+
+from tqchain.keys import gen_key, get_genesis_vanity_chain_id, set_use_docker
 
 from ._version import get_versions
 
@@ -14,58 +13,8 @@ sys.path.insert(0, "tqchain")
 
 __version__ = get_versions()["version"]
 
-# charts/tezos/templates/baker.yaml
 BAKER_NODE_NAME = "tezos-baking-node"
-BAKER_NODE_TYPE = "baking"
-# charts/tezos/templates/node.yaml
 REGULAR_NODE_NAME = "tezos-node"
-REGULAR_NODE_TYPE = "regular"
-
-
-def run_docker(image, entrypoint, *args):
-    return subprocess.check_output(
-        "docker run --entrypoint %s --rm %s %s" % (entrypoint, image, " ".join(args)),
-        stderr=subprocess.STDOUT,
-        shell=True,
-    )
-
-
-def extract_key(keys, index: int) -> bytes:
-    return keys[index].split(b":")[index].strip().decode("ascii")
-
-
-def gen_key(image):
-    keys = run_docker(
-        image,
-        "sh",
-        "-c",
-        "'/usr/local/bin/tezos-client --protocol PsDELPH1Kxsx gen keys mykey && /usr/local/bin/tezos-client --protocol PsDELPH1Kxsx show address mykey -S'",
-    ).split(b"\n")
-
-    return {"public": extract_key(keys, 1), "secret": extract_key(keys, 2)}
-
-
-def get_genesis_vanity_chain_id(docker_image, seed_len=16):
-    print("Generating vanity chain id")
-    seed = "".join(
-        random.choice(string.ascii_uppercase + string.digits) for _ in range(seed_len)
-    )
-
-    return (
-        run_docker(
-            docker_image,
-            "flextesa",
-            "vani",
-            '""',
-            "--seed",
-            seed,
-            "--first",
-            "--machine-readable",
-            "csv",
-        )
-        .decode("utf-8")
-        .split(",")[1]
-    )
 
 
 cli_args = {
@@ -104,6 +53,14 @@ cli_args = {
         "help": "Version of the Tezos docker image",
         "default": "tezos/tezos:v9-release",
     },
+    "use_docker": {
+        "action": "store_true",
+        "default": None,
+    },
+    "no_use_docker": {
+        "dest": "use_docker",
+        "action": "store_false",
+    },
 }
 
 # python versions < 3.8 doesn't have "extend" action
@@ -132,19 +89,6 @@ def get_args():
         parser.add_argument(*["--" + k.replace("_", "-")], **v)
 
     return parser.parse_args()
-
-
-def pull_docker_images(images):
-    for image in images:
-        has_image_return_code = subprocess.run(
-            f"docker inspect --type=image {image} > /dev/null 2>&1", shell=True
-        ).returncode
-        if has_image_return_code != 0:
-            print(f"Pulling docker image {image}")
-            subprocess.check_output(
-                f"docker pull {image}", shell=True, stderr=subprocess.STDOUT
-            )
-            print(f"Done pulling docker image {image}")
 
 
 def validate_args(args):
@@ -183,19 +127,26 @@ def validate_args(args):
         exit(1)
 
 
+def node_config(name, n, is_baker):
+    ret = {
+        "is_bootstrap_node": False,
+        "config": {
+            "shell": {"history_mode": "rolling"},
+        },
+    }
+    if is_baker:
+        ret["bake_using_accounts"] = [f"{name}-{n}"]
+        if n < 2:
+            ret["is_bootstrap_node"] = True
+            ret["config"]["shell"]["history_mode"] = "archive"
+    return ret
+
+
 def main():
     args = get_args()
 
     validate_args(args)
-
-    # Dirty fix. If tezos image doesn't exist, pull it before `docker run` can
-    # pull it. This is to avoid parsing extra output. Preferably, we want to get
-    # rid of docker dependency from mkchain.
-    FLEXTESA = "registry.gitlab.com/tezos/flextesa:01e3f596-run"
-    images = [args.tezos_docker_image]
-    if not args.should_generate_unsafe_deterministic_data:
-        images.append(FLEXTESA)
-    pull_docker_images(images)
+    set_use_docker(args.use_docker)
 
     base_constants = {
         "images": {
@@ -217,14 +168,16 @@ def main():
     files_path = f"{os.getcwd()}/{args.chain_name}"
     if os.path.isfile(f"{files_path}_values.yaml"):
         print(
-            "Found old values file. Some pre-existing values might remain the "
-            "same, e.g. public/private keys, and genesis block. Please delete the "
-            "values file to generate all new values.\n"
+            "Found old values file. Some pre-existing values might remain\n"
+            "the same, e.g. public/private keys, and genesis block. Please\n"
+            "delete the values file to generate all new values.\n"
         )
         with open(f"{files_path}_values.yaml", "r") as yaml_file:
             old_create_values = yaml.safe_load(yaml_file)
 
-        current_number_of_bakers = len(old_create_values["nodes"][BAKER_NODE_TYPE])
+        current_number_of_bakers = len(
+            old_create_values["nodes"][BAKER_NODE_NAME]["instances"]
+        )
         if current_number_of_bakers != args.number_of_bakers:
             print("ERROR: the number of bakers must not change on a pre-existing chain")
             print(f"Current number of bakers: {current_number_of_bakers}")
@@ -243,7 +196,7 @@ def main():
     else:
         # create new chain genesis params if brand new chain
         base_constants["node_config_network"]["genesis"] = {
-            "block": get_genesis_vanity_chain_id(FLEXTESA)
+            "block": get_genesis_vanity_chain_id()
             if not args.should_generate_unsafe_deterministic_data
             else "YOUR_GENESIS_BLOCK_HASH_HERE",
             "protocol": "PtYuensgYBb3G3x1hLLbCmcav8ue8Kyd2khADcL5LsT5R1hcXex",
@@ -258,7 +211,9 @@ def main():
             print("Using existing public keys")
             accounts["public"] = old_invite_values["accounts"]
     elif not args.should_generate_unsafe_deterministic_data:
-        baking_accounts = {f"baker{n}": {} for n in range(args.number_of_bakers)}
+        baking_accounts = {
+            f"{BAKER_NODE_NAME}-{n}": {} for n in range(args.number_of_bakers)
+        }
         for account in baking_accounts:
             print(f"Generating keys for account {account}")
             keys = gen_key(args.tezos_docker_image)
@@ -272,30 +227,35 @@ def main():
 
     # First 2 bakers are acting as bootstrap nodes for the others, and run in
     # archive mode. Any other bakers will be in rolling mode.
-    regular_node_config = {"config": {"shell": {"history_mode": "rolling"}}}
     creation_nodes = {
-        BAKER_NODE_TYPE: {
-            f"{BAKER_NODE_NAME}-{n}": {
-                "bake_using_account": f"baker{n}",
-                "is_bootstrap_node": n < 2,
-                "config": {
-                    "shell": {"history_mode": "archive" if n < 2 else "rolling"}
-                },
-            }
-            for n in range(args.number_of_bakers)
+        BAKER_NODE_NAME: {
+            "runs": ["baker", "endorser"],
+            "storage_size": "15Gi",
+            "instances": [
+                node_config(BAKER_NODE_NAME, n, is_baker=True)
+                for n in range(args.number_of_bakers)
+            ],
         },
-        REGULAR_NODE_TYPE: None,
+        REGULAR_NODE_NAME: None,
     }
     if args.number_of_nodes:
-        creation_nodes[REGULAR_NODE_TYPE] = {
-            f"{REGULAR_NODE_NAME}-{n}": regular_node_config
-            for n in range(args.number_of_nodes)
+        creation_nodes[REGULAR_NODE_NAME] = {
+            "storage_size": "15Gi",
+            "instances": [
+                node_config(REGULAR_NODE_NAME, n, is_baker=False)
+                for n in range(args.number_of_nodes)
+            ],
         }
 
-    first_baker_node_name = next(iter(creation_nodes[BAKER_NODE_TYPE]))
-    activation_account_name = creation_nodes[BAKER_NODE_TYPE][first_baker_node_name][
-        "bake_using_account"
-    ]
+    signers = {
+        "tezos-signer-0": {
+            "sign_for_accounts": [
+                f"{BAKER_NODE_NAME}-{n}" for n in range(args.number_of_bakers)
+            ]
+        }
+    }
+
+    activation_account_name = f"{BAKER_NODE_NAME}-0"
     base_constants["node_config_network"][
         "activation_account_name"
     ] = activation_account_name
@@ -306,8 +266,7 @@ def main():
         parametersYaml = yaml.safe_load(yaml_file)
         activation = {
             "activation": {
-                "protocol_hash": "PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i",
-                "should_include_commitments": False,
+                "protocol_hash": "PtGRANADsDU8R9daYKAgWnQYAJ64omN1o3KMGVCykShA97vQbvV",
                 "protocol_parameters": parametersYaml,
             },
         }
@@ -321,6 +280,7 @@ def main():
         **base_constants,
         "bootstrap_peers": bootstrap_peers,
         "accounts": accounts["secret"],
+        "signers": signers,
         "nodes": creation_nodes,
         **activation,
     }
@@ -334,8 +294,11 @@ def main():
         "zerotier_config", {}
     ).get("zerotier_network"):
         invite_nodes = {
-            REGULAR_NODE_TYPE: {f"{REGULAR_NODE_NAME}-0": regular_node_config},
-            BAKER_NODE_TYPE: {},
+            REGULAR_NODE_NAME: {
+                "storage_size": "15Gi",
+                "instances": [node_config(REGULAR_NODE_NAME, 0, is_baker=False)],
+            },
+            BAKER_NODE_NAME: None,
         }
         invitation_constants = {
             "is_invitation": True,

@@ -9,23 +9,30 @@ is_invitation: false
 # Images not part of the tezos-k8s repo go here
 images:
   tezos: tezos/tezos:v9-release
+  tezedge: tezedge/tezedge:v1.6.8
 # Images that are part of the tezos-k8s repo go here with 'dev' tag
 tezos_k8s_images:
   utils: tezos-k8s-utils:dev
   zerotier: tezos-k8s-zerotier:dev
 
+# octez v11 or superior requires explicitly opening up ACLs for other
+# containers to be able to do sentitive RPC operations to it
+# for example chain activation
+#
+# But v10 or less does not recognize the argument.
+# Set this toggle to true when using octez v11.
+open_acls: false
+
 # Properties that are templated in Helm template files
-baker_statefulset: # charts/tezos/templates/baker.yaml
-  name: tezos-baking-node
-  node_type: baking
-  storage_size: 15Gi
-regular_node_statefulset: # charts/tezos/templates/node.yaml
-  name: tezos-node
-  node_type: regular
-  storage_size: 15Gi
 tzkt_indexer_statefulset:
   name: tzkt-indexer
   storageClassName: ""
+signer_statefulset:
+  name: tezos-signer
+  pod_type: signing
+chain_initiator_job:
+  name: chain-initiator
+  pod_type: activating
 
 # For non-public chains the defualt mutez given to an account if the
 # account is not explicitly set below.
@@ -50,63 +57,75 @@ should_generate_unsafe_deterministic_data: false
 #   balance, it will default to the `bootstrap_mutez` field above.
 #
 accounts: {}
-#   tqtezos_baker_0:
+#   oxheadalpha_baker_0:
 #     key: edsk...
 #     type: secret
 #     is_bootstrap_baker_account: true
 #     bootstrap_balance: "50000000000000"
 
-#   tqtezos_regular_account_0:
+#   oxheadalpha_regular_account_0:
 #     key: edpk...
 #     type: public
 #     is_bootstrap_baker_account: false
 #     bootstrap_balance: "4000000000000"
 
 # # NODES
-# Names of nodes should be consistent with their statefulset names but with
-# an added suffix being the index of the node.
-# Example: `baker_statefulset.name: tezos-baking-node` -> `nodes.baking.tezos-baking-node-0`
-# These names with suffix are the
-# `metadata.name` of the downward k8s API. They should be kebab case.
+#
+# nodes is a dictionary where each k/v pair defines a statefulset and
+# a number of instances thereof.  The name (key) defines the name of the
+# statefulset and will be the base of the pod names.  The instances are
+# defined as a list because their names are simply -N appended to the
+# statefulsetname.  Said names are typically kebab case.
+#
 # https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/
 #
-# Params for for non-public chains:
-# - `bake_using_account`: The name of the account that should be used
+# Params at the statefulset level:
+# - storage_size: the size of the PV
+# - runs: a list of containers to run, e.g. "baker", "endorser"
+# - instances: a list of nodes to fire up, each is a dictionary
+#   defining:
+#   - `bake_using_account`: The name of the account that should be used
 #                         for baking.
-# - `is_bootstrap_node`: Is this node a bootstrap peer.
+#   - `is_bootstrap_node`: Is this node a bootstrap peer.
+#   - config: The `config` property should mimic the structure
+#             of a node's config.json.
+#             Run `tezos-node config --help` for more info.
 #
-# The `config` property should mimic the structure of a node's config.json.
-# Run `tezos-node config --help` for more info.
+# defaults are filled in for most values.
+#
+# E.g.:
+#
+# nodes:
+#  tezos-baking-node:
+#    storage_size: 15Gi
+#    runs:
+#      - baker
+#      - endorser
+#    instances:
+#      - bake_using_account: baker0
+#        is_bootstrap_node: true
+#        config:
+#          shell:
+#   tezos-node:
+#     instances:
+#       - {}
+#       - {}
 
 nodes:
-  baking: {}
-    # tezos-baking-node-0:
-      # bake_using_account: tqtezos_baker_0
-      # is_bootstrap_node: true
-      # config:
-      #   shell:
-      #     history_mode: rolling
+  tezos-node:
+    storage_size: 15Gi
+    instances:
+      - is_bootstrap_node: false
+        config:
+          shell:
+            history_mode: rolling
 
-    # Non-public chains: An account with deterministic keys will
-    # automatically be created for this baker, as no account named
-    # tqtezos_baker_1 is specified in accounts.
-    #
-    # Public chain: This baker will fail to boot as it doesn't have a secret key.
-    #
-    # tezos-baking-node-1:
-    #   bake_using_account: tqtezos_baker_1
-    #   is_bootstrap_node: true
-    #   config:
-    #     shell:
-    #       history_mode: full
-
-  # Non-baking nodes
-  regular:
-    tezos-node-0:
-      is_bootstrap_node: false
-      config:
-        shell:
-          history_mode: rolling
+# Define and use external remote signers.
+# Bakers automatically use signers when configured.
+signers: {}
+#  tezos-signer-0:
+#    sign_for_accounts:
+#    - baker0
 
 # LINKS: specifies links between nodes.
 # The nodes will be configured to peer with the remote end.
@@ -126,9 +145,8 @@ bootstrap_peers: []
 # Identity generation difficulty.
 expected_proof_of_work: 26
 
-# Create a custom network using a config structure that is similar to a node's
-# config.json.
-# Run `tezos-node config --help` for more info.
+## Create a custom network using a config structure that is similar to a node's
+## config.json. Run `tezos-node config --help` for more info.
 #
 # node_config_network:
 #   chain_name: YOUR_CHAIN_NAME_HERE
@@ -138,10 +156,14 @@ expected_proof_of_work: 26
 #     protocol: PtYuensgYBb3G3x1hLLbCmcav8ue8Kyd2khADcL5LsT5R1hcXex
 #   # The name of the account who's public key will be set downstream in
 #   # config.json at `network.genesis_parameters.values.genesis_pubkey`.
-#   activation_account_name: tqtezos_baker_0
+#   activation_account_name: oxheadalpha_baker_0
 #
-# For joining a public network. The network must be recognized by the
-# docker image passed as .Values.images.tezos above.
+## For joining a public network:
+## - If specifying the name of the network, the network's name must be
+##   recognized by the docker image passed as .Values.images.tezos above.
+## - Additionally, you can pass a url that returns the config.json of the
+##   network. Example: "https://teztnets.xyz/granadanet". In general you
+##   shouldn't need this and should just specifiy the network's name.
 node_config_network:
   chain_name: mainnet
 
@@ -152,17 +174,14 @@ protocols:
   # You may want to run two or more if you are expecting an on-chain upgrade.
   # Be mindful that running more protocols will start more containers in your
   # pods which may consume more memory.
-  - command: 009-PsFLoren
+  - command: 010-PtGRANAD
   #- command: alpha
 
 # # Activate a new chain from genesis. Note, this is only for when your chain does
 # # not exist yet. For subsequent deploys, remove this.
 #
 # activation:
-#   protocol_hash: PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i
-#   # Should the commitments data in
-#   # tezos-k8s/config-generator/commitment-params.json be part of parameters.json.
-#   should_include_commitments: false
+#   protocol_hash: PtGRANADsDU8R9daYKAgWnQYAJ64omN1o3KMGVCykShA97vQbvV
 #   # parameters.json
 #   protocol_parameters:
 #     preserved_cycles: 2
@@ -184,13 +203,33 @@ protocols:
 #     endorsement_reward: ["2000000", "200000"]
 #     cost_per_byte: "1000"
 #     hard_storage_limit_per_operation: "60000"
-#     test_chain_duration: "1966080"
 #     quorum_min: 2000
 #     quorum_max: 7000
 #     min_proposal_quorum: 500
 #     initial_endorsers: 1
 #     delay_per_missing_endorsement: "1"
 #     baking_reward_per_endorsement: ["200000", "20000"]
+#     minimal_block_delay: "2"
+#     liquidity_baking_subsidy: "2500000"
+#     liquidity_baking_sunset_level: 525600
+#     liquidity_baking_escape_ema_threshold: 100000
+#
+#   # Pass url pointing to additional contracts that you want injected at activation.
+#   # This data is typically too large to pass it directly inside helm chart.
+#   bootstrap_contract_urls: []
+#
+#   # Pass url pointing to a json file listing commitments (precursor to faucet accounts).
+#   # This data is typically too large to pass it directly inside helm chart.
+#   commitments_url: "https://bucket/commitments.json"
+#
+#   # Instead of pre-existing commitments file, use the "deteministic_faucet" map
+#   # to predictably create a desired number of faucet accounts.
+#   # The seed can be shared with an instance of the tezos-faucet project
+#   #   https://gitlab.com/nomadic-labs/tezos-faucet
+#   # so you can deploy a website where people get free tez from the faucet.
+#   deterministic_faucet:
+#     seed: "deterministic faucet seed"
+#     number_of_accounts: 100
 
 # Deploy an indexer with the chain. An indexer puts the chain
 # contents in a database for efficient indexing. Most dapps need it.

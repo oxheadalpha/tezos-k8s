@@ -11,29 +11,17 @@ spec:
     appType: tezos-node
   type: NodePort
 ---
-{{- if (include "tezos.shouldDeployRegularNodeStatefulset" .) }}
+{{- range $key, $val := .Values.nodes }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.regular_node_statefulset.name }}
+  name: {{ $key }}
 spec:
   clusterIP: None
   selector:
-    app: {{ .Values.regular_node_statefulset.name }}
-{{- end }}
-
-{{- if (include "tezos.shouldDeployBakerStatefulset" .) }}
+    app: {{ $key }}
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ .Values.baker_statefulset.name }}
-spec:
-  clusterIP: None
-  selector:
-    app: {{ .Values.baker_statefulset.name }}
 {{- end }}
----
 {{- if (include "tezos.shouldDeployTzktIndexer" .) }}
 apiVersion: v1
 kind: Service

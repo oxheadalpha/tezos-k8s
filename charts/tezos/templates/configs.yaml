@@ -17,6 +17,9 @@ data:
 {{ .Values.nodes | mustToPrettyJson | indent 4 }}
   LINKS: |
 {{ .Values.links | mustToPrettyJson | indent 4 }}
+  SIGNERS: |
+{{ .Values.signers | mustToPrettyJson | indent 4 }}
+  OPEN_ACLS: "{{ .Values.open_acls }}"
 kind: ConfigMap
 metadata:
   name: tezos-config
