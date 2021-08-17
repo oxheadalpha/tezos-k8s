@@ -118,15 +118,31 @@
 {{- end }}
 {{- end }}
 
+{{- define "tezos.getNodeImplementation" }}
+{{- $node_implementation := $.node_vals.node_implementation }}
+  {{- if and (hasKey $node_implementation "octez") (hasKey $node_implementation "tezedge") }}
+    {{- fail "Only one Tezos implementation should be specified" }}
+  {{- else if hasKey $node_implementation "octez" }}
+    {{- "octez" }}
+  {{- else if hasKey $node_implementation "tezedge" }}
+    {{- "tezedge" }}
+  {{- else }}
+    {{- /* Default to octez implementation */}}
+    {{- "octez" }}
+  {{- end }}
+{{- end }}
+
 {{- define "tezos.container.node" }}
-{{- if has "tezedge" $.node_vals.runs | not }}
+{{- if eq (include "tezos.getNodeImplementation" $) "octez" }}
+{{- $node_implementation := $.node_vals.node_implementation | default dict }}
+{{- $node_image := or ($node_implementation.octez) (.Values.images.tezos) }}
 - command:
     - /bin/sh
   args:
     - "-c"
     - |
 {{ tpl (.Files.Get "scripts/tezos-node.sh") . | indent 6 }}
-  image: "{{ .Values.images.tezos }}"
+  image: {{ $node_image }}
   imagePullPolicy: IfNotPresent
   name: tezos-node
   ports:
@@ -143,13 +159,13 @@
 {{- end }}
 
 {{- define "tezos.container.tezedge" }}
-{{- if has "tezedge" $.node_vals.runs }}
+{{- if eq (include "tezos.getNodeImplementation" $) "tezedge" }}
 - name: tezedge
   command:
     - /light-node
   args:
     - "--config-file=/etc/tezos/tezedge.conf"
-  image: "{{ .Values.images.tezedge }}"
+  image: {{ $.node_vals.node_implementation.tezedge }}
   imagePullPolicy: IfNotPresent
   ports:
     - containerPort: 8732
