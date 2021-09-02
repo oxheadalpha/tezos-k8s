@@ -160,12 +160,14 @@
 
 {{- define "tezos.container.tezedge" }}
 {{- if eq (include "tezos.getNodeImplementation" $) "tezedge" }}
+{{- $node_implementation := $.node_vals.node_implementation | default dict }}
+{{- $node_image := or ($node_implementation.tezedge) (.Values.images.tezedge) }}
 - name: tezedge
   command:
     - /light-node
   args:
     - "--config-file=/etc/tezos/tezedge.conf"
-  image: {{ $.node_vals.node_implementation.tezedge }}
+  image: {{ $node_image }}
   imagePullPolicy: IfNotPresent
   ports:
     - containerPort: 8732
