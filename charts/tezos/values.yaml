@@ -246,3 +246,7 @@ protocols:
 #       db_password: bar
 #       # api_log_level: Debug
 #       # indexer_log_level: Debug
+#
+# To set a node-selector key-value pair, uncomment the following:
+# node_selector:
+#   key: value
