@@ -17,7 +17,8 @@ RUN     apk add --no-cache --virtual .build-deps gcc g++ python3-dev	\
      && pip install pyblake2 pysodium numpy \
      && pip install -e 'git+https://github.com/vbuterin/pybitcointools.git@aeb0a2bbb8bbfe421432d776c649650eaeb882a5#egg=bitcoin' \
      && apk del .build-deps git \
-     && apk add jq netcat-openbsd curl binutils
+     && apk add jq netcat-openbsd curl binutils \
+     && apk add lz4
 
 COPY config-generator.py /
 COPY faucet-gen.py /
