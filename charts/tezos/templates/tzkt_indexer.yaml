@@ -41,11 +41,12 @@ data:
     #!/bin/bash
     set -ex
 
-    # The first execution of this file is done by user 999(postgres) via
-    # postgres docker-entrypoint-initdb.d, as postgres can't run as root. When
-    # upgrading the db the upgrade-db initContainer runs it as root. The file is
-    # given group rw permissions via create-snapshot-tracker-file initContainer.
-    # This way 999(postgres)  can write to it.
+    # The first execution of this script is on initialization of the db via
+    # docker-entrypoint-initdb.db. Subsequent times are done on db upgrades. The
+    # postgres container runs as user 999(postgres) and not root. The
+    # "$MY_CURRENT_SNAPSHOTS_URL" file is given group rw permissions via
+    # create-snapshot-tracker-file initContainer so this way the 999(postgres)
+    # can write the current snapshot url to it.
 
     echo "Importing snapshot $SNAPSHOT_URL"
     pg_restore -U "$POSTGRES_USER" \
@@ -148,6 +149,9 @@ spec:
           envFrom:
             - secretRef:
                 name: db-creds
+          securityContext:
+            {{/* Run as user 999(postgres) */}}
+            runAsUser: 999
           command: ["/bin/sh", "-c"]
           args:
             - |
@@ -166,11 +170,10 @@ spec:
                 fi
               fi
 
-              # Postgres requires the server to be run as non-root
-              su postgres -c "pg_ctl start"
+              pg_ctl start
               /etc/import-script/import-db-snapshot.sh
               import_exit_code="$?"
-              su postgres -c "pg_ctl stop"
+              pg_ctl stop
               [ "$import_exit_code" != 0 ] && exit 1 || exit 0
       {{- end }}
         - image: {{ .Values.images.tezos }}
@@ -254,6 +257,7 @@ spec:
             - name: indexer-db
               mountPath: /etc/db-snapshot
               subPath: db-snapshot
+            {{/* Postgres on db initialization runs import-db-snapshot.sh */}}
             - name: import-db-script
               mountPath: /docker-entrypoint-initdb.d
             {{- end }}
