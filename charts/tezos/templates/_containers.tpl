@@ -277,8 +277,12 @@ https://github.com/helm/helm/issues/5979#issuecomment-518231758
 - image: "registry.gitlab.com/nomadic-labs/tezos-metrics"
   args:
     - "--listen-prometheus=6666"
+    - "--data-dir=/var/tezos/node/data"
   imagePullPolicy: IfNotPresent
   name: metrics
+  ports:
+    - containerPort: 6666
+      name: tezos-metrics
   volumeMounts:
     - mountPath: /etc/tezos
       name: config-volume
