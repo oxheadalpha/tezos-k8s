@@ -43,10 +43,11 @@ data:
 
     # The first execution of this script is on initialization of the db via
     # docker-entrypoint-initdb.db. Subsequent times are done on db upgrades. The
-    # postgres container runs as user 999(postgres) and not root. The
-    # "$MY_CURRENT_SNAPSHOTS_URL" file is given group rw permissions via
-    # create-snapshot-tracker-file initContainer so this way the 999(postgres)
-    # can write the current snapshot url to it.
+    # postgres container runs as user 999(postgres) and not root, so it doesn't
+    # have write access to the indexer-db pv (on AWS). The "$MY_CURRENT_SNAPSHOTS_URL"
+    # file is given group rw permissions via the create-snapshot-tracker-file
+    # initContainer so that this way the 999(postgres) can write the current
+    # snapshot url to it.
 
     echo "Importing snapshot $SNAPSHOT_URL"
     pg_restore -U "$POSTGRES_USER" \
@@ -171,8 +172,15 @@ spec:
               fi
 
               pg_ctl start
+
+              # Drop the db. There are certain db objects that pg_restore
+              # cannot cascade delete. So wipe the whole db.
+              dropdb -U "$POSTGRES_USER" --if-exists "$POSTGRES_DB"
+              # Recreate the db
+              createdb -U "$POSTGRES_USER" "$POSTGRES_DB"
               /etc/import-script/import-db-snapshot.sh
               import_exit_code="$?"
+
               pg_ctl stop
               [ "$import_exit_code" != 0 ] && exit 1 || exit 0
       {{- end }}
