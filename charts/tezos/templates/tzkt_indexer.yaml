@@ -211,12 +211,20 @@ spec:
               do
                 [ "$(curl -s http://localhost:5000/v1/head | jq '.synced')" = true ] \
                   && { touch /tmp/synced; echo "Synced"; } \
-                  || { echo "Syncing..."; rm -f /tmp/synced; }
+                  || { echo "Indexer syncing..."; rm -f /tmp/synced; }
                 sleep 8s
               done
           readinessProbe:
+            {{- /*
+              initialDelaySeconds gives indexer time to boot up and grab chain data
+              before starting the probe. Also, some blocks can take longer than others
+              to sync, such as when fetching baking/endorsing rights for a cycle.
+              So we set failureThreshold to 3.
+            */}}
+            initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
+            failureThreshold: 3
             exec:
               command: ["cat", "/tmp/synced"]
         - image: "{{ $tzkt_indexer.api_image }}:{{ $tzkt_indexer.api_image_tag }}"
@@ -265,7 +273,7 @@ spec:
             - name: indexer-db
               mountPath: /etc/db-snapshot
               subPath: db-snapshot
-            {{/* Postgres on db initialization runs import-db-snapshot.sh */}}
+            {{- /* Postgres on db initialization runs import-db-snapshot.sh */}}
             - name: import-db-script
               mountPath: /docker-entrypoint-initdb.d
             {{- end }}
