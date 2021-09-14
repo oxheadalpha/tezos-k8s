@@ -9,7 +9,7 @@
  The path of a downloaded snapshot.
  The file's name format is "{CHAIN_NAME}-{indexer_image_tag}.backup"
 */}}
-{{- $snapshot_file := print "/etc/db-snapshot/" .Values.node_config_network.chain_name "-" $tzkt_indexer.indexer_image_tag ".backup" }}
+{{- $snapshot_file := print "/etc/db-snapshot/" $tzkt_indexer.config.db_name "-" $tzkt_indexer.indexer_image_tag ".backup" }}
 {{- /*
  A file every pod uses to remember its imported snapshot.
  By keeping track, pods won't try to re-upgrade their db on restarts.
