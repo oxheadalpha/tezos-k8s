@@ -17,19 +17,34 @@ case "$my_nodes_history_mode" in
         rolling)        snapshot_url="$ROLLING_SNAPSHOT_URL"    ;;
 esac
 
-#curl https://tezos-snapshots.s3-accelerate.amazonaws.com/vol-00e24ee0c708bcce9/2021-09-13T16%3A58%3A16%2B00%3A00+snap-0074628953cabfaae+-+grenadanet-archive-snapshot.tar.lz4 | lz4 -d | tar -x -C /var/tezos
+if [ -d "/var/tezos" ] 
+then
+    echo "Directory /var/tezos exists."
+		if [ -z "$(ls -A /var/tezos)" ]; then
+   		echo "/var/tezos Empty"
+		else
+			echo "/var/tezos Not Empty"
+fi 
+else
+    echo "Directory /var/tezos does not exist."
+fi
 
-printf "\nDownloading archive from S3..."
-curl -# https://tezos-snapshots.s3-accelerate.amazonaws.com/vol-00e24ee0c708bcce9/2021-09-13T16%3A58%3A16%2B00%3A00+snap-0074628953cabfaae+-+grenadanet-archive-snapshot.tar.lz4 --output file.tar.lz4
+echo "downloading snapshot and untarring"
+curl https://tezos-snapshots.s3-accelerate.amazonaws.com/vol-00e24ee0c708bcce9/2021-09-13T16%3A58%3A16%2B00%3A00+snap-0074628953cabfaae+-+grenadanet-archive-snapshot.tar.lz4 | lz4 -d | tar -x -C /var/tezos
 
-printf "\nlz4 unpacking..."
-lz4 -d file.tar.lz4
+echo "download and untar finished!"
 
-printf "\ndelete lz4 file..."
-rm file.tar.lz4
+# printf "\nDownloading archive from S3..."
+# curl -# https://tezos-snapshots.s3-accelerate.amazonaws.com/vol-00e24ee0c708bcce9/2021-09-13T16%3A58%3A16%2B00%3A00+snap-0074628953cabfaae+-+grenadanet-archive-snapshot.tar.lz4 --output file.tar.lz4
 
-printf "\nuntarring filesystem..."
-tar -x file.tar -C /var/tezos
+# printf "\nlz4 unpacking..."
+# lz4 -d file.tar.lz4
+
+# printf "\ndelete lz4 file..."
+# rm file.tar.lz4
+
+# printf "\nuntarring filesystem..."
+# tar -x file.tar -C /var/tezos
 
 if [ ! -d $node_data_dir/context ]; then
 	echo "Did not find pre-existing data, importing blockchain"
