@@ -210,39 +210,36 @@ protocols:
 #   # This data is typically too large to pass it directly inside helm chart.
 #   commitments_url: "https://bucket/commitments.json"
 
-# Deploy an indexer with the chain. An indexer puts the chain
-# contents in a database for efficient indexing. Most dapps need it.
-# Supported indexers:
-# * tzkt https://github.com/baking-bad/tzkt
+## Deploy an indexer with the chain. An indexer puts the chain
+## contents in a database for efficient indexing. Most dapps need it.
+## Supported indexers:
+## * tzkt https://github.com/baking-bad/tzkt
 #
-# Templatized indexer configuration values go in the config field.
-#
+## Templatized indexer configuration values go in the config field.
+##
 # indexers:
 #   tzkt:
 #     api_image: "bakingbad/tzkt-api"
-#     api_image_tag: "1.5"
+#     api_image_tag: "1.6.1"
 #     indexer_image: "bakingbad/tzkt-sync"
-#     indexer_image_tag: "1.5"
+#     indexer_image_tag: "1.6.1"
 #
 #     # Indexer replicas
 #     replicas: 1
 #
-#     ## See tzkt's readme for public networks' db snapshot urls.
-#     ## If you want to index a brand new archive node you are spinning up, just let
-#     ## the indexer start syncing with it from scratch.
-#     # db_snapshot_url: https://tzkt-snapshots.s3.eu-central-1.amazonaws.com/tzkt_v1.5.2.backup
-#
 #     ## Tzkt provides new snapshots as they update their code. Update your
-#     ## indexers by specifying new docker image tags and by using a new
-#     ## db_snapshot_url. Then set this field to true to trigger a rolling update
-#     ## of your indexers. Spin up an additional replica if you only have one to
-#     ## avoid downtime. You can set this back to false on subsequent deployments.
-#     # upgrade_indexer: false
+#     ## indexers by specifying new docker image tags and by using the matching
+#     ## db_snapshot_url. Spin up an additional replica if you only have one to
+#     ## avoid downtime. See tzkt's readme for public networks' db snapshot urls.
+#     ## If you want to index a brand new archive node you are spinning up, just
+#     ## let the indexer start syncing with it from scratch.
+#     ## https://github.com/baking-bad/tzkt
+#     db_snapshot_url: https://tzkt-snapshots.s3.eu-central-1.amazonaws.com/tzkt_v1.6_florencenet.backup
 #
 #     ## For developing: you can choose to persist the snapshot file after it's
 #     ## imported so that the pod would never have to re-download it. The files
-#     ## name format is "{CHAIN_NAME}-{indexer_image_tag}.backup"
-#     # keep_snapshot_after_import: true
+#     ## name format is "{db_name}-{indexer_image_tag}.backup"
+#     keep_snapshot_after_import: true
 #
 #     # Configurable tzkt fields
 #     config:
