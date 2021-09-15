@@ -64,30 +64,30 @@ accounts: {}
 ## NODES
 ##
 ## "nodes" is a dictionary where each key/value pair defines a statefulset and a
-## number of instances thereof.  The name (key) defines the name of the
-## statefulset and will be the base of the pod names.  The instances are defined
+## number of instances thereof. The name (key) defines the name of the
+## statefulset and will be the base of the pod names. The instances are defined
 ## as a list because their names are simply -N appended to the statefulsetname.
 ## Said names are typically kebab case.
 ##
 ## https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/
 ##
 ## Params at the statefulset level:
-## - storage_size: the size of the PV
-## - images: Optional specification of images to use for the tezos node and
+## - "storage_size": the size of the PV
+## - "images": Optional specification of images to use for the tezos node and
 ##           baker/endorser. Options are "octez" with a tezos/tezos image or
 ##           "tezedge" with a tezedge/tezedge image. If no images are provided,
-##           the containers will default to the images defined in the `images`
+##           the containers will default to the images defined in the "images"
 ##           field up above.
-## - runs: A list of containers to run. A tezos node implementation is required.
+## - "runs": A list of containers to run. A tezos node implementation is required.
 ##         Options being "octez_node" or "tezedge_node". Other optional
 ##         containers are "baker", "endorser", "logger", and "metrics".
-## - instances: a list of nodes to fire up, each is a dictionary defining:
-##   - `bake_using_account`: Account name that should be used for baking.
-##   - `bake_using_accounts`: List of account names that should be used for baking.
-##   - `is_bootstrap_node`: Is this node a bootstrap peer.
-##   - config: The `config` property should mimic the structure of a node's
+## - "instances": a list of nodes to fire up, each is a dictionary defining:
+##   - "bake_using_account": Account name that should be used for baking.
+##   - "bake_using_accounts": List of account names that should be used for baking.
+##   - "is_bootstrap_node": Is this node a bootstrap peer.
+##   - "config": The "config" property should mimic the structure of a node's
 ##             config.json. Run `tezos-node config --help` for more info.
-##   - node_selector: specify a kubernetes node selector in 'key: value' format
+##   - "node_selector": Specify a kubernetes node selector in 'key: value' format
 ##     for your tezos nodes.
 ##
 ##
