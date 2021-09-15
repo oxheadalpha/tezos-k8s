@@ -22,6 +22,7 @@ echo "Valid options are:"
 echo "	config-generator"
 echo "	logger"
 echo "	snapshot-downloader"
+echo "	tarball-downloader"
 echo "	wait-for-bootstrap"
 echo "	faucet-gen"
 
