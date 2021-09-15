@@ -333,3 +333,15 @@ https://github.com/helm/helm/issues/5979#issuecomment-518231758
       name: var-volume
 {{- end }}
 {{- end }}
+
+{{/*
+  Node selector config section
+*/}}
+{{- define "tezos.nodeSelectorConfig" -}}
+{{- if hasKey $.node_vals "node_selector" }}
+nodeSelector:
+{{ toYaml $.node_vals.node_selector | indent 2 }}
+{{- else }}
+{{- "" }}
+{{- end }}
+{{- end }}

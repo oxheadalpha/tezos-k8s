@@ -37,6 +37,7 @@ spec:
 {{- include "tezos.init_container.snapshot_importer"   $ | indent 8 }}
       securityContext:
         fsGroup: 100
+{{- include "tezos.nodeSelectorConfig" $ | indent 6 }}
       volumes:
         - hostPath:
             path: /dev/net/tun
