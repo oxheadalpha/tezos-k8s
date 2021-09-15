@@ -216,7 +216,7 @@ def main():
         }
         for account in baking_accounts:
             print(f"Generating keys for account {account}")
-            keys = gen_key(args.tezos_docker_image)
+            keys = gen_key(args.octez_docker_image)
             for key_type in keys:
                 accounts[key_type][account] = {
                     "key": keys[key_type],
@@ -229,7 +229,7 @@ def main():
     # archive mode. Any other bakers will be in rolling mode.
     creation_nodes = {
         BAKER_NODE_NAME: {
-            "runs": ["baker", "endorser"],
+            "runs": ["octez_node", "baker", "endorser"],
             "storage_size": "15Gi",
             "instances": [
                 node_config(BAKER_NODE_NAME, n, is_baker=True)
