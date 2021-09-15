@@ -51,7 +51,7 @@ cli_args = {
     },
     "tezos_docker_image": {
         "help": "Version of the Tezos docker image",
-        "default": "tezos/tezos:v9-release",
+        "default": "tezos/tezos:v10-release",
     },
     "use_docker": {
         "action": "store_true",
@@ -135,7 +135,7 @@ def node_config(name, n, is_baker):
         },
     }
     if is_baker:
-        ret["bake_using_account"] = f"{name}-{n}"
+        ret["bake_using_accounts"] = [f"{name}-{n}"]
         if n < 2:
             ret["is_bootstrap_node"] = True
             ret["config"]["shell"]["history_mode"] = "archive"
@@ -266,7 +266,7 @@ def main():
         parametersYaml = yaml.safe_load(yaml_file)
         activation = {
             "activation": {
-                "protocol_hash": "PsFLorenaUUuikDWvMDr6fGBRG8kt3e3D3fHoXK1j1BFRxeSH4i",
+                "protocol_hash": "PtGRANADsDU8R9daYKAgWnQYAJ64omN1o3KMGVCykShA97vQbvV",
                 "protocol_parameters": parametersYaml,
             },
         }

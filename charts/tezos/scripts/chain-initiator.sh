@@ -16,5 +16,5 @@ $CLIENT -d /var/tezos/client --block					\
 	genesis activate protocol					\
 	{{ .Values.activation.protocol_hash }}				\
 	with fitness -1 and key						\
-	{{ .Values.node_config_network.activation_account_name }}	\
+	$( cat /etc/tezos/activation_account_name )			\
 	and parameters /etc/tezos/parameters.json 2>&1 | head -200

@@ -19,7 +19,6 @@ cat > /etc/tezos/tezedge.conf <<EOM
 --custom-network-file=/etc/tezos/config.json
 --p2p-port=9732
 --rpc-port=8732
---websocket-address=0.0.0.0:4927
 --init-sapling-spend-params-file=/sapling-spend.params
 --init-sapling-output-params-file=/sapling-output.params
 --tezos-data-dir=/var/tezos/node/data
@@ -32,21 +31,9 @@ cat > /etc/tezos/tezedge.conf <<EOM
 --peer-thresh-low=10
 --peer-thresh-high=15
 --protocol-runner=/protocol-runner
---ffi-pool-max-connections=10
---ffi-trpap-pool-max-connections=10
---ffi-twcap-pool-max-connections=10
---ffi-pool-connection-timeout-in-secs=60
---ffi-trpap-pool-connection-timeout-in-secs=60
---ffi-twcap-pool-connection-timeout-in-secs=60
---ffi-pool-max-lifetime-in-secs=21600
---ffi-trpap-pool-max-lifetime-in-secs=21600
---ffi-twcap-pool-max-lifetime-in-secs=21600
---ffi-pool-idle-timeout-in-secs=1800
---ffi-trpap-pool-idle-timeout-in-secs=1800
---ffi-twcap-pool-idle-timeout-in-secs=1800
---compute-context-action-tree-hashes=false
 --tokio-threads=0
 --enable-testchain=false
+--log=terminal
 EOM
 
 < /etc/tezos/config.json jq -r '.p2p."bootstrap-peers"[]'	| \
@@ -60,12 +47,19 @@ EOM
 # tezos docker image.
 
 MY_CLASS=$(echo $NODES | jq -r ".\"${MY_NODE_CLASS}\"")
-AM_I_BAKER=$(echo $MY_CLASS | jq -r '.runs|map(select(. == "baker"))|length')
+AM_I_BAKER=0
+if [ "$MY_CLASS" != null ]; then
+    AM_I_BAKER=$(echo $MY_CLASS | \
+		 jq -r '.runs|map(select(. == "baker"))|length')
+fi
 
 if [ "$AM_I_BAKER" -eq 1 ]; then
     my_baker_account=$(echo $MY_CLASS | \
 	    jq -r ".instances[${MY_POD_NAME#$MY_NODE_CLASS-}]
-		   .bake_using_account")
+		   |if .bake_using_accounts
+		    then .bake_using_accounts[]
+		    else .bake_using_account
+		    end")
 
     # If no account to bake for was specified in the node's settings,
     # config-generator defaults the account name to the pod's name.

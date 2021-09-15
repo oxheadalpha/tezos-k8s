@@ -10,3 +10,5 @@ mkdir -p /etc/tezos/data
     --network $CHAIN_NAME
 
 cat /etc/tezos/data/config.json
+
+printf "\n\n\n\n\n\n\n"

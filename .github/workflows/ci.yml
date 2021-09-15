@@ -173,16 +173,16 @@ jobs:
 
           curl -s -H "Authorization: JWT ${TOKEN}" "https://hub.docker.com/v2/repositories/" \
           --data 'description="tezos-k8s ${{ matrix.container }}"' \
-          --data 'full_description="The container for https://github.com/tqtezos/tezos-k8s/tree/master/${{ matrix.container }}' \
+          --data 'full_description="The container for https://github.com/oxheadalpha/tezos-k8s/tree/master/${{ matrix.container }}' \
           --data 'is_private=false' \
           --data 'name=tezos-k8s-${{ matrix.container }}' \
-          --data "namespace=tqtezos" || true
+          --data "namespace=oxheadalpha" || true
 
       - name: Docker meta
         id: docker_meta
         uses: crazy-max/ghaction-docker-meta@v1
         with:
-          images: tqtezos/tezos-k8s-${{ matrix.container }}
+          images: oxheadalpha/tezos-k8s-${{ matrix.container }}
           tag-sha: true
 
       - name: Publish ${{ matrix.container }} container to Docker Hub
@@ -238,13 +238,13 @@ jobs:
             # Update Chart.yaml with release version
             yq e ".version = \"$RELEASE_VERSION\"" -i "$chart/Chart.yaml"
 
-            # Get tqtezos/tezos-k8s images specified in values.yaml
+            # Get oxheadalpha/tezos-k8s images specified in values.yaml
             tq_images=$(yq e '(.tezos_k8s_images[]) | path | .[-1]' "$chart/values.yaml")
 
             # Update the release version of each of tezos-k8s images
             for image in $tq_images; do
               image_name=$(yq e ".tezos_k8s_images.$image" $chart/values.yaml | sed -E "s/tezos-k8s-(.*):.*/\1/")
-              yq e ".tezos_k8s_images.$image = \"tqtezos/tezos-k8s-$image_name:$RELEASE_VERSION\"" -i $chart/values.yaml
+              yq e ".tezos_k8s_images.$image = \"oxheadalpha/tezos-k8s-$image_name:$RELEASE_VERSION\"" -i $chart/values.yaml
             done
           done
 

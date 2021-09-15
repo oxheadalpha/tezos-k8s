@@ -13,7 +13,8 @@ if [ -d ${node_data_dir}/context ]; then
     exit 0
 fi
 
+cp -v /etc/tezos/config.json ${node_data_dir}
 ${node} snapshot import ${snapshot_file} --data-dir ${node_data_dir} \
-    --network $CHAIN_NAME --config-file /etc/tezos/config.json
+    --network $CHAIN_NAME
 find ${node_dir}
 rm -rvf ${snapshot_file}
