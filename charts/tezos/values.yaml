@@ -8,7 +8,7 @@ is_invitation: false
 
 # Images not part of the tezos-k8s repo go here
 images:
-  tezos: tezos/tezos:v9-release
+  octez: tezos/tezos:v9-release
   tezedge: tezedge/tezedge:v1.6.8
 # Images that are part of the tezos-k8s repo go here with 'dev' tag
 tezos_k8s_images:
@@ -168,7 +168,7 @@ expected_proof_of_work: 26
 #
 ## For joining a public network:
 ## - If specifying the name of the network, the network's name must be
-##   recognized by the docker image passed as .Values.images.tezos above.
+##   recognized by the docker image passed as .Values.images.octez above.
 ## - Additionally, you can pass a url that returns the config.json of the
 ##   network. Example: "https://teztnets.xyz/granadanet". In general you
 ##   shouldn't need this and should just specifiy the network's name.

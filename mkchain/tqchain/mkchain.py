@@ -49,8 +49,8 @@ cli_args = {
         "action": "extend",
         "nargs": "+",
     },
-    "tezos_docker_image": {
-        "help": "Version of the Tezos docker image",
+    "octez_docker_image": {
+        "help": "Version of the Octez docker image",
         "default": "tezos/tezos:v9-release",
     },
     "use_docker": {
@@ -150,7 +150,7 @@ def main():
 
     base_constants = {
         "images": {
-            "tezos": args.tezos_docker_image,
+            "octez": args.tezos_docker_image,
         },
         "node_config_network": {"chain_name": args.chain_name},
         "zerotier_config": {

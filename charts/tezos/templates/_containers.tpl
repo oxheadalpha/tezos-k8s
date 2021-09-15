@@ -15,7 +15,7 @@
 
 {{- define "tezos.init_container.config_init" }}
 {{- if include "tezos.shouldConfigInit" . }}
-- image: "{{ .Values.images.tezos }}"
+- image: "{{ .Values.images.octez }}"
   command:
     - /bin/sh
   args:
@@ -96,7 +96,7 @@
 
 {{- define "tezos.init_container.snapshot_importer" }}
 {{- if include "tezos.shouldDownloadSnapshot" . }}
-- image: "{{ .Values.images.tezos }}"
+- image: "{{ .Values.images.octez }}"
   imagePullPolicy: IfNotPresent
   name: snapshot-importer
   command:
@@ -136,7 +136,7 @@
 {{- if eq (include "tezos.getNodeImplementation" $) "octez" }}
 {{ $node_vals_images := $.node_vals.images | default dict }}
 - name: octez-node
-  image: "{{ or $node_vals_images.octez $.Values.images.tezos }}"
+  image: "{{ or $node_vals_images.octez $.Values.images.octez }}"
   command:
     - /bin/sh
   args:
@@ -184,7 +184,7 @@
 {{- if has "baker" $.node_vals.runs }}
 {{ $node_vals_images := $.node_vals.images | default dict }}
 {{- range .Values.protocols }}
-- image: "{{ or $node_vals_images.octez $.Values.images.tezos }}"
+- image: "{{ or $node_vals_images.octez $.Values.images.octez }}"
   command:
     - /bin/sh
   args:
@@ -218,7 +218,7 @@ https://github.com/helm/helm/issues/5979#issuecomment-518231758
 {{- if has "endorser" $.node_vals.runs }}
 {{ $node_vals_images := $.node_vals.images | default dict }}
 {{- range .Values.protocols }}
-- image: "{{ or $node_vals_images.octez $.Values.images.tezos }}"
+- image: "{{ or $node_vals_images.octez $.Values.images.octez }}"
   command:
     - /bin/sh
   args:

@@ -44,7 +44,7 @@ spec:
               echo "Database '{{ .Values.indexers.tzkt.config.db_name }}' already exists. Skipping download."
             fi
       {{- end }}
-        - image: {{ .Values.images.tezos }}
+        - image: {{ .Values.images.octez }}
           name: get-chain-id
           volumeMounts:
             - name: tzkt-env
