@@ -15,6 +15,8 @@ echo My nodes history mode: $my_nodes_history_mode
 case "$my_nodes_history_mode" in
         full)           snapshot_url="$FULL_SNAPSHOT_URL"       ;;
         rolling)        snapshot_url="$ROLLING_SNAPSHOT_URL"    ;;
+        *)              echo "No snapshot URL provide for node, exiting"
+                        exit 1;;
 esac
 
 if [ ! -d $node_data_dir/context ]; then
