@@ -51,7 +51,7 @@ cli_args = {
     },
     "tezos_docker_image": {
         "help": "Version of the Tezos docker image",
-        "default": "tezos/tezos:v9-release",
+        "default": "tezos/tezos:v10-release",
     },
     "use_docker": {
         "action": "store_true",
