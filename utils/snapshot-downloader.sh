@@ -29,22 +29,7 @@ else
     echo "Directory /var/tezos does not exist."
 fi
 
-echo "downloading snapshot and untarring"
 curl https://tezos-snapshots.s3-accelerate.amazonaws.com/vol-0e83a0d1b1855d198/2021-09-14T23%3A17%3A34%2B00%3A00+snap-0b6fddf57af1d7f93+-+teztnets-granadanet-v10-snapshot.tar.lz4 | lz4 -d | tar -x -C /var/tezos
-
-echo "download and untar finished!"
-
-# printf "\nDownloading archive from S3..."
-# curl -# https://tezos-snapshots.s3-accelerate.amazonaws.com/vol-00e24ee0c708bcce9/2021-09-13T16%3A58%3A16%2B00%3A00+snap-0074628953cabfaae+-+grenadanet-archive-snapshot.tar.lz4 --output file.tar.lz4
-
-# printf "\nlz4 unpacking..."
-# lz4 -d file.tar.lz4
-
-# printf "\ndelete lz4 file..."
-# rm file.tar.lz4
-
-# printf "\nuntarring filesystem..."
-# tar -x file.tar -C /var/tezos
 
 if [ ! -d $node_data_dir/context ]; then
 	echo "Did not find pre-existing data, importing blockchain"
