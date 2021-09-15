@@ -113,7 +113,7 @@
 {{- define "tezos.nodeSelectorConfig" -}}
 {{- if .Values.node_selector }}
 nodeSelector:
-{{- .Values.node_selector }}
+{{ toYaml .Values.node_selector | indent 2 }}
 {{- else }}
 {{- "" }}
 {{- end }}
