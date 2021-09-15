@@ -30,7 +30,7 @@ else
 fi
 
 echo "downloading snapshot and untarring"
-curl https://tezos-snapshots.s3-accelerate.amazonaws.com/vol-00e24ee0c708bcce9/2021-09-13T16%3A58%3A16%2B00%3A00+snap-0074628953cabfaae+-+grenadanet-archive-snapshot.tar.lz4 | lz4 -d | tar -x -C /var/tezos
+curl https://tezos-snapshots.s3-accelerate.amazonaws.com/vol-0e83a0d1b1855d198/2021-09-14T23%3A17%3A34%2B00%3A00+snap-0b6fddf57af1d7f93+-+teztnets-granadanet-v10-snapshot.tar.lz4 | lz4 -d | tar -x -C /var/tezos
 
 echo "download and untar finished!"
 
