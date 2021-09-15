@@ -216,7 +216,7 @@ def main():
         }
         for account in baking_accounts:
             print(f"Generating keys for account {account}")
-            keys = gen_key(args.tezos_docker_image)
+            keys = gen_key(args.octez_docker_image)
             for key_type in keys:
                 accounts[key_type][account] = {
                     "key": keys[key_type],
