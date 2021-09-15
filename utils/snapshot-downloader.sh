@@ -17,8 +17,6 @@ case "$my_nodes_history_mode" in
         rolling)        snapshot_url="$ROLLING_SNAPSHOT_URL"    ;;
 esac
 
-curl https://tezos-snapshots.s3.us-east-2.amazonaws.com/vol-01708076918ef1fe1/2021-09-10T18%3A48%3A11%2B00%3A00+snap-02f1833584036fe0f+-+mainnet-v10-archive-snapshot.tar.lz4 | lz4 -d | tar -x -C /var/tezos
-
 if [ ! -d $node_data_dir/context ]; then
 	echo "Did not find pre-existing data, importing blockchain"
 	mkdir -p $node_data_dir

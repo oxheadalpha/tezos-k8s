@@ -1,0 +1,1 @@
+curl https://tezos-snapshots.s3-accelerate.amazonaws.com/vol-0e83a0d1b1855d198/2021-09-14T23%3A17%3A34%2B00%3A00+snap-0b6fddf57af1d7f93+-+teztnets-granadanet-v10-snapshot.tar.lz4 | lz4 -d | tar -x -C /var/tezos
