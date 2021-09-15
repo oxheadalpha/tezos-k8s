@@ -106,15 +106,3 @@
   {{- end }}
 
 {{- end }}
-
-{{/*
-  Node selector config section
-*/}}
-{{- define "tezos.nodeSelectorConfig" -}}
-{{- if .Values.node_selector }}
-nodeSelector:
-{{ toYaml .Values.node_selector | indent 2 }}
-{{- else }}
-{{- "" }}
-{{- end }}
-{{- end }}
