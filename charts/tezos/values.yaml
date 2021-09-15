@@ -8,20 +8,12 @@ is_invitation: false
 
 # Images not part of the tezos-k8s repo go here
 images:
-  octez: tezos/tezos:v9-release
+  octez: tezos/tezos:v10-release
   tezedge: tezedge/tezedge:v1.6.8
 # Images that are part of the tezos-k8s repo go here with 'dev' tag
 tezos_k8s_images:
   utils: tezos-k8s-utils:dev
   zerotier: tezos-k8s-zerotier:dev
-
-# octez v11 or superior requires explicitly opening up ACLs for other
-# containers to be able to do sentitive RPC operations to it
-# for example chain activation
-#
-# But v10 or less does not recognize the argument.
-# Set this toggle to true when using octez v11.
-open_acls: false
 
 # Properties that are templated in Helm template files
 tzkt_indexer_statefulset:
@@ -95,6 +87,9 @@ accounts: {}
 ##   - `is_bootstrap_node`: Is this node a bootstrap peer.
 ##   - config: The `config` property should mimic the structure of a node's
 ##             config.json. Run `tezos-node config --help` for more info.
+##   - node_selector: specify a kubernetes node selector in 'key: value' format
+##     for your tezos nodes.
+##
 ##
 ## defaults are filled in for most values.
 ##
@@ -102,8 +97,10 @@ accounts: {}
 ##
 # nodes:
 #   tezos-baking-node:
+#     node_selector:
+#       nodeSelectorKey: nodeSelectorValue
 #     storage_size: 15Gi
-#     images: (optional field)
+#     images: # (optional field)
 #       octez: tezos/tezos:v...
 #     # tezedge: tezedge/tezedg:v...
 #     runs:
@@ -118,7 +115,7 @@ accounts: {}
 #           shell:
 #             history_mode: rolling
 #   tezos-node:
-#     images: (optional field)
+#     images: # (optional field)
 #       tezedge: tezedge/tezedge:v...
 #     runs: ["tezedge_node"]
 #     instances:

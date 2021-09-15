@@ -51,7 +51,7 @@ cli_args = {
     },
     "octez_docker_image": {
         "help": "Version of the Octez docker image",
-        "default": "tezos/tezos:v9-release",
+        "default": "tezos/tezos:v10-release",
     },
     "use_docker": {
         "action": "store_true",
@@ -150,7 +150,7 @@ def main():
 
     base_constants = {
         "images": {
-            "octez": args.tezos_docker_image,
+            "octez": args.octez_docker_image,
         },
         "node_config_network": {"chain_name": args.chain_name},
         "zerotier_config": {
