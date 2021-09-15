@@ -545,7 +545,12 @@ def create_node_config_json(
         #  Either way, set the `network` field here as the `network` object of the
         #  produced config.json.
         with open("/etc/tezos/data/config.json", "r") as f:
-            node_config["network"] = json.load(f)["network"]
+            node_config_orig = json.load(f)
+            if "network" in node_config_orig:
+                node_config["network"] = node_config_orig["network"]
+            else:
+                node_config["network"] = "mainnet"
+            
     else:
         if CHAIN_PARAMS.get("expected-proof-of-work") != None:
             node_config["p2p"]["expected-proof-of-work"] = CHAIN_PARAMS[
