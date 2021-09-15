@@ -89,6 +89,8 @@ accounts: {}
 ##             config.json. Run `tezos-node config --help` for more info.
 ##   - "node_selector": Specify a kubernetes node selector in 'key: value' format
 ##     for your tezos nodes.
+##   - "local_storage": use a local node storage that gets reset each time the pod
+##     restarts; effectively syncs from a snpashot each time. Defaults to false
 ##
 ##
 ## defaults are filled in for most values.
@@ -103,6 +105,7 @@ accounts: {}
 #     images: # (optional field)
 #       octez: tezos/tezos:v...
 #     # tezedge: tezedge/tezedg:v...
+#     local_storage: false
 #     runs:
 #       - octez_node
 #     # - tezedge_node
