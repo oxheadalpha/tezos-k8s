@@ -219,7 +219,7 @@ spec:
               initialDelaySeconds gives indexer time to boot up and grab chain data
               before starting the probe. Also some blocks can take longer than others
               to sync, such as when fetching baking/endorsing rights for a cycle.
-              So we set failureThreshold to 3. Tzkt has a bug where occasionaly the
+              So we set failureThreshold to 3. Tzkt has a bug where occasionally the
               indexer sync status returns a false positive. Usually when the container
               just starts. We set the successThreshold at 2 so we are more likely to
               know if the indexer is actually synced.
