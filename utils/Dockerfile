@@ -27,5 +27,6 @@ COPY entrypoint.sh /
 COPY logger.sh /
 COPY snapshot-downloader.sh /
 COPY wait-for-bootstrap.sh /
+COPY tarball_downloader.sh /
 ENTRYPOINT ["/entrypoint.sh"]
 CMD []
