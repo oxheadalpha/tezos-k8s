@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: tezos-signer
-        image: "{{ .Values.images.tezos }}"
+        image: "{{ .Values.images.octez }}"
         ports:
         - containerPort: 6732
           name: signer

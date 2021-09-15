@@ -8,7 +8,7 @@ is_invitation: false
 
 # Images not part of the tezos-k8s repo go here
 images:
-  tezos: tezos/tezos:v10-release
+  octez: tezos/tezos:v10-release
   tezedge: tezedge/tezedge:v1.6.8
 # Images that are part of the tezos-k8s repo go here with 'dev' tag
 tezos_k8s_images:
@@ -49,60 +49,75 @@ should_generate_unsafe_deterministic_data: false
 #   balance, it will default to the `bootstrap_mutez` field above.
 #
 accounts: {}
-#   oxheadalpha_baker_0:
+#   baker0:
 #     key: edsk...
 #     type: secret
 #     is_bootstrap_baker_account: true
 #     bootstrap_balance: "50000000000000"
 
-#   oxheadalpha_regular_account_0:
+#   baker1:
 #     key: edpk...
 #     type: public
 #     is_bootstrap_baker_account: false
 #     bootstrap_balance: "4000000000000"
 
-# # NODES
-#
-# nodes is a dictionary where each k/v pair defines a statefulset and
-# a number of instances thereof.  The name (key) defines the name of the
-# statefulset and will be the base of the pod names.  The instances are
-# defined as a list because their names are simply -N appended to the
-# statefulsetname.  Said names are typically kebab case.
-#
-# https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/
-#
-# Params at the statefulset level:
-# - storage_size: the size of the PV
-# - runs: a list of containers to run, e.g. "baker", "endorser"
-# - instances: a list of nodes to fire up, each is a dictionary
-#   defining:
-#   - `bake_using_account`: The name of the account that should be used
-#                         for baking.
-#   - `is_bootstrap_node`: Is this node a bootstrap peer.
-#   - config: The `config` property should mimic the structure
-#             of a node's config.json.
-#             Run `tezos-node config --help` for more info.
-# - node_selector: specify a kubernetes node selector in 'key: value'
-#   format for your tezos nodes.
-#
-# defaults are filled in for most values.
-#
-# E.g.:
-#
+## NODES
+##
+## "nodes" is a dictionary where each key/value pair defines a statefulset and a
+## number of instances thereof. The name (key) defines the name of the
+## statefulset and will be the base of the pod names. The instances are defined
+## as a list because their names are simply -N appended to the statefulsetname.
+## Said names are typically kebab case.
+##
+## https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/
+##
+## Params at the statefulset level:
+## - "storage_size": the size of the PV
+## - "images": Optional specification of images to use for the tezos node and
+##           baker/endorser. Options are "octez" with a tezos/tezos image or
+##           "tezedge" with a tezedge/tezedge image. If no images are provided,
+##           the containers will default to the images defined in the "images"
+##           field up above.
+## - "runs": A list of containers to run. A tezos node implementation is required.
+##         Options being "octez_node" or "tezedge_node". Other optional
+##         containers are "baker", "endorser", "logger", and "metrics".
+## - "instances": a list of nodes to fire up, each is a dictionary defining:
+##   - "bake_using_account": Account name that should be used for baking.
+##   - "bake_using_accounts": List of account names that should be used for baking.
+##   - "is_bootstrap_node": Is this node a bootstrap peer.
+##   - "config": The "config" property should mimic the structure of a node's
+##             config.json. Run `tezos-node config --help` for more info.
+##   - "node_selector": Specify a kubernetes node selector in 'key: value' format
+##     for your tezos nodes.
+##
+##
+## defaults are filled in for most values.
+##
+## E.g.:
+##
 # nodes:
-#  tezos-baking-node:
-#    node_selector:
-#      nodeSelectorKey: nodeSelectorValue
-#    storage_size: 15Gi
-#    runs:
-#      - baker
-#      - endorser
-#    instances:
-#      - bake_using_account: baker0
-#        is_bootstrap_node: true
-#        config:
-#          shell:
+#   tezos-baking-node:
+#     node_selector:
+#       nodeSelectorKey: nodeSelectorValue
+#     storage_size: 15Gi
+#     images: # (optional field)
+#       octez: tezos/tezos:v...
+#     # tezedge: tezedge/tezedg:v...
+#     runs:
+#       - octez_node
+#     # - tezedge_node
+#       - baker
+#       - endorser
+#     instances:
+#       - bake_using_account: baker0
+#         is_bootstrap_node: true
+#         config:
+#           shell:
+#             history_mode: rolling
 #   tezos-node:
+#     images: # (optional field)
+#       tezedge: tezedge/tezedge:v...
+#     runs: ["tezedge_node"]
 #     instances:
 #       - {}
 #       - {}
@@ -110,6 +125,8 @@ accounts: {}
 nodes:
   tezos-node:
     storage_size: 15Gi
+    runs:
+      - octez_node
     instances:
       - is_bootstrap_node: false
         config:
@@ -135,7 +152,7 @@ expected_proof_of_work: 26
 
 ## Create a custom network using a config structure that is similar to a node's
 ## config.json. Run `tezos-node config --help` for more info.
-#
+##
 # node_config_network:
 #   chain_name: YOUR_CHAIN_NAME_HERE
 #   genesis:
@@ -144,11 +161,11 @@ expected_proof_of_work: 26
 #     protocol: PtYuensgYBb3G3x1hLLbCmcav8ue8Kyd2khADcL5LsT5R1hcXex
 #   # The name of the account who's public key will be set downstream in
 #   # config.json at `network.genesis_parameters.values.genesis_pubkey`.
-#   activation_account_name: oxheadalpha_baker_0
+#   activation_account_name: baker0
 #
 ## For joining a public network:
 ## - If specifying the name of the network, the network's name must be
-##   recognized by the docker image passed as .Values.images.tezos above.
+##   recognized by the docker image passed as .Values.images.octez above.
 ## - Additionally, you can pass a url that returns the config.json of the
 ##   network. Example: "https://teztnets.xyz/granadanet". In general you
 ##   shouldn't need this and should just specifiy the network's name.
@@ -165,9 +182,9 @@ protocols:
   - command: 010-PtGRANAD
   #- command: alpha
 
-# # Activate a new chain from genesis. Note, this is only for when your chain does
-# # not exist yet. For subsequent deploys, remove this.
-#
+## Activate a new chain from genesis. Note, this is only for when your chain does
+## not exist yet. For subsequent deploys, remove this.
+##
 # activation:
 #   protocol_hash: PtGRANADsDU8R9daYKAgWnQYAJ64omN1o3KMGVCykShA97vQbvV
 #   # parameters.json

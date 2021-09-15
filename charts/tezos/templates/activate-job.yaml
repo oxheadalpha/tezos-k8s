@@ -10,7 +10,7 @@ spec:
       name: activate-job
     spec:
       containers:
-        - image: "{{ .Values.images.tezos }}"
+        - image: "{{ .Values.images.octez }}"
           command:
             - /bin/sh
           args:
