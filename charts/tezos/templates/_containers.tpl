@@ -119,32 +119,31 @@
 {{- end }}
 
 {{- define "tezos.getNodeImplementation" }}
-{{- $node_implementation := $.node_vals.node_implementation }}
-  {{- if and (hasKey $node_implementation "octez") (hasKey $node_implementation "tezedge") }}
-    {{- fail "Only one Tezos implementation should be specified" }}
-  {{- else if hasKey $node_implementation "octez" }}
+{{- $containers := $.node_vals.runs }}
+  {{- if and (has "tezedge_node" $containers) (has "octez_node" $containers) }}
+    {{- fail "Only either tezedge_node or octez_node container can be specified in 'runs' field " }}
+  {{- else if (has "octez_node" $containers) }}
     {{- "octez" }}
-  {{- else if hasKey $node_implementation "tezedge" }}
+  {{- else if (has "tezedge_node" $containers) }}
     {{- "tezedge" }}
   {{- else }}
-    {{- /* Default to octez implementation */}}
-    {{- "octez" }}
+    {{- fail "No Tezos node container was specified in 'runs' field. Must specify tezedge_node or octez_node" }}
   {{- end }}
 {{- end }}
 
+
 {{- define "tezos.container.node" }}
 {{- if eq (include "tezos.getNodeImplementation" $) "octez" }}
-{{- $node_implementation := $.node_vals.node_implementation | default dict }}
-{{- $node_image := or ($node_implementation.octez) (.Values.images.tezos) }}
-- command:
+{{ $node_vals_images := $.node_vals.images | default dict }}
+- name: octez-node
+  image: "{{ or $node_vals_images.octez $.Values.images.tezos }}"
+  command:
     - /bin/sh
   args:
     - "-c"
     - |
 {{ tpl (.Files.Get "scripts/tezos-node.sh") . | indent 6 }}
-  image: {{ $node_image }}
   imagePullPolicy: IfNotPresent
-  name: tezos-node
   ports:
     - containerPort: 8732
       name: tezos-rpc
@@ -160,14 +159,13 @@
 
 {{- define "tezos.container.tezedge" }}
 {{- if eq (include "tezos.getNodeImplementation" $) "tezedge" }}
-{{- $node_implementation := $.node_vals.node_implementation | default dict }}
-{{- $node_image := or ($node_implementation.tezedge) (.Values.images.tezedge) }}
-- name: tezedge
+{{- $node_vals_images := $.node_vals.images | default dict }}
+- name: tezedge-node
+  image: {{ or ($node_vals_images.tezedge) (.Values.images.tezedge) }}
   command:
     - /light-node
   args:
     - "--config-file=/etc/tezos/tezedge.conf"
-  image: {{ $node_image }}
   imagePullPolicy: IfNotPresent
   ports:
     - containerPort: 8732
@@ -184,8 +182,9 @@
 
 {{- define "tezos.container.bakers" }}
 {{- if has "baker" $.node_vals.runs }}
+{{ $node_vals_images := $.node_vals.images | default dict }}
 {{- range .Values.protocols }}
-- image: "{{ $.Values.images.tezos }}"
+- image: "{{ or $node_vals_images.octez $.Values.images.tezos }}"
   command:
     - /bin/sh
   args:
@@ -217,8 +216,9 @@ https://github.com/helm/helm/issues/5979#issuecomment-518231758
 
 {{- define "tezos.container.endorsers" }}
 {{- if has "endorser" $.node_vals.runs }}
+{{ $node_vals_images := $.node_vals.images | default dict }}
 {{- range .Values.protocols }}
-- image: "{{ $.Values.images.tezos }}"
+- image: "{{ or $node_vals_images.octez $.Values.images.tezos }}"
   command:
     - /bin/sh
   args:

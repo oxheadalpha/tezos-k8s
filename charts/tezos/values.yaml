@@ -81,12 +81,14 @@ accounts: {}
 ##
 ## Params at the statefulset level:
 ## - storage_size: the size of the PV
-## - node_implementation: The implementation of the tezos node. Options are
-##                        "octez" with a tezos/tezos image or "tezedge" with a
-##                        tezedge/tezedge image. If no implementation is
-##                        provided it defaults to the tezos image defined in the
-##                        `images` field.
-## - runs: a list of containers to run, e.g. "baker", "endorser"
+## - images: Optional specification of images to use for the tezos node and
+##           baker/endorser. Options are "octez" with a tezos/tezos image or
+##           "tezedge" with a tezedge/tezedge image. If no images are provided,
+##           the containers will default to the images defined in the `images`
+##           field up above.
+## - runs: A list of containers to run. A tezos node implementation is required.
+##         Options being "octez_node" or "tezedge_node". Other optional
+##         containers are "baker", "endorser", "logger", and "metrics".
 ## - instances: a list of nodes to fire up, each is a dictionary defining:
 ##   - `bake_using_account`: The account name that should be used for baking.
 ##   - `is_bootstrap_node`: Is this node a bootstrap peer.
@@ -100,10 +102,12 @@ accounts: {}
 # nodes:
 #   tezos-baking-node:
 #     storage_size: 15Gi
-#     node_implementation:
-#       octez: tezos/tezos:v9-release
-#       # tezedge: tezedge/tezedge:v1.6.8
+#     images: (optional field)
+#       octez: tezos/tezos:v...
+#     # tezedge: tezedge/tezedg:v...
 #     runs:
+#       - octez_node
+#     # - tezedge_node
 #       - baker
 #       - endorser
 #     instances:
@@ -113,9 +117,9 @@ accounts: {}
 #           shell:
 #             history_mode: rolling
 #   tezos-node:
-#     node_implementation:
-#       octez: tezos/tezos:v9-release
-#       # tezedge: tezedge/tezedge:v1.6.8
+#     images: (optional field)
+#       tezedge: tezedge/tezedge:v...
+#     runs: ["tezedge_node"]
 #     instances:
 #       - {}
 #       - {}
@@ -123,6 +127,8 @@ accounts: {}
 nodes:
   tezos-node:
     storage_size: 15Gi
+    runs:
+      - octez_node
     instances:
       - is_bootstrap_node: false
         config:
