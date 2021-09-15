@@ -7,6 +7,7 @@ case "$CMD" in
 	config-generator)	exec /config-generator.sh	"$@"	;;
 	logger)			exec /logger.sh			"$@"	;;
 	snapshot-downloader)	exec /snapshot-downloader.sh	"$@"	;;
+	tarball-downloader)	exec /tarball-downloader.sh	"$@"	;;
 	wait-for-bootstrap)	exec /wait-for-bootstrap.sh	"$@"	;;
 	faucet-gen)	        exec /faucet-gen.py     	"$@"	;;
 esac
