@@ -28,6 +28,7 @@ spec:
 {{- include "tezos.container.logger"    $ | indent 8 }}
 {{- include "tezos.container.metrics"   $ | indent 8 }}
 {{- include "tezos.container.zerotier"  $ | indent 8 }}
+{{- include "tezos.container.sidecar"   $ | indent 8 }}
       initContainers:
 {{- include "tezos.init_container.config_init"         $ | indent 8 }}
 {{- include "tezos.init_container.wait_for_bootstrap"  $ | indent 8 }}

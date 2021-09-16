@@ -154,6 +154,10 @@
       name: config-volume
     - mountPath: /var/tezos
       name: var-volume
+  readinessProbe:
+    httpGet:
+      path: /is_synced
+      port: 31732
 {{- end }}
 {{- end }}
 
@@ -327,6 +331,18 @@ https://github.com/helm/helm/issues/5979#issuecomment-518231758
   env:
 {{- include "tezos.localvars.pod_envvars" . | indent 4 }}
 {{- end }}
+{{- end }}
+
+{{- define "tezos.container.sidecar" }}
+- command:
+    - python
+  args:
+    - "-c"
+    - |
+{{ tpl (.Files.Get "scripts/tezos-sidecar.py") . | indent 6 }}
+  image: {{ .Values.tezos_k8s_images.utils }}
+  imagePullPolicy: IfNotPresent
+  name: sidecar
 {{- end }}
 
 {{- define "tezos.container.zerotier" }}

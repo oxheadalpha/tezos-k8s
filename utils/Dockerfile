@@ -14,7 +14,7 @@ RUN     apk add --no-cache --virtual .build-deps gcc g++ python3-dev	\
      && apk add zeromq-dev						\
      && pip install base58 pynacl					\
      && pip install pytezos requests                                    \
-     && pip install pyblake2 pysodium numpy \
+     && pip install pyblake2 pysodium numpy flask \
      && pip install -e 'git+https://github.com/vbuterin/pybitcointools.git@aeb0a2bbb8bbfe421432d776c649650eaeb882a5#egg=bitcoin' \
      && apk del .build-deps git \
      && apk add jq netcat-openbsd curl binutils
