@@ -67,7 +67,7 @@
   Checks if filesystem archive should be downloaded.
 */}}
 {{- define "tezos.shouldDownloadTarball" -}}
-{{- if or (.Values.tarball_url)}}
+{{- if (.Values.tarball_url)}}
 {{- "true" }}
 {{- else }}
 {{- "" }}
