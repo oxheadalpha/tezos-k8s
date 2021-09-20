@@ -30,15 +30,6 @@ chain_initiator_job:
 # account is not explicitly set below.
 bootstrap_mutez: "4000000000000"
 
-# You can download a public filesystem LZ4-compressed filesystem tar of an archive 
-# node by putting the URL to the archive file in tarball_url.
-
-# NOTE full_snapshot_url and rolling_snapshot_url need to be set to null.
-
-# tarball_url: 
-# full_snapshot_url: null
-# rolling_snapshot_url: null
-
 # # ACCOUNTS
 #
 # When running bakers for a public net, you must provide your own secret keys.
@@ -141,6 +132,16 @@ bootstrap_peers: []
 
 # Identity generation difficulty.
 expected_proof_of_work: 26
+
+# You can download a public filesystem LZ4-compressed filesystem tar of an archive 
+# node by putting the URL to the archive file in tarball_url.
+
+# NOTE: tarballl_url and snapshot_url are mutually exclusive. When tarball_url is 
+# configured,full_snapshot_urlandrolling_snapshot_url must be null.
+
+# tarball_url: 
+# full_snapshot_url: null
+# rolling_snapshot_url: null
 
 ## Create a custom network using a config structure that is similar to a node's
 ## config.json. Run `tezos-node config --help` for more info.
