@@ -182,8 +182,10 @@ protocols:
   - command: 010-PtGRANAD
   #- command: alpha
 
-## Activate a new chain from genesis. Note, this is only for when your chain does
-## not exist yet. For subsequent deploys, remove this.
+## Activate a new chain from genesis. Uncommenting this will create an
+## activation job. The activation job will activate the chain if the
+## level is at zero, and do nothing otherwise, so this section can remain
+## after chain activation.
 ##
 # activation:
 #   protocol_hash: PtGRANADsDU8R9daYKAgWnQYAJ64omN1o3KMGVCykShA97vQbvV
