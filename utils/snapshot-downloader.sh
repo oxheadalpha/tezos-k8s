@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 data_dir="/var/tezos"
 node_dir="$data_dir/node"
 node_data_dir="$node_dir/data"

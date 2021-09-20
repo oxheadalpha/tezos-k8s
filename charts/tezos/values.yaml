@@ -129,10 +129,9 @@ rolling_snapshot_url: https://mainnet.xtz-shots.io/rolling
 
 # Alternatively to a snapshot, you can download a public LZ4-compressed filesystem tar
 # of a node's /var/tezos/node folder by putting the URL to the archive file in tarball_url:
-# tarball_url: 
-
 # NOTE: tarballl_url and *_snapshot_url are mutually exclusive. When tarball_url is 
 # configured,full_snapshot_url and rolling_snapshot_url must be null.
+# tarball_url: 
 
 # List of peers for nodes to connect to. Gets set under config.json `p2p` field
 bootstrap_peers: []
