@@ -10,9 +10,8 @@ node_data_dir="$node_dir/data"
 if [ -d /var/tezos ] ; then
   if [ ! -d $node_data_dir/context ]; then
     echo "Did not find pre-existing data, importing blockchain"
-    rm -rf $node_data_dir
+    rm -rf $node_data_dir 
     mkdir -p $node_data_dir
-    cp -v /usr/local/share/tezos/alphanet_version $node_dir
     curl $TARBALL_URL | lz4 -d | tar -x -C /var/tezos
     rm $node_data_dir/identity.json
   fi
