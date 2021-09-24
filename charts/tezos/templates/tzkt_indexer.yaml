@@ -240,6 +240,9 @@ spec:
             value: {{ $tzkt_indexer.config.api_log_level }}
           - name: ConnectionStrings__DefaultConnection
             value: {{- include "tezos.tzkt.setDbConnectionEnvVar" . }}
+          {{- /* https://github.com/baking-bad/tzkt/blob/198e3879d4/docker-compose.yml#L26 */}}
+          - name: TZKT_API_KESTREL__ENDPOINTS__HTTP__URL
+            value: "http://0.0.0.0:5000"
           envFrom:
           - secretRef:
               name: db-creds
