@@ -81,6 +81,9 @@ accounts: {}
 ## - "runs": A list of containers to run. A tezos node implementation is required.
 ##         Options being "octez_node" or "tezedge_node". Other optional
 ##         containers are "baker", "endorser", "logger", and "metrics".
+## - "local_storage": use local storage instead of a volume. The storage will be
+##                  wiped when the node restarts for any reason. Useful when
+##                  faster IO is desired. Defaults to false.
 ## - "instances": a list of nodes to fire up, each is a dictionary defining:
 ##   - "bake_using_account": Account name that should be used for baking.
 ##   - "bake_using_accounts": List of account names that should be used for baking.
@@ -89,8 +92,6 @@ accounts: {}
 ##             config.json. Run `tezos-node config --help` for more info.
 ##   - "node_selector": Specify a kubernetes node selector in 'key: value' format
 ##     for your tezos nodes.
-##   - "local_storage": use a local node storage that gets reset each time the pod
-##     restarts; effectively syncs from a snpashot each time. Defaults to false
 ##
 ##
 ## defaults are filled in for most values.

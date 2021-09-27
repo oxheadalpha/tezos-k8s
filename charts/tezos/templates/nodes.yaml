@@ -44,8 +44,7 @@ spec:
           name: dev-net-tun
         - emptyDir: {}
           name: config-volume
-{{- $local_storage := $val.local_storage | default false }}
-{{- if $local_storage }}
+{{- if $val.local_storage | default false }}
         - emptyDir: {}
           name: var-volume
 {{- else }}
