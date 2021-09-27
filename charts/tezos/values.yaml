@@ -185,8 +185,10 @@ protocols:
   - command: 010-PtGRANAD
   #- command: alpha
 
-## Activate a new chain from genesis. Note, this is only for when your chain does
-## not exist yet. For subsequent deploys, remove this.
+## Activate a new chain from genesis. Uncommenting this will create an
+## activation job. The activation job will activate the chain if the
+## level is at zero, and do nothing otherwise, so this section can remain
+## after chain activation.
 ##
 # activation:
 #   protocol_hash: PtGRANADsDU8R9daYKAgWnQYAJ64omN1o3KMGVCykShA97vQbvV
@@ -253,7 +255,7 @@ protocols:
 #     indexer_image: "bakingbad/tzkt-sync"
 #     indexer_image_tag: "1.6.1"
 #
-#     # Indexer replicas
+#     ## Indexer replicas
 #     replicas: 1
 #
 #     ## Tzkt provides new snapshots as they update their code. Update your
@@ -263,12 +265,12 @@ protocols:
 #     ## If you want to index a brand new archive node you are spinning up, just
 #     ## let the indexer start syncing with it from scratch.
 #     ## https://github.com/baking-bad/tzkt
-#     db_snapshot_url: https://tzkt-snapshots.s3.eu-central-1.amazonaws.com/tzkt_v1.6_granadanet.backup
+#     db_snapshot_url: https://tzkt-snapshots.s3.eu-central-1.amazonaws.com/tzkt_v1.6_mainnet.backup
 #
 #     ## For developing: you can choose to persist the snapshot file after it's
 #     ## imported so that the pod would never have to re-download it. The files
 #     ## name format is "{db_name}-{indexer_image_tag}.backup"
-#     keep_snapshot_after_import: true
+#     # keep_snapshot_after_import: true
 #
 #     # Configurable tzkt fields
 #     config:

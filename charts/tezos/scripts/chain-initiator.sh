@@ -1,6 +1,6 @@
 CLIENT="/usr/local/bin/tezos-client --endpoint http://tezos-node-rpc:8732"
 
-until $CLIENT rpc get /version; do
+until $CLIENT rpc get /chains/main/blocks/head/header | grep '"level":'; do
     sleep 2
 done
 
