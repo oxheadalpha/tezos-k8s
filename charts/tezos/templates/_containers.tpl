@@ -71,6 +71,8 @@
   volumeMounts:
     - mountPath: /var/tezos
       name: var-volume
+    - mountPath: /etc/tezos
+      name: config-volume
 {{- end }}
 {{- end }}
 

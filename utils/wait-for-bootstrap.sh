@@ -10,105 +10,25 @@ if [ -s /var/tezos/node/peers.json ] && [ "$(jq length /var/tezos/node/peers.jso
     exit 0
 fi
 
-#
-# BOOTSTRAP_NODES will be a space separated list of all of the bootstrap
-# nodes.  We use jq to extract this list from $NODES which is passed in.
-#
-# In the jq, the function expand_nodes() takes a hash description of a
-# statefulset in the form:
-# {
-#	"key" : "statefulset-name",
-#        value : { "instances" : [ i0, i1, i2, ... ], etc }
-# }
-# and converts it into:
-# {
-#	"statefulsetname-0" : i0,
-#	"statefulsetname-0" : i1,
-#	"statefulsetname-0" : i2,
-#	.
-#	.
-#	.
-# }
-#
-# expand_all_nodes iterates over the input expanding
-# each defined statefulset using expand_nodes(), note
-# that a {} + another {} merges them together and so
-# the output of expand_all_nodes actually has the same
-# schema as that of expand_nodes above.
+PRIVATE_NET=$(echo $CHAIN_PARAMS | jq -r '.network.genesis')
 
-BOOTSTRAP_NODES=$(echo $NODES | \
-    jq -r '
-	def expand_nodes(a):
-	    reduce (a|(.value.instances // [{}])[] // []) as $f
-		([0,{}];
-		 [ .[0] + 1,
-		   .[1] + { ((a|.key) + "-" + (.[0]|tostring)) : $f}
-		 ])
-	    |.[1];
-
-	def expand_all_nodes:
-	    reduce .[] as $inp ({}; . + expand_nodes($inp));
-
-	 to_entries
-	|expand_all_nodes
-	|to_entries[]
-	|debug
-	|select(.value.is_bootstrap_node)
-	|.key + "." + (.key|sub("-[\\d]+$"; ""))'
-)
-
-
-if [ -z "$BOOTSTRAP_NODES" ]; then
-    echo No bootstrap nodes were provided
-    exit 1
+if [ "$PRIVATE_NET" = null ]; then
+    echo "We are not setting up a private network, it is not necessary"
+    echo "to wait for the bootstrap nodes as they are likely external."
+    exit 0
 fi
 
-HOST=$(hostname -f)
-for node in $BOOTSTRAP_NODES; do
-    if [ "${HOST##$node}" != "$HOST" ]; then
-	echo "I am $node!"
-	echo "I'm the one of the bootstrap nodes: do not wait for myself"
-	exit 0
-    else
-	echo "I am not $node!"
-    fi
-done
-
 #
-# wait for node to respond to rpc.  We still sleep between nc(1)'s because
-# some errors are instant.
-#
-# We give the sleep some jitter because that's often helpful when firing
-# up a lot of nodes.
-#
-# We also start off with a bit of a random sleep before we get going under
-# the assumption that the bootstrap node will take some time to get going.
-# Remember: the bootstrap nodes exit(3)ed above and so this slows down only
-# those that are likely to need to wait a minute for it to start.
+# BOOTSTRAP_PEERS will be a space separated list of all of the bootstrap
+# nodes.  We use jq to extract this list from /etc/tezos/config.json because
+# the data structure is much simpler than what we find in $NODES.
 
-INTERVAL=1
-randomsleep() {
-    SLEEP=$(expr $(od -An -N1 -i /dev/random) % 15 + $INTERVAL)
-    if [ $SLEEP -gt 30 ]; then
-	SLEEP=30
-    fi
-    echo Sleeping for $SLEEP seconds.
-    sleep $SLEEP
-    if [ $INTERVAL -lt 20 ]; then
-	INTERVAL=$(expr $INTERVAL + 2)
-    fi
-}
+BOOTSTRAP_PEERS=$(< /etc/tezos/config.json jq -r	\
+	'.p2p."bootstrap-peers"[]|split(":")[0]')
 
-echo "waiting for bootstrap nodes to accept connections"
-
-while :; do
-    for node in $BOOTSTRAP_NODES; do
-	if </dev/null nc -q 0 ${node} 8732; then
-	    echo "$node is up"
-	    echo "Found bootstrap node, exiting"
-	    exit 0
-	fi
-	echo "$node is down"
+for peer in $BOOTSTRAP_PEERS; do
+    while ! getent hosts $peer; do
+	echo "Waiting for name service for $peer"
+	sleep 5
     done
-    randomsleep
 done
