@@ -199,7 +199,7 @@ def main():
             "block": get_genesis_vanity_chain_id()
             if not args.should_generate_unsafe_deterministic_data
             else "YOUR_GENESIS_BLOCK_HASH_HERE",
-            "protocol": "PtYuensgYBb3G3x1hLLbCmcav8ue8Kyd2khADcL5LsT5R1hcXex",
+            "protocol": "Ps9mPmXaRzmzk35gbAYNCAw6UXdE2qoABTHbN2oEEc1qM7CwT9P",
             "timestamp": datetime.utcnow().replace(tzinfo=timezone.utc).isoformat(),
         }
 
