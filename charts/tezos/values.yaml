@@ -158,7 +158,7 @@ expected_proof_of_work: 26
 #   genesis:
 #     timestamp: "2021-03-04T20:00:00Z"
 #     block: YOUR_GENESIS_BLOCK_HASH_HERE
-#     protocol: PtYuensgYBb3G3x1hLLbCmcav8ue8Kyd2khADcL5LsT5R1hcXex
+#     protocol: Ps9mPmXaRzmzk35gbAYNCAw6UXdE2qoABTHbN2oEEc1qM7CwT9P
 #   # The name of the account who's public key will be set downstream in
 #   # config.json at `network.genesis_parameters.values.genesis_pubkey`.
 #   activation_account_name: baker0
