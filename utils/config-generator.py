@@ -427,9 +427,9 @@ def get_genesis_accounts_pubkey_and_balance(accounts):
 
 
 #
-# commitments and bootstrap_accounts are not part of
-# `CHAIN_PARAMS["protocol_parameters"]`. The commitment size for Florence was
-# too large to load from Helm to k8s. So we are mounting a file containing them.
+# bootstrap_contracts are not part of `CHAIN_PARAMS["protocol_parameters"]`.
+# We are mounting a file containing them, since they are too large to be passed
+# as helm parameters.
 # bootstrap accounts always needs massaging so they are passed as arguments.
 def create_protocol_parameters_json(accounts):
     """Create the protocol's parameters.json file"""
@@ -442,7 +442,7 @@ def create_protocol_parameters_json(accounts):
 
     print(json.dumps(protocol_activation, indent=4))
 
-    # genesis contracts and commitments are downloaded from a http location (like a bucket)
+    # genesis contracts are downloaded from a http location (like a bucket)
     # they are typically too big to be passed directly to helm
     if protocol_activation.get("bootstrap_contract_urls"):
         protocol_params["bootstrap_contracts"] = []
@@ -450,18 +450,7 @@ def create_protocol_parameters_json(accounts):
             print(f"Injecting bootstrap contract from {url}")
             protocol_params["bootstrap_contracts"].append(requests.get(url).json())
 
-    if protocol_activation.get("commitments_url") and protocol_activation.get("deterministic_faucet"):
-        print("ERROR: cannot have both external commitment file and deterministic faucet set at the same time, please fix your activation parameters")
-        exit(1)
-
-    if protocol_activation.get("commitments_url"):
-        print(
-            f"Injecting commitments (faucet account precursors) from {protocol_activation['commitments_url']}"
-        )
-        protocol_params["commitments"] = requests.get(
-            protocol_activation["commitments_url"]
-        ).json()
-    elif protocol_activation.get("deterministic_faucet"):
+    if protocol_activation.get("deterministic_faucet"):
         with open("/faucet-commitments/commitments.json", "r") as f:
             commitments = json.load(f)
         protocol_params["commitments"] = commitments
