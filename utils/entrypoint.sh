@@ -7,7 +7,7 @@ case "$CMD" in
 	config-generator)	exec /config-generator.sh	"$@"	;;
 	logger)			exec /logger.sh			"$@"	;;
 	snapshot-downloader)	exec /snapshot-downloader.sh	"$@"	;;
-	wait-for-bootstrap)	exec /wait-for-bootstrap.sh	"$@"	;;
+	wait-for-dns)		exec /wait-for-dns.sh		"$@"	;;
 	faucet-gen)	        exec /faucet-gen.py     	"$@"	;;
 esac
 
@@ -21,7 +21,7 @@ echo "Valid options are:"
 echo "	config-generator"
 echo "	logger"
 echo "	snapshot-downloader"
-echo "	wait-for-bootstrap"
+echo "	wait-for-dns"
 echo "	faucet-gen"
 
 exit 1
