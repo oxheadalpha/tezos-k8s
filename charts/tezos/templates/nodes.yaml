@@ -45,6 +45,10 @@ spec:
           name: dev-net-tun
         - emptyDir: {}
           name: config-volume
+{{- if $val.local_storage | default false }}
+        - emptyDir: {}
+          name: var-volume
+{{- else }}
   volumeClaimTemplates:
     - metadata:
         name: var-volume
@@ -55,6 +59,7 @@ spec:
         resources:
           requests:
             storage: {{ default "15Gi" $val.storage_size }}
+{{- end }}
 ---
 {{- end }}
 {{- end }}

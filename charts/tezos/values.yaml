@@ -81,6 +81,9 @@ accounts: {}
 ## - "runs": A list of containers to run. A tezos node implementation is required.
 ##         Options being "octez_node" or "tezedge_node". Other optional
 ##         containers are "baker", "endorser", "logger", and "metrics".
+## - "local_storage": use local storage instead of a volume. The storage will be
+##                  wiped when the node restarts for any reason. Useful when
+##                  faster IO is desired. Defaults to false.
 ## - "instances": a list of nodes to fire up, each is a dictionary defining:
 ##   - "bake_using_account": Account name that should be used for baking.
 ##   - "bake_using_accounts": List of account names that should be used for baking.
@@ -103,6 +106,7 @@ accounts: {}
 #     images: # (optional field)
 #       octez: tezos/tezos:v...
 #     # tezedge: tezedge/tezedg:v...
+#     local_storage: false
 #     runs:
 #       - octez_node
 #     # - tezedge_node
