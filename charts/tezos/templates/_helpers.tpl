@@ -70,7 +70,7 @@
 {{- if (.Values.tarball_url)}}
   {{- if or (.Values.full_snapshot_url)  (.Values.rolling_snapshot_url) }}
     {{- fail ".Values.tarball_url cannot be defined with .Values.full_snapshot_url or .Values.rolling_snapshot_url" }}
-  {{- else-}}
+  {{- else}}
   {{- "true" }}
   {{- end }}
 {{- else }}
