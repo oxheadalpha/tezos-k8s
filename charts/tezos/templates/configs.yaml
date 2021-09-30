@@ -13,6 +13,7 @@ data:
     }
   FULL_SNAPSHOT_URL: "{{ .Values.full_snapshot_url }}"
   ROLLING_SNAPSHOT_URL: "{{ .Values.rolling_snapshot_url }}"
+  TARBALL_URL: "{{ .Values.tarball_url }}"
   NODES: |
 {{ .Values.nodes | mustToPrettyJson | indent 4 }}
   SIGNERS: |

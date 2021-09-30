@@ -36,6 +36,7 @@ spec:
 {{- include "tezos.init_container.wait_for_dns"        $ | indent 8 }}
 {{- include "tezos.init_container.snapshot_downloader" $ | indent 8 }}
 {{- include "tezos.init_container.snapshot_importer"   $ | indent 8 }}
+{{- include "tezos.init_container.tarball_downloader"  $ | indent 8 }}
       securityContext:
         fsGroup: 100
 {{- include "tezos.nodeSelectorConfig" $ | indent 6 }}
@@ -56,6 +57,9 @@ spec:
       spec:
         accessModes:
           - ReadWriteOnce
+        {{- if $val.storageClassName }}
+        storageClassName: {{ $val.storageClassName }}
+        {{- end }}
         resources:
           requests:
             storage: {{ default "15Gi" $val.storage_size }}
