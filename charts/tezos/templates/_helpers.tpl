@@ -68,7 +68,11 @@
 */}}
 {{- define "tezos.shouldDownloadTarball" -}}
 {{- if (.Values.tarball_url)}}
-{{- "true" }}
+  {{- if or (.Values.full_snapshot_url)  (.Values.rolling_snapshot_url) }}
+    {{- fail ".Values.tarball_url cannot be defined with .Values.full_snapshot_url or .Values.rolling_snapshot_url" }}
+  {{- else-}}
+  {{- "true" }}
+  {{- end }}
 {{- else }}
 {{- "" }}
 {{- end }}
@@ -81,7 +85,11 @@
 */}}
 {{- define "tezos.shouldDownloadSnapshot" -}}
 {{- if or (.Values.full_snapshot_url)  (.Values.rolling_snapshot_url) }}
-{{- "true" }}
+  {{- if (.Values.tarball_url)}}
+  {{- fail ".Values.full_snapshot_url or .Values.rolling_snapshot_url cannot be defined with .Values.tarball_url" }}
+  {{- else }}
+  {{- "true" }}
+  {{- end }}
 {{- else }}
 {{- "" }}
 {{- end }}
