@@ -25,7 +25,6 @@ if [ ! -d $node_data_dir/context ]; then
 	echo "Did not find pre-existing data, importing blockchain"
 	mkdir -p $node_data_dir
 	echo '{ "version": "0.0.4" }' > $node_dir/version.json
-	cp -v /usr/local/share/tezos/alphanet_version $node_dir
 	curl -Lf -o $snapshot_file $snapshot_url
 fi
 
