@@ -12,8 +12,8 @@ if [ -d /var/tezos ] ; then
     echo "Did not find pre-existing data, importing blockchain"
     rm -rf $node_data_dir 
     mkdir -p $node_data_dir
-    curl $TARBALL_URL | lz4 -d | tar -x -C /var/tezos
-    rm $node_data_dir/identity.json
+    curl -LfsS "$TARBALL_URL" | lz4 -d | tar -x -C /var/tezos
+    rm -fv $node_data_dir/identity.json
   fi
 else
   echo "/var/tezos does not exist."
