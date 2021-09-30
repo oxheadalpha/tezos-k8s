@@ -17,6 +17,7 @@ kind: Service
 metadata:
   name: {{ $key }}
 spec:
+  publishNotReadyAddresses: true
   clusterIP: None
   selector:
     app: {{ $key }}

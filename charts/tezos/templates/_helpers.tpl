@@ -12,13 +12,13 @@
 {{- end }}
 
 {{/*
-  Should nodes wait for a bootstrap node to be ready.
+  Should nodes wait for DNS to be ready for peers
   Yes if these conditions are met:
   - Node is not an invitee to a private chain
   - There are chain genesis parameters specified, i.e. this is not a public chain
   Returns a string "true" or empty string which is falsey.
 */}}
-{{- define "tezos.shouldWaitForBootstrapNode" -}}
+{{- define "tezos.shouldWaitForDNSNode" -}}
 {{- if and (not .Values.is_invitation) (hasKey .Values.node_config_network "genesis")}}
 {{- "true" }}
 {{- else }}

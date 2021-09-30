@@ -26,7 +26,7 @@ COPY config-generator.sh /
 COPY entrypoint.sh /
 COPY logger.sh /
 COPY snapshot-downloader.sh /
-COPY wait-for-bootstrap.sh /
 COPY tarball-downloader.sh /
+COPY wait-for-dns.sh /
 ENTRYPOINT ["/entrypoint.sh"]
 CMD []

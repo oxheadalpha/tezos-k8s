@@ -58,19 +58,21 @@
       name: var-volume
 {{- end }}
 
-{{- define "tezos.init_container.wait_for_bootstrap" }}
-{{- if include "tezos.shouldWaitForBootstrapNode" . }}
+{{- define "tezos.init_container.wait_for_dns" }}
+{{- if include "tezos.shouldWaitForDNSNode" . }}
 - image: {{ .Values.tezos_k8s_images.utils }}
   args:
-    - wait-for-bootstrap
+    - wait-for-dns
   imagePullPolicy: IfNotPresent
-  name: wait-for-bootstrap
+  name: wait-for-dns
   envFrom:
     - configMapRef:
         name: tezos-config
   volumeMounts:
     - mountPath: /var/tezos
       name: var-volume
+    - mountPath: /etc/tezos
+      name: config-volume
 {{- end }}
 {{- end }}
 
