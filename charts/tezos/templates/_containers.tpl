@@ -15,7 +15,7 @@
 
 {{- define "tezos.init_container.config_init" }}
 {{- if include "tezos.shouldConfigInit" . }}
-- image: "{{ .Values.images.tezos }}"
+- image: "{{ .Values.images.octez }}"
   command:
     - /bin/sh
   args:
@@ -114,7 +114,7 @@
 
 {{- define "tezos.init_container.snapshot_importer" }}
 {{- if include "tezos.shouldDownloadSnapshot" . }}
-- image: "{{ .Values.images.tezos }}"
+- image: "{{ .Values.images.octez }}"
   imagePullPolicy: IfNotPresent
   name: snapshot-importer
   command:
@@ -136,17 +136,32 @@
 {{- end }}
 {{- end }}
 
+{{- define "tezos.getNodeImplementation" }}
+{{- $containers := $.node_vals.runs }}
+  {{- if and (has "tezedge_node" $containers) (has "octez_node" $containers) }}
+    {{- fail "Only either tezedge_node or octez_node container can be specified in 'runs' field " }}
+  {{- else if (has "octez_node" $containers) }}
+    {{- "octez" }}
+  {{- else if (has "tezedge_node" $containers) }}
+    {{- "tezedge" }}
+  {{- else }}
+    {{- fail "No Tezos node container was specified in 'runs' field. Must specify tezedge_node or octez_node" }}
+  {{- end }}
+{{- end }}
+
+
 {{- define "tezos.container.node" }}
-{{- if has "tezedge" $.node_vals.runs | not }}
-- command:
+{{- if eq (include "tezos.getNodeImplementation" $) "octez" }}
+{{ $node_vals_images := $.node_vals.images | default dict }}
+- name: octez-node
+  image: "{{ or $node_vals_images.octez $.Values.images.octez }}"
+  command:
     - /bin/sh
   args:
     - "-c"
     - |
 {{ tpl (.Files.Get "scripts/tezos-node.sh") . | indent 6 }}
-  image: "{{ .Values.images.tezos }}"
   imagePullPolicy: IfNotPresent
-  name: tezos-node
   ports:
     - containerPort: 8732
       name: tezos-rpc
@@ -157,17 +172,22 @@
       name: config-volume
     - mountPath: /var/tezos
       name: var-volume
+  readinessProbe:
+    httpGet:
+      path: /is_synced
+      port: 31732
 {{- end }}
 {{- end }}
 
 {{- define "tezos.container.tezedge" }}
-{{- if has "tezedge" $.node_vals.runs }}
-- name: tezedge
+{{- if eq (include "tezos.getNodeImplementation" $) "tezedge" }}
+{{- $node_vals_images := $.node_vals.images | default dict }}
+- name: tezedge-node
+  image: {{ or ($node_vals_images.tezedge) (.Values.images.tezedge) }}
   command:
     - /light-node
   args:
     - "--config-file=/etc/tezos/tezedge.conf"
-  image: "{{ .Values.images.tezedge }}"
   imagePullPolicy: IfNotPresent
   ports:
     - containerPort: 8732
@@ -184,8 +204,9 @@
 
 {{- define "tezos.container.bakers" }}
 {{- if has "baker" $.node_vals.runs }}
+{{ $node_vals_images := $.node_vals.images | default dict }}
 {{- range .Values.protocols }}
-- image: "{{ $.Values.images.tezos }}"
+- image: "{{ or $node_vals_images.octez $.Values.images.octez }}"
   command:
     - /bin/sh
   args:
@@ -217,8 +238,9 @@ https://github.com/helm/helm/issues/5979#issuecomment-518231758
 
 {{- define "tezos.container.endorsers" }}
 {{- if has "endorser" $.node_vals.runs }}
+{{ $node_vals_images := $.node_vals.images | default dict }}
 {{- range .Values.protocols }}
-- image: "{{ $.Values.images.tezos }}"
+- image: "{{ or $node_vals_images.octez $.Values.images.octez }}"
   command:
     - /bin/sh
   args:
@@ -277,8 +299,12 @@ https://github.com/helm/helm/issues/5979#issuecomment-518231758
 - image: "registry.gitlab.com/nomadic-labs/tezos-metrics"
   args:
     - "--listen-prometheus=6666"
+    - "--data-dir=/var/tezos/node/data"
   imagePullPolicy: IfNotPresent
   name: metrics
+  ports:
+    - containerPort: 6666
+      name: tezos-metrics
   volumeMounts:
     - mountPath: /etc/tezos
       name: config-volume
@@ -327,6 +353,18 @@ https://github.com/helm/helm/issues/5979#issuecomment-518231758
   env:
 {{- include "tezos.localvars.pod_envvars" . | indent 4 }}
 {{- end }}
+{{- end }}
+
+{{- define "tezos.container.sidecar" }}
+- command:
+    - python
+  args:
+    - "-c"
+    - |
+{{ tpl (.Files.Get "scripts/tezos-sidecar.py") . | indent 6 }}
+  image: {{ .Values.tezos_k8s_images.utils }}
+  imagePullPolicy: IfNotPresent
+  name: sidecar
 {{- end }}
 
 {{- define "tezos.container.zerotier" }}

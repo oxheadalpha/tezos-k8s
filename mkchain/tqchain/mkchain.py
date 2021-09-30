@@ -49,8 +49,8 @@ cli_args = {
         "action": "extend",
         "nargs": "+",
     },
-    "tezos_docker_image": {
-        "help": "Version of the Tezos docker image",
+    "octez_docker_image": {
+        "help": "Version of the Octez docker image",
         "default": "tezos/tezos:v10-release",
     },
     "use_docker": {
@@ -150,7 +150,7 @@ def main():
 
     base_constants = {
         "images": {
-            "tezos": args.tezos_docker_image,
+            "octez": args.octez_docker_image,
         },
         "node_config_network": {"chain_name": args.chain_name},
         "zerotier_config": {
@@ -199,7 +199,7 @@ def main():
             "block": get_genesis_vanity_chain_id()
             if not args.should_generate_unsafe_deterministic_data
             else "YOUR_GENESIS_BLOCK_HASH_HERE",
-            "protocol": "PtYuensgYBb3G3x1hLLbCmcav8ue8Kyd2khADcL5LsT5R1hcXex",
+            "protocol": "Ps9mPmXaRzmzk35gbAYNCAw6UXdE2qoABTHbN2oEEc1qM7CwT9P",
             "timestamp": datetime.utcnow().replace(tzinfo=timezone.utc).isoformat(),
         }
 
@@ -216,7 +216,7 @@ def main():
         }
         for account in baking_accounts:
             print(f"Generating keys for account {account}")
-            keys = gen_key(args.tezos_docker_image)
+            keys = gen_key(args.octez_docker_image)
             for key_type in keys:
                 accounts[key_type][account] = {
                     "key": keys[key_type],
@@ -229,7 +229,7 @@ def main():
     # archive mode. Any other bakers will be in rolling mode.
     creation_nodes = {
         BAKER_NODE_NAME: {
-            "runs": ["baker", "endorser"],
+            "runs": ["octez_node", "baker", "endorser"],
             "storage_size": "15Gi",
             "instances": [
                 node_config(BAKER_NODE_NAME, n, is_baker=True)

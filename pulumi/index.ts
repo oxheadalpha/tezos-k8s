@@ -113,7 +113,7 @@ const chain = new k8s.helm.v2.Chart("chain", {
     values: helmValues,
 }, { providers: { "kubernetes": cluster.provider } });
 
-if (config.getBlooean("rpc-auth")) {
+if (config.getBoolean("rpc-auth")) {
     // change to true if you want rpc auth
     const nginxIngressHelmValues_file
 	= fs.readFileSync('nginx_ingress_values.yaml', 'utf8')

@@ -1,4 +1,4 @@
-FROM python:3.9-slim as builder
+FROM python:3.9.6-slim as builder
 
 RUN mkdir -p /var/rpc-auth/
 
