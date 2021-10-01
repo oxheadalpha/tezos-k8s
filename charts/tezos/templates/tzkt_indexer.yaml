@@ -318,6 +318,6 @@ spec:
         storageClassName: {{ .Values.tzkt_indexer_statefulset.storageClassName }}
         resources:
           requests:
-            storage: "50Gi"
+            storage: {{ required "DB storage size must be specified" .Values.tzkt_indexer_statefulset.storage  }}
 
 {{- end }}

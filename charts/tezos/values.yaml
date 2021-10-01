@@ -19,6 +19,8 @@ tezos_k8s_images:
 tzkt_indexer_statefulset:
   name: tzkt-indexer
   storageClassName: ""
+  # Mainnet indexer requires a lot of storage
+  storage: "100Gi"
 signer_statefulset:
   name: tezos-signer
   pod_type: signing
