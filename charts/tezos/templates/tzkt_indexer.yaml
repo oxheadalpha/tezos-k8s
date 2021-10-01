@@ -315,9 +315,9 @@ spec:
       spec:
         accessModes:
           - ReadWriteOnce
-        storageClassName: {{ .Values.tzkt_indexer_statefulset.storageClassName }}
+        storageClassName: {{ $tzkt_indexer.storage_class_name }}
         resources:
           requests:
-            storage: {{ required "DB storage size must be specified" .Values.tzkt_indexer_statefulset.storage  }}
+            storage: {{ required "DB storage size must be specified" $tzkt_indexer.storage_size  }}
 
 {{- end }}

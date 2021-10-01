@@ -18,9 +18,6 @@ tezos_k8s_images:
 # Properties that are templated in Helm template files
 tzkt_indexer_statefulset:
   name: tzkt-indexer
-  storageClassName: ""
-  # Mainnet indexer requires a lot of storage
-  storage: "100Gi"
 signer_statefulset:
   name: tezos-signer
   pod_type: signing
@@ -261,6 +258,10 @@ protocols:
 #     indexer_image: "bakingbad/tzkt-sync"
 #     indexer_image_tag: "1.6.1"
 #
+#     storage_class_name: ""
+#     ## Mainnet indexer requires a lot of storage
+#     storage_size: "100Gi"
+#
 #     ## Indexer replicas
 #     replicas: 1
 #
@@ -278,9 +279,9 @@ protocols:
 #     ## name format is "{db_name}-{indexer_image_tag}.backup"
 #     # keep_snapshot_after_import: true
 #
-#     # Configurable tzkt fields
+#     ## Configurable tzkt fields
 #     config:
-#       # url of the archive node to index
+#       ## url of the archive node to index
 #       rpc_url: http://tezos-node-0.tezos-node:8732
 #       db_name: db
 #       db_user: foo
