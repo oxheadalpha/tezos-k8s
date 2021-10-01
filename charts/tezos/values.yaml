@@ -19,6 +19,8 @@ tezos_k8s_images:
 tzkt_indexer_statefulset:
   name: tzkt-indexer
   storageClassName: ""
+  # Mainnet indexer requires a lot of storage
+  storage: "100Gi"
 signer_statefulset:
   name: tezos-signer
   pod_type: signing
@@ -148,11 +150,12 @@ signers: {}
 full_snapshot_url: https://mainnet.xtz-shots.io/full
 rolling_snapshot_url: https://mainnet.xtz-shots.io/rolling
 
-# Alternatively to a snapshot, you can download a public LZ4-compressed filesystem tar
-# of a node's /var/tezos/node folder by putting the URL to the archive file in tarball_url:
-# NOTE: tarballl_url and *_snapshot_url are mutually exclusive. When tarball_url is 
-# configured,full_snapshot_url and rolling_snapshot_url must be null.
-# tarball_url: 
+## Alternatively to a Tezos snapshot, you can download a public LZ4-compressed
+## filesystem tar of a node's data directory by setting the tarball_url field to
+## the URL of the archive file. NOTE: tarball_url and *_snapshot_url are
+## mutually exclusive. When tarball_url is configured, full_snapshot_url and
+## rolling_snapshot_url must be null.
+# tarball_url:
 
 # List of peers for nodes to connect to. Gets set under config.json `p2p` field
 bootstrap_peers: []
