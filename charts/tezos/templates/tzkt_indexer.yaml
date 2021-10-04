@@ -122,8 +122,10 @@ spec:
               if [ ! -f "$MY_CURRENT_SNAPSHOTS_URL" ];
               then
                 touch "$MY_CURRENT_SNAPSHOTS_URL"
-                # The 999(postgres) user needs write permissions for this file
+                # The 999(postgres) user needs write permissions for this file.
                 chmod 666 "$MY_CURRENT_SNAPSHOTS_URL"
+                # Write permissions so that snapshots can be deleted by 999(postgres).
+                chmod 777 /etc/db-snapshot
               fi
               cat "$MY_CURRENT_SNAPSHOTS_URL"
         - name: upgrade-db
