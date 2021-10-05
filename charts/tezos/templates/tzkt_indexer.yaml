@@ -69,6 +69,9 @@ kind: StatefulSet
 metadata:
   name: {{ .Values.tzkt_indexer_statefulset.name }}
   namespace: {{ .Release.Namespace }}
+{{- if $tzkt_indexer.annotations }}
+  annotations: {{ $tzkt_indexer.annotations | toYaml | nindent 4 }}
+{{- end }}
 spec:
   podManagementPolicy: Parallel
   replicas: {{ $tzkt_indexer.replicas }}
@@ -317,9 +320,9 @@ spec:
       spec:
         accessModes:
           - ReadWriteOnce
-        storageClassName: {{ $tzkt_indexer.storage_class_name }}
+        storageClassName: {{ $tzkt_indexer.storageClassName }}
         resources:
           requests:
-            storage: {{ required "DB storage size must be specified" $tzkt_indexer.storage_size  }}
+            storage: {{ required "DB storage size must be specified" $tzkt_indexer.storage  }}
 
 {{- end }}

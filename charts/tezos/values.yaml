@@ -258,9 +258,11 @@ protocols:
 #     indexer_image: "bakingbad/tzkt-sync"
 #     indexer_image_tag: "1.6.1"
 #
-#     storage_class_name: ""
-#     ## Mainnet indexer requires a lot of storage
-#     storage_size: "100Gi"
+#     ## Database volumeClaimTemplates config
+#     storageClassName: ""
+#     storage: "100Gi"
+#     ## Statefulset annotations
+#     # annotations:
 #
 #     ## Indexer replicas
 #     replicas: 1
