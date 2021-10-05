@@ -14,16 +14,25 @@
 #		"timestamp": "2021-06-21T20:35:39Z",
 #		"reorg": false,
 #		"operations": {
-#		"endorsement_with_slot": 3
+#			"endorsement_with_slot": 3
+#			.
+#			.
+#			.
 #		},
 #		"num_endorsements": 3,
 #		"possible_endorsements": 5,
 #		"percent_endorsed": 60
+#		"pending_operations" : {
+#			"applied" : { ... },
+#			.
+#			.
+#			.
+#		}
 #	}
 
-DELAY=15
+DELAY=3
 HOST="$(hostname)"
-TOP=http://127.0.0.1:8732/chains/main/blocks
+TOP=http://127.0.0.1:8732/chains/main
 
 TMPFILE=$(mktemp)
 bail() {
@@ -50,7 +59,7 @@ find_next_blocks() {
     CUR_BLOCK=head
     BLOCKS=
     while :; do
-	HASH="$(curl -s "$TOP/$CUR_BLOCK/header" | jq -r .predecessor)"
+	HASH="$(curl -s "$TOP/blocks/$CUR_BLOCK/header" | jq -r .predecessor)"
 	if [ "$CUR_BLOCK" = head -a "$HASH" = "$STOP_AT_BLOCK" ]; then
 	    # we must wait for at least one block to be added
 	    sleep $DELAY
@@ -87,12 +96,27 @@ while :; do
 	    continue
 	fi
 
-	( echo '{ "reorg" : '$REORG', "node" : "'$HOST'" }';		  \
-	  curl -s $TOP/$BLOCK $TOP/$PREV/helpers/endorsing_rights )	| \
+	( echo '{ "reorg" : '$REORG', "node" : "'$HOST'" }';	\
+	  curl -s $TOP/blocks/$BLOCK				\
+		  $TOP/blocks/$PREV/helpers/endorsing_rights	\
+		  $TOP/mempool/pending_operations		\
+	) | \
 	    jq --slurp -c '
+		def uniq:
+			reduce (.[]) as $f ({}; .[$f] += 1);
+		def flatten_ops:
+                        map (if type == "array" then .[1].contents[].kind
+                             else .contents[].kind
+                             end);
+
+		def pending_operations:
+			to_entries | reduce (.[]) as $f
+			   ({}; . +
+			    { ($f.key) : (($f.value) | flatten_ops | uniq)});
+
 		  (.[1].operations[0]|length) as $num_ops
 		| (.[2]|length) as $poss_ops
-		|{
+		| {
 		    "logtype"               : "new-block-on-node",
 		    "node"                  : .[0].node,
 		    "level"                 : .[1].header.level,
@@ -105,14 +129,14 @@ while :; do
 		    "operations"            : ([.[1].operations[][]
 		    				.contents[]
 		    				.kind
-					       ]|reduce .[] as $item
-						      ({}; .[$item] += 1)
+					       ]|uniq
 			                      ),
 		    "num_endorsements"      : $num_ops,
 		    "possible_endorsements" : $poss_ops,
 		    "percent_endorsed"      : (if $poss_ops != 0 then
 					          ($num_ops / $poss_ops * 100)
-					      else -1 end)
+					      else -1 end),
+		    "pending_operations"    : (.[3] | pending_operations)
 		}'
 
 	PREV=$BLOCK
