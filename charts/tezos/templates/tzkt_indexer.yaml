@@ -98,6 +98,8 @@ spec:
               value: {{ .Values.indexers.tzkt.db_snapshot_url }}
             - name: SNAPSHOT_FILE
               value: {{ $snapshot_file }}
+            - name: MY_IMPORTED_SNAPSHOTS_URL
+              value: {{ $MY_IMPORTED_SNAPSHOTS_URL }}
           command: ["/bin/sh", "-c"]
           args:
             - |
