@@ -189,23 +189,6 @@ spec:
               pg_ctl stop
               [ "$import_exit_code" != 0 ] && exit 1 || exit 0
       {{- end }}
-        - image: {{ .Values.images.octez }}
-          name: get-chain-id
-          volumeMounts:
-            - name: tzkt-env
-              mountPath: /etc/tzkt
-          command: ["/bin/sh", "-c"]
-          args:
-            - |
-              ENV_FILE="/etc/tzkt/tzkt.env"
-              touch "$ENV_FILE"
-
-              # Get the chain id
-              CLIENT="/usr/local/bin/tezos-client -E {{ $tzkt_indexer.config.rpc_url }}"
-              until $CLIENT rpc get /version; do sleep 2; done
-              CHAIN_ID=$($CLIENT rpc get /chains/main/chain_id)
-              echo "Got chain id: $CHAIN_ID"
-              echo "export TezosNode__ChainId=$CHAIN_ID" >> "$ENV_FILE"
       containers:
         - image: {{ .Values.tezos_k8s_images.utils }}
           name: readiness
@@ -266,12 +249,6 @@ spec:
           envFrom:
           - secretRef:
               name: db-creds
-          command: ["/bin/bash", "-c"]
-          args:
-            - |
-              # Set TezosNode__ChainId env var
-              . /etc/tzkt/tzkt.env
-              dotnet Tzkt.Sync.dll
         - image: postgres:13
           name: db
           imagePullPolicy: IfNotPresent
