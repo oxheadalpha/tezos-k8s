@@ -14,7 +14,7 @@
  A file every pod uses to remember its imported snapshot.
  By keeping track, pods won't try to re-upgrade their db on restarts.
 */}}
-{{- $MY_CURRENT_SNAPSHOTS_URL := print "/etc/db-snapshot/current-snapshots-url.txt" }}
+{{- $MY_IMPORTED_SNAPSHOTS_URL := print "/etc/db-snapshot/my-imported-snapshots-url.txt" }}
 
 apiVersion: v1
 kind: Secret
@@ -44,9 +44,9 @@ data:
     # The first execution of this script is on initialization of the db via
     # docker-entrypoint-initdb.db. Subsequent times are done on db upgrades. The
     # postgres container runs as user 999(postgres) and not root, so it doesn't
-    # have write access to the indexer-db pv (on AWS). The "$MY_CURRENT_SNAPSHOTS_URL"
-    # file is given group rw permissions via the create-snapshot-tracker-file
-    # initContainer so that this way the 999(postgres) can write the current
+    # have write access to the indexer-db pv (on AWS). The $MY_IMPORTED_SNAPSHOTS_URL
+    # file gets owned by the postgres user via the download-db-snapshot
+    # initContainer, so that this way the postgres user can write the current
     # snapshot url to it.
 
     echo "Importing snapshot $SNAPSHOT_URL"
@@ -54,10 +54,11 @@ data:
     -v --no-owner --clean \
     --if-exists --exit-on-error \
     --dbname "$POSTGRES_DB" \
-    -1 "$SNAPSHOT_FILE"
+    --single-transaction \
+    "$SNAPSHOT_FILE"
 
     echo "Snapshot imported"
-    echo "$SNAPSHOT_URL" > "$MY_CURRENT_SNAPSHOTS_URL"
+    echo "$SNAPSHOT_URL" > "$MY_IMPORTED_SNAPSHOTS_URL"
   {{ if not $tzkt_indexer.keep_snapshot_after_import }}
     rm -fv "$SNAPSHOT_FILE"
   {{ end }}
@@ -101,36 +102,29 @@ spec:
           args:
             - |
               set -ex
-              if [ ! -f "$SNAPSHOT_FILE" ];
+
+              if [ ! -f "$MY_IMPORTED_SNAPSHOTS_URL" ];
+              then
+                # Create file to track the current imported db snapshot. Once
+                # the snapshot is imported we will record its url in this file.
+                touch "$MY_IMPORTED_SNAPSHOTS_URL"
+              fi
+
+              imported_snapshot_url=$(cat "$MY_IMPORTED_SNAPSHOTS_URL" || true)
+              if [ "$imported_snapshot_url" != "$SNAPSHOT_URL" -a ! -f "$SNAPSHOT_FILE" ]
               then
                 echo "Downloading db snapshot from $SNAPSHOT_URL ..."
                 curl -LfSs -o "$SNAPSHOT_FILE" "$SNAPSHOT_URL"
                 echo "Successfully downloaded snapshot"
               else
-                echo "Snapshot already exists. Not downloading."
+                echo "Skipping snapshot download"
               fi
-        - image: {{ .Values.tezos_k8s_images.utils }}
-          name: create-snapshot-tracker-file
-          volumeMounts:
-            - name: indexer-db
-              mountPath: /etc/db-snapshot
-              subPath: db-snapshot
-          env:
-            - name: MY_CURRENT_SNAPSHOTS_URL
-              value: {{ $MY_CURRENT_SNAPSHOTS_URL }}
-          command: ["/bin/sh", "-c"]
-          args:
-            - |
-              set -ex
-              if [ ! -f "$MY_CURRENT_SNAPSHOTS_URL" ];
-              then
-                touch "$MY_CURRENT_SNAPSHOTS_URL"
-                # The 999(postgres) user needs write permissions for this file.
-                chmod 666 "$MY_CURRENT_SNAPSHOTS_URL"
-                # Write permissions so that snapshots can be deleted by 999(postgres).
-                chmod 777 /etc/db-snapshot
-              fi
-              cat "$MY_CURRENT_SNAPSHOTS_URL"
+
+              # Make 999(postgres) own the directory so that it can record the
+              # current snapshot url and delete snapshot files.
+              chown -R 999:999 /etc/db-snapshot
+
+              cat "$MY_IMPORTED_SNAPSHOTS_URL"
         - name: upgrade-db
           image: postgres:13
           volumeMounts:
@@ -150,8 +144,8 @@ spec:
               value: {{ .Values.indexers.tzkt.db_snapshot_url }}
             - name: SNAPSHOT_FILE
               value: {{ $snapshot_file }}
-            - name: MY_CURRENT_SNAPSHOTS_URL
-              value: {{ $MY_CURRENT_SNAPSHOTS_URL }}
+            - name: MY_IMPORTED_SNAPSHOTS_URL
+              value: {{ $MY_IMPORTED_SNAPSHOTS_URL }}
           envFrom:
             - secretRef:
                 name: db-creds
@@ -168,10 +162,10 @@ spec:
                 exit 0
               fi
 
-              if [ -f "$MY_CURRENT_SNAPSHOTS_URL" ]; then
-                current_snapshot=$(cat "$MY_CURRENT_SNAPSHOTS_URL")
-                if [ "$current_snapshot" = "$SNAPSHOT_URL" ]; then
-                  echo "Already imported $current_snapshot. Exiting."
+              if [ -f "$MY_IMPORTED_SNAPSHOTS_URL" ]; then
+                current_imported_snapshot=$(cat "$MY_IMPORTED_SNAPSHOTS_URL")
+                if [ "$current_imported_snapshot" = "$SNAPSHOT_URL" ]; then
+                  echo "Already imported $current_imported_snapshot. Exiting."
                   exit 0
                 fi
               fi
@@ -275,8 +269,8 @@ spec:
               value: {{ .Values.indexers.tzkt.db_snapshot_url }}
             - name: SNAPSHOT_FILE
               value: {{ $snapshot_file }}
-            - name: MY_CURRENT_SNAPSHOTS_URL
-              value: {{ $MY_CURRENT_SNAPSHOTS_URL }}
+            - name: MY_IMPORTED_SNAPSHOTS_URL
+              value: {{ $MY_IMPORTED_SNAPSHOTS_URL }}
             {{- end }}
           envFrom:
           - secretRef:
