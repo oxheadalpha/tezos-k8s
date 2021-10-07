@@ -52,7 +52,7 @@ const maxClusterCapacity = config.getNumber("max-cluster-capacity") || 100;
 const nodesPerVM = config.getNumber("nodes-per-vm") || 8;
 let numNodes: number = 0
 for (const key in helmValues.nodes) {
-    numNodes += helmValues.nodes[key].instances.length;
+    numNodes += helmValues.nodes[key]?.instances?.length || 0;
 }
 const desiredClusterCapacity = Math.round(numNodes / nodesPerVM + 3);
 
