@@ -1,0 +1,8 @@
+images:
+  faucet: faucet:dev
+  account_gen: account-gen:dev
+recaptcha_keys:
+  siteKey: # fill in recaptcha site key
+  secretKey: # fill in recaptcha secret key
+number_of_accounts: 1000
+seed: "a unique seed for deterministally generating accounts"

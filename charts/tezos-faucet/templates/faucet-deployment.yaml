@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: faucet
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: faucet
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: faucet
+    spec:
+      containers:
+        - image: {{ .Values.images.faucet }}
+          name: faucet
+            #command: [ "sleep", "1000" ]
+          ports:
+            - containerPort: 8081
+          volumeMounts:
+          - name: recaptcha
+            mountPath: "/recaptcha_keys"
+            readOnly: true
+          - name: secret-seeds
+            mountPath: "/secret-seeds"
+            readOnly: true
+      initContainers:
+        - image: {{ .Values.images.account_gen }}
+          name: account-gen
+          args: [ "{{ .Values.seed }}", "{{ .Values.number_of_accounts }}" ]
+          volumeMounts:
+          - name: secret-seeds
+            mountPath: "/secret-seeds"
+      restartPolicy: Always
+      volumes:
+      - name: secret-seeds
+        emptyDir: {}
+      - name: recaptcha
+        secret:
+          secretName: recaptcha
+status: {}
