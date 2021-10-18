@@ -59,6 +59,12 @@ data:
 
     echo "Snapshot imported"
     echo "$SNAPSHOT_URL" > "$MY_IMPORTED_SNAPSHOTS_URL"
+{{/*
+TIP: When developing, you can choose to persist the snapshot file after it's
+imported. This will save time as the pod would not have to re-download it. To
+enable this, add `keep_snapshot_after_import: true` in the tzkt section of
+values.yaml. File name format is "{db_name}-{indexer_image_tag}.backup".
+*/}}
   {{ if not $tzkt_indexer.keep_snapshot_after_import }}
     rm -fv "$SNAPSHOT_FILE"
   {{ end }}

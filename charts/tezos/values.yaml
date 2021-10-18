@@ -276,11 +276,6 @@ protocols:
 #     ## https://github.com/baking-bad/tzkt
 #     db_snapshot_url: https://tzkt-snapshots.s3.eu-central-1.amazonaws.com/tzkt_v1.6_mainnet.backup
 #
-#     ## For developing: you can choose to persist the snapshot file after it's
-#     ## imported so that the pod would never have to re-download it. The files
-#     ## name format is "{db_name}-{indexer_image_tag}.backup"
-#     # keep_snapshot_after_import: true
-#
 #     ## Configurable tzkt fields
 #     config:
 #       ## url of the archive node to index
