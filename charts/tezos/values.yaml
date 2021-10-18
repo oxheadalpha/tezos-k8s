@@ -258,9 +258,11 @@ protocols:
 #     indexer_image: "bakingbad/tzkt-sync"
 #     indexer_image_tag: "1.6.1"
 #
-#     storage_class_name: ""
-#     ## Mainnet indexer requires a lot of storage
-#     storage_size: "100Gi"
+#     ## Database volumeClaimTemplates config
+#     storageClassName: ""
+#     storage: "100Gi"
+#     ## Statefulset annotations
+#     # annotations:
 #
 #     ## Indexer replicas
 #     replicas: 1
@@ -273,11 +275,6 @@ protocols:
 #     ## let the indexer start syncing with it from scratch.
 #     ## https://github.com/baking-bad/tzkt
 #     db_snapshot_url: https://tzkt-snapshots.s3.eu-central-1.amazonaws.com/tzkt_v1.6_mainnet.backup
-#
-#     ## For developing: you can choose to persist the snapshot file after it's
-#     ## imported so that the pod would never have to re-download it. The files
-#     ## name format is "{db_name}-{indexer_image_tag}.backup"
-#     # keep_snapshot_after_import: true
 #
 #     ## Configurable tzkt fields
 #     config:
