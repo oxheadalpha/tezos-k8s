@@ -16,7 +16,7 @@ spec:
         app: faucet
     spec:
       containers:
-        - image: {{ .Values.images.faucet }}
+        - image: {{ .Values.tezos_k8s_images.faucet }}
           name: faucet
             #command: [ "sleep", "1000" ]
           ports:
@@ -29,9 +29,16 @@ spec:
             mountPath: "/secret-seeds"
             readOnly: true
       initContainers:
-        - image: {{ .Values.images.account_gen }}
-          name: account-gen
-          args: [ "{{ .Values.seed }}", "{{ .Values.number_of_accounts }}" ]
+        - image: {{ .Values.tezos_k8s_images.utils }}
+          name: faucet-gen
+          args:
+            - faucet-gen
+            - --seed
+            - "{{ .Values.seed }}"
+            - --number-of-accounts
+            - "{{ .Values.number_of_accounts }}"
+            - --write-secret-seeds-to
+            - "/secret-seeds/secret-seeds.json"
           volumeMounts:
           - name: secret-seeds
             mountPath: "/secret-seeds"

@@ -1,6 +1,6 @@
-images:
-  faucet: faucet:dev
-  account_gen: account-gen:dev
+tezos_k8s_images:
+  faucet: tezos-k8s-faucet:dev
+  utils: tezos-k8s-utils:dev
 recaptcha_keys:
   siteKey: # fill in recaptcha site key
   secretKey: # fill in recaptcha secret key

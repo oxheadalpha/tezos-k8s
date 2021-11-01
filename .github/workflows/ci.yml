@@ -135,7 +135,7 @@ jobs:
       - id: gen-containers-matrix
         run: |
           container_list=$(jq -c -n --arg cont "$(find -name 'Dockerfile' -printf '%h\n' | sort -u | sed 's/.\///')" '{ container: $cont | split("\n")}')
-          echo "Dynamically generated container list based on subdirectories of the docker directory. The following list will be passed to next build step:"
+          echo "Dynamically generated container list based on subdirectories of the repo with a dockerfile in it. The following list will be passed to next build step:"
           echo $container_list
           echo "::set-output name=matrix::$container_list"
 

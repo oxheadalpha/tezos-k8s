@@ -33,8 +33,12 @@ spec:
           name: faucet-gen
           args:
             - faucet-gen
+            - --seed
             - "{{ .Values.activation.deterministic_faucet.seed }}"
+            - --number-of-accounts
             - "{{ .Values.activation.deterministic_faucet.number_of_accounts }}"
+            - --write-commitments-to
+            - "/faucet-commitments/commitments.json"
           volumeMounts:
           - name: faucet-commitments
             mountPath: "/faucet-commitments"

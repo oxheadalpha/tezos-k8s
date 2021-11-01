@@ -1,0 +1,12 @@
+script(src='https://www.google.com/recaptcha/api.js')
+script function captchaDone(response) { $("#gettz").prop('disabled',false); $("#gettz").addClass('btn-b'); }
+script function submited() { $("#gettz").prop('disabled',true); $("#gettz").removeClass('btn-b'); }
+
+
+form(method='POST', action='.', onsubmit="submited()")
+  div
+    button.smooth.btn(id="gettz" style='display: block; margin: 0 auto; width: 304px;',disabled=true) Get Testnet ꜩ
+
+    aside(style='text-align: center;') Faucet ꜩ specific to the testnet in URL.
+    br
+    != recaptcha_form

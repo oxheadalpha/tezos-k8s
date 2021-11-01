@@ -3,7 +3,18 @@
 # Generation is deterministic based on the seed passed.
 # This allows deployment of faucet infrastructure without moving
 # large json commitment files around.
+# Use `--write-commitments-to` to generate the public tezos address
+# precursors to include in the chain activation parameters.
+# This list is not sensitive.
+# Use `--write-secret-seeds-to` to dump the list of private keys
+# for actually running the faucet. This list is sensitive.
+# `--write-secret-seeds-to` also queries every faucet account balance
+# in order until it finds EMPTY_ACCOUNT_BUFFER empty addresses.
+# This way, it does not need persistence. We infer from the chain
+# which is the last faucet account that has been given. The ones after
+# that are written in the secret json file.
 
+import argparse
 import sys
 import os
 import json
@@ -15,7 +26,10 @@ from pyblake2 import blake2b
 import unicodedata
 from hashlib import sha256
 import random
+import requests
 import string
+
+EMPTY_ACCOUNT_BUFFER = 10
 
 def get_keys(mnemonic, email, password):
     salt = unicodedata.normalize(
@@ -73,27 +87,57 @@ def make_dummy_wallets(n, blind):
         secrets[pkh_b58] = (mnemonic, email, password, amount, binascii.hexlify(secret))
     return wallets, secrets
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--seed", help="a seed for deterministic faucet gen",
+                            type=str)
+parser.add_argument("--number-of-accounts", help="number of faucet accounts to generate",
+                            type=int)
+parser.add_argument("--write-commitments-to", help="file path where to write the public commitments (typically for chain activation)",
+                            type=str)
+parser.add_argument("--write-secret-seeds-to", help="file path where to write the secret seed file (typically for launching a faucet)",
+                            type=str)
+args = parser.parse_args()
+
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print("Usage: faucet-gen.py seed [number_of_accounts]")
-        exit(1)
-    print(f"Seed is {sys.argv[1]}")
-    blind = sys.argv[1].encode('utf-8')
-    if len(sys.argv) == 3:
-        number_of_accounts = int(sys.argv[2])
-    else:
-        number_of_accounts = 2
+    print(f"Seed is {args.seed}")
+    blind = args.seed.encode('utf-8')
     # initialize random functions for determinism
     random.seed(a=blind, version=2)
     numpy_seed = random.randint(0,2**32)
     print("numpy seed is %s" % numpy_seed)
     np.random.seed(seed=numpy_seed)
-    wallets, secrets = make_dummy_wallets(number_of_accounts, blind)
+    wallets, secrets = make_dummy_wallets(args.number_of_accounts, blind)
 
     commitments = genesis_commitments(wallets, blind)
 
-    with open('./faucet-commitments/commitments.json', 'w') as f:
-        json.dump([
-                (commitment['blinded_pkh'], str(commitment['amount']))
-                for commitment in commitments if commitment['amount'] > 0
-            ], f, indent=1)
+    if args.write_commitments_to:
+        with open(args.write_commitments_to, 'w') as f:
+            json.dump([
+                    (commitment['blinded_pkh'], str(commitment['amount']))
+                    for commitment in commitments if commitment['amount'] > 0
+                ], f, indent=1)
+
+    if args.write_secret_seeds_to:
+        print("Searching for already used faucet keys")
+        print(f"Assuming that if we see more than {EMPTY_ACCOUNT_BUFFER} empty accounts, we have reached the end of the faucet")
+        print(f"Hopefully it's true. But if someone claims more than {EMPTY_ACCOUNT_BUFFER} faucets and do not use them, then our assumption is wrong")
+        faucet_pkhs = secrets.keys()
+        balances = {}
+        # TODO wait for bootstrap
+        for i, pkh in enumerate(faucet_pkhs):
+            balances[pkh] = int(requests.get("http://tezos-node-rpc:8732/chains/main/blocks/head/context/contracts/%s/balance" % pkh).json())
+            print(f"Balance for {pkh} is {balances[pkh]}")
+            if i >= EMPTY_ACCOUNT_BUFFER and set([ balances[pkh] for pkh in list(faucet_pkhs)[i - EMPTY_ACCOUNT_BUFFER:i] ]) == { 0 }:
+                # 10 past accounts are empty, assuming we have reached the end of the used faucets
+                print(f"Found the first empty faucet address: {list(faucet_pkhs)[i-10]}")
+                break
+        unused_secrets = { pkh: secrets[pkh] for pkh in list(faucet_pkhs)[i-10:] }
+
+        with open(args.write_secret_seeds_to, 'w') as f:
+            json.dump([ { "pkh" : pkh,
+                          "mnemonic" : mnemonic,
+                          "email" : email,
+                          "password" : password,
+                          "amount" : str(amount),
+                          "activation_code" : secret.decode('utf-8') }
+                        for pkh, (mnemonic, email, password, amount, secret) in unused_secrets.items()], f, indent=1)
