@@ -7,8 +7,10 @@ spec:
   ports:
     - port: 8732
       name: rpc
+  {{- with .Values.services.tezos_node_rpc.selector | default (dict "appType" "tezos-node") }}
   selector:
-    appType: tezos-node
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   type: NodePort
 ---
 {{- range $key, $val := .Values.nodes }}
