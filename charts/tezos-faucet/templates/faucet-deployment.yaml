@@ -28,6 +28,9 @@ spec:
           - name: secret-seeds
             mountPath: "/secret-seeds"
             readOnly: true
+          env:
+          - name: TESTNET
+            value: {{ .Release.Namespace }}
       initContainers:
         - image: {{ .Values.tezos_k8s_images.utils }}
           name: faucet-gen

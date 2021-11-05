@@ -21,8 +21,10 @@ console.log("KEYS: ", keys.length);
 
 let i = 0;
 
+const testnet = process.env.TESTNET;
+
 app.get('/', (req, res) =>
-    res.redirect("https://teztnets.xyz/")
+    res.redirect(`https://teztnets.xyz/${testnet}-faucet`)
 );
 
 app.post('/', (req,res) => {
