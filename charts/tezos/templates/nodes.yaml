@@ -1,42 +1,43 @@
 {{- range $key, $val := .Values.nodes }}
 {{- if $val }}
-{{- $_ := set $ "node_class" $key }}
-{{- $_ := set $ "node_vals" $val }}
+  {{- $_ := set $ "node_class" $key }}
+  {{- $_ := set $ "node_vals" $val }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ $key }}
+  name: {{ $.node_class }}
   namespace: {{ $.Release.Namespace }}
 spec:
   podManagementPolicy: Parallel
-  replicas: {{ $val.instances | len }}
-  serviceName: {{ $key }}
+  replicas: {{ $.node_vals.instances | len }}
+  serviceName: {{ $.node_class }}
   selector:
     matchLabels:
-      app: {{ $key }}
+      node_class: {{ $.node_class }}
   template:
     metadata:
       labels:
-        app: {{ $key }}
         appType: tezos-node
+        node_class: {{ $.node_class }}
+        {{- $.node_vals.labels | default dict | toYaml | nindent 8 }}
     spec:
       containers:
-{{- include "tezos.container.node"      $ | indent 8 }}
-{{- include "tezos.container.tezedge"   $ | indent 8 }}
-{{- include "tezos.container.bakers"    $ | indent 8 }}
-{{- include "tezos.container.endorsers" $ | indent 8 }}
-{{- include "tezos.container.logger"    $ | indent 8 }}
-{{- include "tezos.container.metrics"   $ | indent 8 }}
-{{- include "tezos.container.zerotier"  $ | indent 8 }}
-{{- include "tezos.container.sidecar"   $ | indent 8 }}
+        {{- include "tezos.container.node"      $ | indent 8 }}
+        {{- include "tezos.container.tezedge"   $ | indent 8 }}
+        {{- include "tezos.container.bakers"    $ | indent 8 }}
+        {{- include "tezos.container.endorsers" $ | indent 8 }}
+        {{- include "tezos.container.logger"    $ | indent 8 }}
+        {{- include "tezos.container.metrics"   $ | indent 8 }}
+        {{- include "tezos.container.zerotier"  $ | indent 8 }}
+        {{- include "tezos.container.sidecar"   $ | indent 8 }}
       initContainers:
-{{- include "tezos.init_container.config_init"         $ | indent 8 }}
-{{- include "tezos.init_container.zerotier"            $ | indent 8 }}
-{{- include "tezos.init_container.config_generator"    $ | indent 8 }}
-{{- include "tezos.init_container.wait_for_dns"        $ | indent 8 }}
-{{- include "tezos.init_container.snapshot_downloader" $ | indent 8 }}
-{{- include "tezos.init_container.snapshot_importer"   $ | indent 8 }}
-{{- include "tezos.init_container.tarball_downloader"  $ | indent 8 }}
+        {{- include "tezos.init_container.config_init"         $ | indent 8 }}
+        {{- include "tezos.init_container.zerotier"            $ | indent 8 }}
+        {{- include "tezos.init_container.config_generator"    $ | indent 8 }}
+        {{- include "tezos.init_container.wait_for_dns"        $ | indent 8 }}
+        {{- include "tezos.init_container.snapshot_downloader" $ | indent 8 }}
+        {{- include "tezos.init_container.snapshot_importer"   $ | indent 8 }}
+        {{- include "tezos.init_container.tarball_downloader"  $ | indent 8 }}
       securityContext:
         fsGroup: 100
 {{- include "tezos.nodeSelectorConfig" $ | indent 6 }}
@@ -46,7 +47,7 @@ spec:
           name: dev-net-tun
         - emptyDir: {}
           name: config-volume
-{{- if $val.local_storage | default false }}
+{{- if $.node_vals.local_storage | default false }}
         - emptyDir: {}
           name: var-volume
 {{- else }}
@@ -57,12 +58,12 @@ spec:
       spec:
         accessModes:
           - ReadWriteOnce
-        {{- if $val.storageClassName }}
-        storageClassName: {{ $val.storageClassName }}
+        {{- if $.node_vals.storageClassName }}
+        storageClassName: {{ $.node_vals.storageClassName }}
         {{- end }}
         resources:
           requests:
-            storage: {{ default "15Gi" $val.storage_size }}
+            storage: {{ default "15Gi" $.node_vals.storage_size }}
 {{- end }}
 ---
 {{- end }}

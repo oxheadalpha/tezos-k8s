@@ -91,14 +91,20 @@ accounts: {}
 ##             config.json. Run `tezos-node config --help` for more info.
 ##   - "node_selector": Specify a kubernetes node selector in 'key: value' format
 ##     for your tezos nodes.
+## - "labels": https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
 ##
 ##
-## defaults are filled in for most values.
+## Defaults are filled in for most of the above values.
 ##
-## E.g.:
+## Example config:
 ##
 # nodes:
 #   tezos-baking-node:
+#     labels:
+#       # Example labels you might use to specify certain attributes of your nodes.
+#       baking_node: "true" # This node types instances are baking nodes
+#       peer_node: "true" # Forward P2P traffic to this node types instances
+#       rpc_node: "true" # Forward RPC traffic to this node types instances
 #     node_selector:
 #       nodeSelectorKey: nodeSelectorValue
 #     storage_size: 15Gi
@@ -118,6 +124,10 @@ accounts: {}
 #           shell:
 #             history_mode: rolling
 #   tezos-node:
+#     labels:
+#       # Example labels you might use to specify certain attributes of your nodes.
+#       peer_node: "true"
+#       rpc_node: "true"
 #     images: # (optional field)
 #       tezedge: tezedge/tezedge:v...
 #     runs: ["tezedge_node"]
@@ -127,7 +137,10 @@ accounts: {}
 
 nodes:
   tezos-node:
-    storage_size: 15Gi
+    labels:
+      rpc_node: "true"
+      peer_node: "true"
+    storage_size: 100Gi
     runs:
       - octez_node
     instances:
@@ -135,6 +148,16 @@ nodes:
         config:
           shell:
             history_mode: rolling
+
+## Configuration for K8s Service resources. Configuring the labels selector of a
+## service will result in the service forwarding traffic only to pods that have
+## matching labels.
+services:
+  ## Configure the labels selector of the Tezos node RPC service. Traffic will
+  ## be forwarded to all nodes if no labels are specified.
+  tezos_node_rpc:
+    selector:
+      rpc_node: "true"
 
 # Define and use external remote signers.
 # Bakers automatically use signers when configured.
