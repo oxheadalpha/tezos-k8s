@@ -4,8 +4,6 @@ const express  = require('express');
 const app = express();
 const bodyParser = require('body-parser');
 
-app.set("view engine", "pug");
-
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static('public'))
@@ -24,15 +22,8 @@ console.log("KEYS: ", keys.length);
 let i = 0;
 
 app.get('/', (req, res) =>
-        {
-            console.log(recaptcha.formElement());
-            res.render('index',
-                       {
-                           recaptcha_form:
-`<div class="g-recaptcha" data-sitekey=${recaptcha2Keys.siteKey} data-callback=captchaDone></div>`
-                       });
-        }
-       );
+    res.redirect("https://teztnets.xyz/")
+);
 
 app.post('/', (req,res) => {
     recaptcha.validateRequest(req)
@@ -44,7 +35,10 @@ app.post('/', (req,res) => {
             key     = json.pkh;
             i += 1;
             console.log("Sending: ", i, key);
-            res.render('key', { key: JSON.stringify(json, null, 2), keyFilename: `${key}.json` });
+            res.header('Access-Control-Allow-Origin', 'https://teztnets.xyz');
+            res.header('Access-Control-Allow-Methods', 'PUT, GET, POST, DELETE, OPTIONS');
+            res.header('Access-Control-Allow-Headers', 'Content-Type');
+            res.json(json);
         })
         .catch(function(errorCodes){
             // invalid
