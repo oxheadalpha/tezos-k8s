@@ -140,7 +140,7 @@ nodes:
     labels:
       rpc_node: "true"
       peer_node: "true"
-    storage_size: 15Gi
+    storage_size: 100Gi
     runs:
       - octez_node
     instances:
