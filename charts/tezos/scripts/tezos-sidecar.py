@@ -10,6 +10,8 @@ application = Flask(__name__)
 
 AGE_LIMIT_IN_SECS = 600
 
+LEVEL_THRESHOLD = 1000
+
 @application.route('/is_synced')
 def sync_checker():
     '''
@@ -26,11 +28,13 @@ def sync_checker():
         print(err)
         return err
     header = r.json()
-    if header["level"] == 0:
-        # when chain has not been activated, bypass age check
-        # and return succesfully to mark as ready
-        # otherwise it will never activate (activation uses rpc service)
-        return "Chain has not been activated yet"
+    if header["level"] < LEVEL_THRESHOLD:
+        # If the level is low, we assume chain is healthy.
+        # Reasons:
+        # 1. chain not activated yet - the activation job needs to reach RPC endpoint to activate
+        # 2. early public chains (i.e. testnets) may be slow at first before every bootstrap
+        #    baker becomes online. We still need them to reach the p2p endpoint to peer with our node.
+        return f"Chain level below {LEVEL_THRESHOLD}, assuming healthy."
     timestamp = r.json()["timestamp"]
     block_age = datetime.datetime.utcnow() -  datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
     age_in_secs = block_age.total_seconds()
