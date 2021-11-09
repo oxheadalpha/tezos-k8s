@@ -92,6 +92,8 @@ accounts: {}
 ##   - "node_selector": Specify a kubernetes node selector in 'key: value' format
 ##     for your tezos nodes.
 ## - "labels": https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+##   NOTE: the labels appType, node_class, and baking_node are set
+##         automatically for you.
 ##
 ##
 ## Defaults are filled in for most of the above values.
@@ -102,7 +104,6 @@ accounts: {}
 #   tezos-baking-node:
 #     labels:
 #       # Example labels you might use to specify certain attributes of your nodes.
-#       baking_node: "true" # This node types instances are baking nodes
 #       peer_node: "true" # Forward P2P traffic to this node types instances
 #       rpc_node: "true" # Forward RPC traffic to this node types instances
 #     node_selector:
