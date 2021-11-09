@@ -22,7 +22,7 @@ spec:
   publishNotReadyAddresses: true
   clusterIP: None
   selector:
-    app: {{ $key }}
+    node_class: {{ $key }}
 ---
 {{- end }}
 {{- if (include "tezos.shouldDeployTzktIndexer" .) }}
