@@ -138,9 +138,9 @@ accounts: {}
 
 nodes:
   tezos-node:
-    labels:
-      rpc_node: "true"
-      peer_node: "true"
+#    labels:
+#      rpc_node: "true"
+#      peer_node: "true"
     storage_size: 100Gi
     runs:
       - octez_node
@@ -158,7 +158,7 @@ services:
   ## be forwarded to all nodes if no labels are specified.
   tezos_node_rpc:
     selector:
-      rpc_node: "true"
+#      rpc_node: "true"
 
 # Define and use external remote signers.
 # Bakers automatically use signers when configured.
