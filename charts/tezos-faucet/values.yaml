@@ -4,5 +4,7 @@ tezos_k8s_images:
 recaptcha_keys:
   siteKey: # fill in recaptcha site key
   secretKey: # fill in recaptcha secret key
-number_of_accounts: 1000
-seed: "a unique seed for deterministally generating accounts"
+activation:
+  faucet:
+    number_of_accounts: 1000
+    seed: "a unique seed for deterministally generating accounts"
