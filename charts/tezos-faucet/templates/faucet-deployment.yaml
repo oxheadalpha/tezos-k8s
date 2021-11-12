@@ -37,9 +37,9 @@ spec:
           args:
             - faucet-gen
             - --seed
-            - "{{ .Values.seed }}"
+            - "{{ .Values.activation.faucet.seed }}"
             - --number-of-accounts
-            - "{{ .Values.number_of_accounts }}"
+            - "{{ .Values.activation.faucet.number_of_accounts }}"
             - --write-secret-seeds-to
             - "/secret-seeds/secret-seeds.json"
           volumeMounts:

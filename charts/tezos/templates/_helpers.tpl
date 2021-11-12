@@ -51,12 +51,12 @@
 
 {{/*
   When activating a protocol, check whether faucet commitments
-  should be deterministically generated from a seed.
+  should be included.
   Returns a string "true" or empty string which is falsey.
 */}}
-{{- define "tezos.shouldInitializeDeterministicFaucet" -}}
-{{ $deterministic_faucet := .Values.activation.deterministic_faucet | default dict }}
-{{- if and ($deterministic_faucet.seed)  ($deterministic_faucet.number_of_accounts) }}
+{{- define "tezos.shouldInitializeFaucet" -}}
+{{ $faucet := .Values.activation.faucet | default dict }}
+{{- if and ($faucet.seed)  ($faucet.number_of_accounts) }}
 {{- "true" }}
 {{- else }}
 {{- "" }}
