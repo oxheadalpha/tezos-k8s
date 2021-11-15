@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: faucet
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: faucet
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: faucet
+    spec:
+      containers:
+        - image: {{ .Values.tezos_k8s_images.faucet }}
+          name: faucet
+            #command: [ "sleep", "1000" ]
+          ports:
+            - containerPort: 8081
+          volumeMounts:
+          - name: recaptcha
+            mountPath: "/recaptcha_keys"
+            readOnly: true
+          - name: secret-seeds
+            mountPath: "/secret-seeds"
+            readOnly: true
+          env:
+          - name: TESTNET
+            value: {{ .Release.Namespace }}
+      initContainers:
+        - image: {{ .Values.tezos_k8s_images.utils }}
+          name: faucet-gen
+          args:
+            - faucet-gen
+            - --seed
+            - "{{ .Values.activation.faucet.seed }}"
+            - --number-of-accounts
+            - "{{ .Values.activation.faucet.number_of_accounts }}"
+            - --write-secret-seeds-to
+            - "/secret-seeds/secret-seeds.json"
+          volumeMounts:
+          - name: secret-seeds
+            mountPath: "/secret-seeds"
+      restartPolicy: Always
+      volumes:
+      - name: secret-seeds
+        emptyDir: {}
+      - name: recaptcha
+        secret:
+          secretName: recaptcha
+status: {}

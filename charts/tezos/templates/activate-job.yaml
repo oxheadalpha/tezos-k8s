@@ -28,13 +28,17 @@ spec:
             - configMapRef:
                 name: tezos-config
       initContainers:
-{{- if (include "tezos.shouldInitializeDeterministicFaucet" .) }}
+{{- if (include "tezos.shouldInitializeFaucet" .) }}
         - image: {{ .Values.tezos_k8s_images.utils }}
           name: faucet-gen
           args:
             - faucet-gen
-            - "{{ .Values.activation.deterministic_faucet.seed }}"
-            - "{{ .Values.activation.deterministic_faucet.number_of_accounts }}"
+            - --seed
+            - "{{ .Values.activation.faucet.seed }}"
+            - --number-of-accounts
+            - "{{ .Values.activation.faucet.number_of_accounts }}"
+            - --write-commitments-to
+            - "/faucet-commitments/commitments.json"
           volumeMounts:
           - name: faucet-commitments
             mountPath: "/faucet-commitments"
