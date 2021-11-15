@@ -5,13 +5,14 @@ set -e
 data_dir="/var/tezos"
 node_dir="$data_dir/node"
 node_data_dir="$node_dir/data"
-
+tarball_file=$(curl -sL --head "$TARBALL_URL" | grep Location: | tail -n1 | cut -d' ' -f2)
 
 if [ -d /var/tezos ] ; then
   if [ ! -d $node_data_dir/context ]; then
     echo "Did not find pre-existing data, importing blockchain"
     rm -rf $node_data_dir 
     mkdir -p $node_data_dir
+    echo "Downloading $tarball_file"
     curl -LfsS "$TARBALL_URL" | lz4 -d | tar -x -C /var/tezos
     rm -fv $node_data_dir/identity.json
   fi
