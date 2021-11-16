@@ -32,7 +32,9 @@ data:
   ROLLING_TARBALL_URL: ""
   ARCHIVE_TARBALL_URL: "https://mainnet.xtz-shots.io/archive-tarball"
   NODE_GLOBALS: |
-    null
+    {
+      "env": {}
+    }
 
   NODES: |
     {

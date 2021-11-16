@@ -1,5 +1,18 @@
+node_globals:
+  env:
+    all:
+      key: outer-value
+    snapshot-downloader:
+      key: outer-container
+    octez-node:
+      TEZOS_LOG: "* -> DEBUG"
 nodes:
   country-town:
+    env:
+      all:
+        key: specific-pod
+      snapshot-downloader:
+        key: specific-container
     images:
       octez: tezos/tezos:v12-release
     runs: [ octez_node, logger, metrics ]

@@ -32,7 +32,19 @@ data:
   ROLLING_TARBALL_URL: ""
   ARCHIVE_TARBALL_URL: "https://mainnet.xtz-shots.io/archive-tarball"
   NODE_GLOBALS: |
-    null
+    {
+      "env": {
+        "all": {
+          "key": "outer-value"
+        },
+        "octez-node": {
+          "TEZOS_LOG": "* -\u003e DEBUG"
+        },
+        "snapshot-downloader": {
+          "key": "outer-container"
+        }
+      }
+    }
 
   NODES: |
     {
@@ -47,6 +59,14 @@ data:
         ]
       },
       "country-town": {
+        "env": {
+          "all": {
+            "key": "specific-pod"
+          },
+          "snapshot-downloader": {
+            "key": "specific-container"
+          }
+        },
         "images": {
           "octez": "tezos/tezos:v12-release"
         },
@@ -152,6 +172,8 @@ spec:
           env:
             - name: DAEMON
               value: tezedge-node
+            - name:  key
+              value: "outer-value"
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -189,6 +211,8 @@ spec:
               value: city-block
             - name: DAEMON
               value: logger
+            - name:  key
+              value: "outer-value"
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -251,6 +275,8 @@ spec:
               value: city-block
             - name: DAEMON
               value: sidecar
+            - name:  key
+              value: "outer-value"
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -296,6 +322,8 @@ spec:
               value: city-block
             - name: DAEMON
               value: config-init
+            - name:  key
+              value: "outer-value"
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -324,6 +352,8 @@ spec:
               value: city-block
             - name: DAEMON
               value: config-generator
+            - name:  key
+              value: "outer-value"
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -354,6 +384,8 @@ spec:
               value: city-block
             - name: DAEMON
               value: snapshot-downloader
+            - name:  key
+              value: "outer-container"
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -409,6 +441,8 @@ spec:
               value: city-block
             - name: DAEMON
               value: snapshot-importer
+            - name:  key
+              value: "outer-value"
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -491,6 +525,10 @@ spec:
           env:
             - name: DAEMON
               value: octez-node
+            - name:  TEZOS_LOG
+              value: "* -> DEBUG"
+            - name:  key
+              value: "specific-pod"
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -528,6 +566,8 @@ spec:
               value: country-town
             - name: DAEMON
               value: logger
+            - name:  key
+              value: "specific-pod"
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -590,6 +630,8 @@ spec:
               value: country-town
             - name: DAEMON
               value: sidecar
+            - name:  key
+              value: "specific-pod"
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -635,6 +677,8 @@ spec:
               value: country-town
             - name: DAEMON
               value: config-init
+            - name:  key
+              value: "specific-pod"
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -663,6 +707,8 @@ spec:
               value: country-town
             - name: DAEMON
               value: config-generator
+            - name:  key
+              value: "specific-pod"
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -693,6 +739,8 @@ spec:
               value: country-town
             - name: DAEMON
               value: snapshot-downloader
+            - name:  key
+              value: "specific-container"
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -748,6 +796,8 @@ spec:
               value: country-town
             - name: DAEMON
               value: snapshot-importer
+            - name:  key
+              value: "specific-pod"
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
