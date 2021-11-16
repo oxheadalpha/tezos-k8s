@@ -82,7 +82,9 @@ data:
   ROLLING_TARBALL_URL: ""
   ARCHIVE_TARBALL_URL: ""
   NODE_GLOBALS: |
-    null
+    {
+      "env": {}
+    }
 
   NODES: |
     {

@@ -76,6 +76,14 @@ accounts: {}
 ##             config.json. Run `tezos-node config --help` for more info.
 ##             If present at the statefulset level, it overrides it in
 ##             node_globals.
+## - "env": a dictionary of containers mapped to a dictionary of env
+##          vars.  The container name "all" will apply the env vars to
+##          all containers.  The most specific wins.  Find the names of
+##          the containers by examining an installed environment, or by
+##          looking at charts/tezos/templates/nodes.yaml.  Please note
+##          that we truncate the protocol from the container name for
+##          bakers and accusers, so "baker-011-pthangz2" is configured
+##          using just "baker".
 ## - "storage_size": the size of the PV
 ## - "images": Optional specification of images to use for the tezos node and
 ##           baker. Options are "octez" with a tezos/tezos image or
@@ -117,8 +125,8 @@ accounts: {}
 ##
 ## Defaults are filled in for most of the above values.  You can also provide
 ## global defaults for all nodes via a node_globals: section which is also
-## a dictionary.  Currently, the only key defined is "config" which provides
-## a default for that section in the nodes:.
+## a dictionary.  Currently, two keys are defined: "config" and "env".  These
+## operate in the same way as the section in "nodes" going by the same name.
 ##
 ## Example config:
 ##
@@ -127,11 +135,19 @@ accounts: {}
 #   config:
 #     shell:
 #       history_mode: full
+#   env:
+#     baker:
+#       TEZOS_LOG: "* -> debug"
 # nodes:
 #   rolling-baking-node:
 #     config:
 #       shell:
 #         history_mode: rolling
+#     env:
+#       all:
+#         TEZOS_CLIENT_UNSAFE_DISABLE_DISCLAIMER: "Y"
+#       snapshot-downloader:
+#         HTTP_PROXY: http://my-proxy.my-company.com:3128/
 #     labels:
 #       # Example labels you might use to specify certain attributes of your nodes.
 #       peer_node: "true" # Forward P2P traffic to this node types instances
@@ -171,6 +187,9 @@ accounts: {}
 #     instances:
 #       - {}
 #       - {}
+
+node_globals:
+  env: {}
 
 nodes:
   rolling-node:

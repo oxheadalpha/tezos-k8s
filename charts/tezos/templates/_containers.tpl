@@ -123,6 +123,21 @@
   {{- end }}
     - name: DAEMON
       value: {{ .type }}
+{{- $envdict := dict }}
+{{- $lenv := $.node_vals.env           | default dict }}
+{{- $genv := $.Values.node_globals.env | default dict }}
+{{- range $curdict := concat
+          (pick $lenv .type | values)
+          (pick $lenv "all"           | values)
+          (pick $genv .type | values)
+          (pick $genv "all"           | values)
+}}
+{{- $envdict := merge $envdict ($curdict | default dict) }}
+{{- end }}
+{{- range $key, $val := $envdict }}
+    - name:  {{ $key  }}
+      value: {{ $val | quote }}
+{{- end }}
   volumeMounts:
     - mountPath: /etc/tezos
       name: config-volume
