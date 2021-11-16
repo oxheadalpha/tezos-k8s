@@ -239,6 +239,8 @@
       name: config-volume
     - mountPath: /var/tezos
       name: var-volume
+  env:
+{{- include "tezos.localvars.pod_envvars" $ | indent 4 }}
 {{- end }}
 {{- end }}
 
