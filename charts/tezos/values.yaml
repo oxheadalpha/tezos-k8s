@@ -97,10 +97,18 @@ accounts: {}
 ##         automatically for you.
 ##
 ##
-## Defaults are filled in for most of the above values.
+## Defaults are filled in for most of the above values.  You can also provide
+## global defaults for all nodes via a node_globals: section which is also
+## a dictionary.  Currently, the only key defined is "config" which provides
+## a default for that section in the nodes:.
 ##
 ## Example config:
 ##
+#
+# node_globals:
+#   config:
+#     shell:
+#       history_mode: full
 # nodes:
 #   tezos-baking-node:
 #     labels:
