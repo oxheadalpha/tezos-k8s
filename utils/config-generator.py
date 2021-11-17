@@ -54,7 +54,7 @@ def main():
 
     if SHOULD_GENERATE_UNSAFE_DETERMINISTIC_DATA:
         fill_in_missing_genesis_block()
-        all_accounts = fill_in_missing_baker_accounts()
+        all_accounts = fill_in_missing_accounts()
         fill_in_missing_keys(all_accounts)
 
     fill_in_activation_account(all_accounts)
@@ -187,8 +187,8 @@ def get_baking_accounts(baker_values):
 #
 # We create any missing accounts that are refered to by a node at
 # BAKING_NODES to ensure that all named accounts exist.
-def fill_in_missing_baker_accounts():
-    print("\nFilling in any missing baker accounts...")
+def fill_in_missing_accounts():
+    print("\nFilling in any missing accounts...")
     new_accounts = {}
     init_balance = CHAIN_PARAMS["default_bootstrap_mutez"]
     for baker_name, baker_values in BAKING_NODES.items():
@@ -208,6 +208,16 @@ def fill_in_missing_baker_accounts():
                     "bootstrap_balance": init_balance,
                     "is_bootstrap_baker_account": True,
                 }
+
+    try:
+        acct = NETWORK_CONFIG["activation_account_name"]
+        if acct not in ACCOUNTS and acct not in new_accounts:
+            print(f"Creating activation account: {acct}")
+            new_accounts[acct] = {
+                "bootstrap_balance": CHAIN_PARAMS["default_bootstrap_mutez"],
+            }
+    except:
+        pass
 
     return {**new_accounts, **ACCOUNTS}
 
@@ -488,7 +498,9 @@ def get_genesis_pubkey():
                 genesis_pubkey = pubkey["value"]["key"]
                 break
         if not genesis_pubkey:
-            raise Exception("ERROR: Couldn't find the genesis_pubkey")
+            raise Exception("ERROR: Couldn't find the genesis_pubkey. " +
+                            "This generally happens if you forgot to " +
+                            "define an account for the activation account")
         return genesis_pubkey
 
 
