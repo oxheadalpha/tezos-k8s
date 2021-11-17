@@ -63,6 +63,13 @@ if (desiredClusterCapacity > maxClusterCapacity) {
 			 ' "pulumi config set max-cluster-capacity N"');
 }
 
+if (nodesPerVM == 1) {
+    if (helmValues["node_global"] == undefined) {
+	helmValues["node_global"] = {};
+    }
+    helmValues["node_global"]["one_node_per_vm"] = true;
+}
+
 function createWorkerNodeRole(name: string): aws.iam.Role {
     const managedPolicyArns: string[] = [
         "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy",

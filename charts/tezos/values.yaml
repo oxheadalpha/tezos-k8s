@@ -60,6 +60,12 @@ accounts: {}
 #     is_bootstrap_baker_account: false
 #     bootstrap_balance: "4000000000000"
 
+## node_globals.env defines environment variables which will be
+## set in every container on every node:
+
+node_globals:
+  one_node_per_vm: false
+
 ## NODES
 ##
 ## "nodes" is a dictionary where each key/value pair defines a statefulset and a
