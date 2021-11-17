@@ -15,13 +15,15 @@ from base58 import b58encode_check
 
 ACCOUNTS = json.loads(os.environ["ACCOUNTS"])
 CHAIN_PARAMS = json.loads(os.environ["CHAIN_PARAMS"])
+NODE_GLOBALS = json.loads(os.environ["NODE_GLOBALS"]) or {}
 NODES = json.loads(os.environ["NODES"])
 SIGNERS = json.loads(os.environ["SIGNERS"])
 
 MY_POD_NAME = os.environ["MY_POD_NAME"]
 MY_POD_TYPE = os.environ["MY_POD_TYPE"]
 
-MY_POD_CONFIG = None
+MY_POD_CLASS = {}
+MY_POD_CONFIG = {}
 ALL_NODES = {}
 BAKING_NODES = {}
 
@@ -31,6 +33,7 @@ for cl, val in NODES.items():
             name = f"{cl}-{i}"
             ALL_NODES[name] = inst
             if name == MY_POD_NAME:
+                MY_POD_CLASS = val
                 MY_POD_CONFIG = inst
             if "runs" in val:
                 if "baker" in val["runs"]:
@@ -525,7 +528,6 @@ def create_node_config_json(
 ):
     """Create the node's config.json file"""
 
-    values_node_config = MY_POD_CONFIG.get("config", {})
     computed_node_config = {
         "data-dir": "/var/tezos/node/data",
         "rpc": {
@@ -538,7 +540,10 @@ def create_node_config_json(
         },
         # "log": {"level": "debug"},
     }
-    node_config = recursive_update(values_node_config, computed_node_config)
+    node_config = NODE_GLOBALS.get("config", {})
+    node_config = recursive_update(node_config, MY_POD_CLASS.get("config", {}))
+    node_config = recursive_update(node_config, MY_POD_CONFIG.get("config", {}))
+    node_config = recursive_update(node_config, computed_node_config)
 
     if THIS_IS_A_PUBLIC_NET:
         # `tezos-node config --network ...` will have been run in config-init.sh
