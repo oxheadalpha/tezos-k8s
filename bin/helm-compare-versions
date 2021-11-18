@@ -16,12 +16,14 @@ CUR_BRANCH=
 OLD_BRANCH=
 COMPARE_STASHED=0
 I_STASHED_IT=0
+DIFF="diff -u"
 DIFF_ARGS=
 
-while getopts SU:b:n:w f; do
+while getopts SU:Yb:n:w f; do
 	case $f in
 	S)	COMPARE_STASHED=1;;
 	U)	DIFF_ARGS="$DIFF_ARGS -U$OPTARG";;
+	Y)	DIFF="dyff between";;
 	b)	OLD_BRANCH=$OPTARG;;
 	n)	NEW_BRANCH=$OPTARG;;
 	w)	DIFF_ARGS="$DIFF_ARGS -w";;
@@ -94,4 +96,4 @@ if [ ! -z "$OLD_BRANCH" ]; then
 fi
 helm template charts/tezos/ --values "$OLD_VALUES" --namespace tez > "$CHART2"
 
-diff -u $DIFF_ARGS "$CHART2" "$CHART1"
+$DIFF $DIFF_ARGS "$CHART2" "$CHART1"
