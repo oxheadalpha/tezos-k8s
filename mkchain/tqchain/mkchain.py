@@ -229,7 +229,7 @@ def main():
     # archive mode. Any other bakers will be in rolling mode.
     creation_nodes = {
         BAKER_NODE_NAME: {
-            "runs": ["octez_node", "baker", "endorser"],
+            "runs": ["octez_node", "baker"],
             "storage_size": "15Gi",
             "instances": [
                 node_config(BAKER_NODE_NAME, n, is_baker=True)
