@@ -15,7 +15,8 @@ tezos_k8s_images:
   utils: tezos-k8s-utils:dev
   zerotier: tezos-k8s-zerotier:dev
 
-# Properties that are templated in Helm template files
+## Properties that are templated for some k8s resources. There are container
+## scripts that will look up some of these values. They should not be modified.
 tzkt_indexer_statefulset:
   name: tzkt-indexer
 signer_statefulset:
@@ -167,16 +168,17 @@ signers: {}
 #    sign_for_accounts:
 #    - baker0
 
-# Where full and rolling history mode nodes will get their snapshots from
+## Where full and rolling history mode nodes will get their Tezos snapshots from.
 full_snapshot_url: https://mainnet.xtz-shots.io/full
 rolling_snapshot_url: https://mainnet.xtz-shots.io/rolling
 
-## Alternatively to a Tezos snapshot, you can download a public LZ4-compressed
-## filesystem tar of a node's data directory by setting the tarball_url field to
-## the URL of the archive file. NOTE: tarball_url and *_snapshot_url are
-## mutually exclusive. When tarball_url is configured, full_snapshot_url and
-## rolling_snapshot_url must be null.
-# tarball_url:
+## Alternatively to a Tezos snapshot, you can download an LZ4-compressed
+## filesystem tar of a node's data directory by setting `archive_tarball_url`
+## and `rolling_tarball_url` fields to the URL of the file. NOTE:
+## `rolling_tarball_url` and `rolling_snapshot_url` are mutually exclusive and
+## cannot both be specified at the same time.
+archive_tarball_url: "http://tezos-tarballs.s3-website.us-east-2.amazonaws.com/mainnet-archive-tarball"
+# rolling_tarball_url: "http://tezos-tarballs.s3-website.us-east-2.amazonaws.com/mainnet-rolling-tarball"
 
 # List of peers for nodes to connect to. Gets set under config.json `p2p` field
 bootstrap_peers: []

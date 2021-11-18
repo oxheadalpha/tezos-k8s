@@ -64,35 +64,19 @@
 {{- end }}
 
 {{/*
-  Checks if filesystem archive should be downloaded.
-*/}}
-{{- define "tezos.shouldDownloadTarball" -}}
-{{- if (.Values.tarball_url)}}
-  {{- if or (.Values.full_snapshot_url)  (.Values.rolling_snapshot_url) }}
-    {{- fail ".Values.tarball_url cannot be defined with .Values.full_snapshot_url or .Values.rolling_snapshot_url" }}
-  {{- else}}
-  {{- "true" }}
-  {{- end }}
-{{- else }}
-{{- "" }}
-{{- end }}
-{{- end }}
-
-{{/*
-  Checks if a snapshot should be downloaded. Either full_snapshot_url or
-  rolling_snapshot_url must not be null.
+  Checks if a snapshot/tarball should be downloaded.
   Returns a string "true" or empty string which is falsey.
 */}}
 {{- define "tezos.shouldDownloadSnapshot" -}}
-{{- if or (.Values.full_snapshot_url)  (.Values.rolling_snapshot_url) }}
-  {{- if (.Values.tarball_url)}}
-  {{- fail ".Values.full_snapshot_url or .Values.rolling_snapshot_url cannot be defined with .Values.tarball_url" }}
+  {{- if or (.Values.full_snapshot_url) (.Values.rolling_snapshot_url) (.Values.rolling_tarball_url) (.Values.archive_tarball_url) }}
+    {{- if and (.Values.rolling_tarball_url) (.Values.rolling_snapshot_url) }}
+      {{- fail "Either only a snapshot url or tarball url may be specified per Tezos node history mode" }}
+    {{- else }}
+      {{- "true" }}
+    {{- end }}
   {{- else }}
-  {{- "true" }}
+    {{- "" }}
   {{- end }}
-{{- else }}
-{{- "" }}
-{{- end }}
 {{- end }}
 
 {{/*

@@ -19,12 +19,12 @@ spec:
       labels:
         appType: tezos-node
         node_class: {{ $.node_class }}
-        {{- if has "baker" $.node_vals.runs }}
+      {{- if has "baker" $.node_vals.runs }}
         baking_node: "true"
-        {{- end }}
-        {{- if $.node_vals.labels }}
+      {{- end }}
+      {{- if $.node_vals.labels }}
         {{- $.node_vals.labels | toYaml | nindent 8 }}
-        {{- end }}
+      {{- end }}
     spec:
       containers:
         {{- include "tezos.container.node"      $ | indent 8 }}
@@ -42,7 +42,6 @@ spec:
         {{- include "tezos.init_container.wait_for_dns"        $ | indent 8 }}
         {{- include "tezos.init_container.snapshot_downloader" $ | indent 8 }}
         {{- include "tezos.init_container.snapshot_importer"   $ | indent 8 }}
-        {{- include "tezos.init_container.tarball_downloader"  $ | indent 8 }}
       securityContext:
         fsGroup: 100
 {{- include "tezos.nodeSelectorConfig" $ | indent 6 }}
