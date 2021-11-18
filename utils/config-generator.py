@@ -82,19 +82,8 @@ def main():
     if NODE_IDENTITIES.get(MY_POD_NAME, False):
         create_node_identity_json()
 
-    main_parser = argparse.ArgumentParser()
-    main_parser.add_argument(
-        "--generate-parameters-json",
-        action="store_true",
-        help="generate parameters.json",
-    )
-    main_parser.add_argument(
-        "--generate-config-json", action="store_true", help="generate config.json"
-    )
-    main_args = main_parser.parse_args()
-
     # Create parameters.json
-    if main_args.generate_parameters_json:
+    if MY_POD_TYPE == "activating":
         print("Starting parameters.json file generation")
         protocol_parameters = create_protocol_parameters_json(all_accounts)
 
@@ -106,7 +95,7 @@ def main():
             print(NETWORK_CONFIG["activation_account_name"], file=file)
 
     # Create config.json
-    if main_args.generate_config_json:
+    if MY_POD_TYPE == "node":
         print("\nStarting config.json file generation")
         bootstrap_peers = CHAIN_PARAMS.get("bootstrap_peers", [])
 

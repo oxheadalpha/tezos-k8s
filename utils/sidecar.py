@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 from flask import Flask, escape, request
 import requests
 import datetime
