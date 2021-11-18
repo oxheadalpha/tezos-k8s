@@ -1,124 +1,184 @@
-{{- define "tezos.localvars.pod_envvars" }}
-- name: MY_POD_IP
-  valueFrom:
-    fieldRef:
-      fieldPath: status.podIP
-- name: MY_POD_NAME
-  valueFrom:
-    fieldRef:
-      fieldPath: metadata.name
-- name: MY_POD_TYPE
-  value: node
-- name: MY_NODE_CLASS
-  value: {{ .node_class }}
+{{- /*
+     * First, e define a generic container template.  We pass in a set
+     * of arguments via a dictionary specified as a global variable .call_args.
+     * We use this approach as if we pass the dict directly to "include",
+     * we lose access to global variables, it overrides $.
+     *
+     * The arguments are as follows:
+     *
+     *    type           the container type, e.g.: baker, wait-for-dns
+     *    name           the name of the statefulset, defaults to type
+     *    image          one of: octez, tezedge, utils
+     *    command        the command
+     *    args           the list of arguments to the command
+     *    script_command define the command as a script from the scripts
+     *                   directory corresponding to the container type,
+     *                   so a type of wait-for-dns will include the script
+     *                   scripts/wait-for-dns.sh and pass it as a single
+     *                   argument to /bin/sh -c.  For image == octez, this
+     *                   is the default.
+     *    with_config    bring in the configMap defaults true only on utils.
+     *    with_secret    bring in the secrets map.
+     *    localvars      set env vars MY_* Defaults to true only on utils.
+     * 
+     * If you want to have a custom command, just leave out "with_script"
+     * and put it after this include indented by 2 spaces.
+     */ -}}
+
+{{- define "tezos.generic_container" }}
+
+{{- /*
+     * First, we set up all of the default values:
+     */ -}}
+
+{{- if not (hasKey .call_args "name") }}
+{{- $_ := set .call_args "name" .call_args.type }}
+{{- end }}
+{{- if not (hasKey .call_args "with_config") }}
+{{- $_ := set .call_args "with_config" (eq .call_args.image "utils") }}
+{{- end }}
+{{- if not (hasKey .call_args "localvars") }}
+{{- $_ := set .call_args "localvars" (eq .call_args.image "utils") }}
+{{- end }}
+{{- if not (hasKey .call_args "script_command") }}
+{{- $_ := set .call_args "script_command" (eq .call_args.image "octez") }}
 {{- end }}
 
-{{- define "tezos.init_container.config_init" }}
-{{- if include "tezos.shouldConfigInit" . }}
-- image: "{{ .Values.images.octez }}"
+{{- /*
+     * And, now, we generate the YAML:
+     */ -}}
+
+- name: {{ .call_args.name }}
+{{- if eq .call_args.image "octez" }}
+{{ $node_vals_images := $.node_vals.images | default dict }}
+  image: "{{ or $node_vals_images.octez $.Values.images.octez }}"
+{{- else if eq .call_args.image "tezedge" }}
+{{- else }}
+  image: "{{ .Values.tezos_k8s_images.utils }}"
+{{- end }}
+  imagePullPolicy: IfNotPresent
+{{- if .call_args.script_command }}
   command:
     - /bin/sh
   args:
     - "-c"
     - |
-{{ tpl (.Files.Get "scripts/config-init.sh") . | indent 6 }}
-  imagePullPolicy: IfNotPresent
-  name: config-init
+{{ tpl (.Files.Get (print "scripts/" .call_args.type ".sh")) . | indent 6 }}
+{{- end }}
+{{- if .call_args.args }}
+  args:
+{{ range .call_args.args }}
+    - {{ . }}
+{{ end }}
+{{- end }}
+  envFrom:
+    {{- if .call_args.with_secret }}
+    - secretRef:
+        name: tezos-secret
+    {{- end }}
+    {{- if .call_args.with_config }}
+    - configMapRef:
+        name: tezos-config
+    {{- end }}
+  env:
+  {{- if .call_args.localvars }}
+  - name: MY_POD_IP
+    valueFrom:
+      fieldRef:
+        fieldPath: status.podIP
+  - name: MY_POD_NAME
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.name
+  - name: MY_POD_TYPE
+    value: node
+  {{ if hasKey . "node_class" }}
+  - name: MY_NODE_CLASS
+    value: {{ .node_class }}
+  {{- end }}
+  {{- end }}
+  - name: DAEMON
+    value: {{ .call_args.type }}
+  {{- range $key, $val := $.node_vals.env }}
+    value: {{ $val }}
+  {{- end }}
+  {{- range $key, $val := $.Values.node_globals.env }}
+  - name:  {{ $key }}
+    value: {{ $val }}
+  {{- end }}
   volumeMounts:
     - mountPath: /etc/tezos
       name: config-volume
     - mountPath: /var/tezos
       name: var-volume
-  envFrom:
-    - configMapRef:
-        name: tezos-config
-  env:
-{{- include "tezos.localvars.pod_envvars" . | indent 4 }}
+{{- $_ := unset $ "call_args" }}
+{{- end }}
+
+{{- /*
+     * We are finished defining tezos.generic_container, and are now
+     * on to defining the actual containers.
+     */
+
+{{- define "tezos.init_container.config_init" }}
+{{- if include "tezos.shouldConfigInit" . }}
+{{- $_ := set $ "call_args" (dict "type"           "config-init"
+                                  "image"          "octez"
+                                  "with_config"    1
+) }}
+{{- include "tezos.generic_container" $ }}
 {{- end }}
 {{- end }}
 
 {{- define "tezos.init_container.config_generator" }}
-- image: {{ .Values.tezos_k8s_images.utils }}
-  imagePullPolicy: IfNotPresent
-  name: config-generator
-  args:
-    - "config-generator"
-    - "--generate-config-json"
-  envFrom:
-    - secretRef:
-        name: tezos-secret
-    - configMapRef:
-        name: tezos-config
-  env:
-{{- include "tezos.localvars.pod_envvars" . | indent 4 }}
-  volumeMounts:
-    - mountPath: /etc/tezos
-      name: config-volume
-    - mountPath: /var/tezos
-      name: var-volume
+{{- $_ := set $ "call_args" (dict "type"        "config-generator"
+                                  "image"       "utils"
+                                  "with_secret" 1
+                                  "args"        (list "config-generator"
+                                                      "--generate-config-json")
+) }}
+{{- include "tezos.generic_container" $ }}
+{{- end }}
+
+{{- define "tezos.init_container.chain_initiator" }}
+{{- $_ := set $ "call_args" (dict "type"           "chain-initiator"
+                                  "image"          "octez"
+                                  "with_config"    1
+) }}
+{{- include "tezos.generic_container" $ }}
 {{- end }}
 
 {{- define "tezos.init_container.wait_for_dns" }}
 {{- if include "tezos.shouldWaitForDNSNode" . }}
-- image: {{ .Values.tezos_k8s_images.utils }}
-  args:
-    - wait-for-dns
-  imagePullPolicy: IfNotPresent
-  name: wait-for-dns
-  envFrom:
-    - configMapRef:
-        name: tezos-config
-  volumeMounts:
-    - mountPath: /var/tezos
-      name: var-volume
-    - mountPath: /etc/tezos
-      name: config-volume
+{{- $_ := set $ "call_args" (dict "type"           "wait-for-dns"
+                                  "image"          "utils"
+                                  "localvars"      0
+                                  "args"           (list "wait-for-dns")
+) }}
+{{- include "tezos.generic_container" $ }}
 {{- end }}
 {{- end }}
 
 {{- define "tezos.init_container.snapshot_downloader" }}
 {{- if include "tezos.shouldDownloadSnapshot" . }}
-- image: "{{ .Values.tezos_k8s_images.utils }}"
-  imagePullPolicy: IfNotPresent
-  name: snapshot-downloader
-  args:
-    - snapshot-downloader
-  volumeMounts:
-    - mountPath: /var/tezos
-      name: var-volume
-    - mountPath: /etc/tezos
-      name: config-volume
-  envFrom:
-    - configMapRef:
-        name: tezos-config
-  env:
-{{- include "tezos.localvars.pod_envvars" . | indent 4 }}
+{{- $_ := set $ "call_args" (dict "type"        "snapshot-downloader"
+                                  "image"       "utils"
+                                  "args"        (list "snapshot-downloader")
+) }}
+{{- include "tezos.generic_container" $ }}
 {{- end }}
 {{- end }}
 
 {{- define "tezos.init_container.snapshot_importer" }}
 {{- if include "tezos.shouldDownloadSnapshot" . }}
-- image: "{{ .Values.images.octez }}"
-  imagePullPolicy: IfNotPresent
-  name: snapshot-importer
-  command:
-    - /bin/sh
-  args:
-    - "-c"
-    - |
-{{ tpl (.Files.Get "scripts/snapshot-importer.sh") . | indent 6 }}
-  volumeMounts:
-    - mountPath: /var/tezos
-      name: var-volume
-    - mountPath: /etc/tezos
-      name: config-volume
-  envFrom:
-    - configMapRef:
-        name: tezos-config
-  env:
-{{- include "tezos.localvars.pod_envvars" . | indent 4 }}
+{{- $_ := set $ "call_args" (dict "type"           "snapshot-importer"
+                                  "image"          "octez"
+                                  "with_config"    1
+) }}
+{{- include "tezos.generic_container" $ }}
 {{- end }}
 {{- end }}
+
+
 
 {{- define "tezos.getNodeImplementation" }}
 {{- $containers := $.node_vals.runs }}
@@ -133,29 +193,18 @@
   {{- end }}
 {{- end }}
 
-
 {{- define "tezos.container.node" }}
 {{- if eq (include "tezos.getNodeImplementation" $) "octez" }}
-{{ $node_vals_images := $.node_vals.images | default dict }}
-- name: octez-node
-  image: "{{ or $node_vals_images.octez $.Values.images.octez }}"
-  command:
-    - /bin/sh
-  args:
-    - "-c"
-    - |
-{{ tpl (.Files.Get "scripts/tezos-node.sh") . | indent 6 }}
-  imagePullPolicy: IfNotPresent
+{{- $_ := set $ "call_args" (dict "type"           "octez-node"
+                                  "image"          "octez"
+                                  "with_config"    0
+) }}
+{{- include "tezos.generic_container" $ }}
   ports:
     - containerPort: 8732
       name: tezos-rpc
     - containerPort: 9732
       name: tezos-net
-  volumeMounts:
-    - mountPath: /etc/tezos
-      name: config-volume
-    - mountPath: /var/tezos
-      name: var-volume
   readinessProbe:
     httpGet:
       path: /is_synced
@@ -190,35 +239,22 @@
 {{- if has "baker" $.node_vals.runs }}
 {{ $node_vals_images := $.node_vals.images | default dict }}
 {{- range .Values.protocols }}
-- image: "{{ or $node_vals_images.octez $.Values.images.octez }}"
-  command:
-    - /bin/sh
-  args:
-    - "-c"
-    - |
-{{- /*
-Below set is a trick to get the range and global context. See:
-https://github.com/helm/helm/issues/5979#issuecomment-518231758
-*/}}
+{{- if eq (include "tezos.getNodeImplementation" $) "octez" }}
 {{- $_ := set $ "command_in_tpl" .command }}
-{{ tpl ($.Files.Get "scripts/baker-endorser.sh") $ | indent 6 }}
-  imagePullPolicy: IfNotPresent
-  name: baker-{{ lower .command }}
-  volumeMounts:
-    - mountPath: /etc/tezos
-      name: config-volume
-    - mountPath: /var/tezos
-      name: var-volume
-  envFrom:
-    - configMapRef:
-        name: tezos-config
-  env:
-{{- include "tezos.localvars.pod_envvars" $ | indent 4 }}
-    - name: DAEMON
-      value: baker
+{{- $_ := set $ "call_args" (dict "name"      (print "baker-" (lower .command))
+                                  "type"        "baker"
+                                  "image"       "octez"
+                                  "with_config" 1
+                                  "localvars"   1
+) }}
+{{- include "tezos.generic_container" $ }}
+
 {{- if or (regexFind "GRANAD" .command) (regexFind "Hangz" .command) }}
 {{- /*
 Also start endorser for protocols that need it.
+
+XXXrcd: We are leaving this out of the tezos.generic_container" because
+        that is deprecated and will be removed soon.
 */}}
 - image: "{{ or $node_vals_images.octez $.Values.images.octez }}"
   command:
@@ -227,7 +263,7 @@ Also start endorser for protocols that need it.
     - "-c"
     - |
 {{- $_ := set $ "command_in_tpl" .command }}
-{{ tpl ($.Files.Get "scripts/baker-endorser.sh") $ | indent 6 }}
+{{ tpl ($.Files.Get "scripts/baker.sh") $ | indent 6 }}
   imagePullPolicy: IfNotPresent
   name: endorser-{{ lower .command }}
   volumeMounts:
@@ -248,27 +284,18 @@ Also start endorser for protocols that need it.
 {{- end }}
 {{- end }}
 {{- end }}
+{{- end }}
 
 
 {{- define "tezos.container.logger" }}
 {{- if has "logger" $.node_vals.runs }}
-- image: "{{ $.Values.tezos_k8s_images.utils }}"
-  imagePullPolicy: IfNotPresent
-  name: logger
-  args:
-    - "logger"
-  envFrom:
-    - secretRef:
-        name: tezos-secret
-    - configMapRef:
-        name: tezos-config
-  env:
-{{- include "tezos.localvars.pod_envvars" . | indent 4 }}
-  volumeMounts:
-    - mountPath: /etc/tezos
-      name: config-volume
-    - mountPath: /var/tezos
-      name: var-volume
+{{- $_ := set $ "call_args" (dict "type"        "logger"
+                                  "image"       "utils"
+                                  "args"        (list "logger")
+	"with_secret" 1
+	"with_config" 1
+) }}
+{{- include "tezos.generic_container" $ }}
 {{- end }}
 {{- end }}
 
