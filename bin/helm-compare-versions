@@ -72,8 +72,17 @@ cleanup() {
 }
 trap cleanup EXIT INT PIPE
 
+get_branch() {
+	CUR_BRANCH=$(git branch --show-current)
+	if [ -z "$CUR_BRANCH" ]; then
+		echo "Could not determine current branch"		1>&2
+		usage
+	fi
+	echo $CUR_BRANCH
+}
+
 if [ ! -z "$NEW_BRANCH" ]; then
-	CUR_BRANCH=$(git status -sb | head -1 | sed 's/## //')
+	CUR_BRANCH=$(get_branch)
 	git checkout "$NEW_BRANCH"
 fi
 
@@ -90,7 +99,7 @@ fi
 CHART2=$(mktemp /tmp/chartXXXXXX)
 if [ ! -z "$OLD_BRANCH" ]; then
 	if [ -z "$CUR_BRANCH" ]; then
-		CUR_BRANCH=$(git status -sb | head -1 | sed 's/## //')
+		CUR_BRANCH=$(get_branch)
 	fi
 	git checkout "$OLD_BRANCH"
 fi
