@@ -1,0 +1,367 @@
+---
+# Source: tezos-chain/templates/configs.yaml
+---
+apiVersion: v1
+data:
+  ACCOUNTS: |
+    e30=
+kind: Secret
+metadata:
+  name: tezos-secret
+  namespace: testing
+---
+# Source: tezos-chain/templates/configs.yaml
+apiVersion: v1
+data:
+  CHAIN_NAME: "mainnet"
+  CHAIN_PARAMS: |
+    {
+      "bootstrap_peers": [],
+      "default_bootstrap_mutez": "4000000000000",
+      "expected-proof-of-work": 26,
+
+      "should_generate_unsafe_deterministic_data": false,
+      "network": {
+          "chain_name": "mainnet"
+        },
+      "protocol_activation": null
+    }
+  FULL_SNAPSHOT_URL: "https://mainnet.xtz-shots.io/full"
+  ROLLING_SNAPSHOT_URL: "https://mainnet.xtz-shots.io/rolling"
+  TARBALL_URL: ""
+  NODES: |
+    {
+      "tezos-node": {
+        "instances": [
+          {
+            "config": {
+              "shell": {
+                "history_mode": "rolling"
+              }
+            },
+            "is_bootstrap_node": false
+          }
+        ],
+        "runs": [
+          "octez_node"
+        ],
+        "storage_size": "100Gi"
+      }
+    }
+  SIGNERS: |
+    {}
+kind: ConfigMap
+metadata:
+  name: tezos-config
+  namespace: testing
+---
+# Source: tezos-chain/templates/static.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: tezos-node-rpc
+  namespace: testing
+spec:
+  ports:
+    - port: 8732
+      name: rpc
+  selector:
+    appType: tezos-node
+  type: NodePort
+---
+# Source: tezos-chain/templates/static.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: tezos-node
+spec:
+  publishNotReadyAddresses: true
+  clusterIP: None
+  selector:
+    node_class: tezos-node
+---
+# Source: tezos-chain/templates/nodes.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: tezos-node
+  namespace: testing
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  serviceName: tezos-node
+  selector:
+    matchLabels:
+      node_class: tezos-node
+  template:
+    metadata:
+      labels:
+        appType: tezos-node
+        node_class: tezos-node
+    spec:
+      containers:        
+        
+        - name: octez-node
+          image: "tezos/tezos:v10-release"
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              set -x
+              
+              set
+              
+              #
+              # Not every error is fatal on start.  In particular, with zerotier,
+              # the listen-addr may not yet be bound causing tezos-node to fail.
+              # So, we try a few times with increasing delays:
+              
+              for d in 1 1 5 10 20 60 120; do
+              	/usr/local/bin/tezos-node run				\
+              			--bootstrap-threshold 0			\
+              			--config-file /etc/tezos/config.json
+              	sleep $d
+              done
+              
+              #
+              # Keep the container alive for troubleshooting on failures:
+              
+              sleep 3600
+              
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8732
+              name: tezos-rpc
+            - containerPort: 9732
+              name: tezos-net
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+          readinessProbe:
+            httpGet:
+              path: /is_synced
+              port: 31732                                                
+        - command:
+            - python
+          args:
+            - "-c"
+            - |
+              from flask import Flask, escape, request
+              import requests
+              import datetime
+              
+              import logging
+              log = logging.getLogger('werkzeug')
+              log.setLevel(logging.ERROR)
+              
+              application = Flask(__name__)
+              
+              AGE_LIMIT_IN_SECS = 600
+              
+              @application.route('/is_synced')
+              def sync_checker():
+                  '''
+                  Here we don't trust the /is_bootstrapped endpoint of
+                  tezos-node. We have seen it return true when the node is
+                  in a bad state (for example, some crashed threads)
+                  Instead, we query the head block and verify timestamp is
+                  not too old.
+                  '''
+                  try:
+                      r = requests.get('http://127.0.0.1:8732/chains/main/blocks/head/header')
+                  except requests.exceptions.RequestException as e:
+                      err = "Could not connect to node, %s" % repr(e), 500
+                      print(err)
+                      return err
+                  header = r.json()
+                  if header["level"] == 0:
+                      # when chain has not been activated, bypass age check
+                      # and return succesfully to mark as ready
+                      # otherwise it will never activate (activation uses rpc service)
+                      return "Chain has not been activated yet"
+                  timestamp = r.json()["timestamp"]
+                  block_age = datetime.datetime.utcnow() -  datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
+                  age_in_secs = block_age.total_seconds()
+                  if age_in_secs > AGE_LIMIT_IN_SECS:
+                      err = "Error: Chain head is %s secs old, older than %s" % ( age_in_secs, AGE_LIMIT_IN_SECS), 500
+                      print(err)
+                      return err
+                  return "Chain is bootstrapped"
+              
+              if __name__ == "__main__":
+                 application.run(host = "0.0.0.0", port = 31732, debug = False)
+              
+          image: tezos-k8s-utils:dev
+          imagePullPolicy: IfNotPresent
+          name: sidecar
+      initContainers:        
+        - image: "tezos/tezos:v10-release"
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              echo "Writing custom configuration for public node"
+              mkdir -p /etc/tezos/data
+              
+              #
+              # This is my comment.
+              
+              /usr/local/bin/tezos-node config init		\
+                  --config-file /etc/tezos/data/config.json	\
+                  --data-dir /etc/tezos/data			\
+                  --network $CHAIN_NAME
+              
+              cat /etc/tezos/data/config.json
+              
+              printf "\n\n\n\n\n\n\n"
+              
+          imagePullPolicy: IfNotPresent
+          name: config-init
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: tezos-node                
+        - image: tezos-k8s-utils:dev
+          imagePullPolicy: IfNotPresent
+          name: config-generator
+          args:
+            - "config-generator"
+            - "--generate-config-json"
+          envFrom:
+            - secretRef:
+                name: tezos-secret
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: tezos-node
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume                
+        - image: "tezos-k8s-utils:dev"
+          imagePullPolicy: IfNotPresent
+          name: snapshot-downloader
+          args:
+            - snapshot-downloader
+          volumeMounts:
+            - mountPath: /var/tezos
+              name: var-volume
+            - mountPath: /etc/tezos
+              name: config-volume
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: tezos-node        
+        - image: "tezos/tezos:v10-release"
+          imagePullPolicy: IfNotPresent
+          name: snapshot-importer
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              set -ex
+              
+              bin_dir="/usr/local/bin"
+              
+              data_dir="/var/tezos"
+              node_dir="$data_dir/node"
+              node_data_dir="$node_dir/data"
+              node="$bin_dir/tezos-node"
+              snapshot_file=${node_dir}/chain.snapshot
+              
+              if [ -d ${node_data_dir}/context ]; then
+                  echo "Blockchain has already been imported, exiting"
+                  exit 0
+              fi
+              
+              cp -v /etc/tezos/config.json ${node_data_dir}
+              ${node} snapshot import ${snapshot_file} --data-dir ${node_data_dir} \
+                  --network $CHAIN_NAME
+              find ${node_dir}
+              rm -rvf ${snapshot_file}
+              
+          volumeMounts:
+            - mountPath: /var/tezos
+              name: var-volume
+            - mountPath: /etc/tezos
+              name: config-volume
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: tezos-node        
+      securityContext:
+        fsGroup: 100      
+      volumes:
+        - hostPath:
+            path: /dev/net/tun
+          name: dev-net-tun
+        - emptyDir: {}
+          name: config-volume
+  volumeClaimTemplates:
+    - metadata:
+        name: var-volume
+        namespace: testing
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 100Gi

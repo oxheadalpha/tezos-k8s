@@ -1,0 +1,1552 @@
+---
+# Source: tezos-chain/templates/configs.yaml
+---
+apiVersion: v1
+data:
+  ACCOUNTS: |
+    e30=
+kind: Secret
+metadata:
+  name: tezos-secret
+  namespace: testing
+---
+# Source: tezos-chain/templates/configs.yaml
+apiVersion: v1
+data:
+  CHAIN_NAME: "elric"
+  CHAIN_PARAMS: |
+    {
+      "bootstrap_peers": [],
+      "default_bootstrap_mutez": "4000000000000",
+      "expected-proof-of-work": 0,
+
+      "should_generate_unsafe_deterministic_data": true,
+      "network": {
+          "activation_account_name": "tezos-baking-node-0",
+          "chain_name": "elric",
+          "genesis": {
+            "block": "BKupwQVt7UoyuBDDpj17NEtT3M8a1hKDTuw1HahdANAMXznC5YC",
+            "protocol": "Ps9mPmXaRzmzk35gbAYNCAw6UXdE2qoABTHbN2oEEc1qM7CwT9P",
+            "timestamp": "2021-08-31T16:04:29.430078+00:00"
+          }
+        },
+      "protocol_activation": {
+          "deterministic_faucet_number_of_accounts": 1000,
+          "deterministic_faucet_seed": "oM0TxIV5gYNVd0T9kasdfnv352",
+          "protocol_hash": "PtGRANADsDU8R9daYKAgWnQYAJ64omN1o3KMGVCykShA97vQbvV",
+          "protocol_parameters": {
+            "baking_reward_per_endorsement": [
+              "200000"
+            ],
+            "block_security_deposit": "512000000",
+            "blocks_per_commitment": 4,
+            "blocks_per_cycle": 8,
+            "blocks_per_roll_snapshot": 4,
+            "blocks_per_voting_period": 64,
+            "cost_per_byte": "1000",
+            "delay_per_missing_endorsement": "1",
+            "endorsement_reward": [
+              "2000000"
+            ],
+            "endorsement_security_deposit": "64000000",
+            "endorsers_per_block": 32,
+            "hard_gas_limit_per_block": "8000000",
+            "hard_gas_limit_per_operation": "800000",
+            "hard_storage_limit_per_operation": "60000",
+            "initial_endorsers": 1,
+            "liquidity_baking_escape_ema_threshold": 100000,
+            "liquidity_baking_subsidy": "2500000",
+            "liquidity_baking_sunset_level": 525600,
+            "michelson_maximum_type_size": 1000,
+            "min_proposal_quorum": 500,
+            "minimal_block_delay": "2",
+            "origination_size": 257,
+            "preserved_cycles": 2,
+            "proof_of_work_threshold": "-1",
+            "quorum_max": 7000,
+            "quorum_min": 2000,
+            "seed_nonce_revelation_tip": "125000",
+            "time_between_blocks": [
+              "10",
+              "20"
+            ],
+            "tokens_per_roll": "8000000000"
+          }
+        }
+    }
+  FULL_SNAPSHOT_URL: ""
+  ROLLING_SNAPSHOT_URL: ""
+  TARBALL_URL: ""
+  NODES: |
+    {
+      "af": {
+        "instances": [
+          {}
+        ],
+        "runs": [
+          "tezedge_node",
+          "baker",
+          "logger",
+          "metrics"
+        ],
+        "storage_size": "15Gi"
+      },
+      "as": {
+        "instances": [
+          {}
+        ],
+        "runs": [
+          "octez_node"
+        ]
+      },
+      "eu": {
+        "images": {
+          "octez": "tezos/tezos:v10-release"
+        },
+        "instances": [
+          {
+            "bake_using_accounts": [
+              "tezos-baking-node-0",
+              "a",
+              "b",
+              "c",
+              "d"
+            ],
+            "config": {
+              "shell": {
+                "history_mode": "archive"
+              }
+            },
+            "is_bootstrap_node": true
+          },
+          {
+            "is_bootstrap_node": true
+          },
+          {}
+        ],
+        "labels": {
+          "rpc_node": "true"
+        },
+        "runs": [
+          "octez_node",
+          "baker",
+          "endorser",
+          "logger",
+          "metrics"
+        ],
+        "storage_size": "15Gi"
+      },
+      "us": {
+        "instances": [
+          {},
+          {}
+        ],
+        "runs": [
+          "octez_node",
+          "baker",
+          "endorser"
+        ],
+        "storage_size": "15Gi"
+      }
+    }
+  SIGNERS: |
+    {
+      "tezos-signer-0": {
+        "sign_for_accounts": [
+          "tezos-baking-node-0"
+        ]
+      }
+    }
+kind: ConfigMap
+metadata:
+  name: tezos-config
+  namespace: testing
+---
+# Source: tezos-chain/templates/signer.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: tezos-signer
+  namespace: testing
+spec:
+  clusterIP: None
+  ports:
+    - port: 6732
+      name: signer
+  selector:
+    app: tezos-signer
+---
+# Source: tezos-chain/templates/static.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: tezos-node-rpc
+  namespace: testing
+spec:
+  ports:
+    - port: 8732
+      name: rpc
+  selector:
+    appType: tezos-node
+  type: NodePort
+---
+# Source: tezos-chain/templates/static.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: af
+spec:
+  publishNotReadyAddresses: true
+  clusterIP: None
+  selector:
+    node_class: af
+---
+# Source: tezos-chain/templates/static.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: as
+spec:
+  publishNotReadyAddresses: true
+  clusterIP: None
+  selector:
+    node_class: as
+---
+# Source: tezos-chain/templates/static.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: eu
+spec:
+  publishNotReadyAddresses: true
+  clusterIP: None
+  selector:
+    node_class: eu
+---
+# Source: tezos-chain/templates/static.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: us
+spec:
+  publishNotReadyAddresses: true
+  clusterIP: None
+  selector:
+    node_class: us
+---
+# Source: tezos-chain/templates/nodes.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: af
+  namespace: testing
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  serviceName: af
+  selector:
+    matchLabels:
+      node_class: af
+  template:
+    metadata:
+      labels:
+        appType: tezos-node
+        node_class: af
+        baking_node: "true"
+    spec:
+      containers:                
+        - name: tezedge-node
+          image: tezedge/tezedge:v1.6.8
+          command:
+            - /light-node
+          args:
+            - "--config-file=/etc/tezos/tezedge.conf"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8732
+              name: tezos-rpc
+            - containerPort: 9732
+              name: tezos-net
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume        
+        
+        - image: "tezos/tezos:v11-release"
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              set -ex
+              
+              TEZ_VAR=/var/tezos
+              TEZ_BIN=/usr/local/bin
+              CLIENT_DIR="$TEZ_VAR/client"
+              NODE_DIR="$TEZ_VAR/node"
+              NODE_DATA_DIR="$TEZ_VAR/node/data"
+              
+              proto_command="010-PtGRANAD"
+              
+              if [ "${DAEMON}" == "baker" ]; then
+                  extra_args="with local node $NODE_DATA_DIR"
+              fi
+              
+              my_baker_account="$(cat /etc/tezos/baker-account )"
+              
+              CLIENT="$TEZ_BIN/tezos-client -d $CLIENT_DIR"
+              CMD="$TEZ_BIN/tezos-$DAEMON-$proto_command -d $CLIENT_DIR"
+              
+              while ! $CLIENT rpc get chains/main/blocks/head; do
+                  sleep 5
+              done
+              
+              exec $CMD run ${extra_args} ${my_baker_account}
+              
+          imagePullPolicy: IfNotPresent
+          name: baker-010-ptgranad
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: af
+            - name: DAEMON
+              value: baker
+        - image: "tezos/tezos:v11-release"
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              set -ex
+              
+              TEZ_VAR=/var/tezos
+              TEZ_BIN=/usr/local/bin
+              CLIENT_DIR="$TEZ_VAR/client"
+              NODE_DIR="$TEZ_VAR/node"
+              NODE_DATA_DIR="$TEZ_VAR/node/data"
+              
+              proto_command="010-PtGRANAD"
+              
+              if [ "${DAEMON}" == "baker" ]; then
+                  extra_args="with local node $NODE_DATA_DIR"
+              fi
+              
+              my_baker_account="$(cat /etc/tezos/baker-account )"
+              
+              CLIENT="$TEZ_BIN/tezos-client -d $CLIENT_DIR"
+              CMD="$TEZ_BIN/tezos-$DAEMON-$proto_command -d $CLIENT_DIR"
+              
+              while ! $CLIENT rpc get chains/main/blocks/head; do
+                  sleep 5
+              done
+              
+              exec $CMD run ${extra_args} ${my_baker_account}
+              
+          imagePullPolicy: IfNotPresent
+          name: endorser-010-ptgranad
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+            - secretRef:
+                name: tezos-secret
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: af
+            - name: DAEMON
+              value: endorser        
+        - image: "tezos-k8s-utils:dev"
+          imagePullPolicy: IfNotPresent
+          name: logger
+          args:
+            - "logger"
+          envFrom:
+            - secretRef:
+                name: tezos-secret
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: af
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume        
+        - image: "registry.gitlab.com/nomadic-labs/tezos-metrics"
+          args:
+            - "--listen-prometheus=6666"
+            - "--data-dir=/var/tezos/node/data"
+          imagePullPolicy: IfNotPresent
+          name: metrics
+          ports:
+            - containerPort: 6666
+              name: tezos-metrics
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+            - secretRef:
+                name: tezos-secret
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: af
+            - name: DAEMON
+              value: tezos-metrics                
+        - command:
+            - python
+          args:
+            - "-c"
+            - |
+              from flask import Flask, escape, request
+              import requests
+              import datetime
+              
+              import logging
+              log = logging.getLogger('werkzeug')
+              log.setLevel(logging.ERROR)
+              
+              application = Flask(__name__)
+              
+              AGE_LIMIT_IN_SECS = 600
+              
+              @application.route('/is_synced')
+              def sync_checker():
+                  '''
+                  Here we don't trust the /is_bootstrapped endpoint of
+                  tezos-node. We have seen it return true when the node is
+                  in a bad state (for example, some crashed threads)
+                  Instead, we query the head block and verify timestamp is
+                  not too old.
+                  '''
+                  try:
+                      r = requests.get('http://127.0.0.1:8732/chains/main/blocks/head/header')
+                  except requests.exceptions.RequestException as e:
+                      err = "Could not connect to node, %s" % repr(e), 500
+                      print(err)
+                      return err
+                  header = r.json()
+                  if header["level"] == 0:
+                      # when chain has not been activated, bypass age check
+                      # and return succesfully to mark as ready
+                      # otherwise it will never activate (activation uses rpc service)
+                      return "Chain has not been activated yet"
+                  timestamp = r.json()["timestamp"]
+                  block_age = datetime.datetime.utcnow() -  datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
+                  age_in_secs = block_age.total_seconds()
+                  if age_in_secs > AGE_LIMIT_IN_SECS:
+                      err = "Error: Chain head is %s secs old, older than %s" % ( age_in_secs, AGE_LIMIT_IN_SECS), 500
+                      print(err)
+                      return err
+                  return "Chain is bootstrapped"
+              
+              if __name__ == "__main__":
+                 application.run(host = "0.0.0.0", port = 31732, debug = False)
+              
+          image: tezos-k8s-utils:dev
+          imagePullPolicy: IfNotPresent
+          name: sidecar
+      initContainers:                        
+        - image: tezos-k8s-utils:dev
+          imagePullPolicy: IfNotPresent
+          name: config-generator
+          args:
+            - "config-generator"
+            - "--generate-config-json"
+          envFrom:
+            - secretRef:
+                name: tezos-secret
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: af
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume        
+        - image: tezos-k8s-utils:dev
+          args:
+            - wait-for-dns
+          imagePullPolicy: IfNotPresent
+          name: wait-for-dns
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          volumeMounts:
+            - mountPath: /var/tezos
+              name: var-volume
+            - mountPath: /etc/tezos
+              name: config-volume                        
+      securityContext:
+        fsGroup: 100      
+      volumes:
+        - hostPath:
+            path: /dev/net/tun
+          name: dev-net-tun
+        - emptyDir: {}
+          name: config-volume
+  volumeClaimTemplates:
+    - metadata:
+        name: var-volume
+        namespace: testing
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 15Gi
+---
+# Source: tezos-chain/templates/nodes.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: as
+  namespace: testing
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  serviceName: as
+  selector:
+    matchLabels:
+      node_class: as
+  template:
+    metadata:
+      labels:
+        appType: tezos-node
+        node_class: as
+    spec:
+      containers:        
+        
+        - name: octez-node
+          image: "tezos/tezos:v11-release"
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              set -x
+              
+              set
+              
+              #
+              # Not every error is fatal on start.  In particular, with zerotier,
+              # the listen-addr may not yet be bound causing tezos-node to fail.
+              # So, we try a few times with increasing delays:
+              
+              for d in 1 1 5 10 20 60 120; do
+              	/usr/local/bin/tezos-node run				\
+              			--bootstrap-threshold 0			\
+              			--config-file /etc/tezos/config.json
+              	sleep $d
+              done
+              
+              #
+              # Keep the container alive for troubleshooting on failures:
+              
+              sleep 3600
+              
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8732
+              name: tezos-rpc
+            - containerPort: 9732
+              name: tezos-net
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+          readinessProbe:
+            httpGet:
+              path: /is_synced
+              port: 31732                                                
+        - command:
+            - python
+          args:
+            - "-c"
+            - |
+              from flask import Flask, escape, request
+              import requests
+              import datetime
+              
+              import logging
+              log = logging.getLogger('werkzeug')
+              log.setLevel(logging.ERROR)
+              
+              application = Flask(__name__)
+              
+              AGE_LIMIT_IN_SECS = 600
+              
+              @application.route('/is_synced')
+              def sync_checker():
+                  '''
+                  Here we don't trust the /is_bootstrapped endpoint of
+                  tezos-node. We have seen it return true when the node is
+                  in a bad state (for example, some crashed threads)
+                  Instead, we query the head block and verify timestamp is
+                  not too old.
+                  '''
+                  try:
+                      r = requests.get('http://127.0.0.1:8732/chains/main/blocks/head/header')
+                  except requests.exceptions.RequestException as e:
+                      err = "Could not connect to node, %s" % repr(e), 500
+                      print(err)
+                      return err
+                  header = r.json()
+                  if header["level"] == 0:
+                      # when chain has not been activated, bypass age check
+                      # and return succesfully to mark as ready
+                      # otherwise it will never activate (activation uses rpc service)
+                      return "Chain has not been activated yet"
+                  timestamp = r.json()["timestamp"]
+                  block_age = datetime.datetime.utcnow() -  datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
+                  age_in_secs = block_age.total_seconds()
+                  if age_in_secs > AGE_LIMIT_IN_SECS:
+                      err = "Error: Chain head is %s secs old, older than %s" % ( age_in_secs, AGE_LIMIT_IN_SECS), 500
+                      print(err)
+                      return err
+                  return "Chain is bootstrapped"
+              
+              if __name__ == "__main__":
+                 application.run(host = "0.0.0.0", port = 31732, debug = False)
+              
+          image: tezos-k8s-utils:dev
+          imagePullPolicy: IfNotPresent
+          name: sidecar
+      initContainers:                        
+        - image: tezos-k8s-utils:dev
+          imagePullPolicy: IfNotPresent
+          name: config-generator
+          args:
+            - "config-generator"
+            - "--generate-config-json"
+          envFrom:
+            - secretRef:
+                name: tezos-secret
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: as
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume        
+        - image: tezos-k8s-utils:dev
+          args:
+            - wait-for-dns
+          imagePullPolicy: IfNotPresent
+          name: wait-for-dns
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          volumeMounts:
+            - mountPath: /var/tezos
+              name: var-volume
+            - mountPath: /etc/tezos
+              name: config-volume                        
+      securityContext:
+        fsGroup: 100      
+      volumes:
+        - hostPath:
+            path: /dev/net/tun
+          name: dev-net-tun
+        - emptyDir: {}
+          name: config-volume
+  volumeClaimTemplates:
+    - metadata:
+        name: var-volume
+        namespace: testing
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 15Gi
+---
+# Source: tezos-chain/templates/nodes.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: eu
+  namespace: testing
+spec:
+  podManagementPolicy: Parallel
+  replicas: 3
+  serviceName: eu
+  selector:
+    matchLabels:
+      node_class: eu
+  template:
+    metadata:
+      labels:
+        appType: tezos-node
+        node_class: eu
+        baking_node: "true"
+        rpc_node: "true"
+    spec:
+      containers:        
+        
+        - name: octez-node
+          image: "tezos/tezos:v10-release"
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              set -x
+              
+              set
+              
+              #
+              # Not every error is fatal on start.  In particular, with zerotier,
+              # the listen-addr may not yet be bound causing tezos-node to fail.
+              # So, we try a few times with increasing delays:
+              
+              for d in 1 1 5 10 20 60 120; do
+              	/usr/local/bin/tezos-node run				\
+              			--bootstrap-threshold 0			\
+              			--config-file /etc/tezos/config.json
+              	sleep $d
+              done
+              
+              #
+              # Keep the container alive for troubleshooting on failures:
+              
+              sleep 3600
+              
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8732
+              name: tezos-rpc
+            - containerPort: 9732
+              name: tezos-net
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+          readinessProbe:
+            httpGet:
+              path: /is_synced
+              port: 31732                
+        
+        - image: "tezos/tezos:v10-release"
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              set -ex
+              
+              TEZ_VAR=/var/tezos
+              TEZ_BIN=/usr/local/bin
+              CLIENT_DIR="$TEZ_VAR/client"
+              NODE_DIR="$TEZ_VAR/node"
+              NODE_DATA_DIR="$TEZ_VAR/node/data"
+              
+              proto_command="010-PtGRANAD"
+              
+              if [ "${DAEMON}" == "baker" ]; then
+                  extra_args="with local node $NODE_DATA_DIR"
+              fi
+              
+              my_baker_account="$(cat /etc/tezos/baker-account )"
+              
+              CLIENT="$TEZ_BIN/tezos-client -d $CLIENT_DIR"
+              CMD="$TEZ_BIN/tezos-$DAEMON-$proto_command -d $CLIENT_DIR"
+              
+              while ! $CLIENT rpc get chains/main/blocks/head; do
+                  sleep 5
+              done
+              
+              exec $CMD run ${extra_args} ${my_baker_account}
+              
+          imagePullPolicy: IfNotPresent
+          name: baker-010-ptgranad
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: eu
+            - name: DAEMON
+              value: baker
+        - image: "tezos/tezos:v10-release"
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              set -ex
+              
+              TEZ_VAR=/var/tezos
+              TEZ_BIN=/usr/local/bin
+              CLIENT_DIR="$TEZ_VAR/client"
+              NODE_DIR="$TEZ_VAR/node"
+              NODE_DATA_DIR="$TEZ_VAR/node/data"
+              
+              proto_command="010-PtGRANAD"
+              
+              if [ "${DAEMON}" == "baker" ]; then
+                  extra_args="with local node $NODE_DATA_DIR"
+              fi
+              
+              my_baker_account="$(cat /etc/tezos/baker-account )"
+              
+              CLIENT="$TEZ_BIN/tezos-client -d $CLIENT_DIR"
+              CMD="$TEZ_BIN/tezos-$DAEMON-$proto_command -d $CLIENT_DIR"
+              
+              while ! $CLIENT rpc get chains/main/blocks/head; do
+                  sleep 5
+              done
+              
+              exec $CMD run ${extra_args} ${my_baker_account}
+              
+          imagePullPolicy: IfNotPresent
+          name: endorser-010-ptgranad
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+            - secretRef:
+                name: tezos-secret
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: eu
+            - name: DAEMON
+              value: endorser        
+        - image: "tezos-k8s-utils:dev"
+          imagePullPolicy: IfNotPresent
+          name: logger
+          args:
+            - "logger"
+          envFrom:
+            - secretRef:
+                name: tezos-secret
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: eu
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume        
+        - image: "registry.gitlab.com/nomadic-labs/tezos-metrics"
+          args:
+            - "--listen-prometheus=6666"
+            - "--data-dir=/var/tezos/node/data"
+          imagePullPolicy: IfNotPresent
+          name: metrics
+          ports:
+            - containerPort: 6666
+              name: tezos-metrics
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+            - secretRef:
+                name: tezos-secret
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: eu
+            - name: DAEMON
+              value: tezos-metrics                
+        - command:
+            - python
+          args:
+            - "-c"
+            - |
+              from flask import Flask, escape, request
+              import requests
+              import datetime
+              
+              import logging
+              log = logging.getLogger('werkzeug')
+              log.setLevel(logging.ERROR)
+              
+              application = Flask(__name__)
+              
+              AGE_LIMIT_IN_SECS = 600
+              
+              @application.route('/is_synced')
+              def sync_checker():
+                  '''
+                  Here we don't trust the /is_bootstrapped endpoint of
+                  tezos-node. We have seen it return true when the node is
+                  in a bad state (for example, some crashed threads)
+                  Instead, we query the head block and verify timestamp is
+                  not too old.
+                  '''
+                  try:
+                      r = requests.get('http://127.0.0.1:8732/chains/main/blocks/head/header')
+                  except requests.exceptions.RequestException as e:
+                      err = "Could not connect to node, %s" % repr(e), 500
+                      print(err)
+                      return err
+                  header = r.json()
+                  if header["level"] == 0:
+                      # when chain has not been activated, bypass age check
+                      # and return succesfully to mark as ready
+                      # otherwise it will never activate (activation uses rpc service)
+                      return "Chain has not been activated yet"
+                  timestamp = r.json()["timestamp"]
+                  block_age = datetime.datetime.utcnow() -  datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
+                  age_in_secs = block_age.total_seconds()
+                  if age_in_secs > AGE_LIMIT_IN_SECS:
+                      err = "Error: Chain head is %s secs old, older than %s" % ( age_in_secs, AGE_LIMIT_IN_SECS), 500
+                      print(err)
+                      return err
+                  return "Chain is bootstrapped"
+              
+              if __name__ == "__main__":
+                 application.run(host = "0.0.0.0", port = 31732, debug = False)
+              
+          image: tezos-k8s-utils:dev
+          imagePullPolicy: IfNotPresent
+          name: sidecar
+      initContainers:                        
+        - image: tezos-k8s-utils:dev
+          imagePullPolicy: IfNotPresent
+          name: config-generator
+          args:
+            - "config-generator"
+            - "--generate-config-json"
+          envFrom:
+            - secretRef:
+                name: tezos-secret
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: eu
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume        
+        - image: tezos-k8s-utils:dev
+          args:
+            - wait-for-dns
+          imagePullPolicy: IfNotPresent
+          name: wait-for-dns
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          volumeMounts:
+            - mountPath: /var/tezos
+              name: var-volume
+            - mountPath: /etc/tezos
+              name: config-volume                        
+      securityContext:
+        fsGroup: 100      
+      volumes:
+        - hostPath:
+            path: /dev/net/tun
+          name: dev-net-tun
+        - emptyDir: {}
+          name: config-volume
+  volumeClaimTemplates:
+    - metadata:
+        name: var-volume
+        namespace: testing
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 15Gi
+---
+# Source: tezos-chain/templates/nodes.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: us
+  namespace: testing
+spec:
+  podManagementPolicy: Parallel
+  replicas: 2
+  serviceName: us
+  selector:
+    matchLabels:
+      node_class: us
+  template:
+    metadata:
+      labels:
+        appType: tezos-node
+        node_class: us
+        baking_node: "true"
+    spec:
+      containers:        
+        
+        - name: octez-node
+          image: "tezos/tezos:v11-release"
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              set -x
+              
+              set
+              
+              #
+              # Not every error is fatal on start.  In particular, with zerotier,
+              # the listen-addr may not yet be bound causing tezos-node to fail.
+              # So, we try a few times with increasing delays:
+              
+              for d in 1 1 5 10 20 60 120; do
+              	/usr/local/bin/tezos-node run				\
+              			--bootstrap-threshold 0			\
+              			--config-file /etc/tezos/config.json
+              	sleep $d
+              done
+              
+              #
+              # Keep the container alive for troubleshooting on failures:
+              
+              sleep 3600
+              
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8732
+              name: tezos-rpc
+            - containerPort: 9732
+              name: tezos-net
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+          readinessProbe:
+            httpGet:
+              path: /is_synced
+              port: 31732                
+        
+        - image: "tezos/tezos:v11-release"
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              set -ex
+              
+              TEZ_VAR=/var/tezos
+              TEZ_BIN=/usr/local/bin
+              CLIENT_DIR="$TEZ_VAR/client"
+              NODE_DIR="$TEZ_VAR/node"
+              NODE_DATA_DIR="$TEZ_VAR/node/data"
+              
+              proto_command="010-PtGRANAD"
+              
+              if [ "${DAEMON}" == "baker" ]; then
+                  extra_args="with local node $NODE_DATA_DIR"
+              fi
+              
+              my_baker_account="$(cat /etc/tezos/baker-account )"
+              
+              CLIENT="$TEZ_BIN/tezos-client -d $CLIENT_DIR"
+              CMD="$TEZ_BIN/tezos-$DAEMON-$proto_command -d $CLIENT_DIR"
+              
+              while ! $CLIENT rpc get chains/main/blocks/head; do
+                  sleep 5
+              done
+              
+              exec $CMD run ${extra_args} ${my_baker_account}
+              
+          imagePullPolicy: IfNotPresent
+          name: baker-010-ptgranad
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: us
+            - name: DAEMON
+              value: baker
+        - image: "tezos/tezos:v11-release"
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              set -ex
+              
+              TEZ_VAR=/var/tezos
+              TEZ_BIN=/usr/local/bin
+              CLIENT_DIR="$TEZ_VAR/client"
+              NODE_DIR="$TEZ_VAR/node"
+              NODE_DATA_DIR="$TEZ_VAR/node/data"
+              
+              proto_command="010-PtGRANAD"
+              
+              if [ "${DAEMON}" == "baker" ]; then
+                  extra_args="with local node $NODE_DATA_DIR"
+              fi
+              
+              my_baker_account="$(cat /etc/tezos/baker-account )"
+              
+              CLIENT="$TEZ_BIN/tezos-client -d $CLIENT_DIR"
+              CMD="$TEZ_BIN/tezos-$DAEMON-$proto_command -d $CLIENT_DIR"
+              
+              while ! $CLIENT rpc get chains/main/blocks/head; do
+                  sleep 5
+              done
+              
+              exec $CMD run ${extra_args} ${my_baker_account}
+              
+          imagePullPolicy: IfNotPresent
+          name: endorser-010-ptgranad
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+            - secretRef:
+                name: tezos-secret
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: us
+            - name: DAEMON
+              value: endorser                                
+        - command:
+            - python
+          args:
+            - "-c"
+            - |
+              from flask import Flask, escape, request
+              import requests
+              import datetime
+              
+              import logging
+              log = logging.getLogger('werkzeug')
+              log.setLevel(logging.ERROR)
+              
+              application = Flask(__name__)
+              
+              AGE_LIMIT_IN_SECS = 600
+              
+              @application.route('/is_synced')
+              def sync_checker():
+                  '''
+                  Here we don't trust the /is_bootstrapped endpoint of
+                  tezos-node. We have seen it return true when the node is
+                  in a bad state (for example, some crashed threads)
+                  Instead, we query the head block and verify timestamp is
+                  not too old.
+                  '''
+                  try:
+                      r = requests.get('http://127.0.0.1:8732/chains/main/blocks/head/header')
+                  except requests.exceptions.RequestException as e:
+                      err = "Could not connect to node, %s" % repr(e), 500
+                      print(err)
+                      return err
+                  header = r.json()
+                  if header["level"] == 0:
+                      # when chain has not been activated, bypass age check
+                      # and return succesfully to mark as ready
+                      # otherwise it will never activate (activation uses rpc service)
+                      return "Chain has not been activated yet"
+                  timestamp = r.json()["timestamp"]
+                  block_age = datetime.datetime.utcnow() -  datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
+                  age_in_secs = block_age.total_seconds()
+                  if age_in_secs > AGE_LIMIT_IN_SECS:
+                      err = "Error: Chain head is %s secs old, older than %s" % ( age_in_secs, AGE_LIMIT_IN_SECS), 500
+                      print(err)
+                      return err
+                  return "Chain is bootstrapped"
+              
+              if __name__ == "__main__":
+                 application.run(host = "0.0.0.0", port = 31732, debug = False)
+              
+          image: tezos-k8s-utils:dev
+          imagePullPolicy: IfNotPresent
+          name: sidecar
+      initContainers:                        
+        - image: tezos-k8s-utils:dev
+          imagePullPolicy: IfNotPresent
+          name: config-generator
+          args:
+            - "config-generator"
+            - "--generate-config-json"
+          envFrom:
+            - secretRef:
+                name: tezos-secret
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: us
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume        
+        - image: tezos-k8s-utils:dev
+          args:
+            - wait-for-dns
+          imagePullPolicy: IfNotPresent
+          name: wait-for-dns
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          volumeMounts:
+            - mountPath: /var/tezos
+              name: var-volume
+            - mountPath: /etc/tezos
+              name: config-volume                        
+      securityContext:
+        fsGroup: 100      
+      volumes:
+        - hostPath:
+            path: /dev/net/tun
+          name: dev-net-tun
+        - emptyDir: {}
+          name: config-volume
+  volumeClaimTemplates:
+    - metadata:
+        name: var-volume
+        namespace: testing
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 15Gi
+---
+# Source: tezos-chain/templates/signer.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: tezos-signer
+  namespace: testing
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  serviceName: tezos-signer
+  selector:
+    matchLabels:
+      app: tezos-signer
+  template:
+    metadata:
+      labels:
+        app: tezos-signer
+    spec:
+      containers:
+      - name: tezos-signer
+        image: "tezos/tezos:v11-release"
+        ports:
+        - containerPort: 6732
+          name: signer
+        command:
+          - /bin/sh
+        volumeMounts:
+        - mountPath: /var/tezos
+          name: var-volume
+        args:
+          - "-c"
+          - |
+            set -ex
+            
+            TEZ_VAR=/var/tezos
+            TEZ_BIN=/usr/local/bin
+            CLIENT_DIR="$TEZ_VAR/client"
+            NODE_DIR="$TEZ_VAR/node"
+            NODE_DATA_DIR="$TEZ_VAR/node/data"
+            
+            CMD="$TEZ_BIN/tezos-signer -d $CLIENT_DIR launch http signer -a 0.0.0.0 -p 6732"
+            
+            exec $CMD
+            
+      initContainers:
+      - image: tezos-k8s-utils:dev
+        imagePullPolicy: IfNotPresent
+        name: config-generator
+        args:
+          - "config-generator"
+        envFrom:
+          - secretRef:
+              name: tezos-secret
+          - configMapRef:
+              name: tezos-config
+        env:
+          - name: MY_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: MY_POD_TYPE
+            value: signing
+        volumeMounts:
+          - mountPath: /var/tezos
+            name: var-volume
+      securityContext:
+        fsGroup: 100
+      volumes:
+        - emptyDir: {}
+          name: var-volume
+---
+# Source: tezos-chain/templates/activate-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: activate-job
+  namespace: testing
+spec:
+  template:
+    metadata:
+      name: activate-job
+    spec:
+      containers:
+        - image: "tezos/tezos:v11-release"
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              CLIENT="/usr/local/bin/tezos-client --endpoint http://tezos-node-rpc:8732"
+              
+              until $CLIENT rpc get /chains/main/blocks/head/header | grep '"level":'; do
+                  sleep 2
+              done
+              
+              set -x
+              set -o pipefail
+              if ! $CLIENT rpc get /chains/main/blocks/head/header | grep '"level": 0,'; then
+                  echo "Chain already activated, considering activation successful and exiting"
+                  exit 0
+              fi
+              
+              echo Activating chain:
+              $CLIENT -d /var/tezos/client --block					\
+              	genesis activate protocol					\
+              	PtGRANADsDU8R9daYKAgWnQYAJ64omN1o3KMGVCykShA97vQbvV				\
+              	with fitness -1 and key						\
+              	$( cat /etc/tezos/activation_account_name )			\
+              	and parameters /etc/tezos/parameters.json 2>&1 | head -200
+              
+          imagePullPolicy: IfNotPresent
+          name: chain-initiator
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+      initContainers:
+        - image: tezos-k8s-utils:dev
+          imagePullPolicy: IfNotPresent
+          name: config-generator
+          args:
+            - config-generator
+            - "--generate-parameters-json"
+          envFrom:
+            - secretRef:
+                name: tezos-secret
+            - configMapRef:
+                name: tezos-config
+          env:
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: activating
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+            - name: faucet-commitments
+              mountPath: "/faucet-commitments"
+      restartPolicy: Never
+      volumes:
+        - emptyDir: {}
+          name: config-volume
+        - emptyDir: {}
+          name: var-volume
+        - name: faucet-commitments
+          emptyDir: {}

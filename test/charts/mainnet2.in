@@ -1,0 +1,18 @@
+nodes:
+  country-town:
+    images:
+      octez: tezos/tezos:v11-release
+    runs: [ octez_node, logger, metrics ]
+    instances:
+    - config:
+        shell: {history_mode: rolling}
+    - config:
+        shell:
+          history_mode:
+            rolling:
+              additional_cycles: 5
+  city-block:
+    runs: [tezedge_node, logger, metrics]
+    instances:
+      - {}
+  tezos-node: null
