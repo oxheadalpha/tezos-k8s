@@ -1,5 +1,12 @@
 #!/bin/sh -e
 
+copy_vals() {
+
+	NEWLOC="$(mktemp "$MYDIR/valuesXXXXXX")"
+	cp $1 $NEWLOC
+	echo $NEWLOC
+}
+
 usage() {
 
 	(  echo "$1"
@@ -18,6 +25,8 @@ COMPARE_STASHED=0
 I_STASHED_IT=0
 DIFF="diff -u"
 DIFF_ARGS=
+
+MYDIR="$(mktemp -d /tmp/helm-compare-versions-XXXXXX)"
 
 while getopts SU:Yb:n:w f; do
 	case $f in
@@ -47,6 +56,9 @@ if [ -z "$NEW_VALUES" ]; then
 	NEW_VALUES="$OLD_VALUES"
 fi
 
+[ ! -f "$NEW_VALUES" ] && NEW_VALUES="$(copy_vals test/charts/$NEW_VALUES.in)"
+[ ! -f "$OLD_VALUES" ] && OLD_VALUES="$(copy_vals test/charts/$OLD_VALUES.in)"
+
 CHART1=
 CHART2=
 CUR_BRANCH=
@@ -61,8 +73,9 @@ cleanup() {
 
 	trap '' PIPE INT
 
-	[ -f "$CHART1" ] && rm "$CHART1"
-	[ -f "$CHART2" ] && rm "$CHART2"
+	if [ -d "$MYDIR" ]; then
+		rm -rf "$MYDIR"
+	fi
 	if [ ! -z "$CUR_BRANCH" ]; then
 		git checkout "$CUR_BRANCH"
 	fi
@@ -86,7 +99,7 @@ if [ ! -z "$NEW_BRANCH" ]; then
 	git checkout "$NEW_BRANCH"
 fi
 
-CHART1=$(mktemp /tmp/chartXXXXXX)
+CHART1="$MYDIR/chart1"
 helm template charts/tezos/ --values "$NEW_VALUES" --namespace tez > "$CHART1"
 
 if [ "$COMPARE_STASHED" = 1 ]; then
@@ -96,7 +109,7 @@ if [ "$COMPARE_STASHED" = 1 ]; then
 	fi
 fi
 
-CHART2=$(mktemp /tmp/chartXXXXXX)
+CHART2="$MYDIR/chart2"
 if [ ! -z "$OLD_BRANCH" ]; then
 	if [ -z "$CUR_BRANCH" ]; then
 		CUR_BRANCH=$(get_branch)

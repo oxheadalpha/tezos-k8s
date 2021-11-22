@@ -1,0 +1,94 @@
+#
+# This is our private-chain test chart.
+#
+# Please note that we are trying to exercise as many features as
+# we can in a single chart.  In nodes:, e.g., we are ensuring that:
+# we are using both octez and tezedge; each runs list is different;
+# that we have some regular nodes; we use the config sections;
+# multiple baking accounts; etc.
+
+activation:
+  deterministic_faucet_seed: oM0TxIV5gYNVd0T9kasdfnv352
+  deterministic_faucet_number_of_accounts: 1000
+  protocol_hash: PtGRANADsDU8R9daYKAgWnQYAJ64omN1o3KMGVCykShA97vQbvV
+  protocol_parameters:
+    baking_reward_per_endorsement: ['200000']
+    block_security_deposit: '512000000'
+    blocks_per_commitment: 4
+    blocks_per_cycle: 8
+    blocks_per_roll_snapshot: 4
+    blocks_per_voting_period: 64
+    cost_per_byte: '1000'
+    delay_per_missing_endorsement: '1'
+    endorsement_reward: ['2000000']
+    endorsement_security_deposit: '64000000'
+    endorsers_per_block: 32
+    hard_gas_limit_per_block: '8000000'
+    hard_gas_limit_per_operation: '800000'
+    hard_storage_limit_per_operation: '60000'
+    initial_endorsers: 1
+    liquidity_baking_escape_ema_threshold: 100000
+    liquidity_baking_subsidy: '2500000'
+    liquidity_baking_sunset_level: 525600
+    michelson_maximum_type_size: 1000
+    min_proposal_quorum: 500
+    minimal_block_delay: '2'
+    origination_size: 257
+    preserved_cycles: 2
+    proof_of_work_threshold: '-1'
+    quorum_max: 7000
+    quorum_min: 2000
+    seed_nonce_revelation_tip: '125000'
+    time_between_blocks: ['10', '20']
+    tokens_per_roll: '8000000000'
+bootstrap_peers: []
+expected_proof_of_work: 0
+full_snapshot_url: null
+images:
+  octez: 'tezos/tezos:v11-release'
+is_invitation: false
+node_config_network:
+  activation_account_name: tezos-baking-node-0
+  chain_name: elric
+  genesis:
+    block: BKupwQVt7UoyuBDDpj17NEtT3M8a1hKDTuw1HahdANAMXznC5YC
+    protocol: Ps9mPmXaRzmzk35gbAYNCAw6UXdE2qoABTHbN2oEEc1qM7CwT9P
+    timestamp: '2021-08-31T16:04:29.430078+00:00'
+nodes:
+  eu:
+    images:
+      octez: tezos/tezos:v10-release
+    labels:
+      rpc_node: "true"
+    instances:
+    - bake_using_accounts: [tezos-baking-node-0, a, b, c, d]
+      config:
+        shell: {history_mode: archive}
+      is_bootstrap_node: true
+    - is_bootstrap_node: true
+    - {}
+    runs: [octez_node, baker, endorser, logger, metrics]
+    storage_size: 15Gi
+  us:
+    instances:
+    - {}
+    - {}
+    runs: [octez_node, baker, endorser]
+    storage_size: 15Gi
+  af:
+    instances:
+    - {}
+    runs: [tezedge_node, baker, logger, metrics]
+    storage_size: 15Gi
+  as:
+    runs: [octez_node]
+    instances:
+    - {}
+  tezos-node: null
+rolling_snapshot_url: null
+should_generate_unsafe_deterministic_data: true
+signers:
+  tezos-signer-0:
+    sign_for_accounts: [tezos-baking-node-0]
+zerotier_config: {zerotier_network: null, zerotier_token: null}
+open_acls: true
