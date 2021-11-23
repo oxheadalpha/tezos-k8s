@@ -453,6 +453,7 @@ def create_protocol_parameters_json(accounts):
     if protocol_activation.get("faucet"):
         with open("/faucet-commitments/commitments.json", "r") as f:
             commitments = json.load(f)
+        print(f"Faucet commitment file found, adding faucet commitments to protocol parameters")
         protocol_params["commitments"] = commitments
 
     return protocol_params
