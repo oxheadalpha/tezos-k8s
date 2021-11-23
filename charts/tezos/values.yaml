@@ -166,6 +166,14 @@ signers: {}
 #    sign_for_accounts:
 #    - baker0
 
+# LINKS: specifies links between nodes.
+# The nodes will be configured to peer with the remote end.
+# Useful only when one of the ends of the link is a private node.
+# Non-private nodes establish gratuitious links between each other.
+# Each link is a list of 2 node names, i.e.
+#   - [ "tezos-baking-node-0.tezos-baking-node", "tezos-node-0.tezos-node" ]
+links: []
+
 # Where full and rolling history mode nodes will get their snapshots from
 full_snapshot_url: https://mainnet.xtz-shots.io/full
 rolling_snapshot_url: https://mainnet.xtz-shots.io/rolling

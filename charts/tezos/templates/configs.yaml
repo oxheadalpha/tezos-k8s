@@ -16,6 +16,8 @@ data:
   TARBALL_URL: "{{ .Values.tarball_url }}"
   NODES: |
 {{ .Values.nodes | mustToPrettyJson | indent 4 }}
+  LINKS: |
+{{ .Values.links | mustToPrettyJson | indent 4 }}
   SIGNERS: |
 {{ .Values.signers | mustToPrettyJson | indent 4 }}
 kind: ConfigMap
