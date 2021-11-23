@@ -6,10 +6,6 @@ done
 
 set -x
 set -o pipefail
-if ! $CLIENT rpc get /chains/main/blocks/head/header | grep '"level": 0,'; then
-    echo "Chain already activated, considering activation successful and exiting"
-    exit 0
-fi
 
 activation_fitness_param="{{ .Values.activation.fitness }}"
 if [  -z "$activation_fitness_param" ]; then
