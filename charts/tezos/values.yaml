@@ -265,6 +265,9 @@ protocols:
 #   faucet:
 #     seed: "deterministic faucet seed"
 #     number_of_accounts: 100
+#   # fitness default to -1 if not set. Pass a fitness higher than -1 if desired,
+#   # for example to reactivate a chain which was activated with wrong params.
+#   fitness: -1
 
 ## Deploy an indexer with the chain. An indexer puts the chain
 ## contents in a database for efficient indexing. Most dapps need it.
