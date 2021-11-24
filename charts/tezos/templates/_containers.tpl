@@ -216,24 +216,16 @@ https://github.com/helm/helm/issues/5979#issuecomment-518231758
 {{- include "tezos.localvars.pod_envvars" $ | indent 4 }}
     - name: DAEMON
       value: baker
-{{- end }}
-{{- end }}
-{{- end }}
-
-{{- define "tezos.container.endorsers" }}
-{{- if has "endorser" $.node_vals.runs }}
-{{ $node_vals_images := $.node_vals.images | default dict }}
-{{- range .Values.protocols }}
+{{- if or (regexFind "GRANAD" .command) (regexFind "Hangz" .command) }}
+{{- /*
+Also start endorser for protocols that need it.
+*/}}
 - image: "{{ or $node_vals_images.octez $.Values.images.octez }}"
   command:
     - /bin/sh
   args:
     - "-c"
     - |
-{{- /*
-Below set is a trick to get the range and global context. See:
-https://github.com/helm/helm/issues/5979#issuecomment-518231758
-*/}}
 {{- $_ := set $ "command_in_tpl" .command }}
 {{ tpl ($.Files.Get "scripts/baker-endorser.sh") $ | indent 6 }}
   imagePullPolicy: IfNotPresent
@@ -255,6 +247,8 @@ https://github.com/helm/helm/issues/5979#issuecomment-518231758
 {{- end }}
 {{- end }}
 {{- end }}
+{{- end }}
+
 
 {{- define "tezos.container.logger" }}
 {{- if has "logger" $.node_vals.runs }}

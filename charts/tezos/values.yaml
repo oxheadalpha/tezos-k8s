@@ -74,13 +74,13 @@ accounts: {}
 ## Params at the statefulset level:
 ## - "storage_size": the size of the PV
 ## - "images": Optional specification of images to use for the tezos node and
-##           baker/endorser. Options are "octez" with a tezos/tezos image or
+##           baker. Options are "octez" with a tezos/tezos image or
 ##           "tezedge" with a tezedge/tezedge image. If no images are provided,
 ##           the containers will default to the images defined in the "images"
 ##           field up above.
 ## - "runs": A list of containers to run. A tezos node implementation is required.
 ##         Options being "octez_node" or "tezedge_node". Other optional
-##         containers are "baker", "endorser", "logger", and "metrics".
+##         containers are "baker", "logger", and "metrics".
 ## - "local_storage": use local storage instead of a volume. The storage will be
 ##                  wiped when the node restarts for any reason. Useful when
 ##                  faster IO is desired. Defaults to false.
@@ -118,7 +118,6 @@ accounts: {}
 #       - octez_node
 #     # - tezedge_node
 #       - baker
-#       - endorser
 #     instances:
 #       - bake_using_account: baker0
 #         is_bootstrap_node: true
@@ -209,8 +208,8 @@ node_config_network:
   chain_name: mainnet
 
 protocols:
-  # Tezos builds baker and endorser binaries for every supported protocol.
-  # List here the protocols that you wish to run bakers and endorsers for.
+  # Tezos builds baker binaries for every supported protocol.
+  # List here the protocols that you wish to run bakers for.
   # These binaries must be present in the docker image specified.
   # You may want to run two or more if you are expecting an on-chain upgrade.
   # Be mindful that running more protocols will start more containers in your
@@ -261,12 +260,11 @@ protocols:
 #   # This data is typically too large to pass it directly inside helm chart.
 #   bootstrap_contract_urls: []
 #
-#   # Use the "deteministic_faucet" map to predictably create a desired
-#   # number of faucet accounts.
-#   # The seed can be shared with an instance of the tezos-faucet project
-#   #   https://gitlab.com/nomadic-labs/tezos-faucet
+#   # Use the "faucet" map to predictably create a desired number of faucet
+#   # accounts. Change the seed to generate different sets of accounts.
+#   # Pass the same map to the "tezos-faucet" chart in the same repository
 #   # so you can deploy a website where people get free tez from the faucet.
-#   deterministic_faucet:
+#   faucet:
 #     seed: "deterministic faucet seed"
 #     number_of_accounts: 100
 
