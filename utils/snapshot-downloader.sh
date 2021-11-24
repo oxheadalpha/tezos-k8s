@@ -49,8 +49,6 @@ if [ -n "$snapshot_url" ] && [ -n "$tarball_url" ]; then
   echo "ERROR: Either only a snapshot or tarball url may be specified per Tezos node history mode."
 fi
 
-# This is from the old tarball-downloader.sh script. Not sure why it is
-# needed but am leaving it. Also adding -v to log what might be there.
 rm -rfv "$node_data_dir"
 mkdir -p "$node_data_dir"
 
