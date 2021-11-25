@@ -10,7 +10,11 @@ snapshot_file=$node_dir/chain.snapshot
 my_nodes_history_mode=$(echo $NODES | jq -r "
 				.\"${MY_NODE_CLASS}\"
 				.instances[${MY_POD_NAME#$MY_NODE_CLASS-}]
-				.config.shell.history_mode")
+				.config.shell.history_mode
+				|if type == \"object\" then
+					(keys|.[0])
+				 else .
+				 end")
 
 echo My nodes history mode: $my_nodes_history_mode
 
