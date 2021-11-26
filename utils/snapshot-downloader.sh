@@ -57,7 +57,7 @@ if [ -n "$snapshot_url" ]; then
   echo '{ "version": "0.0.4" }' > "$node_dir/version.json"
   curl -LfsS -o "$snapshot_file" "$snapshot_url"
 elif [ -n "$tarball_url" ]; then
-  echo "Downloading $tarball_url"
+  echo "Downloading and extracting tarball from $tarball_url"
   curl -LfsS "$tarball_url" | lz4 -d | tar -x -C "$data_dir"
   rm -fv "$node_data_dir/identity.json"
 fi
