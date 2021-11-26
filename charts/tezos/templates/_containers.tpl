@@ -76,24 +76,6 @@
 {{- end }}
 {{- end }}
 
-{{- define "tezos.init_container.tarball_downloader" }}
-{{- if include "tezos.shouldDownloadTarball" . }}
-- image: "{{ .Values.tezos_k8s_images.utils }}"
-  imagePullPolicy: IfNotPresent
-  name: tarball-downloader
-  args:
-    - tarball-downloader
-  volumeMounts:
-    - mountPath: /var/tezos
-      name: var-volume
-  envFrom:
-    - configMapRef:
-        name: tezos-config
-  env:
-{{- include "tezos.localvars.pod_envvars" . | indent 4 }}
-{{- end }}
-{{- end }}
-
 {{- define "tezos.init_container.snapshot_downloader" }}
 {{- if include "tezos.shouldDownloadSnapshot" . }}
 - image: "{{ .Values.tezos_k8s_images.utils }}"
