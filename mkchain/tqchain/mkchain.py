@@ -51,7 +51,7 @@ cli_args = {
     },
     "octez_docker_image": {
         "help": "Version of the Octez docker image",
-        "default": "tezos/tezos:v10-release",
+        "default": "tezos/tezos:v11-release",
     },
     "use_docker": {
         "action": "store_true",
