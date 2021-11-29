@@ -38,7 +38,7 @@ NOTE: You do not need to clone this repository! All necessary components will be
 
 ## Prerequisites
 
-- python3 (>=3.6)
+- python3 (>=3.7)
 - [docker](https://docs.docker.com/get-docker/)
 - [kubectl](https://kubernetes.io/docs/reference/kubectl/kubectl/)
 - [minikube](https://minikube.sigs.k8s.io/docs/)
