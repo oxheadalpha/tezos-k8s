@@ -161,6 +161,7 @@ def main():
         "full_snapshot_url": None,
         "rolling_snapshot_url": None,
         "archive_tarball_url": None,
+        "rolling_tarball_url": None,
     }
 
     # preserve pre-existing values, if any (in case of scale-up)
