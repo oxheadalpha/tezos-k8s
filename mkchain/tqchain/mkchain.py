@@ -157,9 +157,11 @@ def main():
             "zerotier_network": args.zerotier_network,
             "zerotier_token": args.zerotier_token,
         },
-        # Custom chains should not pull snapshots
+        # Custom chains should not pull snapshots or tarballs
         "full_snapshot_url": None,
         "rolling_snapshot_url": None,
+        "archive_tarball_url": None,
+        "rolling_tarball_url": None,
     }
 
     # preserve pre-existing values, if any (in case of scale-up)
