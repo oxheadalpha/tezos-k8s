@@ -68,14 +68,16 @@
   Returns a string "true" or empty string which is falsey.
 */}}
 {{- define "tezos.shouldDownloadSnapshot" -}}
-  {{- if or (.Values.full_snapshot_url) (.Values.rolling_snapshot_url) (.Values.rolling_tarball_url) (.Values.archive_tarball_url) }}
-    {{- if and (.Values.rolling_tarball_url) (.Values.rolling_snapshot_url) }}
-      {{- fail "Either only a snapshot url or tarball url may be specified per Tezos node history mode" }}
+  {{- if .Values.activation | not }}
+    {{- if or (.Values.full_snapshot_url) (.Values.rolling_snapshot_url) (.Values.rolling_tarball_url) (.Values.archive_tarball_url) }}
+      {{- if and (.Values.rolling_tarball_url) (.Values.rolling_snapshot_url) }}
+        {{- fail "Either only a snapshot url or tarball url may be specified per Tezos node history mode" }}
+      {{- else }}
+        {{- "true" }}
+      {{- end }}
     {{- else }}
-      {{- "true" }}
+      {{- "" }}
     {{- end }}
-  {{- else }}
-    {{- "" }}
   {{- end }}
 {{- end }}
 
