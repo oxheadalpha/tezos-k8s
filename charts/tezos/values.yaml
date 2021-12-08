@@ -286,9 +286,9 @@ protocols:
 # indexers:
 #   tzkt:
 #     api_image: "bakingbad/tzkt-api"
-#     api_image_tag: "1.6.3"
+#     api_image_tag: "1.6.4"
 #     indexer_image: "bakingbad/tzkt-sync"
-#     indexer_image_tag: "1.6.3"
+#     indexer_image_tag: "1.6.4"
 #
 #     ## Database volumeClaimTemplates config
 #     storageClassName: ""
@@ -306,7 +306,7 @@ protocols:
 #     ## If you want to index a brand new archive node you are spinning up, just
 #     ## let the indexer start syncing with it from scratch.
 #     ## https://github.com/baking-bad/tzkt
-#     db_snapshot_url: https://tzkt.s3.eu-central-1.amazonaws.com/snapshots/tzkt_v1.6_mainnet.backup
+#     db_snapshot_url: https://tzkt.fra1.digitaloceanspaces.com/snapshots/tzkt_v1.6_mainnet.backup
 #
 #     ## Configurable tzkt fields
 #     config:
