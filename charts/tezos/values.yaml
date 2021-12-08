@@ -286,9 +286,9 @@ protocols:
 # indexers:
 #   tzkt:
 #     api_image: "bakingbad/tzkt-api"
-#     api_image_tag: "1.6.3"
+#     api_image_tag: "1.6.4"
 #     indexer_image: "bakingbad/tzkt-sync"
-#     indexer_image_tag: "1.6.3"
+#     indexer_image_tag: "1.6.4"
 #
 #     ## Database volumeClaimTemplates config
 #     storageClassName: ""
