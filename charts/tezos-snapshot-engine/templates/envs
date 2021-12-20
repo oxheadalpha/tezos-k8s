@@ -1,0 +1,3 @@
+NAMESPACE=mainnet-shots
+VOLUME_SNAPSHOT_CLASS_NAME=test-snapclass
+PERSISTENT_VOLUME_CLAIM=var-volume-archive-node-0

@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: hangzhounet-shots-snapshot-maker
+  namespace: hangzhounet-shots
+spec:
+  schedule: "0 */6 * * *"
+  successfulJobsHistoryLimit: 0
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            app: snapshot-maker
+        spec:
+          serviceAccountName: snapshot-maker-sa
+          containers:
+            - name: snapshot-maker
+              image: 082993323195.dkr.ecr.us-east-2.amazonaws.com/snapshot-maker:latest
+              env:
+                - name: NAMESPACE
+                  valueFrom:
+                    configMapKeyRef:
+                      name: snapshot-configmap
+                      key: NAMESPACE
+          restartPolicy: Never
