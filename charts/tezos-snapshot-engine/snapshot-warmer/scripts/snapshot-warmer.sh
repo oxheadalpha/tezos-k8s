@@ -15,12 +15,12 @@ PERSISTENT_VOLUME_CLAIM="${PERSISTENT_VOLUME_CLAIM}" yq e -i '.spec.source.persi
 
 while true; do
 
-  while [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==true)].metadata.name}' --namespace "${NAMESPACE}" -o go-template='"{{"len .items"}}"')" -gt 4 ]; do
-    NUMBER_OF_SNAPSHOTS=$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==true)].metadata.name}' --namespace "${NAMESPACE}" -o go-template='"{{"len .items"}}"')
-    printf "%s Number of snapshots is too high at ${NUMBER_OF_SNAPSHOTS} deleting 1." "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+  while [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==true)].metadata.name}' --namespace "${NAMESPACE}" -o go-template='{{ "{{" }}len .items{{ "}}" }}')" -gt 4 ]; do
+    NUMBER_OF_SNAPSHOTS=$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==true)].metadata.name}' --namespace "${NAMESPACE}" -o go-template='{{ "{{" }}len .items{{ "}}" }}')
+    printf "%s Number of snapshots is too high at ${NUMBER_OF_SNAPSHOTS} deleting 1.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     SNAPSHOTS=$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==true)].metadata.name}' --namespace "${NAMESPACE}")
     if ! kubectl delete volumesnapshots "${SNAPSHOTS%% *}" --namespace "${NAMESPACE}"; then
-      printf "%s ERROR deleting snapshot. ${SNAPSHOTS%% *}" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+      printf "%s ERROR deleting snapshot. ${SNAPSHOTS%% *}\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     fi
     sleep 10
   done
@@ -33,14 +33,14 @@ while true; do
     # Update volume snapshot name
     SNAPSHOT_NAME="${SNAPSHOT_NAME}" yq e -i '.metadata.name=strenv(SNAPSHOT_NAME)' createVolumeSnapshot.yaml
 
-    printf "%s Creating snapshot ${SNAPSHOT_NAME} in ${NAMESPACE}." "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    printf "%s Creating snapshot ${SNAPSHOT_NAME} in ${NAMESPACE}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
     start_time=$(date +%s)
 
     # Create snapshot
     if ! kubectl apply -f createVolumeSnapshot.yaml
     then
-        printf "%s ERROR creating volumeSnapshot ${SNAPSHOT_NAME} in ${NAMESPACE} ." "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+        printf "%s ERROR creating volumeSnapshot ${SNAPSHOT_NAME} in ${NAMESPACE} .\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         exit 1
     fi
 
@@ -48,15 +48,15 @@ while true; do
 
     # While no snapshots ready
     while [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' --namespace "${NAMESPACE}")" ]; do
-      printf "%s Snapshot is still creating..." "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+      printf "%s Snapshot is still creating...\n" "$(date "+%Y-%m-%d %H:%M:%S\n" "$@")"
       sleep 5
     done
     end_time=$(date +%s)
     elapsed=$(( end_time - start_time ))
     printf "%s Snapshot ${SNAPSHOT_NAME} in ${NAMESPACE} finished." "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    eval "echo Elapsed time: $(date -ud "@$elapsed" +'$((%s/3600/24)) days %H hr %M min %S sec')"
+    eval "echo Elapsed time: $(date -ud "@$elapsed" +'$((%s/3600/24)) days %H hr %M min %S sec')\n"
   else
-    printf "%s Waiting for current snapshot to finish..." "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    printf "%s Waiting for current snapshot to finish...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     sleep 30
   fi
 done   
