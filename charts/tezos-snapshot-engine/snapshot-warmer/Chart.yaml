@@ -1,6 +1,6 @@
 apiVersion: v2
-name: tezos-snapshot-engine
-description: Provides tezos node filesystem tarballs and tezos snapshots.
+name: tezos-snapshot-warmer
+description: Keeps EBS snapshots fast by continuously creating and deleting new snapshots.
 
 # A chart can be either an 'application' or a 'library' chart.
 #
