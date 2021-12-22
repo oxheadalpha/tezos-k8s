@@ -26,3 +26,41 @@ spec:
           env:
             - name: NAMESPACE
               value: {{ .Values.namespace }}
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: modify-volumesnapshots
+rules:
+  - apiGroups: ["snapshot.storage.k8s.io", batch, ""]
+    resources:
+      - volumesnapshots
+      - jobs
+      - persistentvolumeclaims
+      - configmaps
+      - pods
+    verbs:
+      - get
+      - list
+      - delete
+      - create
+      - patch
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: snapshots-for-sa
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.service_account }}
+roleRef:
+  kind: Role
+  name: modify-volumesnapshots
+  apiGroup: rbac.authorization.k8s.io
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.service_account }}
+  annotations:
+    eks.amazonaws.com/role-arn: {{ .Values.iam_role_arn }}
