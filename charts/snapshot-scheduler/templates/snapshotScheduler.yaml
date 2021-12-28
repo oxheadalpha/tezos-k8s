@@ -27,4 +27,7 @@ apiVersion: v1
 data:
   NAMESPACE: {{ .Values.namespace }}
   VOLUME_SNAPSHOT_CLASS_NAME: test-snapclass
+  IMAGE_NAME: {{ .Values.tezos_k8s_images.snapshot_maker }}
 kind: ConfigMap
+metadata:
+  name: snapshot-configmap

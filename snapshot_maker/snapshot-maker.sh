@@ -108,6 +108,9 @@ printf "%s PersistentVolumeClaim ${NAMESPACE}-snap-volume created successfully i
 # Set new PVC Name in snapshotting job
 VOLUME_NAME="${NAMESPACE}-snap-volume" yq e -i '.spec.template.spec.volumes[0].persistentVolumeClaim.claimName=strenv(VOLUME_NAME)' mainJob.yaml
 
+# Set image name for zip and upload
+IMAGE_NAME="${IMAGE_NAME}" yq e -i '.spec.template.spec.containers[1].image=strenv(IMAGE_NAME)' mainJob.yaml
+
 ## Zip job namespace
 NAMESPACE="${NAMESPACE}" yq e -i '.metadata.namespace=strenv(NAMESPACE)' mainJob.yaml
 
