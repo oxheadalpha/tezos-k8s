@@ -15,3 +15,9 @@ spec:
               name: snapshot-configmap
               key: NAMESPACE
   restartPolicy: Never
+
+apiVersion: v1
+data:
+  NAMESPACE: {{ .Values.namespace }}
+  VOLUME_SNAPSHOT_CLASS_NAME: test-snapclass
+kind: ConfigMap
