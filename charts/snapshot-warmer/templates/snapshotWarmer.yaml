@@ -17,7 +17,7 @@ spec:
       serviceAccountName: snapshot-maker-sa
       containers:
         - name: snapshot-warmer
-          image: 082993323195.dkr.ecr.us-east-2.amazonaws.com/snapshot-maker:latest
+          image: {{ .Values.tezos_k8s_images.snapshot_maker }}
           command: ["/bin/sh"]
           args:
             - "-c"

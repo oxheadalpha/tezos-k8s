@@ -1,3 +1,2 @@
-images:
-  snapshot_maker: latest
-  zip_and_upload: latest
+tezos_k8s_images:
+  snapshot_maker: tezos-k8s-snapshot-maker:latest

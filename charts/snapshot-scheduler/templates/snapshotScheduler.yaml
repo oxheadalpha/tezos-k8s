@@ -1,20 +1,27 @@
 apiVersion: v1
-kind: Pod
+kind: Deployment
 metadata:
   name: snapshot-scheduler
-  namespace: {{ .Values.namespace }}
-spec:
-  serviceAccountName: {{ .Values.service_account }}
-  containers:
-    - name: snapshot-scheduler
-      image: 082993323195.dkr.ecr.us-east-2.amazonaws.com/snapshot-scheduler:latest
-      env:
-        - name: NAMESPACE
-          valueFrom:
-            configMapKeyRef:
-              name: snapshot-configmap
-              key: NAMESPACE
-  restartPolicy: Never
+replicas: 1
+selector:
+  matchLabels:
+    app: snapshot-scheduler
+template:
+  metadata:
+    labels:
+      app: snapshot-scheduler
+  spec:
+    serviceAccountName: {{ .Values.service_account }}
+    containers:
+      - name: snapshot-scheduler
+        image: {{ .Values.tezos_k8s_images.snapshot_maker }}
+        env:
+          - name: NAMESPACE
+            valueFrom:
+              configMapKeyRef:
+                name: snapshot-configmap
+                key: NAMESPACE
+    restartPolicy: Never
 
 apiVersion: v1
 data:
