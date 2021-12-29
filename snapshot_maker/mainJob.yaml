@@ -126,6 +126,9 @@ spec:
                   key: NAMESPACE
         - name: zip-and-upload
           image: 082993323195.dkr.ecr.us-east-2.amazonaws.com/zip-and-upload:latest
+          imagePullPolicy: Always
+          args:
+              - "zip-and-upload"
           volumeMounts:
             - mountPath: /var/tezos
               name: persistent-storage

@@ -3,6 +3,9 @@
 ## Snapshot Namespace
 NAMESPACE="${NAMESPACE}" yq e -i '.metadata.namespace=strenv(NAMESPACE)' snapshotMakerJob.yaml
 
+#Snapshot-maker image set
+IMAGE_NAME="${IMAGE_NAME}" yq e -i '.spec.template.spec.containers[0].image=strenv(IMAGE_NAME)' snapshotMakerJob.yaml
+
 while true; do
   # Job exists
   if [ "$(kubectl get jobs "snapshot-maker" --namespace "${NAMESPACE}")" ]; then

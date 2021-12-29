@@ -1,28 +1,37 @@
-apiVersion: v1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: snapshot-scheduler
-replicas: 1
-selector:
-  matchLabels:
-    app: snapshot-scheduler
-template:
-  metadata:
-    labels:
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
       app: snapshot-scheduler
-  spec:
-    serviceAccountName: {{ .Values.service_account }}
-    containers:
-      - name: snapshot-scheduler
-        image: {{ .Values.tezos_k8s_images.snapshot_maker }}
-        env:
-          - name: NAMESPACE
-            valueFrom:
-              configMapKeyRef:
-                name: snapshot-configmap
-                key: NAMESPACE
-    restartPolicy: Never
-
+  template:
+    metadata:
+      labels:
+        app: snapshot-scheduler
+    spec:
+      serviceAccountName: {{ .Values.service_account }}
+      containers:
+        - name: snapshot-scheduler
+          image: {{ .Values.tezos_k8s_images.snapshot_maker }}
+          imagePullPolicy: Always
+          args:
+              - "snapshot-scheduler"
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                configMapKeyRef:
+                  name: snapshot-configmap
+                  key: NAMESPACE
+            - name: IMAGE_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: snapshot-configmap
+                  key: IMAGE_NAME
+---
 apiVersion: v1
 data:
   NAMESPACE: {{ .Values.namespace }}
@@ -31,3 +40,4 @@ data:
 kind: ConfigMap
 metadata:
   name: snapshot-configmap
+  namespace: {{ .Values.namespace }}

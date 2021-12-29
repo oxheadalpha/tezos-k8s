@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: snapshot-warmer
+  namespace: {{ .Values.namespace }}
   labels:
     app: snapshot-warmer
 spec:
@@ -18,6 +19,7 @@ spec:
       containers:
         - name: snapshot-warmer
           image: {{ .Values.tezos_k8s_images.snapshot_maker }}
+          imagePullPolicy: Always
           command: ["/bin/sh"]
           args:
             - "-c"
@@ -26,13 +28,14 @@ spec:
           env:
             - name: NAMESPACE
               value: {{ .Values.namespace }}
-
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: modify-volumesnapshots
+  namespace: {{ .Values.namespace }}
 rules:
-  - apiGroups: ["snapshot.storage.k8s.io", batch, ""]
+  - apiGroups: ["snapshot.storage.k8s.io", "batch", ""]
     resources:
       - volumesnapshots
       - jobs
@@ -45,11 +48,12 @@ rules:
       - delete
       - create
       - patch
-
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: snapshots-for-sa
+  namespace: {{ .Values.namespace }}
 subjects:
   - kind: ServiceAccount
     name: {{ .Values.service_account }}
@@ -57,10 +61,11 @@ roleRef:
   kind: Role
   name: modify-volumesnapshots
   apiGroup: rbac.authorization.k8s.io
-
+---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: {{ .Values.service_account }}
+  namespace: {{ .Values.namespace }}
   annotations:
     eks.amazonaws.com/role-arn: {{ .Values.iam_role_arn }}

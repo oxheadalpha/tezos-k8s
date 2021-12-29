@@ -13,10 +13,18 @@ spec:
       containers:
         - name: snapshot-maker
           image: 082993323195.dkr.ecr.us-east-2.amazonaws.com/snapshot-maker:latest
+          imagePullPolicy: Always
+          args:
+              - "snapshot-maker"
           env:
             - name: NAMESPACE
               valueFrom:
                 configMapKeyRef:
                   name: snapshot-configmap
                   key: NAMESPACE
+            - name: IMAGE_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: snapshot-configmap
+                  key: IMAGE_NAME
       restartPolicy: Never
