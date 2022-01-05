@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pyrometer
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: pyrometer
+  template:
+    metadata:
+      labels:
+        app: pyrometer
+    spec:
+      containers:
+        - name: pyrometer
+          image: {{ .Values.images.pyrometer }}
+          args:
+          - run
+          - '--ui:enabled'
+          - '--ui:host'
+          - '0.0.0.0'
+          - '--teztnets'
+          ports:
+            - name: http
+              containerPort: 2020
+              protocol: TCP
