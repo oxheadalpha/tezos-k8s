@@ -13,15 +13,20 @@ spec:
         app: pyrometer
     spec:
       containers:
-        - name: pyrometer
-          image: {{ .Values.images.pyrometer }}
-          args:
-          - run
-          - '--ui:enabled'
-          - '--ui:host'
-          - '0.0.0.0'
-          - '--teztnets'
-          ports:
-            - name: http
-              containerPort: 2020
-              protocol: TCP
+      - name: pyrometer
+        image: {{ .Values.images.pyrometer }}
+        args:
+        - run
+        - -c
+        - '/config/config.json'
+        ports:
+          - name: http
+            containerPort: 2020
+            protocol: TCP
+        volumeMounts:
+        - name: config-volume
+          mountPath: /config/
+      volumes:
+      - name: config-volume
+        configMap:
+          name: pyrometer-config
