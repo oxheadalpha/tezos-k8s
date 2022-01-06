@@ -21,7 +21,7 @@ spec:
         - '/config/config.json'
         ports:
           - name: http
-            containerPort: 2020
+            containerPort: 80
             protocol: TCP
         volumeMounts:
         - name: config-volume
