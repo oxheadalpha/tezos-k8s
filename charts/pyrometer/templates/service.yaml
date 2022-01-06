@@ -4,6 +4,7 @@ metadata:
   name: pyrometer
   namespace: {{ .Release.Namespace }}
 spec:
+  type: NodePort
   ports:
     - port: 80
       targetPort: http
