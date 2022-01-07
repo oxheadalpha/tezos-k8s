@@ -110,7 +110,7 @@ accounts: {}
 #     shell:
 #       history_mode: full
 # nodes:
-#   tezos-baking-node:
+#   rolling-baking-node:
 #     labels:
 #       # Example labels you might use to specify certain attributes of your nodes.
 #       peer_node: "true" # Forward P2P traffic to this node types instances
@@ -132,7 +132,7 @@ accounts: {}
 #         config:
 #           shell:
 #             history_mode: rolling
-#   tezos-node:
+#   rolling-node:
 #     labels:
 #       # Example labels you might use to specify certain attributes of your nodes.
 #       peer_node: "true"
@@ -145,7 +145,7 @@ accounts: {}
 #       - {}
 
 nodes:
-  tezos-node:
+  rolling-node:
 #    labels:
 #      rpc_node: "true"
 #      peer_node: "true"
@@ -310,8 +310,10 @@ protocols:
 #
 #     ## Configurable tzkt fields
 #     config:
-#       ## url of the archive node to index
-#       rpc_url: http://tezos-node-0.tezos-node:8732
+#       ## Url of the archive node to index. You will need to create an archive node up
+#       ## above in the `nodes` section. The `rpc_url` field is looking for a node named
+#       ## `archive-node`.
+#       rpc_url: http://archive-node-0.archive-node:8732
 #       db_name: db
 #       db_user: foo
 #       db_password: bar
