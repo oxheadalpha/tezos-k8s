@@ -44,6 +44,8 @@ activation:
 bootstrap_peers: []
 expected_proof_of_work: 0
 full_snapshot_url: null
+rolling_snapshot_url: null
+archive_tarball_url: null
 images:
   octez: 'tezos/tezos:v11-release'
 is_invitation: false
@@ -84,7 +86,7 @@ nodes:
     runs: [octez_node]
     instances:
     - {}
-  tezos-node: null
+  rolling-node: null
 rolling_snapshot_url: null
 should_generate_unsafe_deterministic_data: true
 signers:

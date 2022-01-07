@@ -15,4 +15,4 @@ nodes:
     runs: [tezedge_node, logger, metrics]
     instances:
       - {}
-  tezos-node: null
+  rolling-node: null
