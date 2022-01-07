@@ -138,24 +138,16 @@ Connecting to a public net is easy!
 
 (See [here](https://tezos.gitlab.io/user/history_modes.html) for info on snapshots and node history modes)
 
-If you'd like to spin up a node that runs with history mode rolling, all you need to do is run:
+Simply run the following to spin up a rolling history node:
 
 ```shell
 helm install tezos-mainnet oxheadalpha/tezos-chain \
 --namespace oxheadalpha --create-namespace
 ```
 
-If you'd like to spin up a node with history mode full, run:
+Running this results in:
 
-```shell
-helm install tezos-mainnet oxheadalpha/tezos-chain \
---namespace oxheadalpha --create-namespace \
---set nodes.regular.tezos-node-0.config.shell.history_mode=full
-```
-
-Running either of these commands results in:
-
-- Creating a Helm [release](https://helm.sh/docs/intro/using_helm/#three-big-concepts) named tezos-mainnet in your k8s cluster.
+- Creating a Helm [release](https://helm.sh/docs/intro/using_helm/#three-big-concepts) named tezos-mainnet for your k8s cluster.
 - k8s will spin up one regular (i.e. non-baking node) which will download and import a mainnet snapshot. This will take a few minutes.
 - Once the snapshot step is done, your node will be bootstrapped and syncing with mainnet!
 
@@ -168,7 +160,7 @@ kubectl -n oxheadalpha get pods -l appType=tezos-node
 You can monitor (and follow using the `-f` flag) the logs of the snapshot downloader/import container:
 
 ```shell
-kubectl logs -n oxheadalpha statefulset/tezos-node -c snapshot-downloader -f
+kubectl logs -n oxheadalpha statefulset/rolling-node -c snapshot-downloader -f
 ```
 
 You can view logs for your node using the following command:
@@ -334,7 +326,7 @@ E.g.:
 
 ```
 nodes:
-  tezos-baking-node:
+  full-baking-node:
     storage_size: 15Gi
     runs:
     - baker
@@ -345,11 +337,11 @@ nodes:
       is_bootstrap_node: true
       config:
         shell:
-  tezos-node:
+  full-node:
     instances:
     - {}
     - {}
-  private-node:
+  full-tezedge-node:
     runs:
     - baker
     - endorser
@@ -362,16 +354,16 @@ nodes:
 ```
 
 This will run the following nodes:
-     - `tezos-baking-node-0`
-     - `tezos-node-0`
-     - `tezos-node-1`
-     - `private-node-0`
-     - `private-node-1`
-     - `private-node-2`
+   - `full-baking-node-0`
+   - `full-node-0`
+   - `full-node-1`
+   - `full-tezedge-node-0`
+   - `full-tezedge-node-1`
+   - `full-tezedge-node-2`
 
-`tezos-baking-node-0` will run baker, endorser, and logger containers
-and will be the only bootstrap node.  `tezos-node-*` are just nodes
-with no extras.  `private-node-*` will be tezedge nodes running baker,
+`full-baking-node-0` will run baker, endorser, and logger containers
+and will be the only bootstrap node.  `full-node-*` are just nodes
+with no extras.  `full-tezedge-node-*` will be tezedge nodes running baker,
 endorser, and logger containers.
 
 To upgrade your Helm release run:
