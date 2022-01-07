@@ -298,7 +298,9 @@ def main():
         invite_nodes = {
             ROLLING_REGULAR_NODE_NAME: {
                 "storage_size": "15Gi",
-                "instances": [node_config(ROLLING_REGULAR_NODE_NAME, 0, is_baker=False)],
+                "instances": [
+                    node_config(ROLLING_REGULAR_NODE_NAME, 0, is_baker=False)
+                ],
             },
             ARCHIVE_BAKER_NODE_NAME: None,
         }
