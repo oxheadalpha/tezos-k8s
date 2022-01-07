@@ -90,7 +90,7 @@ accounts: {}
 ##   - "is_bootstrap_node": Is this node a bootstrap peer.
 ##   - "config": The "config" property should mimic the structure of a node's
 ##             config.json. Run `tezos-node config --help` for more info.
-##   - "node_selector": Specify a kubernetes node selector in 'key: value' format
+## - "node_selector": Specify a kubernetes node selector in 'key: value' format
 ##     for your tezos nodes.
 ## - "labels": https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
 ##   NOTE: the labels appType, node_class, and baking_node are set
