@@ -11,6 +11,10 @@ spec:
     metadata:
       labels:
         app: pyrometer
+      annotations:
+        # ensure that the pod bounces each time configmap changes
+        # https://helm.sh/docs/howto/charts_tips_and_tricks/#automatically-roll-deployments
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }} 
     spec:
       containers:
       - name: pyrometer
