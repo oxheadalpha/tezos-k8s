@@ -19,10 +19,8 @@ fi
 
 echo "Did not find a pre-existing blockchain."
 
-my_nodes_history_mode=$(echo $NODES | jq -r "
-				.\"${MY_NODE_CLASS}\"
-				.instances[${MY_POD_NAME#$MY_NODE_CLASS-}]
-				.config.shell.history_mode
+my_nodes_history_mode=$(< /etc/tezos/config.json jq -r "
+				.shell.history_mode
 				|if type == \"object\" then
 					(keys|.[0])
 				 else .
