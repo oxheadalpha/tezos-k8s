@@ -326,44 +326,45 @@ E.g.:
 
 ```
 nodes:
-  full-baking-node:
+  baking-node:
     storage_size: 15Gi
     runs:
-    - baker
-    - endorser
-    - logger
+      - baker
+      - endorser
+      - logger
     instances:
-    - bake_using_account: baker0
-      is_bootstrap_node: true
-      config:
-        shell:
+      - bake_using_account: baker0
+        is_bootstrap_node: true
+        config:
+          shell:
+            history_mode: rolling
   full-node:
     instances:
-    - {}
-    - {}
-  full-tezedge-node:
+      - {}
+      - {}
+  tezedge-full-node:
     runs:
-    - baker
-    - endorser
-    - logger
-    - tezedge
+      - baker
+      - endorser
+      - logger
+      - tezedge
     instances:
-    - {}
-    - {}
-    - {}
+      - {}
+      - {}
+      - {}
 ```
 
 This will run the following nodes:
-   - `full-baking-node-0`
+   - `baking-node-0`
    - `full-node-0`
    - `full-node-1`
-   - `full-tezedge-node-0`
-   - `full-tezedge-node-1`
-   - `full-tezedge-node-2`
+   - `tezedge-full-node-0`
+   - `tezedge-full-node-1`
+   - `tezedge-full-node-2`
 
-`full-baking-node-0` will run baker, endorser, and logger containers
+`baking-node-0` will run baker, endorser, and logger containers
 and will be the only bootstrap node.  `full-node-*` are just nodes
-with no extras.  `full-tezedge-node-*` will be tezedge nodes running baker,
+with no extras.  `tezedge-full-node-*` will be tezedge nodes running baker,
 endorser, and logger containers.
 
 To upgrade your Helm release run:
