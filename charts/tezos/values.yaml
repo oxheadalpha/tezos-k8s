@@ -74,6 +74,8 @@ accounts: {}
 ## Params at the statefulset level:
 ## - "config": The "config" property should mimic the structure of a node's
 ##             config.json. Run `tezos-node config --help` for more info.
+##             If present at the statefulset level, it overrides it in
+##             node_globals.
 ## - "storage_size": the size of the PV
 ## - "images": Optional specification of images to use for the tezos node and
 ##           baker. Options are "octez" with a tezos/tezos image or
@@ -90,7 +92,8 @@ accounts: {}
 ##   - "bake_using_account": Account name that should be used for baking.
 ##   - "bake_using_accounts": List of account names that should be used for baking.
 ##   - "is_bootstrap_node": Is this node a bootstrap peer.
-##   - "config": same as the outer lavel, pass through to config.json.
+##   - "config": same as the outer level, pass through to config.json.  At
+##               the instance level, it overrides the statefulset level.
 ## - "node_selector": Specify a kubernetes node selector in 'key: value' format
 ##     for your tezos nodes.
 ## - "labels": https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
