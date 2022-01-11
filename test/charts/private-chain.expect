@@ -76,7 +76,10 @@ data:
     }
   FULL_SNAPSHOT_URL: ""
   ROLLING_SNAPSHOT_URL: ""
-  TARBALL_URL: ""
+  ARCHIVE_TARBALL_URL: ""
+  ROLLING_TARBALL_URL: ""
+  NODE_GLOBALS: |
+    null
   NODES: |
     {
       "af": {
@@ -531,7 +534,7 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume                        
         - image: tezos-k8s-utils:dev
           args:
             - wait-for-dns
@@ -544,7 +547,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume
             - mountPath: /etc/tezos
-              name: config-volume                        
+              name: config-volume
       securityContext:
         fsGroup: 100      
       volumes:
@@ -710,7 +713,7 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume                        
         - image: tezos-k8s-utils:dev
           args:
             - wait-for-dns
@@ -723,7 +726,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume
             - mountPath: /etc/tezos
-              name: config-volume                        
+              name: config-volume
       securityContext:
         fsGroup: 100      
       volumes:
@@ -1068,7 +1071,7 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume                        
         - image: tezos-k8s-utils:dev
           args:
             - wait-for-dns
@@ -1081,7 +1084,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume
             - mountPath: /etc/tezos
-              name: config-volume                        
+              name: config-volume
       securityContext:
         fsGroup: 100      
       volumes:
@@ -1363,7 +1366,7 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume                        
         - image: tezos-k8s-utils:dev
           args:
             - wait-for-dns
@@ -1376,7 +1379,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume
             - mountPath: /etc/tezos
-              name: config-volume                        
+              name: config-volume
       securityContext:
         fsGroup: 100      
       volumes:

@@ -28,10 +28,13 @@ data:
     }
   FULL_SNAPSHOT_URL: "https://mainnet.xtz-shots.io/full"
   ROLLING_SNAPSHOT_URL: "https://mainnet.xtz-shots.io/rolling"
-  TARBALL_URL: ""
+  ARCHIVE_TARBALL_URL: "http://tezos-tarballs.s3-website.us-east-2.amazonaws.com/mainnet-archive-tarball"
+  ROLLING_TARBALL_URL: ""
+  NODE_GLOBALS: |
+    null
   NODES: |
     {
-      "tezos-node": {
+      "rolling-node": {
         "instances": [
           {
             "config": {
@@ -73,36 +76,36 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: tezos-node
+  name: rolling-node
 spec:
   publishNotReadyAddresses: true
   clusterIP: None
   selector:
-    node_class: tezos-node
+    node_class: rolling-node
 ---
 # Source: tezos-chain/templates/nodes.yaml
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: tezos-node
+  name: rolling-node
   namespace: testing
 spec:
   podManagementPolicy: Parallel
   replicas: 1
-  serviceName: tezos-node
+  serviceName: rolling-node
   selector:
     matchLabels:
-      node_class: tezos-node
+      node_class: rolling-node
   template:
     metadata:
       labels:
         appType: tezos-node
-        node_class: tezos-node
+        node_class: rolling-node
     spec:
       containers:        
         
         - name: octez-node
-          image: "tezos/tezos:v10-release"
+          image: "tezos/tezos:v11-release"
           command:
             - /bin/sh
           args:
@@ -198,7 +201,7 @@ spec:
           imagePullPolicy: IfNotPresent
           name: sidecar
       initContainers:        
-        - image: "tezos/tezos:v10-release"
+        - image: "tezos/tezos:v11-release"
           command:
             - /bin/sh
           args:
@@ -241,7 +244,7 @@ spec:
             - name: MY_POD_TYPE
               value: node
             - name: MY_NODE_CLASS
-              value: tezos-node                
+              value: rolling-node                
         - image: tezos-k8s-utils:dev
           imagePullPolicy: IfNotPresent
           name: config-generator
@@ -265,12 +268,12 @@ spec:
             - name: MY_POD_TYPE
               value: node
             - name: MY_NODE_CLASS
-              value: tezos-node
+              value: rolling-node
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume                
+              name: var-volume        
         - image: "tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
           name: snapshot-downloader
@@ -296,8 +299,8 @@ spec:
             - name: MY_POD_TYPE
               value: node
             - name: MY_NODE_CLASS
-              value: tezos-node        
-        - image: "tezos/tezos:v10-release"
+              value: rolling-node        
+        - image: "tezos/tezos:v11-release"
           imagePullPolicy: IfNotPresent
           name: snapshot-importer
           command:
@@ -308,7 +311,6 @@ spec:
               set -ex
               
               bin_dir="/usr/local/bin"
-              
               data_dir="/var/tezos"
               node_dir="$data_dir/node"
               node_data_dir="$node_dir/data"
@@ -316,14 +318,18 @@ spec:
               snapshot_file=${node_dir}/chain.snapshot
               
               if [ -d ${node_data_dir}/context ]; then
-                  echo "Blockchain has already been imported, exiting"
+                  echo "Blockchain has already been imported. If a tarball"
+                  echo "instead of a regular tezos snapshot was used, it was"
+                  echo "imported in the snapshot-downloader container."
                   exit 0
               fi
               
               cp -v /etc/tezos/config.json ${node_data_dir}
+              
               ${node} snapshot import ${snapshot_file} --data-dir ${node_data_dir} \
                   --network $CHAIN_NAME
               find ${node_dir}
+              
               rm -rvf ${snapshot_file}
               
           volumeMounts:
@@ -346,7 +352,7 @@ spec:
             - name: MY_POD_TYPE
               value: node
             - name: MY_NODE_CLASS
-              value: tezos-node        
+              value: rolling-node        
       securityContext:
         fsGroup: 100      
       volumes:

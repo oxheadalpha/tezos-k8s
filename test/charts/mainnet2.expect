@@ -28,7 +28,10 @@ data:
     }
   FULL_SNAPSHOT_URL: "https://mainnet.xtz-shots.io/full"
   ROLLING_SNAPSHOT_URL: "https://mainnet.xtz-shots.io/rolling"
-  TARBALL_URL: ""
+  ARCHIVE_TARBALL_URL: "http://tezos-tarballs.s3-website.us-east-2.amazonaws.com/mainnet-archive-tarball"
+  ROLLING_TARBALL_URL: ""
+  NODE_GLOBALS: |
+    null
   NODES: |
     {
       "city-block": {
@@ -268,7 +271,7 @@ spec:
           imagePullPolicy: IfNotPresent
           name: sidecar
       initContainers:        
-        - image: "tezos/tezos:v10-release"
+        - image: "tezos/tezos:v11-release"
           command:
             - /bin/sh
           args:
@@ -340,7 +343,7 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume                
+              name: var-volume        
         - image: "tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
           name: snapshot-downloader
@@ -367,7 +370,7 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: city-block        
-        - image: "tezos/tezos:v10-release"
+        - image: "tezos/tezos:v11-release"
           imagePullPolicy: IfNotPresent
           name: snapshot-importer
           command:
@@ -378,7 +381,6 @@ spec:
               set -ex
               
               bin_dir="/usr/local/bin"
-              
               data_dir="/var/tezos"
               node_dir="$data_dir/node"
               node_data_dir="$node_dir/data"
@@ -386,14 +388,18 @@ spec:
               snapshot_file=${node_dir}/chain.snapshot
               
               if [ -d ${node_data_dir}/context ]; then
-                  echo "Blockchain has already been imported, exiting"
+                  echo "Blockchain has already been imported. If a tarball"
+                  echo "instead of a regular tezos snapshot was used, it was"
+                  echo "imported in the snapshot-downloader container."
                   exit 0
               fi
               
               cp -v /etc/tezos/config.json ${node_data_dir}
+              
               ${node} snapshot import ${snapshot_file} --data-dir ${node_data_dir} \
                   --network $CHAIN_NAME
               find ${node_dir}
+              
               rm -rvf ${snapshot_file}
               
           volumeMounts:
@@ -616,7 +622,7 @@ spec:
           imagePullPolicy: IfNotPresent
           name: sidecar
       initContainers:        
-        - image: "tezos/tezos:v10-release"
+        - image: "tezos/tezos:v11-release"
           command:
             - /bin/sh
           args:
@@ -688,7 +694,7 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume                
+              name: var-volume        
         - image: "tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
           name: snapshot-downloader
@@ -715,7 +721,7 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: country-town        
-        - image: "tezos/tezos:v10-release"
+        - image: "tezos/tezos:v11-release"
           imagePullPolicy: IfNotPresent
           name: snapshot-importer
           command:
@@ -726,7 +732,6 @@ spec:
               set -ex
               
               bin_dir="/usr/local/bin"
-              
               data_dir="/var/tezos"
               node_dir="$data_dir/node"
               node_data_dir="$node_dir/data"
@@ -734,14 +739,18 @@ spec:
               snapshot_file=${node_dir}/chain.snapshot
               
               if [ -d ${node_data_dir}/context ]; then
-                  echo "Blockchain has already been imported, exiting"
+                  echo "Blockchain has already been imported. If a tarball"
+                  echo "instead of a regular tezos snapshot was used, it was"
+                  echo "imported in the snapshot-downloader container."
                   exit 0
               fi
               
               cp -v /etc/tezos/config.json ${node_data_dir}
+              
               ${node} snapshot import ${snapshot_file} --data-dir ${node_data_dir} \
                   --network $CHAIN_NAME
               find ${node_dir}
+              
               rm -rvf ${snapshot_file}
               
           volumeMounts:
