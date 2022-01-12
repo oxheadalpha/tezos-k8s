@@ -49,9 +49,11 @@ spec:
                 wget -qO-  http://localhost:8732/chains/main/blocks/head/header | sed -E 's/.*"hash":"?([^,"]*)"?.*/\1/' > /snapshot-cache-volume/BLOCK_HASH
                 wget -qO-  http://localhost:8732/chains/main/blocks/head/header | sed -E 's/.*"level":"?([^,"]*)"?.*/\1/' > /snapshot-cache-volume/BLOCK_HEIGHT
                 wget -qO-  http://localhost:8732/chains/main/blocks/head/header | sed -E 's/.*"timestamp":"?([^,"]*)"?.*/\1/' > /snapshot-cache-volume/BLOCK_TIMESTAMP
+                /usr/local/bin/tezos-node --version > /snapshot-cache-volume/TEZOS_VERSION
                 printf "%s BLOCK_HASH is...$(cat /snapshot-cache-volume/BLOCK_HASH))\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
                 printf "%s BLOCK_HEIGHT is...$(cat /snapshot-cache-volume/BLOCK_HEIGHT)\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
                 printf "%s BLOCK_TIMESTAMP is...$(cat /snapshot-cache-volume/BLOCK_TIMESTAMP)\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+                printf "%s TEZOS_VERSION is...$(cat /snapshot-cache-volume/TEZOS_VERSION)\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
                 sudo chmod -R 755 /snapshot-cache-volume
               fi
           volumeMounts:

@@ -1,4 +1,4 @@
-FROM alpine:3.11
+FROM jekyll/jekyll:builder
 
 ENV GLIBC_VER=2.31-r0
 
