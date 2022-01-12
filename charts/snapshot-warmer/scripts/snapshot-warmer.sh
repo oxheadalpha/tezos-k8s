@@ -1,5 +1,7 @@
 #!/bin/sh
 
+cd /
+
 ## Snapshot Namespace
 NAMESPACE="${NAMESPACE}" yq e -i '.metadata.namespace=strenv(NAMESPACE)' createVolumeSnapshot.yaml
 
