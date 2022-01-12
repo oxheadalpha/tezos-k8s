@@ -1,5 +1,7 @@
 #!/bin/sh
 
+cd /
+
 # Delete zip-and-upload job
 if kubectl get job zip-and-upload --namespace "${NAMESPACE}"; then
     printf "%s Old zip-and-upload job exits.  Attempting to delete.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
