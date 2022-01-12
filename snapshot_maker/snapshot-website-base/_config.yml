@@ -1,12 +1,12 @@
 title: Tezos Snapshots
-author: MIDL.dev
+author: Oxhead Alpha
 description: > # this means to ignore newlines until "show_excerpts:"
   Tezos Snapshots
 favicon: "./favicon.ico" # set the favicon of the site 
 
 show_excerpts: false # set to true to show excerpts on the homepage
 
-remote_theme: midl-dev/xtz-shots-website
+remote_theme: oxheadalpha/xtz-shots-website
 # Theme settings
 doks:
     baseurl:
@@ -27,14 +27,12 @@ doks:
             logo:
                 text: XTZ-Shots
                 image:
-            copyright: Copyright &copy; 2021. - MIDL.Dev <br>All rights reserved.
+            copyright: Copyright &copy; 2022. - Oxhead Alpha <br>All rights reserved.
         social_list:
             - network_name: github
-              profile_url: 'https://github.com/midl-dev/tezos-snapshot-generator'
+              profile_url: 'https://github.com/oxheadalpha'
             - network_name: twitter
-              profile_url: 'https://twitter.com/midl_dev'
-#            - network_name: sphere
-#              profile_url: 'https://midl.dev'
+              profile_url: 'https://twitter.com/oxheadalpha'
     google_analytics:
         tracking_code: # Add your Google Analytics tracking code to activate Google Analytics
     comments:

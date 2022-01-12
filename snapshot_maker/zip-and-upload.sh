@@ -484,9 +484,10 @@ ROLLING_SNAPSHOT_TEZOS_VERSION=$(curl -L http://"${S3_BUCKET}".s3-website.us-eas
 # Will not need this after artfiacts are going to respective network buckets
 CLOUDFRONT_URL="https://d1u3sv5wkszf4p.cloudfront.net/"
 
+cp /snapshot-website-base/* .
 
 # Create index.html
-cat << EOF > /index.md
+cat << EOF > index.md
 ---
 # Page settings
 layout: snapshot
@@ -564,18 +565,18 @@ tezos-node snapshot import tezos-${NETWORK}.rolling
 EOF
 
 echo "**** DEBUG OUTPUT OF index.md *****"
-cat /index.md
+cat index.md
 echo "**** end debug ****"
 
-chmod -R 777 /index.md
+chmod -R 777 index.md
 
 # convert to index.html with jekyll
 bundle install
 bundle exec jekyll build
 
 # upload index.html to website
-if ! aws s3 cp "${NETWORK}"-rolling-tarball s3://"${S3_BUCKET}" --website-redirect /"${ROLLING_TARBALL_FILENAME}"; then
-    printf "%s Rolling Tarball : Error uploading ${NETWORK}-rolling-tarball file to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+if ! aws s3 cp _site/* s3://"${NETWORK}".xtz-shots.io; then
+    printf "%s Website Build & Deploy : Error uploading site to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 else
-    printf "%s Rolling Tarball : Uploaded ${NETWORK}-rolling-tarball file to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    printf "%s Website Build & Deploy  : Sucessfully uploade website to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 fi
