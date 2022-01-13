@@ -363,7 +363,7 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
             fi
 
             ROLLING_SNAPSHOT_FILESIZE=$(du -h  "${ROLLING_SNAPSHOT_FILENAME}" | cut -f1)
-            ROLLING_SNAPSHOT_SHA256SUM=$(sha256sum "${ROLLING_SNAPSHOT_FILENAME}")
+            ROLLING_SNAPSHOT_SHA256SUM=$(sha256sum "${ROLLING_SNAPSHOT_FILENAME}" | awk '{print $1}')
 
             jq -n \
             --arg BLOCK_HASH "$BLOCK_HASH" \
@@ -423,6 +423,8 @@ else
 fi
 
 if [ "${NAMESPACE}" = ithacanet-shots ]; then
+
+    cd /srv/jekyll || exit
 
     # Get latest values from JSONS
 
@@ -571,6 +573,7 @@ EOF
     echo "**** end debug ****"
 
     chmod -R 777 index.md
+    chown jekyll:jekyll -R /usr/gem
 
     # convert to index.html with jekyll
     bundle install
