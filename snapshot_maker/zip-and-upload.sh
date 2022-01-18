@@ -55,6 +55,27 @@ if ! [ "${NAMESPACE}" = mainnet-shots-2 ]; then
     printf "%s ********************* Archive Tarball *********************\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     ARCHIVE_TARBALL_FILENAME=tezos-"${NETWORK}"-archive-tarball-"${BLOCK_HEIGHT}".lz4
     printf "%s Archive tarball filename is ${ARCHIVE_TARBALL_FILENAME}\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+
+    # LZ4 /var/tezos/node selectively and upload to S3
+    printf "%s Archive Tarball : Tarballing /var/tezos/node, LZ4ing, and uploading to S3...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    tar cvf - . \
+    --exclude='node/data/identity.json' \
+    --exclude='node/data/lock' \
+    --exclude='node/data/peers.json' \
+    --exclude='./lost+found' \
+    -C /var/tezos \
+    | lz4 | tee >(sha256sum | awk '{print $1}' > archive-tarball.sha256) \
+    | aws s3 cp - s3://"${S3_BUCKET}"/"${ARCHIVE_TARBALL_FILENAME}" --expected-size 322122547200
+
+    SHA256=$(cat archive-tarball.sha256)
+
+    FILESIZE=$(aws s3api head-object \
+        --bucket "${S3_BUCKET}" \
+        --key "${ARCHIVE_TARBALL_FILENAME}" \
+        --query ContentLength \
+        --output text \
+        | awk '{ suffix="KMGT"; for(i=0; $1>1024 && i < length(suffix); i++) $1/=1024; print int($1) substr(suffix, i, 1), $3; }')
+
     # Add file to base.json
     # have to do it here because base.json is being overwritten
     # by other snapshot actions that are faster
@@ -66,6 +87,8 @@ if ! [ "${NAMESPACE}" = mainnet-shots-2 ]; then
     --arg BLOCK_HEIGHT "$BLOCK_HEIGHT" \
     --arg BLOCK_TIMESTAMP "$BLOCK_TIMESTAMP" \
     --arg ARCHIVE_TARBALL_FILENAME "${ARCHIVE_TARBALL_FILENAME}" \
+    --arg SHA256 "${SHA256}" \
+    --arg FILESIZE "${FILESIZE}" \
     '. |= 
     [
         {
@@ -73,7 +96,9 @@ if ! [ "${NAMESPACE}" = mainnet-shots-2 ]; then
                 "contents": {
                     "BLOCK_HASH": $BLOCK_HASH,
                     "BLOCK_HEIGHT": $BLOCK_HEIGHT,
-                    "BLOCK_TIMESTAMP": $BLOCK_TIMESTAMP
+                    "BLOCK_TIMESTAMP": $BLOCK_TIMESTAMP,
+                    "SHA256": $SHA256,
+                    "FILESIZE": $FILESIZE
                 }
             }
         }
@@ -91,24 +116,11 @@ if ! [ "${NAMESPACE}" = mainnet-shots-2 ]; then
         printf "%s Upload base.json : File base.json sucessfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     fi
 
-    # LZ4 /var/tezos/node selectively and upload to S3
-    printf "%s Archive Tarball : Tarballing /var/tezos/node, LZ4ing, and uploading to S3...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    tar cvf - . \
-    --exclude='node/data/identity.json' \
-    --exclude='node/data/lock' \
-    --exclude='node/data/peers.json' \
-    --exclude='./lost+found' \
-    -C /var/tezos \
-    | lz4 | aws s3 cp - s3://"${S3_BUCKET}"/"${ARCHIVE_TARBALL_FILENAME}" --expected-size 322122547200
-
     # Check if archive-tarball exists in S3 and process redirect
     if ! aws s3api head-object --bucket "${S3_BUCKET}" --key "${ARCHIVE_TARBALL_FILENAME}" > /dev/null; then
         printf "%s Archive Tarball : Error uploading ${ARCHIVE_TARBALL_FILENAME} to S3 Bucket ${S3_BUCKET}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     else
         printf "%s Archive Tarball : Upload of ${ARCHIVE_TARBALL_FILENAME} to S3 Bucket ${S3_BUCKET} successful!\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-
-        ARCHIVE_TARBALL_FILESIZE=$(du -h  "${ARCHIVE_TARBALL_FILENAME}" | cut -f1)
-        ARCHIVE_TARBALL_SHA256SUM=$(sha256sum "${ARCHIVE_TARBALL_FILENAME}")
 
         # Create archive tarball metadata json
         jq -n \
@@ -116,8 +128,8 @@ if ! [ "${NAMESPACE}" = mainnet-shots-2 ]; then
         --arg BLOCK_HEIGHT "$BLOCK_HEIGHT" \
         --arg BLOCK_TIMESTAMP "$BLOCK_TIMESTAMP" \
         --arg ARCHIVE_TARBALL_FILENAME "$ARCHIVE_TARBALL_FILENAME" \
-        --arg ARCHIVE_TARBALL_FILESIZE "$ARCHIVE_TARBALL_FILESIZE" \
-        --arg ARCHIVE_TARBALL_SHA256SUM "$ARCHIVE_TARBALL_SHA256SUM" \
+        --arg FILESIZE "$ARCHIVE_TARBALL_FILESIZE" \
+        --arg SHA256 "$SHA256" \
         --arg TEZOS_VERSION "$TEZOS_VERSION" \
         '{
             "BLOCK_HASH": $BLOCK_HASH, 
@@ -125,7 +137,7 @@ if ! [ "${NAMESPACE}" = mainnet-shots-2 ]; then
             "BLOCK_TIMESTAMP": $BLOCK_TIMESTAMP, 
             "ARCHIVE_TARBALL_FILENAME": $ARCHIVE_TARBALL_FILENAME, 
             "ARCHIVE_TARBALL_FILESIZE": $ARCHIVE_TARBALL_FILESIZE, 
-            "ARCHIVE_TARBALL_SHA256SUM": $ARCHIVE_TARBALL_SHA256SUM,
+            "SHA256": $SHA256,
             "TEZOS_VERSION": $TEZOS_VERSION
         }' \
         > "${ARCHIVE_TARBALL_FILENAME}".json
@@ -201,6 +213,25 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
     # LZ4 /snapshot-cache-volume/var/tezos/node selectively and upload to S3
     printf "%s ********************* Rolling Tarball *********************\\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
+    printf "%s Rolling Tarball : Tarballing /rolling-tarball-restore/var/tezos/node, LZ4ing, and uploading to S3...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    tar cvf - . \
+    --exclude='node/data/identity.json' \
+    --exclude='node/data/lock' \
+    --exclude='node/data/peers.json' \
+    --exclude='./lost+found' \
+    -C /rolling-tarball-restore/var/tezos \
+    | lz4 | tee >(sha256sum | awk '{print $1}' > rolling-tarball.sha256) \
+    | aws s3 cp - s3://"${S3_BUCKET}"/"${ROLLING_TARBALL_FILENAME}" --expected-size 322122547200
+
+    SHA256=$(cat rolling-tarball.sha256)
+
+    FILESIZE=$(aws s3api head-object \
+    --bucket "${S3_BUCKET}" \
+    --key "${ROLLING_TARBALL_FILENAME}" \
+    --query ContentLength \
+    --output text \
+    | awk '{ suffix="KMGT"; for(i=0; $1>1024 && i < length(suffix); i++) $1/=1024; print int($1) substr(suffix, i, 1), $3; }')
+
     # Add file to base.json
     tmp=$(mktemp)
     cp base.json "${tmp}"
@@ -210,6 +241,8 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
     --arg BLOCK_HEIGHT "$BLOCK_HEIGHT" \
     --arg BLOCK_TIMESTAMP "$BLOCK_TIMESTAMP" \
     --arg ROLLING_TARBALL_FILENAME "${ROLLING_TARBALL_FILENAME}" \
+    --arg SHA256 "${SHA256}" \
+    --arg FILESIZE "${FILESIZE}" \
     '. |= 
     [
         {
@@ -217,7 +250,9 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
                 "contents": {
                     "BLOCK_HASH": $BLOCK_HASH,
                     "BLOCK_HEIGHT": $BLOCK_HEIGHT,
-                    "BLOCK_TIMESTAMP": $BLOCK_TIMESTAMP
+                    "BLOCK_TIMESTAMP": $BLOCK_TIMESTAMP,
+                    "SHA256": $SHA256,
+                    "FILESIZE": $FILESIZE
                 }
             }
         }
@@ -235,31 +270,19 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
         printf "%s Upload base.json : File base.json sucessfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     fi
 
-    printf "%s Rolling Tarball : Tarballing /rolling-tarball-restore/var/tezos/node, LZ4ing, and uploading to S3...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    tar cvf - . \
-    --exclude='node/data/identity.json' \
-    --exclude='node/data/lock' \
-    --exclude='node/data/peers.json' \
-    --exclude='./lost+found' \
-    -C /rolling-tarball-restore/var/tezos \
-    | lz4 | aws s3 cp - s3://"${S3_BUCKET}"/"${ROLLING_TARBALL_FILENAME}" --expected-size 322122547200
-
     # Check if rolling-tarball exists and process redirect
     if ! aws s3api head-object --bucket "${S3_BUCKET}" --key "${ROLLING_TARBALL_FILENAME}" > /dev/null; then
         printf "%s Rolling Tarball : Error uploading ${ROLLING_TARBALL_FILENAME} to S3 Bucket ${S3_BUCKET}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     else
         printf "%s Rolling Tarball : Upload of ${ROLLING_TARBALL_FILENAME} to S3 Bucket ${S3_BUCKET} successful!\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
-        ROLLING_TARBALL_FILESIZE=$(du -h  "${ROLLING_TARBALL_FILENAME}" | cut -f1)
-        ROLLING_TARBALL_SHA256SUM=$(sha256sum "${ROLLING_TARBALL_FILENAME}")
-
         jq -n \
         --arg BLOCK_HASH "$BLOCK_HASH" \
         --arg BLOCK_HEIGHT "$BLOCK_HEIGHT" \
         --arg BLOCK_TIMESTAMP "$BLOCK_TIMESTAMP" \
         --arg ROLLING_TARBALL_FILENAME "${ROLLING_TARBALL_FILENAME}" \
-        --arg ROLLING_TARBALL_FILESIZE "${ROLLING_TARBALL_FILESIZE}" \
-        --arg ROLLING_TARBALL_SHA256SUM "${ROLLING_TARBALL_SHA256SUM}" \
+        --arg SHA256 "${SHA256}" \
+        --arg FILESIZE "${FILESIZE}" \
         --arg TEZOS_VERSION "$TEZOS_VERSION" \
         '{
             "BLOCK_HASH": $BLOCK_HASH, 
@@ -268,6 +291,8 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
             "ROLLING_TARBALL_FILENAME": $ROLLING_TARBALL_FILENAME,
             "ROLLING_TARBALL_FILESIZE": $ROLLING_TARBALL_FILESIZE,
             "ROLLING_TARBALL_SHA256SUM": $ROLLING_TARBALL_SHA256SUM,
+            "SHA256": $SHA256,
+            "FILESIZE": $FILESIZE
             "TEZOS_VERSION": $TEZOS_VERSION
         }' \
         > "${ROLLING_TARBALL_FILENAME}".json
@@ -328,6 +353,9 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
             printf "%s Rolling Tezos : Sucessfully uploaded ${ROLLING_SNAPSHOT} to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
             printf "%s Rolling Tezos : Uploading redirect...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
+            FILESIZE=$(du -h  "${ROLLING_SNAPSHOT}" | cut -f1)
+            SHA256=$(sha256sum "${ROLLING_SNAPSHOT}" | awk '{print $1}')
+
             # Add file to base.json
             tmp=$(mktemp)
             cp base.json "${tmp}"
@@ -337,6 +365,8 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
             --arg BLOCK_HEIGHT "$BLOCK_HEIGHT" \
             --arg BLOCK_TIMESTAMP "$BLOCK_TIMESTAMP" \
             --arg ROLLING_SNAPSHOT_FILENAME "${ROLLING_SNAPSHOT_FILENAME}" \
+            --arg SHA256 "${SHA256}" \
+            --arg FILESIZE "${FILESIZE}" \
             '. |= 
             [
                 {
@@ -344,7 +374,9 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
                         "contents": {
                             "BLOCK_HASH": $BLOCK_HASH,
                             "BLOCK_HEIGHT": $BLOCK_HEIGHT,
-                            "BLOCK_TIMESTAMP": $BLOCK_TIMESTAMP
+                            "BLOCK_TIMESTAMP": $BLOCK_TIMESTAMP,
+                            "SHA256": $SHA256,
+                            "FILESIZE": $FILESIZE
                         }
                     }
                 }
@@ -362,24 +394,21 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
                 printf "%s Upload base.json : File base.json sucessfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
             fi
 
-            ROLLING_SNAPSHOT_FILESIZE=$(du -h  "${ROLLING_SNAPSHOT_FILENAME}" | cut -f1)
-            ROLLING_SNAPSHOT_SHA256SUM=$(sha256sum "${ROLLING_SNAPSHOT_FILENAME}" | awk '{print $1}')
-
             jq -n \
             --arg BLOCK_HASH "$BLOCK_HASH" \
             --arg BLOCK_HEIGHT "$BLOCK_HEIGHT" \
             --arg BLOCK_TIMESTAMP "$BLOCK_TIMESTAMP" \
             --arg ROLLING_SNAPSHOT_FILENAME "$ROLLING_SNAPSHOT_FILENAME" \
-            --arg ROLLING_SNAPSHOT_FILESIZE "$ROLLING_SNAPSHOT_FILESIZE" \
-            --arg ROLLING_SNAPSHOT_SHA256SUM "$ROLLING_SNAPSHOT_SHA256SUM" \
+            --arg FILESIZE "$FILESIZE" \
+            --arg SHA256 "$SHA256" \
             --arg TEZOS_VERSION "$TEZOS_VERSION" \
             '{
                 "BLOCK_HASH": $BLOCK_HASH, 
                 "BLOCK_HEIGHT": $BLOCK_HEIGHT, 
                 "BLOCK_TIMESTAMP": $BLOCK_TIMESTAMP,
                 "ROLLING_SNAPSHOT_FILENAME": $ROLLING_SNAPSHOT_FILENAME,
-                "ROLLING_SNAPSHOT_FILESIZE": $ROLLING_SNAPSHOT_FILESIZE,
-                "ROLLING_SNAPSHOT_SHA256SUM": $ROLLING_SNAPSHOT_SHA256SUM,
+                "FILESIZE": $ROLLING_SNAPSHOT_FILESIZE,
+                "SHA256": $ROLLING_SNAPSHOT_SHA256SUM,
                 "TEZOS_VERSION": $TEZOS_VERSION
 
             }' \
@@ -441,9 +470,9 @@ if [ "${NAMESPACE}" = ithacanet-shots ]; then
     # archive tarball block timestamp
     ARCHIVE_TARBALL_BLOCK_TIMESTAMP=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-archive-tarball-json 2>/dev/null | jq -r '.BLOCK_TIMESTAMP')
     # archive tarball filesize
-    ARCHIVE_TARBALL_FILESIZE=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-archive-tarball-json 2>/dev/null | jq -r '.ARCHIVE_TARBALL_FILESIZE')
+    ARCHIVE_TARBALL_FILESIZE=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-archive-tarball-json 2>/dev/null | jq -r '.FILESIZE')
     # archive tarball sha256 sum
-    ARCHIVE_TARBALL_SHA256SUM=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-archive-tarball-json 2>/dev/null | jq -r '.ARCHIVE_TARBALL_SHA256SUM')
+    ARCHIVE_TARBALL_SHA256SUM=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-archive-tarball-json 2>/dev/null | jq -r '.SHA256')
     # archive tarball tezos version
     ARCHIVE_TARBALL_TEZOS_VERSION=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-archive-tarball-json 2>/dev/null | jq -r '.TEZOS_VERSION')
 
@@ -460,9 +489,9 @@ if [ "${NAMESPACE}" = ithacanet-shots ]; then
     # rolling tarball block timestamp
     ROLLING_TARBALL_BLOCK_TIMESTAMP=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-rolling-tarball-json 2>/dev/null | jq -r '.BLOCK_TIMESTAMP')
     # rolling tarball filesize
-    ROLLING_TARBALL_FILESIZE=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-rolling-tarball-json 2>/dev/null | jq -r '.ROLLING_TARBALL_FILESIZE')
+    ROLLING_TARBALL_FILESIZE=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-rolling-tarball-json 2>/dev/null | jq -r '.FILESIZE')
     # rolling tarball sha256 sum
-    ROLLING_TARBALL_SHA256SUM=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-rolling-tarball-json 2>/dev/null | jq -r '.ROLLING_TARBALL_SHA256SUM')
+    ROLLING_TARBALL_SHA256SUM=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-rolling-tarball-json 2>/dev/null | jq -r '.SHA256')
     # rolling tarball tezos version
     ROLLING_TARBALL_TEZOS_VERSION=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-rolling-tarball-json 2>/dev/null | jq -r '.TEZOS_VERSION')
 
@@ -479,9 +508,9 @@ if [ "${NAMESPACE}" = ithacanet-shots ]; then
     # rolling snapshot block timestamp
     ROLLING_SNAPSHOT_BLOCK_TIMESTAMP=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-rolling-snapshot-json 2>/dev/null | jq -r '.BLOCK_TIMESTAMP')
     # rolling snapshot filesize
-    ROLLING_SNAPSHOT_FILESIZE=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-rolling-snapshot-json 2>/dev/null | jq -r '.ROLLING_SNAPSHOT_FILESIZE')
+    ROLLING_SNAPSHOT_FILESIZE=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-rolling-snapshot-json 2>/dev/null | jq -r '.FILESIZE')
     # rolling snapshot sha256 sum
-    ROLLING_SNAPSHOT_SHA256SUM=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-rolling-snapshot-json 2>/dev/null | jq -r '.ROLLING_SNAPSHOT_SHA256SUM')
+    ROLLING_SNAPSHOT_SHA256SUM=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-rolling-snapshot-json 2>/dev/null | jq -r '.SHA256')
     # rolling snapshot tezos version
     ROLLING_SNAPSHOT_TEZOS_VERSION=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-rolling-snapshot-json 2>/dev/null | jq -r '.TEZOS_VERSION')
 
@@ -515,41 +544,75 @@ page_nav:
         url: 'https://xtz-shots.io/index.html'
 ---
 # Tezos snapshots for ${NETWORK}
-Block height: $BLOCK_HEIGHT
-Block hash: \`${BLOCK_HASH}\`
-[Verify on TzStats](https://${EXPLORER_SUBDOMAIN}tzstats.com/${BLOCK_HASH}){:target="_blank"} - [Verify on TzKT](https://${EXPLORER_SUBDOMAIN}tzkt.io/${BLOCK_HASH}){:target="_blank"}
-Block timestamp: $BLOCK_TIMESTAMP
+
 Tezos version used for snapshotting: \`${TEZOS_VERSION}\`
 ## Archive tarball
 [Download Archive Tarball](${CLOUDFRONT_URL}${NETWORK}-archive-tarball)
+
+Block height: $ARCHIVE_TARBALL_BLOCK_HEIGHT
+
+Block hash: \`${ARCHIVE_TARBALL_BLOCK_HASH}\`
+
+[Verify on TzStats](https://${EXPLORER_SUBDOMAIN}tzstats.com/${ARCHIVE_TARBALL_BLOCK_HASH}){:target="_blank"} - [Verify on TzKT](https://${EXPLORER_SUBDOMAIN}tzkt.io/${ARCHIVE_TARBALL_BLOCK_HASH}){:target="_blank"}
+
+Block timestamp: $ARCHIVE_TARBALL_BLOCK_TIMESTAMP
+
 Size: ${ARCHIVE_TARBALL_FILESIZE}
+
+Checksum (SHA256): ${ARCHIVE_TARBALL_SHA256SUM}
 ## Rolling tarball
 [Download Rolling Tarball](${CLOUDFRONT_URL}${NETWORK}-rolling-tarball)
+
+Block height: $ROLLING_TARBALL_BLOCK_HEIGHT
+
+Block hash: \`${ROLLING_TARBALL_BLOCK_HASH}\`
+
+[Verify on TzStats](https://${EXPLORER_SUBDOMAIN}tzstats.com/${ROLLING_TARBALL_BLOCK_HASH}){:target="_blank"} - [Verify on TzKT](https://${EXPLORER_SUBDOMAIN}tzkt.io/${ROLLING_TARBALL_BLOCK_HASH}){:target="_blank"}
+
+Block timestamp: $ROLLING_TARBALL_BLOCK_TIMESTAMP
+
 Size: ${ROLLING_TARBALL_FILESIZE}
+
+Checksum (SHA256): ${ROLLING_TARBALL_SHA256SUM}
 ## Rolling snapshot
 [Download Rolling Snapshot](${CLOUDFRONT_URL}${NETWORK}-rolling-tezos)
+
+Block height: $ROLLING_SNAPSHOT_BLOCK_HEIGHT
+
+Block hash: \`${ROLLING_SNAPSHOT_BLOCK_HASH}\`
+
+[Verify on TzStats](https://${EXPLORER_SUBDOMAIN}tzstats.com/${ROLLING_SNAPSHOT_BLOCK_HASH}){:target="_blank"} - [Verify on TzKT](https://${EXPLORER_SUBDOMAIN}tzkt.io/${ROLLING_SNAPSHOT_BLOCK_HASH}){:target="_blank"}
+
+Block timestamp: $ROLLING_SNAPSHOT_BLOCK_TIMESTAMP
+
 Size: ${ROLLING_SNAPSHOT_FILESIZE}
+
+Checksum (SHA256): ${ROLLING_SNAPSHOT_SHA256SUM}
 ## How to use
 ### Archive Tarball
 Issue the following commands:
 \`\`\`
 curl -LfsS "${CLOUDFRONT_URL}${ARCHIVE_TARBALL_FILENAME}" \
+
 | lz4 -d | tar -x -C "/var/tezos"
 \`\`\`
 Or simply use the permalink:
 \`\`\`
 curl -LfsS "${CLOUDFRONT_URL}${NETWORK}-archive-tarball" \
+
 | lz4 -d | tar -x -C "/var/tezos"
 \`\`\`
 ### Rolling Tarball
 Issue the following commands:
 \`\`\`
 curl -LfsS "${CLOUDFRONT_URL}${ROLLING_TARBALL_FILENAME}" \
+
 | lz4 -d | tar -x -C "/var/tezos"
 \`\`\`
 Or simply use the permalink:
 \`\`\`
 curl -LfsS "${CLOUDFRONT_URL}${NETWORK}-rolling-tarball" \
+
 | lz4 -d | tar -x -C "/var/tezos"
 \`\`\`
 ### Rolling Snapshot
@@ -565,6 +628,7 @@ tezos-node snapshot import tezos-${NETWORK}.rolling
 \`\`\`
 ### More details
 [About xtz-shots.io](https://xtz-shots.io/getting-started/).
+
 [Tezos documentation](https://tezos.gitlab.io/user/snapshots.html){:target="_blank"}.
 EOF
 
@@ -580,7 +644,7 @@ EOF
     bundle exec jekyll build
 
     # upload index.html to website
-    if ! aws s3 cp _site/* s3://"${NETWORK}".xtz-shots.io; then
+    if ! aws s3 cp _site/ s3://"${NETWORK}".xtz-shots.io --recursive --include "*"; then
         printf "%s Website Build & Deploy : Error uploading site to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     else
         printf "%s Website Build & Deploy  : Sucessfully uploade website to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
