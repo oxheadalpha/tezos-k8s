@@ -1,9 +1,0 @@
-apiVersion: snapshot.storage.k8s.io/v1
-kind: VolumeSnapshot
-metadata:
-  name: "2021-11-07-01-13-02-node-snapshot"
-  namespace: hangzhounet-shots
-spec:
-  volumeSnapshotClassName: test-snapclass
-  source:
-    persistentVolumeClaimName: var-volume-snapshot-archive-node-0
