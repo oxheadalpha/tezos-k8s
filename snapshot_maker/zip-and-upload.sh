@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 BLOCK_HEIGHT=$(cat /snapshot-cache-volume/BLOCK_HEIGHT)
 BLOCK_HASH=$(cat /snapshot-cache-volume/BLOCK_HASH)
@@ -89,6 +89,7 @@ if ! [ "${NAMESPACE}" = mainnet-shots-2 ]; then
     --arg ARCHIVE_TARBALL_FILENAME "${ARCHIVE_TARBALL_FILENAME}" \
     --arg SHA256 "${SHA256}" \
     --arg FILESIZE "${FILESIZE}" \
+    --arg TEZOS_VERSION "$TEZOS_VERSION" \
     '. |= 
     [
         {
@@ -98,7 +99,8 @@ if ! [ "${NAMESPACE}" = mainnet-shots-2 ]; then
                     "BLOCK_HEIGHT": $BLOCK_HEIGHT,
                     "BLOCK_TIMESTAMP": $BLOCK_TIMESTAMP,
                     "SHA256": $SHA256,
-                    "FILESIZE": $FILESIZE
+                    "FILESIZE": $FILESIZE,
+                    "TEZOS_VERSION": $TEZOS_VERSION
                 }
             }
         }
@@ -128,16 +130,17 @@ if ! [ "${NAMESPACE}" = mainnet-shots-2 ]; then
         --arg BLOCK_HEIGHT "$BLOCK_HEIGHT" \
         --arg BLOCK_TIMESTAMP "$BLOCK_TIMESTAMP" \
         --arg ARCHIVE_TARBALL_FILENAME "$ARCHIVE_TARBALL_FILENAME" \
-        --arg FILESIZE "$ARCHIVE_TARBALL_FILESIZE" \
         --arg SHA256 "$SHA256" \
+        --arg FILESIZE "$FILESIZE" \
         --arg TEZOS_VERSION "$TEZOS_VERSION" \
         '{
             "BLOCK_HASH": $BLOCK_HASH, 
             "BLOCK_HEIGHT": $BLOCK_HEIGHT, 
-            "BLOCK_TIMESTAMP": $BLOCK_TIMESTAMP, 
-            "ARCHIVE_TARBALL_FILENAME": $ARCHIVE_TARBALL_FILENAME, 
-            "ARCHIVE_TARBALL_FILESIZE": $ARCHIVE_TARBALL_FILESIZE, 
+            "BLOCK_TIMESTAMP": $BLOCK_TIMESTAMP,
+            "ARCHIVE_TARBALL_FILENAME": $ARCHIVE_TARBALL_FILENAME,
+            "FILESIZE": $FILESIZE,
             "SHA256": $SHA256,
+            "FILESIZE": $FILESIZE, 
             "TEZOS_VERSION": $TEZOS_VERSION
         }' \
         > "${ARCHIVE_TARBALL_FILENAME}".json
@@ -243,6 +246,7 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
     --arg ROLLING_TARBALL_FILENAME "${ROLLING_TARBALL_FILENAME}" \
     --arg SHA256 "${SHA256}" \
     --arg FILESIZE "${FILESIZE}" \
+    --arg TEZOS_VERSION "$TEZOS_VERSION" \
     '. |= 
     [
         {
@@ -252,7 +256,8 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
                     "BLOCK_HEIGHT": $BLOCK_HEIGHT,
                     "BLOCK_TIMESTAMP": $BLOCK_TIMESTAMP,
                     "SHA256": $SHA256,
-                    "FILESIZE": $FILESIZE
+                    "FILESIZE": $FILESIZE,
+                    "TEZOS_VERSION": $TEZOS_VERSION \
                 }
             }
         }
@@ -280,19 +285,18 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
         --arg BLOCK_HASH "$BLOCK_HASH" \
         --arg BLOCK_HEIGHT "$BLOCK_HEIGHT" \
         --arg BLOCK_TIMESTAMP "$BLOCK_TIMESTAMP" \
-        --arg ROLLING_TARBALL_FILENAME "${ROLLING_TARBALL_FILENAME}" \
-        --arg SHA256 "${SHA256}" \
-        --arg FILESIZE "${FILESIZE}" \
+        --arg ROLLING_TARBALL_FILENAME "$ROLLING_TARBALL_FILENAME" \
+        --arg SHA256 "$SHA256" \
+        --arg FILESIZE "$FILESIZE" \
         --arg TEZOS_VERSION "$TEZOS_VERSION" \
         '{
             "BLOCK_HASH": $BLOCK_HASH, 
             "BLOCK_HEIGHT": $BLOCK_HEIGHT, 
             "BLOCK_TIMESTAMP": $BLOCK_TIMESTAMP,
             "ROLLING_TARBALL_FILENAME": $ROLLING_TARBALL_FILENAME,
-            "ROLLING_TARBALL_FILESIZE": $ROLLING_TARBALL_FILESIZE,
-            "ROLLING_TARBALL_SHA256SUM": $ROLLING_TARBALL_SHA256SUM,
+            "FILESIZE": $FILESIZE,
             "SHA256": $SHA256,
-            "FILESIZE": $FILESIZE
+            "FILESIZE": $FILESIZE, 
             "TEZOS_VERSION": $TEZOS_VERSION
         }' \
         > "${ROLLING_TARBALL_FILENAME}".json
@@ -367,6 +371,7 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
             --arg ROLLING_SNAPSHOT_FILENAME "${ROLLING_SNAPSHOT_FILENAME}" \
             --arg SHA256 "${SHA256}" \
             --arg FILESIZE "${FILESIZE}" \
+            --arg TEZOS_VERSION "$TEZOS_VERSION" \
             '. |= 
             [
                 {
@@ -376,7 +381,8 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
                             "BLOCK_HEIGHT": $BLOCK_HEIGHT,
                             "BLOCK_TIMESTAMP": $BLOCK_TIMESTAMP,
                             "SHA256": $SHA256,
-                            "FILESIZE": $FILESIZE
+                            "FILESIZE": $FILESIZE,
+                            "TEZOS_VERSION": $TEZOS_VERSION
                         }
                     }
                 }
@@ -399,18 +405,18 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
             --arg BLOCK_HEIGHT "$BLOCK_HEIGHT" \
             --arg BLOCK_TIMESTAMP "$BLOCK_TIMESTAMP" \
             --arg ROLLING_SNAPSHOT_FILENAME "$ROLLING_SNAPSHOT_FILENAME" \
-            --arg FILESIZE "$FILESIZE" \
             --arg SHA256 "$SHA256" \
+            --arg FILESIZE "$FILESIZE" \
             --arg TEZOS_VERSION "$TEZOS_VERSION" \
             '{
                 "BLOCK_HASH": $BLOCK_HASH, 
                 "BLOCK_HEIGHT": $BLOCK_HEIGHT, 
                 "BLOCK_TIMESTAMP": $BLOCK_TIMESTAMP,
                 "ROLLING_SNAPSHOT_FILENAME": $ROLLING_SNAPSHOT_FILENAME,
-                "FILESIZE": $ROLLING_SNAPSHOT_FILESIZE,
-                "SHA256": $ROLLING_SNAPSHOT_SHA256SUM,
+                "FILESIZE": $FILESIZE,
+                "SHA256": $SHA256,
+                "FILESIZE": $FILESIZE, 
                 "TEZOS_VERSION": $TEZOS_VERSION
-
             }' \
             > "${ROLLING_SNAPSHOT_FILENAME}".json
             
