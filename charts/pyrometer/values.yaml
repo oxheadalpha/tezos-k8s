@@ -1,0 +1,4 @@
+# Pass below the pyrometer config, in yaml format (will be converted to toml)
+config: {}
+images:
+  pyrometer: registry.gitlab.com/tezos-kiln/pyrometer:latest

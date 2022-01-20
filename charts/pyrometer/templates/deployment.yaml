@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pyrometer
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: pyrometer
+  template:
+    metadata:
+      labels:
+        app: pyrometer
+      annotations:
+        # ensure that the pod bounces each time configmap changes
+        # https://helm.sh/docs/howto/charts_tips_and_tricks/#automatically-roll-deployments
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }} 
+    spec:
+      containers:
+      - name: pyrometer
+        image: {{ .Values.images.pyrometer }}
+        args:
+        - run
+        - -c
+        - '/config/config.json'
+        ports:
+          - name: http
+            containerPort: 80
+            protocol: TCP
+        volumeMounts:
+        - name: config-volume
+          mountPath: /config/
+      volumes:
+      - name: config-volume
+        configMap:
+          name: pyrometer-config
