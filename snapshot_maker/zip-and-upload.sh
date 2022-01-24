@@ -4,8 +4,14 @@ BLOCK_HEIGHT=$(cat /snapshot-cache-volume/BLOCK_HEIGHT)
 BLOCK_HASH=$(cat /snapshot-cache-volume/BLOCK_HASH)
 BLOCK_TIMESTAMP=$(cat /snapshot-cache-volume/BLOCK_TIMESTAMP)
 TEZOS_VERSION=$(cat /snapshot-cache-volume/TEZOS_VERSION)
-S3_BUCKET=tezos-tarballs
 NETWORK="${NAMESPACE%%-*}"
+
+# For dev only
+if [ "${NAMESPACE}" = ithacanet-shots ]; then
+    S3_BUCKET="${NETWORK}.xtz-shots.io"
+else
+    S3_BUCKET=tezos-tarballs
+fi
 
 cd /
 
@@ -16,7 +22,7 @@ printf "%s BLOCK_HASH is...$(cat /snapshot-cache-volume/BLOCK_HASH))\n" "$(date 
 printf "%s BLOCK_HEIGHT is...$(cat /snapshot-cache-volume/BLOCK_HEIGHT)\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 printf "%s BLOCK_TIMESTAMP is...$(cat /snapshot-cache-volume/BLOCK_TIMESTAMP)\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
-# Download base.json or create if if it doesnt exist
+# Download base.json or create if if it doesn't exist
 if ! aws s3api head-object --bucket "${S3_BUCKET}" --key "base.json" > /dev/null; then
     printf "%s Check base.json : Did not detect in S3.  Creating base.json locally to append and upload later.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     if ! touch base.json; then
@@ -160,28 +166,28 @@ if ! [ "${NAMESPACE}" = mainnet-shots-2 ]; then
         fi
 
         # Create archive tarball redirect file
-        if ! touch "${NETWORK}"-archive-tarball; then
+        if ! touch archive-tarball; then
             printf "%s Archive Tarball : Error creating ${NETWORK}-archive-tarball file locally.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         else
             printf "%s Archive Tarball : ${NETWORK}-archive-tarball created sucessfully.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         fi
 
         # Upload redirect file and set header for previously uploaded LZ4 File
-        if ! aws s3 cp "${NETWORK}"-archive-tarball s3://"${S3_BUCKET}" --website-redirect /"${ARCHIVE_TARBALL_FILENAME}"; then
+        if ! aws s3 cp archive-tarball s3://"${S3_BUCKET}" --website-redirect /"${ARCHIVE_TARBALL_FILENAME}"; then
             printf "%s Archive Tarball : Error uploading ${NETWORK}-archive-tarball. to S3\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         else
             printf "%s Archive Tarball : Upload of ${NETWORK}-archive-tarball sucessful to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         fi
 
         # Archive Tarball json redirect file
-        if ! touch "${NETWORK}"-archive-tarball-json; then
+        if ! touch archive-tarball-json; then
             printf "%s Archive Tarball : Error creating ${NETWORK}-archive-tarball-json file locally.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         else
             printf "%s Archive Tarball : Created ${NETWORK}-archive-tarball-json file locally.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         fi
 
         # Upload archive tarball json redirect file and set header for previously uploaded archive tarball json File
-        if ! aws s3 cp "${NETWORK}"-archive-tarball-json s3://"${S3_BUCKET}" --website-redirect /"${ARCHIVE_TARBALL_FILENAME}".json; then
+        if ! aws s3 cp archive-tarball-json s3://"${S3_BUCKET}" --website-redirect /"${ARCHIVE_TARBALL_FILENAME}".json; then
             printf "%s archive Tarball : Error uploading ${NETWORK}-archive-tarball-json file to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         else
             printf "%s archive Tarball : Uploaded ${NETWORK}-archive-tarball-json file to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -315,28 +321,28 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
         fi
         
         # Tarball redirect file
-        if ! touch "${NETWORK}"-rolling-tarball; then
+        if ! touch rolling-tarball; then
             printf "%s Rolling Tarball : Error creating ${NETWORK}-rolling-tarball file locally.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         else
             printf "%s Rolling Tarball : Created ${NETWORK}-rolling-tarball file locally.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         fi
 
         # Upload redirect file and set header for previously uploaded LZ4 File
-        if ! aws s3 cp "${NETWORK}"-rolling-tarball s3://"${S3_BUCKET}" --website-redirect /"${ROLLING_TARBALL_FILENAME}"; then
+        if ! aws s3 cp rolling-tarball s3://"${S3_BUCKET}" --website-redirect /"${ROLLING_TARBALL_FILENAME}"; then
             printf "%s Rolling Tarball : Error uploading ${NETWORK}-rolling-tarball file to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         else
             printf "%s Rolling Tarball : Uploaded ${NETWORK}-rolling-tarball file to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         fi
 
         # Rolling Tarball json redirect file
-        if ! touch "${NETWORK}"-rolling-tarball-json; then
+        if ! touch rolling-tarball-json; then
             printf "%s Rolling Tarball : Error creating ${NETWORK}-rolling-tarball-json file locally.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         else
             printf "%s Rolling Tarball : Created ${NETWORK}-rolling-tarball-json file locally.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         fi
 
         # Upload rolling tarball json redirect file and set header for previously uploaded rolling tarball json File
-        if ! aws s3 cp "${NETWORK}"-rolling-tarball-json s3://"${S3_BUCKET}" --website-redirect /"${ROLLING_TARBALL_FILENAME}".json; then
+        if ! aws s3 cp rolling-tarball-json s3://"${S3_BUCKET}" --website-redirect /"${ROLLING_TARBALL_FILENAME}".json; then
             printf "%s Rolling Tarball : Error uploading ${NETWORK}-rolling-tarball-json file to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         else
             printf "%s Rolling Tarball : Uploaded ${NETWORK}-rolling-tarball-json file to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -427,24 +433,24 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
             printf "%s Rolling Tezos : Metadata JSON ${ROLLING_SNAPSHOT_FILENAME}.json uploaded to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
             # Rolling snapshot redirect object
-            touch "${NETWORK}"-rolling-tezos
+            touch rolling
 
             # Upload rolling tezos snapshot redirect object
-            if ! aws s3 cp "${NETWORK}"-rolling-tezos s3://"${S3_BUCKET}" --website-redirect /"${ROLLING_SNAPSHOT_FILENAME}"; then
+            if ! aws s3 cp rolling s3://"${S3_BUCKET}" --website-redirect /"${ROLLING_SNAPSHOT_FILENAME}"; then
                 printf "%s Rolling Tezos : Error uploading redirect object for ${ROLLING_SNAPSHOT} to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
             else
                 printf "%s Rolling Tezos : Sucessfully uploaded redirect object for ${ROLLING_SNAPSHOT} to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
             fi
 
             # Rolling snapshot json redirect file
-            if ! touch "${NETWORK}"-rolling-snapshot-json; then
+            if ! touch rolling-snapshot-json; then
                 printf "%s Rolling Snapshot : Error creating ${NETWORK}-rolling-snapshot-json file locally.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
             else
                 printf "%s Rolling snapshot : Created ${NETWORK}-rolling-snapshot-json file locally.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
             fi
 
             # Upload rolling snapshot json redirect file and set header for previously uploaded rolling snapshot json File
-            if ! aws s3 cp "${NETWORK}"-rolling-snapshot-json s3://"${S3_BUCKET}" --website-redirect /"${ROLLING_SNAPSHOT_FILENAME}".json; then
+            if ! aws s3 cp rolling-snapshot-json s3://"${S3_BUCKET}" --website-redirect /"${ROLLING_SNAPSHOT_FILENAME}".json; then
                 printf "%s Rolling snapshot : Error uploading ${NETWORK}-rolling-snapshot-json file to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
             else
                 printf "%s Rolling snapshot : Uploaded ${NETWORK}-rolling-snapshot-json file to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -457,6 +463,7 @@ else
   printf "%s Skipping rolling snapshot import and export because its too slow on mainnet.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 fi
 
+# For dev only
 if [ "${NAMESPACE}" = ithacanet-shots ]; then
 
     cd /srv/jekyll || exit
@@ -468,38 +475,38 @@ if [ "${NAMESPACE}" = ithacanet-shots ]; then
     #
 
     # archive tarball filename
-    ARCHIVE_TARBALL_FILENAME=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-archive-tarball-json 2>/dev/null | jq -r '.ARCHIVE_TARBALL_FILENAME')
+    ARCHIVE_TARBALL_FILENAME=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.ARCHIVE_TARBALL_FILENAME')
     # archive tarball block hash
-    ARCHIVE_TARBALL_BLOCK_HASH=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-archive-tarball-json 2>/dev/null | jq -r '.BLOCK_HASH')
+    ARCHIVE_TARBALL_BLOCK_HASH=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.BLOCK_HASH')
     # archive tarball block level
-    ARCHIVE_TARBALL_BLOCK_HEIGHT=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-archive-tarball-json 2>/dev/null | jq -r '.BLOCK_HEIGHT')
+    ARCHIVE_TARBALL_BLOCK_HEIGHT=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.BLOCK_HEIGHT')
     # archive tarball block timestamp
-    ARCHIVE_TARBALL_BLOCK_TIMESTAMP=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-archive-tarball-json 2>/dev/null | jq -r '.BLOCK_TIMESTAMP')
+    ARCHIVE_TARBALL_BLOCK_TIMESTAMP=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.BLOCK_TIMESTAMP')
     # archive tarball filesize
-    ARCHIVE_TARBALL_FILESIZE=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-archive-tarball-json 2>/dev/null | jq -r '.FILESIZE')
+    ARCHIVE_TARBALL_FILESIZE=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.FILESIZE')
     # archive tarball sha256 sum
-    ARCHIVE_TARBALL_SHA256SUM=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-archive-tarball-json 2>/dev/null | jq -r '.SHA256')
+    ARCHIVE_TARBALL_SHA256SUM=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.SHA256')
     # archive tarball tezos version
-    ARCHIVE_TARBALL_TEZOS_VERSION=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-archive-tarball-json 2>/dev/null | jq -r '.TEZOS_VERSION')
+    ARCHIVE_TARBALL_TEZOS_VERSION=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.TEZOS_VERSION')
 
     #
     # rolling tarball
     #
 
     # rolling tarball filename
-    ROLLING_TARBALL_FILENAME=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-rolling-tarball-json 2>/dev/null | jq -r '.ROLLING_TARBALL_FILENAME')
+    ROLLING_TARBALL_FILENAME=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.ROLLING_TARBALL_FILENAME')
     # rolling tarball block hash
-    ROLLING_TARBALL_BLOCK_HASH=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-rolling-tarball-json 2>/dev/null | jq -r '.BLOCK_HASH')
+    ROLLING_TARBALL_BLOCK_HASH=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.BLOCK_HASH')
     # rolling tarball block level
-    ROLLING_TARBALL_BLOCK_HEIGHT=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-rolling-tarball-json 2>/dev/null | jq -r '.BLOCK_HEIGHT')
+    ROLLING_TARBALL_BLOCK_HEIGHT=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.BLOCK_HEIGHT')
     # rolling tarball block timestamp
-    ROLLING_TARBALL_BLOCK_TIMESTAMP=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-rolling-tarball-json 2>/dev/null | jq -r '.BLOCK_TIMESTAMP')
+    ROLLING_TARBALL_BLOCK_TIMESTAMP=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.BLOCK_TIMESTAMP')
     # rolling tarball filesize
-    ROLLING_TARBALL_FILESIZE=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-rolling-tarball-json 2>/dev/null | jq -r '.FILESIZE')
+    ROLLING_TARBALL_FILESIZE=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.FILESIZE')
     # rolling tarball sha256 sum
-    ROLLING_TARBALL_SHA256SUM=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-rolling-tarball-json 2>/dev/null | jq -r '.SHA256')
+    ROLLING_TARBALL_SHA256SUM=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.SHA256')
     # rolling tarball tezos version
-    ROLLING_TARBALL_TEZOS_VERSION=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-rolling-tarball-json 2>/dev/null | jq -r '.TEZOS_VERSION')
+    ROLLING_TARBALL_TEZOS_VERSION=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.TEZOS_VERSION')
 
     #
     # rolling snapshot
@@ -520,10 +527,21 @@ if [ "${NAMESPACE}" = ithacanet-shots ]; then
     # rolling snapshot tezos version
     ROLLING_SNAPSHOT_TEZOS_VERSION=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-rolling-snapshot-json 2>/dev/null | jq -r '.TEZOS_VERSION')
 
-    # Will not need this after artfiacts are going to respective network buckets
-    CLOUDFRONT_URL="https://d1u3sv5wkszf4p.cloudfront.net/"
+    CLOUDFRONT_URL="https://${NETWORK}.xtz-shots.io/"
 
     cp /snapshot-website-base/* .
+
+    NETWORK_SUBSTRING="${NETWORK%%net*}"
+    if [ "${NETWORK_SUBSTRING}" = main ]; then
+        TZSTATS_SUBDOMAIN=""
+        TZKT_SUBDOMAIN=""
+    elif [ "${NETWORK_SUBSTRING}" = hangzhou ]; then
+        TZSTATS_SUBDOMAIN="${NETWORK}."
+        TZKT_SUBDOMAIN="hangzhou2net."
+    else
+        TZSTATS_SUBDOMAIN="${NETWORK_SUBSTRING}."
+        TZKT_SUBDOMAIN="${NETWORK}."
+    fi
 
     # Create index.html
     cat << EOF > index.md
@@ -553,83 +571,94 @@ page_nav:
 
 Tezos version used for snapshotting: \`${TEZOS_VERSION}\`
 ## Archive tarball
-[Download Archive Tarball](${CLOUDFRONT_URL}${NETWORK}-archive-tarball)
+[Download Archive Tarball](${CLOUDFRONT_URL}archive-tarball)
 
 Block height: $ARCHIVE_TARBALL_BLOCK_HEIGHT
 
 Block hash: \`${ARCHIVE_TARBALL_BLOCK_HASH}\`
 
-[Verify on TzStats](https://${EXPLORER_SUBDOMAIN}tzstats.com/${ARCHIVE_TARBALL_BLOCK_HASH}){:target="_blank"} - [Verify on TzKT](https://${EXPLORER_SUBDOMAIN}tzkt.io/${ARCHIVE_TARBALL_BLOCK_HASH}){:target="_blank"}
+[Verify on TzStats](https://${TZSTATS_SUBDOMAIN}tzstats.com/${ARCHIVE_TARBALL_BLOCK_HASH}){:target="_blank"} - [Verify on TzKT](https://${TZKT_SUBDOMAIN}tzkt.io/${ARCHIVE_TARBALL_BLOCK_HASH}){:target="_blank"}
 
 Block timestamp: $ARCHIVE_TARBALL_BLOCK_TIMESTAMP
 
 Size: ${ARCHIVE_TARBALL_FILESIZE}
 
-Checksum (SHA256): ${ARCHIVE_TARBALL_SHA256SUM}
+Checksum (SHA256): 
+\`\`\`
+${ARCHIVE_TARBALL_SHA256SUM}
+\`\`\`
+
+[Artifact Metadata](${CLOUDFRONT_URL}archive-tarball-json)
 ## Rolling tarball
-[Download Rolling Tarball](${CLOUDFRONT_URL}${NETWORK}-rolling-tarball)
+[Download Rolling Tarball](${CLOUDFRONT_URL}rolling-tarball)
 
 Block height: $ROLLING_TARBALL_BLOCK_HEIGHT
 
 Block hash: \`${ROLLING_TARBALL_BLOCK_HASH}\`
 
-[Verify on TzStats](https://${EXPLORER_SUBDOMAIN}tzstats.com/${ROLLING_TARBALL_BLOCK_HASH}){:target="_blank"} - [Verify on TzKT](https://${EXPLORER_SUBDOMAIN}tzkt.io/${ROLLING_TARBALL_BLOCK_HASH}){:target="_blank"}
+[Verify on TzStats](https://${TZSTATS_SUBDOMAIN}tzstats.com/${ROLLING_TARBALL_BLOCK_HASH}){:target="_blank"} - [Verify on TzKT](https://${TZKT_SUBDOMAIN}tzkt.io/${ROLLING_TARBALL_BLOCK_HASH}){:target="_blank"}
 
 Block timestamp: $ROLLING_TARBALL_BLOCK_TIMESTAMP
 
 Size: ${ROLLING_TARBALL_FILESIZE}
 
-Checksum (SHA256): ${ROLLING_TARBALL_SHA256SUM}
+Checksum (SHA256): 
+\`\`\`
+${ROLLING_TARBALL_SHA256SUM}
+\`\`\`
+
+[Artifact Metadata](${CLOUDFRONT_URL}rolling-tarball-json)
 ## Rolling snapshot
-[Download Rolling Snapshot](${CLOUDFRONT_URL}${NETWORK}-rolling-tezos)
+[Download Rolling Snapshot](${CLOUDFRONT_URL}rolling)
 
 Block height: $ROLLING_SNAPSHOT_BLOCK_HEIGHT
 
 Block hash: \`${ROLLING_SNAPSHOT_BLOCK_HASH}\`
 
-[Verify on TzStats](https://${EXPLORER_SUBDOMAIN}tzstats.com/${ROLLING_SNAPSHOT_BLOCK_HASH}){:target="_blank"} - [Verify on TzKT](https://${EXPLORER_SUBDOMAIN}tzkt.io/${ROLLING_SNAPSHOT_BLOCK_HASH}){:target="_blank"}
+[Verify on TzStats](https://${TZSTATS_SUBDOMAIN}tzstats.com/${ROLLING_SNAPSHOT_BLOCK_HASH}){:target="_blank"} - [Verify on TzKT](https://${TZKT_SUBDOMAIN}tzkt.io/${ROLLING_SNAPSHOT_BLOCK_HASH}){:target="_blank"}
 
 Block timestamp: $ROLLING_SNAPSHOT_BLOCK_TIMESTAMP
 
 Size: ${ROLLING_SNAPSHOT_FILESIZE}
 
-Checksum (SHA256): ${ROLLING_SNAPSHOT_SHA256SUM}
+Checksum (SHA256): 
+\`\`\`
+${ROLLING_SNAPSHOT_SHA256SUM}
+\`\`\`
+
+[Artifact Metadata](${CLOUDFRONT_URL}rolling-snapshot-json)
 ## How to use
 ### Archive Tarball
 Issue the following commands:
-\`\`\`
+\`\`\`bash
 curl -LfsS "${CLOUDFRONT_URL}${ARCHIVE_TARBALL_FILENAME}" \
-
 | lz4 -d | tar -x -C "/var/tezos"
 \`\`\`
 Or simply use the permalink:
-\`\`\`
-curl -LfsS "${CLOUDFRONT_URL}${NETWORK}-archive-tarball" \
-
+\`\`\`bash
+curl -LfsS "${CLOUDFRONT_URL}archive-tarball" \
 | lz4 -d | tar -x -C "/var/tezos"
 \`\`\`
 ### Rolling Tarball
 Issue the following commands:
-\`\`\`
+\`\`\`bash
 curl -LfsS "${CLOUDFRONT_URL}${ROLLING_TARBALL_FILENAME}" \
-
 | lz4 -d | tar -x -C "/var/tezos"
 \`\`\`
 Or simply use the permalink:
-\`\`\`
-curl -LfsS "${CLOUDFRONT_URL}${NETWORK}-rolling-tarball" \
-
+\`\`\`bash
+curl -LfsS "${CLOUDFRONT_URL}rolling-tarball" \
 | lz4 -d | tar -x -C "/var/tezos"
 \`\`\`
 ### Rolling Snapshot
 Issue the following commands:
-\`\`\`
+\`\`\`bash
 wget ${CLOUDFRONT_URL}${ROLLING_SNAPSHOT_FILENAME}
 tezos-node snapshot import ${ROLLING_SNAPSHOT_FILENAME} --block ${BLOCK_HASH}
 \`\`\`
 Or simply use the permalink:
-\`\`\`
-wget ${CLOUDFRONT_URL}${NETWORK}-rolling-tezos -O tezos-${NETWORK}.rolling
+\`\`\`bash
+wget ${CLOUDFRONT_URL}rolling -O tezos-${NETWORK}.rolling
 tezos-node snapshot import tezos-${NETWORK}.rolling
 \`\`\`
 ### More details
@@ -653,7 +682,7 @@ EOF
     if ! aws s3 cp _site/ s3://"${NETWORK}".xtz-shots.io --recursive --include "*"; then
         printf "%s Website Build & Deploy : Error uploading site to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     else
-        printf "%s Website Build & Deploy  : Sucessfully uploade website to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+        printf "%s Website Build & Deploy  : Sucessfully uploaded website to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     fi
 
 fi
