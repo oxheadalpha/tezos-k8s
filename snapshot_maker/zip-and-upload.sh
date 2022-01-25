@@ -5,13 +5,7 @@ BLOCK_HASH=$(cat /snapshot-cache-volume/BLOCK_HASH)
 BLOCK_TIMESTAMP=$(cat /snapshot-cache-volume/BLOCK_TIMESTAMP)
 TEZOS_VERSION=$(cat /snapshot-cache-volume/TEZOS_VERSION)
 NETWORK="${NAMESPACE%%-*}"
-
-# For dev only
-if [ "${NAMESPACE}" = ithacanet-shots ]; then
-    S3_BUCKET="${NETWORK}.xtz-shots.io"
-else
-    S3_BUCKET=tezos-tarballs
-fi
+S3_BUCKET="${NETWORK}.xtz-shots.io"
 
 cd /
 
@@ -463,88 +457,85 @@ else
   printf "%s Skipping rolling snapshot import and export because its too slow on mainnet.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 fi
 
-# For dev only
-if [ "${NAMESPACE}" = ithacanet-shots ]; then
+cd /srv/jekyll || exit
 
-    cd /srv/jekyll || exit
+# Get latest values from JSONS
 
-    # Get latest values from JSONS
+#
+# archive tarball
+#
 
-    #
-    # archive tarball
-    #
+# archive tarball filename
+ARCHIVE_TARBALL_FILENAME=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.ARCHIVE_TARBALL_FILENAME')
+# archive tarball block hash
+ARCHIVE_TARBALL_BLOCK_HASH=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.BLOCK_HASH')
+# archive tarball block level
+ARCHIVE_TARBALL_BLOCK_HEIGHT=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.BLOCK_HEIGHT')
+# archive tarball block timestamp
+ARCHIVE_TARBALL_BLOCK_TIMESTAMP=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.BLOCK_TIMESTAMP')
+# archive tarball filesize
+ARCHIVE_TARBALL_FILESIZE=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.FILESIZE')
+# archive tarball sha256 sum
+ARCHIVE_TARBALL_SHA256SUM=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.SHA256')
+# archive tarball tezos version
+ARCHIVE_TARBALL_TEZOS_VERSION=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.TEZOS_VERSION')
 
-    # archive tarball filename
-    ARCHIVE_TARBALL_FILENAME=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.ARCHIVE_TARBALL_FILENAME')
-    # archive tarball block hash
-    ARCHIVE_TARBALL_BLOCK_HASH=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.BLOCK_HASH')
-    # archive tarball block level
-    ARCHIVE_TARBALL_BLOCK_HEIGHT=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.BLOCK_HEIGHT')
-    # archive tarball block timestamp
-    ARCHIVE_TARBALL_BLOCK_TIMESTAMP=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.BLOCK_TIMESTAMP')
-    # archive tarball filesize
-    ARCHIVE_TARBALL_FILESIZE=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.FILESIZE')
-    # archive tarball sha256 sum
-    ARCHIVE_TARBALL_SHA256SUM=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.SHA256')
-    # archive tarball tezos version
-    ARCHIVE_TARBALL_TEZOS_VERSION=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.TEZOS_VERSION')
+#
+# rolling tarball
+#
 
-    #
-    # rolling tarball
-    #
+# rolling tarball filename
+ROLLING_TARBALL_FILENAME=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.ROLLING_TARBALL_FILENAME')
+# rolling tarball block hash
+ROLLING_TARBALL_BLOCK_HASH=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.BLOCK_HASH')
+# rolling tarball block level
+ROLLING_TARBALL_BLOCK_HEIGHT=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.BLOCK_HEIGHT')
+# rolling tarball block timestamp
+ROLLING_TARBALL_BLOCK_TIMESTAMP=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.BLOCK_TIMESTAMP')
+# rolling tarball filesize
+ROLLING_TARBALL_FILESIZE=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.FILESIZE')
+# rolling tarball sha256 sum
+ROLLING_TARBALL_SHA256SUM=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.SHA256')
+# rolling tarball tezos version
+ROLLING_TARBALL_TEZOS_VERSION=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.TEZOS_VERSION')
 
-    # rolling tarball filename
-    ROLLING_TARBALL_FILENAME=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.ROLLING_TARBALL_FILENAME')
-    # rolling tarball block hash
-    ROLLING_TARBALL_BLOCK_HASH=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.BLOCK_HASH')
-    # rolling tarball block level
-    ROLLING_TARBALL_BLOCK_HEIGHT=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.BLOCK_HEIGHT')
-    # rolling tarball block timestamp
-    ROLLING_TARBALL_BLOCK_TIMESTAMP=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.BLOCK_TIMESTAMP')
-    # rolling tarball filesize
-    ROLLING_TARBALL_FILESIZE=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.FILESIZE')
-    # rolling tarball sha256 sum
-    ROLLING_TARBALL_SHA256SUM=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.SHA256')
-    # rolling tarball tezos version
-    ROLLING_TARBALL_TEZOS_VERSION=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.TEZOS_VERSION')
+#
+# rolling snapshot
+#
 
-    #
-    # rolling snapshot
-    #
+# rolling snapshot filename
+ROLLING_SNAPSHOT_FILENAME=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-json 2>/dev/null | jq -r '.ROLLING_SNAPSHOT_FILENAME')
+# rolling snapshot block hash
+ROLLING_SNAPSHOT_BLOCK_HASH=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-json 2>/dev/null | jq -r '.BLOCK_HASH')
+# rolling snapshot block level
+ROLLING_SNAPSHOT_BLOCK_HEIGHT=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-json 2>/dev/null | jq -r '.BLOCK_HEIGHT')
+# rolling snapshot block timestamp
+ROLLING_SNAPSHOT_BLOCK_TIMESTAMP=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-json 2>/dev/null | jq -r '.BLOCK_TIMESTAMP')
+# rolling snapshot filesize
+ROLLING_SNAPSHOT_FILESIZE=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-json 2>/dev/null | jq -r '.FILESIZE')
+# rolling snapshot sha256 sum
+ROLLING_SNAPSHOT_SHA256SUM=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-json 2>/dev/null | jq -r '.SHA256')
+# rolling snapshot tezos version
+ROLLING_SNAPSHOT_TEZOS_VERSION=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-json 2>/dev/null | jq -r '.TEZOS_VERSION')
 
-    # rolling snapshot filename
-    ROLLING_SNAPSHOT_FILENAME=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-rolling-snapshot-json 2>/dev/null | jq -r '.ROLLING_SNAPSHOT_FILENAME')
-    # rolling snapshot block hash
-    ROLLING_SNAPSHOT_BLOCK_HASH=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-rolling-snapshot-json 2>/dev/null | jq -r '.BLOCK_HASH')
-    # rolling snapshot block level
-    ROLLING_SNAPSHOT_BLOCK_HEIGHT=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-rolling-snapshot-json 2>/dev/null | jq -r '.BLOCK_HEIGHT')
-    # rolling snapshot block timestamp
-    ROLLING_SNAPSHOT_BLOCK_TIMESTAMP=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-rolling-snapshot-json 2>/dev/null | jq -r '.BLOCK_TIMESTAMP')
-    # rolling snapshot filesize
-    ROLLING_SNAPSHOT_FILESIZE=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-rolling-snapshot-json 2>/dev/null | jq -r '.FILESIZE')
-    # rolling snapshot sha256 sum
-    ROLLING_SNAPSHOT_SHA256SUM=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-rolling-snapshot-json 2>/dev/null | jq -r '.SHA256')
-    # rolling snapshot tezos version
-    ROLLING_SNAPSHOT_TEZOS_VERSION=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/"${NETWORK}"-rolling-snapshot-json 2>/dev/null | jq -r '.TEZOS_VERSION')
+CLOUDFRONT_URL="https://${NETWORK}.xtz-shots.io/"
 
-    CLOUDFRONT_URL="https://${NETWORK}.xtz-shots.io/"
+cp /snapshot-website-base/* .
 
-    cp /snapshot-website-base/* .
+NETWORK_SUBSTRING="${NETWORK%%net*}"
+if [ "${NETWORK_SUBSTRING}" = main ]; then
+    TZSTATS_SUBDOMAIN=""
+    TZKT_SUBDOMAIN=""
+elif [ "${NETWORK_SUBSTRING}" = hangzhou ]; then
+    TZSTATS_SUBDOMAIN="${NETWORK}."
+    TZKT_SUBDOMAIN="hangzhou2net."
+else
+    TZSTATS_SUBDOMAIN="${NETWORK_SUBSTRING}."
+    TZKT_SUBDOMAIN="${NETWORK}."
+fi
 
-    NETWORK_SUBSTRING="${NETWORK%%net*}"
-    if [ "${NETWORK_SUBSTRING}" = main ]; then
-        TZSTATS_SUBDOMAIN=""
-        TZKT_SUBDOMAIN=""
-    elif [ "${NETWORK_SUBSTRING}" = hangzhou ]; then
-        TZSTATS_SUBDOMAIN="${NETWORK}."
-        TZKT_SUBDOMAIN="hangzhou2net."
-    else
-        TZSTATS_SUBDOMAIN="${NETWORK_SUBSTRING}."
-        TZKT_SUBDOMAIN="${NETWORK}."
-    fi
-
-    # Create index.html
-    cat << EOF > index.md
+# Create index.html
+cat << EOF > index.md
 ---
 # Page settings
 layout: snapshot
@@ -555,17 +546,17 @@ title: Tezos snapshots for ${NETWORK}
 description: 
 # Author box
 author:
-    title: Brought to you by Oxhead Alpha
-    title_url: 'https://medium.com/the-aleph'
-    external_url: true
-    description: A Tezos core development company, providing common goods for the Tezos ecosystem. <a href="https://medium.com/the-aleph" target="_blank">Learn more</a>.
+title: Brought to you by Oxhead Alpha
+title_url: 'https://medium.com/the-aleph'
+external_url: true
+description: A Tezos core development company, providing common goods for the Tezos ecosystem. <a href="https://medium.com/the-aleph" target="_blank">Learn more</a>.
 # Micro navigation
 micro_nav: true
 # Page navigation
 page_nav:
-    home:
-        content: Previous page
-        url: 'https://xtz-shots.io/index.html'
+home:
+    content: Previous page
+    url: 'https://xtz-shots.io/index.html'
 ---
 # Tezos snapshots for ${NETWORK}
 
@@ -667,22 +658,20 @@ tezos-node snapshot import tezos-${NETWORK}.rolling
 [Tezos documentation](https://tezos.gitlab.io/user/snapshots.html){:target="_blank"}.
 EOF
 
-    echo "**** DEBUG OUTPUT OF index.md *****"
-    cat index.md
-    echo "**** end debug ****"
+echo "**** DEBUG OUTPUT OF index.md *****"
+cat index.md
+echo "**** end debug ****"
 
-    chmod -R 777 index.md
-    chown jekyll:jekyll -R /usr/gem
+chmod -R 777 index.md
+chown jekyll:jekyll -R /usr/gem
 
-    # convert to index.html with jekyll
-    bundle install
-    bundle exec jekyll build
+# convert to index.html with jekyll
+bundle install
+bundle exec jekyll build
 
-    # upload index.html to website
-    if ! aws s3 cp _site/ s3://"${NETWORK}".xtz-shots.io --recursive --include "*"; then
-        printf "%s Website Build & Deploy : Error uploading site to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    else
-        printf "%s Website Build & Deploy  : Sucessfully uploaded website to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    fi
-
+# upload index.html to website
+if ! aws s3 cp _site/ s3://"${NETWORK}".xtz-shots.io --recursive --include "*"; then
+    printf "%s Website Build & Deploy : Error uploading site to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+else
+    printf "%s Website Build & Deploy  : Sucessfully uploaded website to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 fi
