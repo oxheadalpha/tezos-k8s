@@ -90,17 +90,21 @@ if ! [ "${NAMESPACE}" = mainnet-shots-2 ]; then
     --arg SHA256 "${SHA256}" \
     --arg FILESIZE "${FILESIZE}" \
     --arg TEZOS_VERSION "$TEZOS_VERSION" \
+    --arg NETWORK "$NETWORK" \
     '. |= 
     [
         {
                 ($ARCHIVE_TARBALL_FILENAME): {
                 "contents": {
-                    "BLOCK_HASH": $BLOCK_HASH,
-                    "BLOCK_HEIGHT": $BLOCK_HEIGHT,
-                    "BLOCK_TIMESTAMP": $BLOCK_TIMESTAMP,
-                    "SHA256": $SHA256,
-                    "FILESIZE": $FILESIZE,
-                    "TEZOS_VERSION": $TEZOS_VERSION
+                    "block_hash": $BLOCK_HASH,
+                    "block_height": $BLOCK_HEIGHT,
+                    "block_timestamp": $BLOCK_TIMESTAMP,
+                    "sha256": $SHA256,
+                    "filesize": $FILESIZE,
+                    "tezos_version": $TEZOS_VERSION,
+                    "chain_name": $NETWORK,
+                    "history_mode": archive,
+                    "artifact_type": tarball
                 }
             }
         }
@@ -133,15 +137,19 @@ if ! [ "${NAMESPACE}" = mainnet-shots-2 ]; then
         --arg SHA256 "$SHA256" \
         --arg FILESIZE "$FILESIZE" \
         --arg TEZOS_VERSION "$TEZOS_VERSION" \
+        --arg NETWORK "$NETWORK" \
         '{
-            "BLOCK_HASH": $BLOCK_HASH, 
-            "BLOCK_HEIGHT": $BLOCK_HEIGHT, 
-            "BLOCK_TIMESTAMP": $BLOCK_TIMESTAMP,
-            "ARCHIVE_TARBALL_FILENAME": $ARCHIVE_TARBALL_FILENAME,
-            "FILESIZE": $FILESIZE,
-            "SHA256": $SHA256,
-            "FILESIZE": $FILESIZE, 
-            "TEZOS_VERSION": $TEZOS_VERSION
+            "block_hash": $BLOCK_HASH, 
+            "block_height": $BLOCK_HEIGHT, 
+            "block_timestamp": $BLOCK_TIMESTAMP,
+            "archive_tarball_filename": $ARCHIVE_TARBALL_FILENAME,
+            "filesize": $FILESIZE,
+            "sha256": $SHA256,
+            "filesize": $FILESIZE, 
+            "tezos_version": $TEZOS_VERSION,
+            "chain_name": $NETWORK,
+            "history_mode": archive,
+            "artifact_type": tarball
         }' \
         > "${ARCHIVE_TARBALL_FILENAME}".json
 
@@ -247,17 +255,21 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
     --arg SHA256 "${SHA256}" \
     --arg FILESIZE "${FILESIZE}" \
     --arg TEZOS_VERSION "$TEZOS_VERSION" \
+    --arg NETWORK "$NETWORK" \
     '. |= 
     [
         {
                 ($ROLLING_TARBALL_FILENAME): {
                 "contents": {
-                    "BLOCK_HASH": $BLOCK_HASH,
-                    "BLOCK_HEIGHT": $BLOCK_HEIGHT,
-                    "BLOCK_TIMESTAMP": $BLOCK_TIMESTAMP,
-                    "SHA256": $SHA256,
-                    "FILESIZE": $FILESIZE,
-                    "TEZOS_VERSION": $TEZOS_VERSION
+                    "block_hash": $BLOCK_HASH,
+                    "block_height": $BLOCK_HEIGHT,
+                    "block_timestamp": $BLOCK_TIMESTAMP,
+                    "sha256": $SHA256,
+                    "filesize": $FILESIZE,
+                    "tezos_version": $TEZOS_VERSION,
+                    "chain_name": $NETWORK,
+                    "history_mode": rolling,
+                    "artifact_type": tarball
                 }
             }
         }
@@ -289,15 +301,19 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
         --arg SHA256 "$SHA256" \
         --arg FILESIZE "$FILESIZE" \
         --arg TEZOS_VERSION "$TEZOS_VERSION" \
+        --arg NETWORK "$NETWORK" \
         '{
-            "BLOCK_HASH": $BLOCK_HASH, 
-            "BLOCK_HEIGHT": $BLOCK_HEIGHT, 
-            "BLOCK_TIMESTAMP": $BLOCK_TIMESTAMP,
-            "ROLLING_TARBALL_FILENAME": $ROLLING_TARBALL_FILENAME,
-            "FILESIZE": $FILESIZE,
-            "SHA256": $SHA256,
-            "FILESIZE": $FILESIZE, 
-            "TEZOS_VERSION": $TEZOS_VERSION
+            "block_hash": $BLOCK_HASH, 
+            "block_height": $BLOCK_HEIGHT, 
+            "block_timestamp": $BLOCK_TIMESTAMP,
+            "rolling_tarball_filename": $ROLLING_TARBALL_FILENAME,
+            "filesize": $FILESIZE,
+            "sha256": $SHA256,
+            "filesize": $FILESIZE, 
+            "tezos_version": $TEZOS_VERSION,
+            "chain_name": $NETWORK,
+            "history_mode": rolling,
+            "artifact_type": tarball
         }' \
         > "${ROLLING_TARBALL_FILENAME}".json
         
@@ -372,17 +388,21 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
             --arg SHA256 "${SHA256}" \
             --arg FILESIZE "${FILESIZE}" \
             --arg TEZOS_VERSION "$TEZOS_VERSION" \
+            --arg NETWORK "$NETWORK" \
             '. |= 
             [
                 {
                         ($ROLLING_SNAPSHOT_FILENAME): {
                         "contents": {
-                            "BLOCK_HASH": $BLOCK_HASH,
-                            "BLOCK_HEIGHT": $BLOCK_HEIGHT,
-                            "BLOCK_TIMESTAMP": $BLOCK_TIMESTAMP,
-                            "SHA256": $SHA256,
-                            "FILESIZE": $FILESIZE,
-                            "TEZOS_VERSION": $TEZOS_VERSION
+                            "block_hash": $BLOCK_HASH,
+                            "block_height": $BLOCK_HEIGHT,
+                            "block_timestamp": $BLOCK_TIMESTAMP,
+                            "sha256": $SHA256,
+                            "filesize": $FILESIZE,
+                            "tezos_version": $TEZOS_VERSION,
+                            "chain_name": $NETWORK,
+                            "history_mode": rolling,
+                            "artifact_type": tezos-snapshot
                         }
                     }
                 }
@@ -408,15 +428,19 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
             --arg SHA256 "$SHA256" \
             --arg FILESIZE "$FILESIZE" \
             --arg TEZOS_VERSION "$TEZOS_VERSION" \
+            --arg NETWORK "$NETWORK" \
             '{
-                "BLOCK_HASH": $BLOCK_HASH, 
-                "BLOCK_HEIGHT": $BLOCK_HEIGHT, 
-                "BLOCK_TIMESTAMP": $BLOCK_TIMESTAMP,
-                "ROLLING_SNAPSHOT_FILENAME": $ROLLING_SNAPSHOT_FILENAME,
-                "FILESIZE": $FILESIZE,
-                "SHA256": $SHA256,
-                "FILESIZE": $FILESIZE, 
-                "TEZOS_VERSION": $TEZOS_VERSION
+                "block_hash": $BLOCK_HASH, 
+                "block_height": $BLOCK_HEIGHT, 
+                "block_timestamp": $BLOCK_TIMESTAMP,
+                "rolling_snapshot_filename": $ROLLING_SNAPSHOT_FILENAME,
+                "filesize": $FILESIZE,
+                "sha256": $SHA256,
+                "filesize": $FILESIZE, 
+                "tezos_version": $TEZOS_VERSION,
+                "chain_name": $NETWORK,
+                "history_mode": archive,
+                "artifact_type": tezos-snapshot
             }' \
             > "${ROLLING_SNAPSHOT_FILENAME}".json
             
@@ -466,57 +490,57 @@ cd /srv/jekyll || exit
 #
 
 # archive tarball filename
-ARCHIVE_TARBALL_FILENAME=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.ARCHIVE_TARBALL_FILENAME')
+ARCHIVE_TARBALL_FILENAME=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.archive_tarball_filename')
 # archive tarball block hash
-ARCHIVE_TARBALL_BLOCK_HASH=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.BLOCK_HASH')
+ARCHIVE_TARBALL_BLOCK_HASH=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.block_hash')
 # archive tarball block level
-ARCHIVE_TARBALL_BLOCK_HEIGHT=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.BLOCK_HEIGHT')
+ARCHIVE_TARBALL_BLOCK_HEIGHT=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.block_height')
 # archive tarball block timestamp
-ARCHIVE_TARBALL_BLOCK_TIMESTAMP=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.BLOCK_TIMESTAMP')
+ARCHIVE_TARBALL_BLOCK_TIMESTAMP=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.block_timestamp')
 # archive tarball filesize
-ARCHIVE_TARBALL_FILESIZE=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.FILESIZE')
+ARCHIVE_TARBALL_FILESIZE=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.filesize')
 # archive tarball sha256 sum
-ARCHIVE_TARBALL_SHA256SUM=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.SHA256')
+ARCHIVE_TARBALL_SHA256SUM=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.sha256')
 # archive tarball tezos version
-ARCHIVE_TARBALL_TEZOS_VERSION=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.TEZOS_VERSION')
+ARCHIVE_TARBALL_TEZOS_VERSION=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-json 2>/dev/null | jq -r '.tezos_version')
 
 #
 # rolling tarball
 #
 
 # rolling tarball filename
-ROLLING_TARBALL_FILENAME=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.ROLLING_TARBALL_FILENAME')
+ROLLING_TARBALL_FILENAME=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.rolling_tarball_filename')
 # rolling tarball block hash
-ROLLING_TARBALL_BLOCK_HASH=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.BLOCK_HASH')
+ROLLING_TARBALL_BLOCK_HASH=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.block_hash')
 # rolling tarball block level
-ROLLING_TARBALL_BLOCK_HEIGHT=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.BLOCK_HEIGHT')
+ROLLING_TARBALL_BLOCK_HEIGHT=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.block_height')
 # rolling tarball block timestamp
-ROLLING_TARBALL_BLOCK_TIMESTAMP=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.BLOCK_TIMESTAMP')
+ROLLING_TARBALL_BLOCK_TIMESTAMP=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.block_timestamp')
 # rolling tarball filesize
-ROLLING_TARBALL_FILESIZE=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.FILESIZE')
+ROLLING_TARBALL_FILESIZE=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.filesize')
 # rolling tarball sha256 sum
-ROLLING_TARBALL_SHA256SUM=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.SHA256')
+ROLLING_TARBALL_SHA256SUM=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.sha256')
 # rolling tarball tezos version
-ROLLING_TARBALL_TEZOS_VERSION=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.TEZOS_VERSION')
+ROLLING_TARBALL_TEZOS_VERSION=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-json 2>/dev/null | jq -r '.tezos_version')
 
 #
 # rolling snapshot
 #
 
 # rolling snapshot filename
-ROLLING_SNAPSHOT_FILENAME=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-json 2>/dev/null | jq -r '.ROLLING_SNAPSHOT_FILENAME')
+ROLLING_SNAPSHOT_FILENAME=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-json 2>/dev/null | jq -r '.rolling_snapshot_filename')
 # rolling snapshot block hash
-ROLLING_SNAPSHOT_BLOCK_HASH=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-json 2>/dev/null | jq -r '.BLOCK_HASH')
+ROLLING_SNAPSHOT_BLOCK_HASH=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-json 2>/dev/null | jq -r '.block_hash')
 # rolling snapshot block level
-ROLLING_SNAPSHOT_BLOCK_HEIGHT=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-json 2>/dev/null | jq -r '.BLOCK_HEIGHT')
+ROLLING_SNAPSHOT_BLOCK_HEIGHT=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-json 2>/dev/null | jq -r '.block_height')
 # rolling snapshot block timestamp
-ROLLING_SNAPSHOT_BLOCK_TIMESTAMP=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-json 2>/dev/null | jq -r '.BLOCK_TIMESTAMP')
+ROLLING_SNAPSHOT_BLOCK_TIMESTAMP=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-json 2>/dev/null | jq -r '.block_timestamp')
 # rolling snapshot filesize
-ROLLING_SNAPSHOT_FILESIZE=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-json 2>/dev/null | jq -r '.FILESIZE')
+ROLLING_SNAPSHOT_FILESIZE=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-json 2>/dev/null | jq -r '.filesize')
 # rolling snapshot sha256 sum
-ROLLING_SNAPSHOT_SHA256SUM=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-json 2>/dev/null | jq -r '.SHA256')
+ROLLING_SNAPSHOT_SHA256SUM=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-json 2>/dev/null | jq -r '.sha256')
 # rolling snapshot tezos version
-ROLLING_SNAPSHOT_TEZOS_VERSION=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-json 2>/dev/null | jq -r '.TEZOS_VERSION')
+ROLLING_SNAPSHOT_TEZOS_VERSION=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-json 2>/dev/null | jq -r '.tezos_version')
 
 CLOUDFRONT_URL="https://${NETWORK}.xtz-shots.io/"
 
