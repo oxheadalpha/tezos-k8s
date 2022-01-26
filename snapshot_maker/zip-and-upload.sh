@@ -257,7 +257,7 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
                     "BLOCK_TIMESTAMP": $BLOCK_TIMESTAMP,
                     "SHA256": $SHA256,
                     "FILESIZE": $FILESIZE,
-                    "TEZOS_VERSION": $TEZOS_VERSION \
+                    "TEZOS_VERSION": $TEZOS_VERSION
                 }
             }
         }
