@@ -546,10 +546,10 @@ title: Tezos snapshots for ${NETWORK}
 description: 
 # Author box
 author:
-title: Brought to you by Oxhead Alpha
-title_url: 'https://medium.com/the-aleph'
-external_url: true
-description: A Tezos core development company, providing common goods for the Tezos ecosystem. <a href="https://medium.com/the-aleph" target="_blank">Learn more</a>.
+    title: Brought to you by Oxhead Alpha
+    title_url: 'https://medium.com/the-aleph'
+    external_url: true
+    description: A Tezos core development company, providing common goods for the Tezos ecosystem. <a href="https://medium.com/the-aleph" target="_blank">Learn more</a>.
 # Micro navigation
 micro_nav: true
 # Page navigation
