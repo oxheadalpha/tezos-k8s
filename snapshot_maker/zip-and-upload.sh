@@ -91,6 +91,8 @@ if ! [ "${NAMESPACE}" = mainnet-shots-2 ]; then
     --arg FILESIZE "${FILESIZE}" \
     --arg TEZOS_VERSION "$TEZOS_VERSION" \
     --arg NETWORK "$NETWORK" \
+    --arg HISTORY_MODE "archive" \
+    --arg ARTIFACT_TYPE "tarball" \
     '. |= 
     [
         {
@@ -105,6 +107,9 @@ if ! [ "${NAMESPACE}" = mainnet-shots-2 ]; then
                     "chain_name": $NETWORK,
                     "history_mode": archive,
                     "artifact_type": tarball
+                    "chain_name": $NETWORK,
+                    "history_mode": $HISTORY_MODE,
+                    "artifact_type": $ARTIFACT_TYPE
                 }
             }
         }
@@ -138,6 +143,8 @@ if ! [ "${NAMESPACE}" = mainnet-shots-2 ]; then
         --arg FILESIZE "$FILESIZE" \
         --arg TEZOS_VERSION "$TEZOS_VERSION" \
         --arg NETWORK "$NETWORK" \
+        --arg HISTORY_MODE "archive" \
+        --arg ARTIFACT_TYPE "tarball" \
         '{
             "block_hash": $BLOCK_HASH, 
             "block_height": $BLOCK_HEIGHT, 
@@ -148,8 +155,8 @@ if ! [ "${NAMESPACE}" = mainnet-shots-2 ]; then
             "filesize": $FILESIZE, 
             "tezos_version": $TEZOS_VERSION,
             "chain_name": $NETWORK,
-            "history_mode": archive,
-            "artifact_type": tarball
+            "history_mode": $HISTORY_MODE,
+            "artifact_type": $ARTIFACT_TYPE
         }' \
         > "${ARCHIVE_TARBALL_FILENAME}".json
 
@@ -256,6 +263,8 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
     --arg FILESIZE "${FILESIZE}" \
     --arg TEZOS_VERSION "$TEZOS_VERSION" \
     --arg NETWORK "$NETWORK" \
+    --arg HISTORY_MODE "rolling" \
+    --arg ARTIFACT_TYPE "tarball" \
     '. |= 
     [
         {
@@ -268,8 +277,8 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
                     "filesize": $FILESIZE,
                     "tezos_version": $TEZOS_VERSION,
                     "chain_name": $NETWORK,
-                    "history_mode": rolling,
-                    "artifact_type": tarball
+                    "history_mode": $HISTORY_MODE,
+                    "artifact_type": $ARTIFACT_TYPE
                 }
             }
         }
@@ -302,6 +311,8 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
         --arg FILESIZE "$FILESIZE" \
         --arg TEZOS_VERSION "$TEZOS_VERSION" \
         --arg NETWORK "$NETWORK" \
+        --arg HISTORY_MODE "rolling" \
+        --arg ARTIFACT_TYPE "tarball" \
         '{
             "block_hash": $BLOCK_HASH, 
             "block_height": $BLOCK_HEIGHT, 
@@ -312,8 +323,8 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
             "filesize": $FILESIZE, 
             "tezos_version": $TEZOS_VERSION,
             "chain_name": $NETWORK,
-            "history_mode": rolling,
-            "artifact_type": tarball
+            "history_mode": $HISTORY_MODE,
+            "artifact_type": $ARTIFACT_TYPE
         }' \
         > "${ROLLING_TARBALL_FILENAME}".json
         
@@ -389,6 +400,8 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
             --arg FILESIZE "${FILESIZE}" \
             --arg TEZOS_VERSION "$TEZOS_VERSION" \
             --arg NETWORK "$NETWORK" \
+            --arg HISTORY_MODE "rolling" \
+            --arg ARTIFACT_TYPE "tezos-snapshot" \
             '. |= 
             [
                 {
@@ -401,8 +414,8 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
                             "filesize": $FILESIZE,
                             "tezos_version": $TEZOS_VERSION,
                             "chain_name": $NETWORK,
-                            "history_mode": rolling,
-                            "artifact_type": tezos-snapshot
+                            "history_mode": $HISTORY_MODE,
+                            "artifact_type": $ARTIFACT_TYPE
                         }
                     }
                 }
@@ -429,6 +442,8 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
             --arg FILESIZE "$FILESIZE" \
             --arg TEZOS_VERSION "$TEZOS_VERSION" \
             --arg NETWORK "$NETWORK" \
+            --arg HISTORY_MODE "rolling" \
+            --arg ARTIFACT_TYPE "tezos-snapshot" \
             '{
                 "block_hash": $BLOCK_HASH, 
                 "block_height": $BLOCK_HEIGHT, 
@@ -439,8 +454,8 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
                 "filesize": $FILESIZE, 
                 "tezos_version": $TEZOS_VERSION,
                 "chain_name": $NETWORK,
-                "history_mode": archive,
-                "artifact_type": tezos-snapshot
+                "history_mode": $HISTORY_MODE,
+                "artifact_type": $ARTIFACT_TYPE
             }' \
             > "${ROLLING_SNAPSHOT_FILENAME}".json
             
