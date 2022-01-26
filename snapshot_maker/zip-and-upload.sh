@@ -357,7 +357,7 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
             printf "%s Rolling Tezos : Sucessfully uploaded ${ROLLING_SNAPSHOT} to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
             printf "%s Rolling Tezos : Uploading redirect...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
-            FILESIZE=$(dstat  -c %c | awk '{ suffix="KMGT"; for(i=0; $1>1024 && i < length(suffix); i++) $1/=1024; print int($1) substr(suffix, i, 1), $3; }' )
+            FILESIZE=$(stat -c %c "${ROLLING_SNAPSHOT}" | awk '{ suffix="KMGT"; for(i=0; $1>1024 && i < length(suffix); i++) $1/=1024; print int($1) substr(suffix, i, 1), $3; }' )
             SHA256=$(sha256sum "${ROLLING_SNAPSHOT}" | awk '{print $1}')
 
             # Add file to base.json
