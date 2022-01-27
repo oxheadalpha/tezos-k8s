@@ -105,9 +105,6 @@ if ! [ "${NAMESPACE}" = mainnet-shots-2 ]; then
                     "filesize": $FILESIZE,
                     "tezos_version": $TEZOS_VERSION,
                     "chain_name": $NETWORK,
-                    "history_mode": archive,
-                    "artifact_type": tarball
-                    "chain_name": $NETWORK,
                     "history_mode": $HISTORY_MODE,
                     "artifact_type": $ARTIFACT_TYPE
                 }
