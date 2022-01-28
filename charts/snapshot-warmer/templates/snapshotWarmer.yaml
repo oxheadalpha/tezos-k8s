@@ -31,7 +31,7 @@ spec:
           env:
             - name: NAMESPACE
               value: {{ $.Release.Namespace }}
-            - history_mode: HISTORY_MODE
+            - name: HISTORY_MODE
               value: {{ $history_mode }}
 ---
 {{- end }}
