@@ -1,39 +1,46 @@
+{{- range $node, $config := .Values.nodes }}
+{{ if $config }}
+{{- $history_mode := (index $config.instances 0).config.shell.history_mode }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: snapshot-warmer
-  namespace: {{ .Values.namespace }}
+  name: {{ printf "%s-%s-%s" "snapshot-warmer-for" $history_mode "node" }}
+  namespace: {{ $.Release.Namespace }}
   labels:
-    app: snapshot-warmer
+    app: {{ printf "%s-%s-%s" "snapshot-warmer-for" $history_mode "node" }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: snapshot-warmer
+      app: {{ printf "%s-%s-%s" "snapshot-warmer-for" $history_mode "node" }}
   template:
     metadata:
       labels:
-        app: snapshot-warmer
+        app: {{ printf "%s-%s-%s" "snapshot-warmer-for" $history_mode "node" }}
     spec:
       serviceAccountName: snapshot-maker-sa
       containers:
-        - name: snapshot-warmer
-          image: {{ .Values.tezos_k8s_images.snapshot_maker }}
+        - name: {{ printf "%s-%s-%s" "snapshot-warmer-for" $history_mode "node" }}
+          image: {{ $.Values.tezos_k8s_images.snapshot_maker }}
           imagePullPolicy: Always
           command: ["/bin/sh"]
           args:
             - "-c"
             - |
-{{ tpl (.Files.Get "scripts/snapshot-warmer.sh") . | indent 14 }}  
+{{ $.Files.Get "scripts/snapshot-warmer.sh" | indent 14 }}  
           env:
             - name: NAMESPACE
-              value: {{ .Values.namespace }}
+              value: {{ $.Release.Namespace }}
+            - history_mode: HISTORY_MODE
+              value: {{ $history_mode }}
 ---
+{{- end }}
+{{- end }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: modify-volumesnapshots
-  namespace: {{ .Values.namespace }}
+  namespace: {{ $.Release.Namespace }}
 rules:
   - apiGroups: ["snapshot.storage.k8s.io", "batch", ""]
     resources:
@@ -53,7 +60,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: snapshots-for-sa
-  namespace: {{ .Values.namespace }}
+  namespace: {{ $.Release.Namespace }}
 subjects:
   - kind: ServiceAccount
     name: {{ .Values.service_account }}
@@ -66,6 +73,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: {{ .Values.service_account }}
-  namespace: {{ .Values.namespace }}
+  namespace: {{ $.Release.Namespace }}
   annotations:
     eks.amazonaws.com/role-arn: {{ .Values.iam_role_arn }}
+---

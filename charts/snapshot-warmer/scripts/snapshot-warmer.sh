@@ -4,15 +4,9 @@ cd /
 
 ## Snapshot Namespace
 NAMESPACE="${NAMESPACE}" yq e -i '.metadata.namespace=strenv(NAMESPACE)' createVolumeSnapshot.yaml
+PERSISTENT_VOLUME_CLAIM=var-volume-snapshot-"${HISTORY_MODE}"-node-0
 
-# hangzhounet-shots PVC is called 'var-volume-archive-node' for some reason
-HISTORY_MODE=$(kubectl get pods -n "${NAMESAPCE}" -l appType=tezos-node -o jsonpath="{.items[0].metadata.labels.node_class_history_mode}")
-if [ "$HISTORY_MODE" ]; then
-    PERSISTENT_VOLUME_CLAIM=var-volume-snapshot-"${HISTORY_MODE}"-node-0
-else
-    PERSISTENT_VOLUME_CLAIM=var-volume-tezos-node-0
-fi
-
+HISTORY_MODE="${HISTORY_MODE}" yq e -i '.metadata.labels.history_mode=strenv(HISTORY_MODE)' createVolumeSnapshot.yaml
 PERSISTENT_VOLUME_CLAIM="${PERSISTENT_VOLUME_CLAIM}" yq e -i '.spec.source.persistentVolumeClaimName=strenv(PERSISTENT_VOLUME_CLAIM)' createVolumeSnapshot.yaml
 
 while true; do
@@ -27,10 +21,10 @@ while true; do
     sleep 10
   done
   
-  if ! [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' --namespace "${NAMESPACE}")" ]
+  if ! [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' --namespace "${NAMESPACE}" -l history_mode="${HISTORY_MODE}")" ]
   then
     # EBS Snapshot name based on current time and date
-    SNAPSHOT_NAME=$(date "+%Y-%m-%d-%H-%M-%S" "$@")-node-snapshot
+    SNAPSHOT_NAME=$(date "+%Y-%m-%d-%H-%M-%S" "$@")-$HISTORY_MODE-node-snapshot
 
     # Update volume snapshot name
     SNAPSHOT_NAME="${SNAPSHOT_NAME}" yq e -i '.metadata.name=strenv(SNAPSHOT_NAME)' createVolumeSnapshot.yaml
@@ -49,7 +43,7 @@ while true; do
     sleep 5
 
     # While no snapshots ready
-    while [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' --namespace "${NAMESPACE}")" ]; do
+    while [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' --namespace "${NAMESPACE}" -l history_mode="${HISTORY_MODE}")" ]; do
       printf "%s Snapshot is still creating...\n" "$(date "+%Y-%m-%d %H:%M:%S\n" "$@")"
       sleep 5
     done

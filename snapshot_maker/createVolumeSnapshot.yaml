@@ -3,6 +3,8 @@ kind: VolumeSnapshot
 metadata:
   name: "2021-11-07-01-13-02-node-snapshot"
   namespace: hangzhounet-shots
+  labels:
+    history_mode: rolling
 spec:
   volumeSnapshotClassName: test-snapclass
   source:
