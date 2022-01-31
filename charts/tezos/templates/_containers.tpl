@@ -250,6 +250,22 @@ Also start endorser for protocols that need it.
 {{- end }}
 
 
+{{- define "tezos.container.accusers" }}
+{{- if has "accuser" $.node_vals.runs }}
+{{ $node_vals_images := $.node_vals.images | default dict }}
+{{- range .Values.protocols }}
+- name: accuser-{{ lower .command }}
+  image: "{{ or $node_vals_images.octez $.Values.images.octez }}"
+  imagePullPolicy: IfNotPresent
+  command:
+    - /usr/local/bin/tezos-accuser-{{ .command }}
+  args:
+    - run
+{{- end }}
+{{- end }}
+{{- end }}
+
+
 {{- define "tezos.container.logger" }}
 {{- if has "logger" $.node_vals.runs }}
 - image: "{{ $.Values.tezos_k8s_images.utils }}"
