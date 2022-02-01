@@ -21,19 +21,19 @@ else
 fi
 
 # Delete old PVCs
-if [ "$(kubectl get pvc rolling-tarball-restore --namespace "${NAMESPACE}")"]; then
+if [ "$(kubectl get pvc rolling-tarball-restore --namespace "${NAMESPACE}")" ]; then
     printf "%s PVC Exists.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     kubectl delete pvc rolling-tarball-restore --namespace "${NAMESPACE}"
     sleep 5
 fi
 
-if [ "$(kubectl get pvc snapshot-cache-volume --namespace "${NAMESPACE}")"]; then
+if [ "$(kubectl get pvc snapshot-cache-volume --namespace "${NAMESPACE}")" ]; then
     printf "%s PVC Exists.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     kubectl delete pvc snapshot-cache-volume --namespace "${NAMESPACE}"
     sleep 5
 fi
 
-if [ "$(kubectl get pvc "${NAMESPACE}"-snap-volume --namespace "${NAMESPACE}")"]; then
+if [ "$(kubectl get pvc "${NAMESPACE}"-snap-volume --namespace "${NAMESPACE}")" ]; then
     printf "%s PVC Exists.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     kubectl delete pvc "${NAMESPACE}"-snap-volume --namespace "${NAMESPACE}"
     sleep 5
