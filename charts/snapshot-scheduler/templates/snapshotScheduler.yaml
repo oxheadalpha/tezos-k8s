@@ -38,11 +38,11 @@ spec:
 {{- end }}
 apiVersion: v1
 data:
-  NAMESPACE: {{ .Values.namespace }}
+  NAMESPACE: {{ $.Release.Namespace }}
   VOLUME_SNAPSHOT_CLASS_NAME: test-snapclass
-  IMAGE_NAME: {{ .Values.tezos_k8s_images.snapshot_maker }}
-  TEZOS_IMAGE: {{ .Values.images.octez }}
+  IMAGE_NAME: {{ $.Values.tezos_k8s_images.snapshot_maker }}
+  TEZOS_IMAGE: {{ $.Values.images.octez }}
 kind: ConfigMap
 metadata:
   name: snapshot-configmap
-  namespace: {{ .Values.namespace }}
+  namespace: {{ $.Release.Namespace }}

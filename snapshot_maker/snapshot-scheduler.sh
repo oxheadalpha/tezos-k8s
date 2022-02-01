@@ -9,7 +9,7 @@ NAMESPACE="${NAMESPACE}" yq e -i '.metadata.namespace=strenv(NAMESPACE)' snapsho
 IMAGE_NAME="${IMAGE_NAME}" yq e -i '.spec.template.spec.containers[0].image=strenv(IMAGE_NAME)' snapshotMakerJob.yaml
 
 #History mode for maker job
-HISTORY_MODE="${HISTORY_MODE}" yq e-i '.spec.template.spec.containers[0].env[0].value=strenv(HISTORY_MODE)' snapshotMakerJob.yaml
+HISTORY_MODE="${HISTORY_MODE}" yq e -i '.spec.template.spec.containers[0].env[0].value=strenv(HISTORY_MODE)' snapshotMakerJob.yaml
 
 while true; do
   # Job exists
