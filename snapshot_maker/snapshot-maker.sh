@@ -47,10 +47,10 @@ NAMESPACE="${NAMESPACE}" yq e -i '.metadata.namespace=strenv(NAMESPACE)' createV
 # EBS Snapshot name based on current time and date
 SNAPSHOT_NAME=$(date "+%Y-%m-%d-%H-%M-%S" "$@")-"${HISTORY_MODE}"-node-snapshot
 
-# Update volume snapshot name
+# Update snapshot name
 SNAPSHOT_NAME="${SNAPSHOT_NAME}" yq e -i '.metadata.name=strenv(SNAPSHOT_NAME)' createVolumeSnapshot.yaml
 
-
+# Target node PVC for snapshot
 PERSISTENT_VOLUME_CLAIM=var-volume-snapshot-"${HISTORY_MODE}"-node-0
 PERSISTENT_VOLUME_CLAIM="${PERSISTENT_VOLUME_CLAIM}" yq e -i '.spec.source.persistentVolumeClaimName=strenv(PERSISTENT_VOLUME_CLAIM)' createVolumeSnapshot.yaml
 
@@ -69,14 +69,11 @@ done
 
 printf "%s VolumeSnapshot ${SNAPSHOT_NAME} created successfully in namespace ${NAMESPACE}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
-# create volume from snapshot
-printf "%s Creating volume from snapshot ${SNAPSHOT_NAME}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-SNAPSHOT_NAME="${SNAPSHOT_NAME}" yq e -i '.spec.dataSource.name=strenv(SNAPSHOT_NAME)' volumeFromSnap.yaml
-
 # Set namespace for both snapshot-cache-volume and rolling-tarball-restore
 NAMESPACE="${NAMESPACE}" yq e -i '.metadata.namespace=strenv(NAMESPACE)' scratchVolume.yaml
 
 # Create snapshot-cache-volume
+printf "%s Creating PVC snapshot-cache-volume.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 NAME="snapshot-cache-volume" yq e -i '.metadata.name=strenv(NAME)' scratchVolume.yaml
 if ! kubectl apply -f scratchVolume.yaml
 then
@@ -85,6 +82,7 @@ then
 fi
 
 # Create rolling-tarball-restore
+printf "%s Creating PVC rolling-tarball-restore..\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 NAME="rolling-tarball-restore" yq e -i '.metadata.name=strenv(NAME)' scratchVolume.yaml
 if ! kubectl apply -f scratchVolume.yaml
 then
@@ -99,6 +97,10 @@ NAMESPACE="${NAMESPACE}" yq e -i '.metadata.namespace=strenv(NAMESPACE)' volumeF
 VOLUME_NAME="${NAMESPACE}-snap-volume"
 VOLUME_NAME="${VOLUME_NAME}" yq e -i '.metadata.name=strenv(VOLUME_NAME)' volumeFromSnap.yaml
 
+# Point snapshot PVC at snapshot
+SNAPSHOT_NAME="${SNAPSHOT_NAME}" yq e -i '.spec.dataSource.name=strenv(SNAPSHOT_NAME)' volumeFromSnap.yaml
+
+printf "%s Creating volume from snapshot ${SNAPSHOT_NAME}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 if ! kubectl apply -f volumeFromSnap.yaml
 then
     printf "%s Error creating persistentVolumeClaim or persistentVolume.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
