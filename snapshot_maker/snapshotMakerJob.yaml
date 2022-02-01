@@ -29,4 +29,9 @@ spec:
                 configMapKeyRef:
                   name: snapshot-configmap
                   key: IMAGE_NAME
+            - name: TEZOS_IMAGE
+              valueFrom:
+                configMapKeyRef:
+                  name: snapshot-configmap
+                  key: TEZOS_IMAGE
       restartPolicy: Never
