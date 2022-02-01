@@ -101,6 +101,9 @@ VOLUME_NAME="${VOLUME_NAME}" yq e -i '.metadata.name=strenv(VOLUME_NAME)' volume
 SNAPSHOT_NAME="${SNAPSHOT_NAME}" yq e -i '.spec.dataSource.name=strenv(SNAPSHOT_NAME)' volumeFromSnap.yaml
 
 printf "%s Creating volume from snapshot ${SNAPSHOT_NAME}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+
+cat volumeFromSnap.yaml
+
 if ! kubectl apply -f volumeFromSnap.yaml
 then
     printf "%s Error creating persistentVolumeClaim or persistentVolume.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
