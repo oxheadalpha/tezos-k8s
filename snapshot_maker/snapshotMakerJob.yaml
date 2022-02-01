@@ -17,6 +17,8 @@ spec:
           args:
               - "snapshot-maker"
           env:
+            - name: HISTORY_MODE
+              value: ""
             - name: NAMESPACE
               valueFrom:
                 configMapKeyRef:

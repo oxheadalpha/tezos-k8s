@@ -2,6 +2,12 @@
 
 cd /
 
+# Pause if nodes are not ready
+while [ ! "$(kubectl get pods -n "${NAMESPACE}" -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}' -l appType=tezos-node -l node_class_history_mode="${HISTORY_MODE}")" ]; do
+    printf "%s Tezos node is not ready for snapshot.  Check node pod logs.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    sleep 30
+done
+
 # Delete zip-and-upload job
 if kubectl get job zip-and-upload --namespace "${NAMESPACE}"; then
     printf "%s Old zip-and-upload job exits.  Attempting to delete.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -116,7 +122,7 @@ IMAGE_NAME="${IMAGE_NAME}" yq e -i '.spec.template.spec.containers[1].image=stre
 ## Zip job namespace
 NAMESPACE="${NAMESPACE}" yq e -i '.metadata.namespace=strenv(NAMESPACE)' mainJob.yaml
 
-TEZOS_IMAGE="${TEZOS_IMAGE}" yq e -i '.spec.template.spec.initcontainers[0].image=strenv(TEZOS_IMAGE)' mainJob.yaml
+TEZOS_IMAGE="${TEZOS_IMAGE}" yq e -i '.spec.template.spec.initContainers[0].image=strenv(TEZOS_IMAGE)' mainJob.yaml
 TEZOS_IMAGE="${TEZOS_IMAGE}" yq e -i '.spec.template.spec.containers[0].image=strenv(TEZOS_IMAGE)' mainJob.yaml
 
 # Trigger subsequent filesytem inits, snapshots, tarballs, and uploads.
