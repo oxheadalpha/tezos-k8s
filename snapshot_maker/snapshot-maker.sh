@@ -33,12 +33,18 @@ if [ "$(kubectl get pvc snapshot-cache-volume -o 'jsonpath={..status.phase}' --n
     sleep 5
 fi
 
+if [ "$(kubectl get pvc "${NAMESPACE}"-snap-volume -o 'jsonpath={..status.phase}' --namespace "${NAMESPACE}")" = "Bound" ]; then
+    printf "%s PVC Exists.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    kubectl delete pvc "${NAMESPACE}"-snap-volume --namespace "${NAMESPACE}"
+    sleep 5
+fi
+
 
 # Wait if there's a snapshot creating  or this snapshot will take extra long
 # TODO use this snapshot once its done
 while [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' --namespace "${NAMESPACE}")" ]; do
     printf "%s There is a snapshot currently creating... Paused until that snapshot is finished...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    sleep 10
+    sleep 30
 done
 
 ## Snapshot Namespace
@@ -64,7 +70,7 @@ fi
 # Wait for snapshot to complete
 while [ "$(kubectl get volumesnapshot "${SNAPSHOT_NAME}" -n "${NAMESPACE}" --template="{{.status.readyToUse}}")" != "true" ]; do
     printf "%s Waiting for snapshot creation to complete.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    sleep 30
+    sleep 15
 done
 
 printf "%s VolumeSnapshot ${SNAPSHOT_NAME} created successfully in namespace ${NAMESPACE}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -101,9 +107,6 @@ VOLUME_NAME="${VOLUME_NAME}" yq e -i '.metadata.name=strenv(VOLUME_NAME)' volume
 SNAPSHOT_NAME="${SNAPSHOT_NAME}" yq e -i '.spec.dataSource.name=strenv(SNAPSHOT_NAME)' volumeFromSnap.yaml
 
 printf "%s Creating volume from snapshot ${SNAPSHOT_NAME}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-
-cat volumeFromSnap.yaml
-
 if ! kubectl apply -f volumeFromSnap.yaml
 then
     printf "%s Error creating persistentVolumeClaim or persistentVolume.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -122,8 +125,19 @@ IMAGE_NAME="${IMAGE_NAME}" yq e -i '.spec.template.spec.containers[1].image=stre
 ## Zip job namespace
 NAMESPACE="${NAMESPACE}" yq e -i '.metadata.namespace=strenv(NAMESPACE)' mainJob.yaml
 
+
 TEZOS_IMAGE="${TEZOS_IMAGE}" yq e -i '.spec.template.spec.initContainers[0].image=strenv(TEZOS_IMAGE)' mainJob.yaml
+
+# DEBUG
+IMAGE=$(yq e '.spec.template.spec.initContainers[0].image' mainJob.yaml)
+printf "%s Image set to ${IMAGE}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+
 TEZOS_IMAGE="${TEZOS_IMAGE}" yq e -i '.spec.template.spec.containers[0].image=strenv(TEZOS_IMAGE)' mainJob.yaml
+
+# DEBUG
+IMAGE=$(yq e '.spec.template.spec.containers[0].image' mainJob.yaml)
+printf "%s Image set to ${IMAGE}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+
 
 # Trigger subsequent filesytem inits, snapshots, tarballs, and uploads.
 if ! kubectl apply -f mainJob.yaml
@@ -146,5 +160,8 @@ while [ "$(kubectl get jobs "zip-and-upload" --namespace "${NAMESPACE}" -o jsonp
     sleep 60
 done
 
+# Delete snapshot PVC
 kubectl delete -f volumeFromSnap.yaml  | while IFS= read -r line; do printf '%s %s\n' "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "$line"; done
+
+# Job deletes iself after its done
 kubectl delete job snapshot-maker --namespace "${NAMESPACE}"
