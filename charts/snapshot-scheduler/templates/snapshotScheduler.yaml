@@ -4,21 +4,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ printf "%s-%s-%s" "snapshot-warmer-for" $history_mode "node" }}
+  name: {{ printf "%s-%s-%s" "snapshot-scheduler-for" $history_mode "node" }}
   namespace: {{ $.Release.Namespace }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: {{ printf "%s-%s-%s" "snapshot-warmer-for" $history_mode "node" }}
+      app: {{ printf "%s-%s-%s" "snapshot-scheduler-for" $history_mode "node" }}
   template:
     metadata:
       labels:
-        app: {{ printf "%s-%s-%s" "snapshot-warmer-for" $history_mode "node" }}
+        app: {{ printf "%s-%s-%s" "snapshot-scheduler-for" $history_mode "node" }}
     spec:
       serviceAccountName: {{ $.Values.service_account }}
       containers:
-        - name: {{ printf "%s-%s-%s" "snapshot-warmer-for" $history_mode "node" }}
+        - name: {{ printf "%s-%s-%s" "snapshot-scheduler-for" $history_mode "node" }}
           image: {{ $.Values.tezos_k8s_images.snapshot_maker }}
           imagePullPolicy: Always
           args:
