@@ -126,11 +126,18 @@ IMAGE_NAME="${IMAGE_NAME}" yq e -i '.spec.template.spec.containers[1].image=stre
 NAMESPACE="${NAMESPACE}" yq e -i '.metadata.namespace=strenv(NAMESPACE)' mainJob.yaml
 
 
+# DEBUG
+
+printf "TEZOS_IMAGE env var is %s" "${TEZOS_IMAGE}"
+
 TEZOS_IMAGE="${TEZOS_IMAGE}" yq e -i '.spec.template.spec.initContainers[0].image=strenv(TEZOS_IMAGE)' mainJob.yaml
 
 # DEBUG
 IMAGE=$(yq e '.spec.template.spec.initContainers[0].image' mainJob.yaml)
 printf "%s Image set to ${IMAGE}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+
+# DEBUG
+printf "TEZOS_IMAGE env var is %s" "${TEZOS_IMAGE}"
 
 TEZOS_IMAGE="${TEZOS_IMAGE}" yq e -i '.spec.template.spec.containers[0].image=strenv(TEZOS_IMAGE)' mainJob.yaml
 
