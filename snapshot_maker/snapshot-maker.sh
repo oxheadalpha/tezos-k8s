@@ -116,6 +116,9 @@ IMAGE_NAME="${IMAGE_NAME}" yq e -i '.spec.template.spec.containers[1].image=stre
 ## Zip job namespace
 NAMESPACE="${NAMESPACE}" yq e -i '.metadata.namespace=strenv(NAMESPACE)' mainJob.yaml
 
+TEZOS_IMAGE="${TEZOS_IMAGE}" yq e -i '.spec.template.spec.initcontainers[0].image=strenv(TEZOS_IMAGE)' mainJob.yaml
+TEZOS_IMAGE="${TEZOS_IMAGE}" yq e -i '.spec.template.spec.containers[0].image=strenv(TEZOS_IMAGE)' mainJob.yaml
+
 # Trigger subsequent filesytem inits, snapshots, tarballs, and uploads.
 if ! kubectl apply -f mainJob.yaml
 then
