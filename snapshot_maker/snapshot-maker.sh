@@ -56,7 +56,7 @@ NEWEST_SNAPSHOT=${SNAPSHOTS##* }
 NAMESPACE="${NAMESPACE}" yq e -i '.metadata.namespace=strenv(NAMESPACE)' createVolumeSnapshot.yaml
 
 # Update snapshot name
-NEWEST_SNAPSHOT="${NEWEST_SNAPSHOT}" yq e -i '.metadata.name=strenv(NEWEST_SNAPSHOT' createVolumeSnapshot.yaml
+NEWEST_SNAPSHOT="${NEWEST_SNAPSHOT}" yq e -i '.metadata.name=strenv(NEWEST_SNAPSHOT)' createVolumeSnapshot.yaml
 
 # Target node PVC for snapshot
 PERSISTENT_VOLUME_CLAIM=var-volume-snapshot-"${HISTORY_MODE}"-node-0
