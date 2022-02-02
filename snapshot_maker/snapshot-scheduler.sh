@@ -29,7 +29,7 @@ while true; do
       sleep 60
       if kubectl get pod -l job-name="${JOB_NAME}" --namespace="${NAMESPACE}"| grep -i -e error -e evicted; then
         printf "%s Snapshot-maker job error. Deleting and starting new job.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-        if ! kubectl delete jobs snapshot-maker-"${JOB_NAME}" --namespace "${NAMESPACE}"; then
+        if ! kubectl delete jobs "${JOB_NAME}" --namespace "${NAMESPACE}"; then
           printf "%s Error deleting snapshot-maker job.  Check pod logs.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
           exit 1
         fi 
