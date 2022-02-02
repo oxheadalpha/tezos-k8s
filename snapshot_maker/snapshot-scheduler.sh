@@ -13,7 +13,7 @@ HISTORY_MODE="${HISTORY_MODE}" yq e -i '.spec.template.spec.containers[0].env[0]
 
 # Job for each node type
 JOB_NAME=snapshot-maker-"${HISTORY_MODE}"-node
-JOB_NAME="${JOB_NAME}" yq e -i '.spec.name=strenv(JOB_NAME)' snapshotMakerJob.yaml
+JOB_NAME="${JOB_NAME}" yq e -i '.metadata.name=strenv(JOB_NAME)' snapshotMakerJob.yaml
 
 while true; do
   # Job exists
