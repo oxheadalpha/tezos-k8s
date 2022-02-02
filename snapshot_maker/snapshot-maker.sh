@@ -59,7 +59,7 @@ PERSISTENT_VOLUME_CLAIM=var-volume-snapshot-"${HISTORY_MODE}"-node-0
 PERSISTENT_VOLUME_CLAIM="${PERSISTENT_VOLUME_CLAIM}" yq e -i '.spec.source.persistentVolumeClaimName=strenv(PERSISTENT_VOLUME_CLAIM)' createVolumeSnapshot.yaml
 
 
-# Set namespace for both "${HISTORY_MODE}"-snapshot-cache-volume and rolling-tarball-restore
+# Set namespace for both "${HISTORY_MODE}"-snapshot-cache-volume
 NAMESPACE="${NAMESPACE}" yq e -i '.metadata.namespace=strenv(NAMESPACE)' scratchVolume.yaml
 
 # Create "${HISTORY_MODE}"-snapshot-cache-volume
@@ -147,7 +147,10 @@ VOLUME_NAME="${VOLUME_NAME}" yq e -i '.spec.template.spec.volumes[0].persistentV
 PVC="${PVC}" yq e -i '.spec.template.spec.volumes[1].persistentVolumeClaim.claimName=strenv(PVC)' mainJob.yaml
 PVC="${PVC}" yq e -i '.spec.template.spec.volumes[1].name=strenv(PVC)' mainJob.yaml
 
-
+# get rid of rolling container if this is an archive job
+if [ "${HISTORY_MODE}" = archive ]; then
+    yq eval -i 'del(.spec.template.spec.containers[0])' mainJob.yaml
+fi
 
 # Trigger subsequent filesytem inits, snapshots, tarballs, and uploads.
 if ! kubectl apply -f mainJob.yaml
