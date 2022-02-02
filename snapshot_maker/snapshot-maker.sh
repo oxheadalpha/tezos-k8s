@@ -29,9 +29,10 @@ if [ "$(kubectl get pvc rolling-tarball-restore --namespace "${NAMESPACE}")" ]; 
     sleep 5
 fi
 
-if [ "$(kubectl get pvc snapshot-cache-volume --namespace "${NAMESPACE}")" ]; then
+
+if [ "$(kubectl get pvc "${HISTORY_MODE}"-snapshot-cache-volume --namespace "${NAMESPACE}")" ]; then
     printf "%s PVC Exists.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    kubectl delete pvc snapshot-cache-volume --namespace "${NAMESPACE}"
+    kubectl delete pvc "${HISTORY_MODE}"-snapshot-cache-volume --namespace "${NAMESPACE}"
     sleep 5
 fi
 
@@ -57,12 +58,12 @@ PERSISTENT_VOLUME_CLAIM=var-volume-snapshot-"${HISTORY_MODE}"-node-0
 PERSISTENT_VOLUME_CLAIM="${PERSISTENT_VOLUME_CLAIM}" yq e -i '.spec.source.persistentVolumeClaimName=strenv(PERSISTENT_VOLUME_CLAIM)' createVolumeSnapshot.yaml
 
 
-# Set namespace for both snapshot-cache-volume and rolling-tarball-restore
+# Set namespace for both "${HISTORY_MODE}"-snapshot-cache-volume and rolling-tarball-restore
 NAMESPACE="${NAMESPACE}" yq e -i '.metadata.namespace=strenv(NAMESPACE)' scratchVolume.yaml
 
-# Create snapshot-cache-volume
-printf "%s Creating PVC snapshot-cache-volume.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-NAME="snapshot-cache-volume" yq e -i '.metadata.name=strenv(NAME)' scratchVolume.yaml
+# Create "${HISTORY_MODE}"-snapshot-cache-volume
+printf "%s Creating PVC ${HISTORY_MODE}-snapshot-cache-volume.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+NAME="${HISTORY_MODE}-snapshot-cache-volume" yq e -i '.metadata.name=strenv(NAME)' scratchVolume.yaml
 if ! kubectl apply -f scratchVolume.yaml
 then
     printf "%s Error creating persistentVolumeClaim or persistentVolume.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -98,11 +99,28 @@ fi
 # TODO Check for PVC
 printf "%s PersistentVolumeClaim ${HISTORY_MODE}-snap-volume created successfully in namespace ${NAMESPACE}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
+# set history mode for tezos init container
+HISTORY_MODE="${HISTORY_MODE}" yq e -i '.spec.template.spec.initContainers[0].env[0].value=strenv(HISTORY_MODE)' mainJob.yaml
+
+# set pvc name for tezos init container
+PVC="${HISTORY_MODE}-snapshot-cache-volume"
+MOUNT_PATH="/${PVC}"
+MOUNT_PATH="${MOUNT_PATH}" yq e -i '.spec.template.spec.initContainers[0].volumeMounts[1].mountPath=strenv(MOUNT_PATH)' mainJob.yaml
+PVC="${PVC}" yq e -i '.spec.template.spec.initContainers[0].volumeMounts[1].name=strenv(PVC)' mainJob.yaml
+
 # set history mode for rolling snapshot container
 HISTORY_MODE="${HISTORY_MODE}" yq e -i '.spec.template.spec.containers[0].env[0].value=strenv(HISTORY_MODE)' mainJob.yaml
 
+# set pvc name for rolling snapshot container
+MOUNT_PATH="${MOUNT_PATH}" yq e -i '.spec.template.spec.containers[0].volumeMounts[1].mountPath=strenv(MOUNT_PATH)' mainJob.yaml
+PVC="${PVC}" yq e -i '.spec.template.spec.containers[0].volumeMounts[1].name=strenv(PVC)' mainJob.yaml
+
 # set history mode for zip and upload container
 HISTORY_MODE="${HISTORY_MODE}" yq e -i  '.spec.template.spec.containers[1].env[0].value=strenv(HISTORY_MODE)' mainJob.yaml
+
+# set pvc for zip and upload
+MOUNT_PATH="${MOUNT_PATH}" yq e -i '.spec.template.spec.containers[1].volumeMounts[1].mountPath=strenv(MOUNT_PATH)' mainJob.yaml
+PVC="${PVC}" yq e -i '.spec.template.spec.containers[1].volumeMounts[1].name=strenv(PVC)' mainJob.yaml
 
 # Set new PVC Name in snapshotting job
 VOLUME_NAME="${VOLUME_NAME}" yq e -i '.spec.template.spec.volumes[0].persistentVolumeClaim.claimName=strenv(VOLUME_NAME)' mainJob.yaml
@@ -120,8 +138,12 @@ ZIP_AND_UPLOAD_JOB_NAME="${ZIP_AND_UPLOAD_JOB_NAME}" yq e -i '.metadata.name=str
 TEZOS_IMAGE="${TEZOS_IMAGE}" yq e -i '.spec.template.spec.initContainers[0].image=strenv(TEZOS_IMAGE)' mainJob.yaml
 TEZOS_IMAGE="${TEZOS_IMAGE}" yq e -i '.spec.template.spec.containers[0].image=strenv(TEZOS_IMAGE)' mainJob.yaml
 
-# target pvc for artifact processing on zip-and-upload container
+# target pvc for artifact processing for entire job
 VOLUME_NAME="${VOLUME_NAME}" yq e -i '.spec.template.spec.volumes[0].persistentVolumeClaim.claimName=strenv(VOLUME_NAME)' mainJob.yaml
+PVC="${PVC}" yq e -i '.spec.template.spec.volumes[1].persistentVolumeClaim.claimName=strenv(PVC)' mainJob.yaml
+PVC="${PVC}" yq e -i '.spec.template.spec.volumes[1].name=strenv(PVC)' mainJob.yaml
+
+
 
 # Trigger subsequent filesytem inits, snapshots, tarballs, and uploads.
 if ! kubectl apply -f mainJob.yaml

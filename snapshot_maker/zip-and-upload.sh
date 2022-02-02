@@ -1,9 +1,9 @@
 #!/bin/bash
 
-BLOCK_HEIGHT=$(cat /snapshot-cache-volume/BLOCK_HEIGHT)
-BLOCK_HASH=$(cat /snapshot-cache-volume/BLOCK_HASH)
-BLOCK_TIMESTAMP=$(cat /snapshot-cache-volume/BLOCK_TIMESTAMP)
-TEZOS_VERSION=$(cat /snapshot-cache-volume/TEZOS_VERSION)
+BLOCK_HEIGHT=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HEIGHT)
+BLOCK_HASH=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH)
+BLOCK_TIMESTAMP=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_TIMESTAMP)
+TEZOS_VERSION=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_VERSION)
 NETWORK="${NAMESPACE%%-*}"
 S3_BUCKET="${NETWORK}.xtz-shots.io"
 
@@ -12,9 +12,9 @@ cd /
 # If block_height is not set than init container failed, exit this container
 [ -z "${BLOCK_HEIGHT}" ] && exit 1
 
-printf "%s BLOCK_HASH is...$(cat /snapshot-cache-volume/BLOCK_HASH))\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-printf "%s BLOCK_HEIGHT is...$(cat /snapshot-cache-volume/BLOCK_HEIGHT)\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-printf "%s BLOCK_TIMESTAMP is...$(cat /snapshot-cache-volume/BLOCK_TIMESTAMP)\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+printf "%s BLOCK_HASH is...$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH))\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+printf "%s BLOCK_HEIGHT is...$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HEIGHT)\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+printf "%s BLOCK_TIMESTAMP is...$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_TIMESTAMP)\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
 # Download base.json or create if if it doesn't exist
 if ! aws s3api head-object --bucket "${S3_BUCKET}" --key "base.json" > /dev/null; then
@@ -209,7 +209,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
     # Rolling snapshot and tarball vars
     #
     ROLLING_SNAPSHOT_FILENAME="${NETWORK}"-"${BLOCK_HEIGHT}".rolling
-    ROLLING_SNAPSHOT=/snapshot-cache-volume/"${ROLLING_SNAPSHOT_FILENAME}"
+    ROLLING_SNAPSHOT=/"${HISTORY_MODE}"-snapshot-cache-volume/"${ROLLING_SNAPSHOT_FILENAME}"
     ROLLING_TARBALL_FILENAME=tezos-"${NETWORK}"-rolling-tarball-"${BLOCK_HEIGHT}".lz4
     IMPORT_IN_PROGRESS=/rolling-tarball-restore/snapshot-import-in-progress
 
@@ -225,7 +225,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
         sleep 60
     done
 
-    # LZ4 /snapshot-cache-volume/var/tezos/node selectively and upload to S3
+    # LZ4 /"${HISTORY_MODE}"-snapshot-cache-volume/var/tezos/node selectively and upload to S3
     printf "%s ********************* Rolling Tarball *********************\\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
     printf "%s Rolling Tarball : Tarballing /rolling-tarball-restore/var/tezos/node, LZ4ing, and uploading to S3...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
