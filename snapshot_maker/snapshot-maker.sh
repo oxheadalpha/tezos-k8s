@@ -160,19 +160,19 @@ fi
 while [ "$(kubectl get jobs "${ZIP_AND_UPLOAD_JOB_NAME}" --namespace "${NAMESPACE}" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')" != "True" ]; do
     if kubectl get pod -l job-name="${ZIP_AND_UPLOAD_JOB_NAME}" --namespace="${NAMESPACE}"| grep -i -e error -e evicted -e pending; then
         printf "%s Zip-and-upload job failed. This job will end and a new snapshot will be taken.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" 
-        printf "%s Deleting temporary snapshot volume.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         break
     else
         printf "%s Zip-and-upload job completed successfully.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-        printf "%s Deleting temporary snapshot volume.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     fi
     printf "%s Waiting for zip-and-upload job to complete.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"    
-    sleep 60
+    sleep 5
 done
 
 # Delete snapshot PVC
+printf "%s Deleting temporary snapshot volume.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 kubectl delete -f volumeFromSnap.yaml  | while IFS= read -r line; do printf '%s %s\n' "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "$line"; done
 
 # Job deletes iself after its done
+printf "%s Deleting this job.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 JOB_NAME=snapshot-maker-"${HISTORY_MODE}"-node
 kubectl delete job "${JOB_NAME}" --namespace "${NAMESPACE}"
