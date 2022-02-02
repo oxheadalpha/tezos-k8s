@@ -156,29 +156,28 @@ then
     exit 1
 fi
 
-
-i=1
-while [ "$i" -ne 10 ]
+i=10
+while [ "$i" -ne 0 ]
 do
     printf "%s Sleeping for %s seconds and waiting for job to create.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${i}"
     sleep 1
-    i=$((i + 1))
+    i=$((i - 1))
 done
-
-
-
 
 # Wait for snapshotting job to complete
 while [ "$(kubectl get jobs "${ZIP_AND_UPLOAD_JOB_NAME}" --namespace "${NAMESPACE}" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')" != "True" ]; do
     if kubectl get pod -l job-name="${ZIP_AND_UPLOAD_JOB_NAME}" --namespace="${NAMESPACE}"| grep -i -e error -e evicted -e pending; then
         printf "%s Zip-and-upload job failed. This job will end and a new snapshot will be taken.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" 
         break
-    else
-        printf "%s Zip-and-upload job completed successfully.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     fi
     printf "%s Waiting for zip-and-upload job to complete.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"    
     sleep 5
 done
+
+# Job sucessful message
+if [ "$(kubectl get jobs "${ZIP_AND_UPLOAD_JOB_NAME}" --namespace "${NAMESPACE}" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')" = "True" ]; then
+    printf "%s Zip-and-upload job completed successfully.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+fi
 
 # Delete snapshot PVC
 printf "%s Deleting temporary snapshot volume.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
