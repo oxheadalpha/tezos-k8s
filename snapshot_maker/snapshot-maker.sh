@@ -9,9 +9,9 @@ while [ "$(kubectl get pods -n "${NAMESPACE}" -o 'jsonpath={..status.conditions[
 done
 
 # Delete zip-and-upload job
-if kubectl get job zip-and-upload --namespace "${NAMESPACE}"; then
+if kubectl get job "${ZIP_AND_UPLOAD_JOB_NAME}" --namespace "${NAMESPACE}"; then
     printf "%s Old zip-and-upload job exits.  Attempting to delete.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    if ! kubectl delete jobs zip-and-upload --namespace "${NAMESPACE}"; then
+    if ! kubectl delete jobs "${ZIP_AND_UPLOAD_JOB_NAME}" --namespace "${NAMESPACE}"; then
             printf "%s Error deleting zip-and-upload job.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
             exit 1
     fi
@@ -114,7 +114,7 @@ then
 fi
 
 # TODO Check for PVC
-printf "%s PersistentVolumeClaim ${NAMESPACE}-snap-volume created successfully in namespace ${NAMESPACE}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+printf "%s PersistentVolumeClaim ${HISTORY_MODE}-snap-volume created successfully in namespace ${NAMESPACE}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
 # set history mode for rolling snapshot container
 HISTORY_MODE="${HISTORY_MODE}" yq e -i '.spec.template.spec.containers[0].env[0].value=strenv(HISTORY_MODE)' mainJob.yaml
@@ -150,8 +150,8 @@ then
 fi
 
 # Wait for snapshotting job to complete
-while [ "$(kubectl get jobs "zip-and-upload" --namespace "${NAMESPACE}" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')" != "True" ]; do
-    if kubectl get pod -l job-name=zip-and-upload --namespace="${NAMESPACE}"| grep -i -e error -e evicted; then
+while [ "$(kubectl get jobs "${ZIP_AND_UPLOAD_JOB_NAME}" --namespace "${NAMESPACE}" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')" != "True" ]; do
+    if kubectl get pod -l job-name=z"${ZIP_AND_UPLOAD_JOB_NAME}"--namespace="${NAMESPACE}"| grep -i -e error -e evicted; then
         printf "%s Zip-and-upload job failed. This job will end and a new snapshot will be taken.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" 
         printf "%s Deleting temporary snapshot volume.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         break
