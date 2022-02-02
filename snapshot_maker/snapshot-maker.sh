@@ -44,19 +44,19 @@ fi
 
 # Wait if there's a snapshot creating  or this snapshot will take extra long
 # TODO use this snapshot once its done
-while [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' --namespace "${NAMESPACE}")" ]; do
+while [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' --namespace "${NAMESPACE}" -l history_mode="${HISTORY_MODE}")" ]; do
     printf "%s There is a snapshot currently creating... Paused until that snapshot is finished...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     sleep 30
 done
 
+SNAPSHOTS=$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==true)].metadata.name}' --namespace "${NAMESPACE}" -l history_mode="${HISTORY_MODE}")
+NEWEST_SNAPSHOT=${SNAPSHOTS##* }
+
 ## Snapshot Namespace
 NAMESPACE="${NAMESPACE}" yq e -i '.metadata.namespace=strenv(NAMESPACE)' createVolumeSnapshot.yaml
 
-# EBS Snapshot name based on current time and date
-SNAPSHOT_NAME=$(date "+%Y-%m-%d-%H-%M-%S" "$@")-"${HISTORY_MODE}"-node-snapshot
-
 # Update snapshot name
-SNAPSHOT_NAME="${SNAPSHOT_NAME}" yq e -i '.metadata.name=strenv(SNAPSHOT_NAME)' createVolumeSnapshot.yaml
+NEWEST_SNAPSHOT="${NEWEST_SNAPSHOT}" yq e -i '.metadata.name=strenv(NEWEST_SNAPSHOT' createVolumeSnapshot.yaml
 
 # Target node PVC for snapshot
 PERSISTENT_VOLUME_CLAIM=var-volume-snapshot-"${HISTORY_MODE}"-node-0
