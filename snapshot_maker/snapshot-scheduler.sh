@@ -17,17 +17,17 @@ JOB_NAME="${JOB_NAME}" yq e -i '.metadata.name=strenv(JOB_NAME)' snapshotMakerJo
 
 while true; do
   # Job exists
-  if [ "$(kubectl get jobs "snapshot-maker" --namespace "${NAMESPACE}")" ]; then
+  if [ "$(kubectl get jobs "${JOB_NAME}" --namespace "${NAMESPACE}")" ]; then
     printf "%s Snapshot-maker job exists.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    if [ "$(kubectl get jobs "snapshot-maker" --namespace "${NAMESPACE}" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')" != "True" ]; then
+    if [ "$(kubectl get jobs "${JOB_NAME}" --namespace "${NAMESPACE}" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')" != "True" ]; then
       printf "%s Snapshot-maker job not complete.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-      if [ "$(kubectl get jobs "snapshot-maker" --namespace "${NAMESPACE}" -o jsonpath='{.status.conditions[?(@.type=="Failed")].status}')" = "True" ]; then
+      if [ "$(kubectl get jobs "${JOB_NAME}" --namespace "${NAMESPACE}" -o jsonpath='{.status.conditions[?(@.type=="Failed")].status}')" = "True" ]; then
           printf "%s Snapshot-maker job failed. Check Job pod logs for more information.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" 
           exit 1
       fi
       printf "%s Waiting for snapshot-maker job to complete.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"    
       sleep 60
-      if kubectl get pod -l job-name=snapshot-maker-"${JOB_NAME}" --namespace="${NAMESPACE}"| grep -i -e error -e evicted; then
+      if kubectl get pod -l job-name="${JOB_NAME}" --namespace="${NAMESPACE}"| grep -i -e error -e evicted; then
         printf "%s Snapshot-maker job error. Deleting and starting new job.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         if ! kubectl delete jobs snapshot-maker-"${JOB_NAME}" --namespace "${NAMESPACE}"; then
           printf "%s Error deleting snapshot-maker job.  Check pod logs.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -43,7 +43,7 @@ while true; do
         if [ "$(kubectl get jobs --namespace "${NAMESPACE}" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')" != "True" ] \
             && [ "$(kubectl get jobs --namespace "${NAMESPACE}" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')" != "True" ]; then
           printf "%s No jobs are running.  Deleting PVC.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-          kubectl delete pvc "${NAMESPACE}"-snap-volume --namespace "${NAMESPACE}"
+          kubectl delete pvc "${HISTORY_MODE}"-snap-volume --namespace "${NAMESPACE}"
           sleep 5
         fi
       fi
