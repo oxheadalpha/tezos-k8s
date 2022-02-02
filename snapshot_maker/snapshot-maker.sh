@@ -2,6 +2,8 @@
 
 cd /
 
+ZIP_AND_UPLOAD_JOB_NAME=zip-and-upload-"${HISTORY_MODE}"
+
 # Pause if nodes are not ready
 while [ "$(kubectl get pods -n "${NAMESPACE}" -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}' -l appType=tezos-node -l node_class_history_mode="${HISTORY_MODE}")" = "False" ]; do
     printf "%s Tezos node is not ready for snapshot.  Check node pod logs.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -132,7 +134,6 @@ IMAGE_NAME="${IMAGE_NAME}" yq e -i '.spec.template.spec.containers[1].image=stre
 NAMESPACE="${NAMESPACE}" yq e -i '.metadata.namespace=strenv(NAMESPACE)' mainJob.yaml
 
 # name per node type
-ZIP_AND_UPLOAD_JOB_NAME=zip-and-upload-"${HISTORY_MODE}"
 ZIP_AND_UPLOAD_JOB_NAME="${ZIP_AND_UPLOAD_JOB_NAME}" yq e -i '.metadata.name=strenv(ZIP_AND_UPLOAD_JOB_NAME)' mainJob.yaml
 
 # Tezos image gets set in values.yaml in base of submod .images.octez
