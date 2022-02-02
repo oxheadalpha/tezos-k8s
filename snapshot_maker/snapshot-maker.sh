@@ -33,9 +33,9 @@ if [ "$(kubectl get pvc snapshot-cache-volume --namespace "${NAMESPACE}")" ]; th
     sleep 5
 fi
 
-if [ "$(kubectl get pvc "${NAMESPACE}"-snap-volume --namespace "${NAMESPACE}")" ]; then
+if [ "$(kubectl get pvc "${HISTORY_MODE}"-snap-volume --namespace "${NAMESPACE}")" ]; then
     printf "%s PVC Exists.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    kubectl delete pvc "${NAMESPACE}"-snap-volume --namespace "${NAMESPACE}"
+    kubectl delete pvc "${HISTORY_MODE}"-snap-volume --namespace "${NAMESPACE}"
     sleep 5
 fi
 
