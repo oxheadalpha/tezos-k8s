@@ -23,12 +23,13 @@ else
 fi
 
 # Delete old PVCs
-if [ "$(kubectl get pvc rolling-tarball-restore --namespace "${NAMESPACE}")" ]; then
+if [ "${HISTORY_MODE}" = rolling ]; then
+    if [ "$(kubectl get pvc rolling-tarball-restore --namespace "${NAMESPACE}")" ]; then
     printf "%s PVC Exists.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     kubectl delete pvc rolling-tarball-restore --namespace "${NAMESPACE}"
     sleep 5
 fi
-
+fi
 
 if [ "$(kubectl get pvc "${HISTORY_MODE}"-snapshot-cache-volume --namespace "${NAMESPACE}")" ]; then
     printf "%s PVC Exists.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -70,13 +71,16 @@ then
     exit 1
 fi
 
-# Create rolling-tarball-restore
-printf "%s Creating PVC rolling-tarball-restore..\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-NAME="rolling-tarball-restore" yq e -i '.metadata.name=strenv(NAME)' scratchVolume.yaml
-if ! kubectl apply -f scratchVolume.yaml
-then
-    printf "%s Error creating persistentVolumeClaim or persistentVolume.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    exit 1
+
+if [ "${HISTORY_MODE}" = rolling ]; then
+    # Create rolling-tarball-restore
+    printf "%s Creating PVC rolling-tarball-restore..\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    NAME="rolling-tarball-restore" yq e -i '.metadata.name=strenv(NAME)' scratchVolume.yaml
+    if ! kubectl apply -f scratchVolume.yaml
+    then
+        printf "%s Error creating persistentVolumeClaim or persistentVolume.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+        exit 1
+    fi
 fi
 
 ## Snapshot volume namespace
