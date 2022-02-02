@@ -148,4 +148,5 @@ done
 kubectl delete -f volumeFromSnap.yaml  | while IFS= read -r line; do printf '%s %s\n' "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "$line"; done
 
 # Job deletes iself after its done
-kubectl delete job snapshot-maker --namespace "${NAMESPACE}"
+JOB_NAME=snapshot-maker-"${HISTORY_MODE}"-node
+kubectl delete job "${JOB_NAME}" --namespace "${NAMESPACE}"
