@@ -92,7 +92,7 @@ spec:
               --network "${NETWORK}" \
               --data-dir /var/tezos/node/data
 
-              if ! [ "${NAMESPACE}" = mainnet-shots ]; then
+              if [ "${HISTORY_MODE}" = rolling ]; then
                 tezos-node snapshot export \
                 --block "${BLOCK_HASH}" \
                 --config-file /home/tezos/.tezos-node/config.json \
@@ -111,7 +111,7 @@ spec:
 
                 rm /rolling-tarball-restore/snapshot-import-in-progress
               else
-                printf "%s Skipping rolling snapshot import and export because its too slow on mainnet.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+                printf "%s Skipping rolling snapshot import since this job is for an archive node.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
               fi
           volumeMounts:
             - mountPath: /var/tezos
@@ -121,6 +121,8 @@ spec:
             - mountPath: /rolling-tarball-restore
               name: rolling-tarball-restore
           env:
+            - name: HISTORY_MODE
+              value: ""
             - name: NAMESPACE
               valueFrom:
                 configMapKeyRef:
@@ -140,6 +142,8 @@ spec:
             - mountPath: /rolling-tarball-restore
               name: rolling-tarball-restore
           env:
+            - name: HISTORY_MODE
+              value: ""
             - name: NAMESPACE
               valueFrom:
                 configMapKeyRef:

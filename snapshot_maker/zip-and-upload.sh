@@ -51,7 +51,7 @@ fi
 #
 
 # Do not take archive tarball in rolling namespace
-if ! [ "${NAMESPACE}" = mainnet-shots-2 ]; then
+if [ "${HISTORY_MODE}" = archive ]; then
     printf "%s ********************* Archive Tarball *********************\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     ARCHIVE_TARBALL_FILENAME=tezos-"${NETWORK}"-archive-tarball-"${BLOCK_HEIGHT}".lz4
     printf "%s Archive tarball filename is ${ARCHIVE_TARBALL_FILENAME}\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -200,11 +200,11 @@ if ! [ "${NAMESPACE}" = mainnet-shots-2 ]; then
         fi
     fi
 else
-    printf "%s Archive Tarball : Not creating archive tarball since we're in mainnet-rolling namespace.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    printf "%s Archive Tarball : Not creating archive tarball since this is a rolling job.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 fi
 
-# dont anticpate rolling snapshot or rolling tarball if we're on mainnet namespace
-if ! [ "${NAMESPACE}" = mainnet-shots ]; then
+# Rolling artifacts for rolling history mode
+if [ "${HISTORY_MODE}" = rolling ]; then
     #
     # Rolling snapshot and tarball vars
     #
@@ -490,7 +490,7 @@ if ! [ "${NAMESPACE}" = mainnet-shots ]; then
         printf "%s Rolling Tezos : ${ROLLING_SNAPSHOT} does not exist.  Not uploading.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     fi
 else
-  printf "%s Skipping rolling snapshot import and export because its too slow on mainnet.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+  printf "%s Skipping rolling snapshot import and export because this is an archive job.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 fi
 
 cd /srv/jekyll || exit

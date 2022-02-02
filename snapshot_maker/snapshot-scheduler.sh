@@ -11,6 +11,10 @@ IMAGE_NAME="${IMAGE_NAME}" yq e -i '.spec.template.spec.containers[0].image=stre
 #History mode for maker job
 HISTORY_MODE="${HISTORY_MODE}" yq e -i '.spec.template.spec.containers[0].env[0].value=strenv(HISTORY_MODE)' snapshotMakerJob.yaml
 
+# Job for each node type
+JOB_NAME=snapshot-maker-"${HISTORY_MODE}"-node
+JOB_NAME="${JOB_NAME}" yq e -i '.spec.name=strenv(JOB_NAME)' snapshotMakerJob.yaml
+
 while true; do
   # Job exists
   if [ "$(kubectl get jobs "snapshot-maker" --namespace "${NAMESPACE}")" ]; then
@@ -23,9 +27,9 @@ while true; do
       fi
       printf "%s Waiting for snapshot-maker job to complete.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"    
       sleep 60
-      if kubectl get pod -l job-name=snapshot-maker --namespace="${NAMESPACE}"| grep -i -e error -e evicted; then
+      if kubectl get pod -l job-name=snapshot-maker-"${JOB_NAME}" --namespace="${NAMESPACE}"| grep -i -e error -e evicted; then
         printf "%s Snapshot-maker job error. Deleting and starting new job.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-        if ! kubectl delete jobs snapshot-maker --namespace "${NAMESPACE}"; then
+        if ! kubectl delete jobs snapshot-maker-"${JOB_NAME}" --namespace "${NAMESPACE}"; then
           printf "%s Error deleting snapshot-maker job.  Check pod logs.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
           exit 1
         fi 

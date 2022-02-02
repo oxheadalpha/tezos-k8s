@@ -116,6 +116,12 @@ fi
 # TODO Check for PVC
 printf "%s PersistentVolumeClaim ${NAMESPACE}-snap-volume created successfully in namespace ${NAMESPACE}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
+# set history mode for rolling snapshot container
+HISTORY_MODE="${HISTORY_MODE}" yq e -i '.spec.template.spec.containers[0].env[0].value=strenv(HISTORY_MODE)' mainJob.yaml
+
+# set history mode for zip and upload container
+HISTORY_MODE="${HISTORY_MODE}" yq e -i  '.spec.template.spec.containers[1].env[0].value=strenv(HISTORY_MODE)' mainJob.yaml
+
 # Set new PVC Name in snapshotting job
 VOLUME_NAME="${VOLUME_NAME}" yq e -i '.spec.template.spec.volumes[0].persistentVolumeClaim.claimName=strenv(VOLUME_NAME)' mainJob.yaml
 
@@ -125,26 +131,13 @@ IMAGE_NAME="${IMAGE_NAME}" yq e -i '.spec.template.spec.containers[1].image=stre
 ## Zip job namespace
 NAMESPACE="${NAMESPACE}" yq e -i '.metadata.namespace=strenv(NAMESPACE)' mainJob.yaml
 
+# name per node type
+ZIP_AND_UPLOAD_JOB_NAME=zip-and-upload-"${HISTORY_MODE}"
+ZIP_AND_UPLOAD_JOB_NAME="${ZIP_AND_UPLOAD_JOB_NAME}" yq e -i '.metadata.name=strenv(ZIP_AND_UPLOAD_JOB_NAME)' mainJob.yaml
 
-# DEBUG
-
-printf "TEZOS_IMAGE env var is %s" "${TEZOS_IMAGE}"
-
+# Tezos image gets set in values.yaml in base of submod .images.octez
 TEZOS_IMAGE="${TEZOS_IMAGE}" yq e -i '.spec.template.spec.initContainers[0].image=strenv(TEZOS_IMAGE)' mainJob.yaml
-
-# DEBUG
-IMAGE=$(yq e '.spec.template.spec.initContainers[0].image' mainJob.yaml)
-printf "%s Image set to ${IMAGE}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-
-# DEBUG
-printf "TEZOS_IMAGE env var is %s" "${TEZOS_IMAGE}"
-
 TEZOS_IMAGE="${TEZOS_IMAGE}" yq e -i '.spec.template.spec.containers[0].image=strenv(TEZOS_IMAGE)' mainJob.yaml
-
-# DEBUG
-IMAGE=$(yq e '.spec.template.spec.containers[0].image' mainJob.yaml)
-printf "%s Image set to ${IMAGE}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-
 
 # Trigger subsequent filesytem inits, snapshots, tarballs, and uploads.
 if ! kubectl apply -f mainJob.yaml
