@@ -52,30 +52,10 @@ done
 SNAPSHOTS=$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==true)].metadata.name}' --namespace "${NAMESPACE}" -l history_mode="${HISTORY_MODE}")
 NEWEST_SNAPSHOT=${SNAPSHOTS##* }
 
-## Snapshot Namespace
-NAMESPACE="${NAMESPACE}" yq e -i '.metadata.namespace=strenv(NAMESPACE)' createVolumeSnapshot.yaml
-
-# Update snapshot name
-NEWEST_SNAPSHOT="${NEWEST_SNAPSHOT}" yq e -i '.metadata.name=strenv(NEWEST_SNAPSHOT)' createVolumeSnapshot.yaml
-
 # Target node PVC for snapshot
 PERSISTENT_VOLUME_CLAIM=var-volume-snapshot-"${HISTORY_MODE}"-node-0
 PERSISTENT_VOLUME_CLAIM="${PERSISTENT_VOLUME_CLAIM}" yq e -i '.spec.source.persistentVolumeClaimName=strenv(PERSISTENT_VOLUME_CLAIM)' createVolumeSnapshot.yaml
 
-# Create snapshot
-if ! kubectl apply -f createVolumeSnapshot.yaml
-then
-    printf "%s Error creating volumeSnapshot ${SNAPSHOT_NAME}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    exit 1
-fi
-
-# Wait for snapshot to complete
-while [ "$(kubectl get volumesnapshot "${SNAPSHOT_NAME}" -n "${NAMESPACE}" --template="{{.status.readyToUse}}")" != "true" ]; do
-    printf "%s Waiting for snapshot creation to complete.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    sleep 15
-done
-
-printf "%s VolumeSnapshot ${SNAPSHOT_NAME} created successfully in namespace ${NAMESPACE}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
 # Set namespace for both snapshot-cache-volume and rolling-tarball-restore
 NAMESPACE="${NAMESPACE}" yq e -i '.metadata.namespace=strenv(NAMESPACE)' scratchVolume.yaml
@@ -106,9 +86,9 @@ VOLUME_NAME="${HISTORY_MODE}-snap-volume"
 VOLUME_NAME="${VOLUME_NAME}" yq e -i '.metadata.name=strenv(VOLUME_NAME)' volumeFromSnap.yaml
 
 # Point snapshot PVC at snapshot
-SNAPSHOT_NAME="${SNAPSHOT_NAME}" yq e -i '.spec.dataSource.name=strenv(SNAPSHOT_NAME)' volumeFromSnap.yaml
+NEWEST_SNAPSHOT="${NEWEST_SNAPSHOT}" yq e -i '.spec.dataSource.name=strenv(NEWEST_SNAPSHOT)' volumeFromSnap.yaml
 
-printf "%s Creating volume from snapshot ${SNAPSHOT_NAME}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+printf "%s Creating volume from snapshot ${NEWEST_SNAPSHOT}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 if ! kubectl apply -f volumeFromSnap.yaml
 then
     printf "%s Error creating persistentVolumeClaim or persistentVolume.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
