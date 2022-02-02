@@ -156,7 +156,8 @@ then
     exit 1
 fi
 
-sleep 2
+printf "%s Sleeping and waiting for job to create.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+sleep 10
 
 # Wait for snapshotting job to complete
 while [ "$(kubectl get jobs "${ZIP_AND_UPLOAD_JOB_NAME}" --namespace "${NAMESPACE}" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')" != "True" ]; do
