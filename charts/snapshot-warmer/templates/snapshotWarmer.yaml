@@ -42,7 +42,7 @@ metadata:
   name: modify-volumesnapshots
   namespace: {{ $.Release.Namespace }}
 rules:
-  - apiGroups: ["snapshot.storage.k8s.io", "batch", ""]
+  - apiGroups: ["snapshot.storage.k8s.io", "batch"]
     resources:
       - volumesnapshots
       - volumesnapshotcontents
