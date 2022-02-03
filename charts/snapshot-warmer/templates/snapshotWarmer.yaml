@@ -83,7 +83,7 @@ kind: ClusterRoleBinding
 metadata:
   name: {{ printf "%s-%s-service-accounts" "list-volumesnapshotcontents-for" $.Release.Namespace }}
 subjects:
-- kind: User
+- kind: ServiceAccount
   name: snapshots-for-sa
   namespace: {{ $.Release.Namespace }}
   apiGroup: rbac.authorization.k8s.io
