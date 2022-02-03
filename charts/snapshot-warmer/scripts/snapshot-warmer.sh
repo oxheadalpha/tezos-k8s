@@ -56,20 +56,20 @@ while true; do
 
     # While no snapshots ready
     while [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' --namespace "${NAMESPACE}" -l history_mode="${HISTORY_MODE}")" ]; do
+      printf "%s Snapshot is still creating...n" "$(date "+%Y-%m-%d %H:%M:%S\n" "$@")"
+      # # Get EBS snapshot progress
+      # SNAPSHOT_CONTENT=$(kubectl get volumesnapshot -n "${NAMESPACE}" "${SNAPSHOT_NAME}" -o jsonpath='{.status.boundVolumeSnapshotContentName}')
+      # EBS_SNAPSHOT_ID=$(kubectl get volumesnapshotcontent -n "${NAMESPACE}" "${SNAPSHOT_CONTENT}" -o jsonpath='{.status.snapshotHandle}')
+      # EBS_SNAPSHOT_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)
 
-      # Get EBS snapshot progress
-      SNAPSHOT_CONTENT=$(kubectl get volumesnapshot -n "${NAMESPACE}" "${SNAPSHOT_NAME}" -o jsonpath='{.status.boundVolumeSnapshotContentName}')
-      EBS_SNAPSHOT_ID=$(kubectl get volumesnapshotcontent -n "${NAMESPACE}" "${SNAPSHOT_CONTENT}" -o jsonpath='{.status.snapshotHandle}')
-      EBS_SNAPSHOT_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)
-
-      while [ "${EBS_SNAPSHOT_PROGRESS}" != 100% ]; do
-        printf "%s Snapshot is still creating...%s\n" "$(date "+%Y-%m-%d %H:%M:%S\n" "$@")" "${EBS_SNAPSHOT_PROGRESS}"
-          if [ "${HISTORY_MODE}" = archive ]; then
-            sleep 1m 
-          else
-            sleep 10
-          fi
-      done
+      # while [ "${EBS_SNAPSHOT_PROGRESS}" != 100% ]; do
+      #   printf "%s Snapshot is still creating...%s\n" "$(date "+%Y-%m-%d %H:%M:%S\n" "$@")" "${EBS_SNAPSHOT_PROGRESS}"
+      #     if [ "${HISTORY_MODE}" = archive ]; then
+      #       sleep 1m 
+      #     else
+      #       sleep 10
+      #     fi
+      # done
 
     done
     end_time=$(date +%s)
