@@ -55,14 +55,16 @@ while [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse
     EBS_SNAPSHOT_ID=$(kubectl get volumesnapshotcontent -n "${NAMESPACE}" "${SNAPSHOT_CONTENT}" -o jsonpath='{.status.snapshotHandle}')
     EBS_SNAPSHOT_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)
 
-    while [ "${EBS_SNAPSHOT_PROGRESS}" != 100% ]; do
-    printf "%s Snapshot is still creating...%s\n" "$(date "+%Y-%m-%d %H:%M:%S\n" "$@")" "${EBS_SNAPSHOT_PROGRESS}"
-        if [ "${HISTORY_MODE}" = archive ]; then
-            sleep 1m 
-        else
-            sleep 10
-        fi
-    done
+    if [ "${EBS_SNAPSHOT_PROGRESS}" ];then
+        while [ "${EBS_SNAPSHOT_PROGRESS}" != 100% ]; do
+        printf "%s Snapshot is still creating...%s\n" "$(date "+%Y-%m-%d %H:%M:%S\n" "$@")" "${EBS_SNAPSHOT_PROGRESS}"
+            if [ "${HISTORY_MODE}" = archive ]; then
+                sleep 1m 
+            else
+                sleep 10
+            fi
+        done
+    fi
 done
 
 printf "%s EBS Snapshot finished!\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
