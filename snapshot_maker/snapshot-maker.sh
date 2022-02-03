@@ -48,16 +48,31 @@ fi
 # TODO use this snapshot once its done
 while [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' --namespace "${NAMESPACE}" -l history_mode="${HISTORY_MODE}")" ]; do
     printf "%s There is a snapshot currently creating... Paused until that snapshot is finished...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    sleep 30
+    
+    # Get EBS snapshot progress
+    SNAPSHOT_NAME=$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' --namespace "${NAMESPACE}" -l history_mode="${HISTORY_MODE}")
+    SNAPSHOT_CONTENT=$(kubectl get volumesnapshot -n "${NAMESPACE}" "${SNAPSHOT_NAME}" -o jsonpath='{.status.boundVolumeSnapshotContentName}')
+    EBS_SNAPSHOT_ID=$(kubectl get volumesnapshotcontent -n "${NAMESPACE}" "${SNAPSHOT_CONTENT}" -o jsonpath='{.status.snapshotHandle}')
+    EBS_SNAPSHOT_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)
+
+    while [ "${EBS_SNAPSHOT_PROGRESS}" != 100% ]; do
+    printf "%s Snapshot is still creating...%s\n" "$(date "+%Y-%m-%d %H:%M:%S\n" "$@")" "${EBS_SNAPSHOT_PROGRESS}"
+        if [ "${HISTORY_MODE}" = archive ]; then
+            sleep 1m 
+        else
+            sleep 10
+        fi
+    done
 done
+
+printf "%s EBS Snapshot finished!\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
 SNAPSHOTS=$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==true)].metadata.name}' --namespace "${NAMESPACE}" -l history_mode="${HISTORY_MODE}")
 NEWEST_SNAPSHOT=${SNAPSHOTS##* }
 
-# Target node PVC for snapshot
-PERSISTENT_VOLUME_CLAIM=var-volume-snapshot-"${HISTORY_MODE}"-node-0
-PERSISTENT_VOLUME_CLAIM="${PERSISTENT_VOLUME_CLAIM}" yq e -i '.spec.source.persistentVolumeClaimName=strenv(PERSISTENT_VOLUME_CLAIM)' createVolumeSnapshot.yaml
+printf "%s Latest snapshot is %s.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${NEWEST_SNAPSHOT}"
 
+printf "%s Creating scratch volume for artifact processing...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
 # Set namespace for both "${HISTORY_MODE}"-snapshot-cache-volume
 NAMESPACE="${NAMESPACE}" yq e -i '.metadata.namespace=strenv(NAMESPACE)' scratchVolume.yaml
@@ -71,6 +86,8 @@ then
     exit 1
 fi
 
+printf "%s PVC %s created.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${HISTORY_MODE}-snapshot-cache-volume"
+
 
 if [ "${HISTORY_MODE}" = rolling ]; then
     # Create rolling-tarball-restore
@@ -81,6 +98,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
         printf "%s Error creating persistentVolumeClaim or persistentVolume.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         exit 1
     fi
+    printf "%s PVC %s created.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "rolling-tarball-restore"
 fi
 
 ## Snapshot volume namespace
@@ -92,6 +110,19 @@ VOLUME_NAME="${VOLUME_NAME}" yq e -i '.metadata.name=strenv(VOLUME_NAME)' volume
 
 # Point snapshot PVC at snapshot
 NEWEST_SNAPSHOT="${NEWEST_SNAPSHOT}" yq e -i '.spec.dataSource.name=strenv(NEWEST_SNAPSHOT)' volumeFromSnap.yaml
+
+printf "%s Calculating needed snapshot restore volume size.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+# Set size of snap volume to snapshot size plus 20% rounded up.
+SNAPSHOT_CONTENT=$(kubectl get volumesnapshot -n "${NAMESPACE}" "${NEWEST_SNAPSHOT}" -o jsonpath='{.status.boundVolumeSnapshotContentName}')
+EBS_SNAPSHOT_RESTORE_SIZE=$(kubectl get volumesnapshotcontent -n "${NAMESPACE}" "${SNAPSHOT_CONTENT}" -o jsonpath='{.status.restoreSize}')
+
+printf "%s EBS Snapshot size is %s .\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "$("${EBS_SNAPSHOT_RESTORE_SIZE}" | awk '{print $1/1024/1024/1024 "GB"}')"
+
+RESTORE_VOLUME_SIZE=$("${EBS_SNAPSHOT_RESTORE_SIZE}" | awk '{print $1*1.2}' | awk '{print $1/1024/1024/1024}' | awk '{print ($0-int($0)>0)?int($0)+1:int($0)}')
+
+printf "%s We're rounding up and adding 20%% , volume size will be %s .\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${RESTORE_VOLUME_SIZE}"
+
+RESTORE_VOLUME_SIZE="${RESTORE_VOLUME_SIZE}Gi" yq e -i '.spec.resources.requests.storage=strenv(RESTORE_VOLUME_SIZE)' volumeFromSnap.yaml
 
 printf "%s Creating volume from snapshot ${NEWEST_SNAPSHOT}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 if ! kubectl apply -f volumeFromSnap.yaml
@@ -160,14 +191,6 @@ then
     printf "%s Error creating Zip-and-upload job.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     exit 1
 fi
-
-i=10
-while [ "$i" -ne 0 ]
-do
-    printf "%s Sleeping for %s seconds and waiting for job to create.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${i}"
-    sleep 1
-    i=$((i - 1))
-done
 
 # Wait for snapshotting job to complete
 while [ "$(kubectl get jobs "${ZIP_AND_UPLOAD_JOB_NAME}" --namespace "${NAMESPACE}" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')" != "True" ]; do
