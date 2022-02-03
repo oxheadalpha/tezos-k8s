@@ -45,6 +45,7 @@ rules:
   - apiGroups: ["snapshot.storage.k8s.io", "batch", ""]
     resources:
       - volumesnapshots
+      - volumesnapshotcontents
       - jobs
       - persistentvolumeclaims
       - configmaps
