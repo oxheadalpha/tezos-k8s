@@ -78,3 +78,25 @@ metadata:
   annotations:
     eks.amazonaws.com/role-arn: {{ .Values.iam_role_arn }}
 ---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: list-volumesnapshotcontents
+rules:
+  - apiGroups: [ "snapshot.storage.k8s.io" ]
+    resources: [ volumesnapshotcontents ]
+    verbs: [ get, list ]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: snapshots-for-sa
+  namespace: {{ $.Release.Namespace }}
+subjects:
+- kind: User
+  name: snapshots-for-sa
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: list-volumesnapshotcontents
+  apiGroup: rbac.authorization.k8s.io
