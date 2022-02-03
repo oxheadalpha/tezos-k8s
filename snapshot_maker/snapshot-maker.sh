@@ -190,6 +190,9 @@ if [ "${HISTORY_MODE}" = archive ]; then
     yq eval -i 'del(.spec.template.spec.volumes[2])' mainJob.yaml
 fi
 
+
+sleep 10
+
 # Trigger subsequent filesytem inits, snapshots, tarballs, and uploads.
 if ! kubectl apply -f mainJob.yaml
 then
