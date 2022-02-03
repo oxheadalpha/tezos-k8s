@@ -88,10 +88,9 @@ rules:
     verbs: [ get, list ]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+kind: ClusterRoleBinding
 metadata:
-  name: snapshots-for-sa
-  namespace: {{ $.Release.Namespace }}
+  name: list-volumesnapshotcontents
 subjects:
 - kind: User
   name: snapshots-for-sa
