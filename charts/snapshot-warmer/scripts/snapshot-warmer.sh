@@ -57,6 +57,7 @@ while true; do
     # While no snapshots ready
     while [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' --namespace "${NAMESPACE}" -l history_mode="${HISTORY_MODE}")" ]; do
       printf "%s Snapshot is still creating...n" "$(date "+%Y-%m-%d %H:%M:%S\n" "$@")"
+      sleep 10
       # # Get EBS snapshot progress
       # SNAPSHOT_CONTENT=$(kubectl get volumesnapshot -n "${NAMESPACE}" "${SNAPSHOT_NAME}" -o jsonpath='{.status.boundVolumeSnapshotContentName}')
       # EBS_SNAPSHOT_ID=$(kubectl get volumesnapshotcontent -n "${NAMESPACE}" "${SNAPSHOT_CONTENT}" -o jsonpath='{.status.snapshotHandle}')
@@ -78,6 +79,7 @@ while true; do
     eval "echo Elapsed time: $(date -ud "@$elapsed" +'$((%s/3600/24)) days %H hr %M min %S sec')\n"
   else
     printf "%s Snapshot already in progress...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    sleep 10
     # SNAPSHOT_NAME=$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' --namespace "${NAMESPACE}" -l history_mode="${HISTORY_MODE}")
     # printf "%s Snapshot is %s.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${SNAPSHOT_NAME}"
     # # Get EBS snapshot progress

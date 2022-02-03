@@ -49,6 +49,8 @@ fi
 while [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' --namespace "${NAMESPACE}" -l history_mode="${HISTORY_MODE}")" ]; do
     printf "%s There is a snapshot currently creating... Paused until that snapshot is finished...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
+    sleep 10
+
     # if [ "${EBS_SNAPSHOT_PROGRESS}" ];then
 
     # # Get EBS snapshot progress
