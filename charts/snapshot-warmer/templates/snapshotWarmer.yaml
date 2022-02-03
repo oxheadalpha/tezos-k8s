@@ -42,7 +42,7 @@ metadata:
   name: modify-volumesnapshots
   namespace: {{ $.Release.Namespace }}
 rules:
-  - apiGroups: ["snapshot.storage.k8s.io", "batch"]
+  - apiGroups: ["snapshot.storage.k8s.io", "batch", ""]
     resources:
       - volumesnapshots
       - volumesnapshotcontents
@@ -78,17 +78,16 @@ metadata:
   annotations:
     eks.amazonaws.com/role-arn: {{ .Values.iam_role_arn }}
 ---
-kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
 metadata:
   name: {{ printf "%s-%s-service-accounts" "list-volumesnapshotcontents-for" $.Release.Namespace }}
-  namespace: {{ $.Release.Namespace }}
 subjects:
 - kind: ServiceAccount
   name: snapshots-for-sa
   namespace: {{ $.Release.Namespace }}
-  apiGroup: rbac.authorization.k8s.io
 roleRef:
   kind: ClusterRole
   name: list-volumesnapshotcontents
   apiGroup: rbac.authorization.k8s.io
+---
