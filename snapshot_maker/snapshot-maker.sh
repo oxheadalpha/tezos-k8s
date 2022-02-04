@@ -125,13 +125,13 @@ printf "%s Newest snapshot is %s.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${NEWE
 SNAPSHOT_CONTENT=$(kubectl get volumesnapshot -n "${NAMESPACE}" "${NEWEST_SNAPSHOT}" -o jsonpath='{.status.boundVolumeSnapshotContentName}')
 printf "%s Volumesnapshotcontent for %s is %s.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${NEWEST_SNAPSHOT}" "${SNAPSHOT_CONTENT}"
 EBS_SNAPSHOT_RESTORE_SIZE=$(kubectl get volumesnapshotcontent "${SNAPSHOT_CONTENT}" -o jsonpath='{.status.restoreSize}')
-printf "%s EBS Snapshot Restore Size is %s.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${EBS_SNAPSHOT_RESTORE_SIZE}"
+printf "%s EBS Snapshot Restore Size is %s in bytes.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${EBS_SNAPSHOT_RESTORE_SIZE}"
 
-printf "%s EBS Snapshot size is %s.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "$("${EBS_SNAPSHOT_RESTORE_SIZE}" | awk '{print $1/1024/1024/1024 "GB"}')"
+printf "%s EBS Snapshot size is %s.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "$(echo "${EBS_SNAPSHOT_RESTORE_SIZE}" | awk '{print $1/1024/1024/1024 "GB"}')"
 
-RESTORE_VOLUME_SIZE=$("${EBS_SNAPSHOT_RESTORE_SIZE}" | awk '{print $1*1.2}' | awk '{print $1/1024/1024/1024}' | awk '{print ($0-int($0)>0)?int($0)+1:int($0)}')
+RESTORE_VOLUME_SIZE=$(echo "${EBS_SNAPSHOT_RESTORE_SIZE}" | awk '{print $1*1.2}' | awk '{print $1/1024/1024/1024}' | awk '{print ($0-int($0)>0)?int($0)+1:int($0)}')
 
-printf "%s We're rounding up and adding 20%% , volume size will be %s .\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${RESTORE_VOLUME_SIZE}"
+printf "%s We're rounding up and adding 20%% , volume size will be %sGB.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${RESTORE_VOLUME_SIZE}"
 
 RESTORE_VOLUME_SIZE="${RESTORE_VOLUME_SIZE}Gi" yq e -i '.spec.resources.requests.storage=strenv(RESTORE_VOLUME_SIZE)' volumeFromSnap.yaml
 
