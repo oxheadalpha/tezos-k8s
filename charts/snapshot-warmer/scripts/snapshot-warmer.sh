@@ -33,6 +33,7 @@ while true; do
     sleep 10
   done
   
+  # If no snapshots in progress then trigger a new EBS snapshot
   if ! [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' --namespace "${NAMESPACE}" -l history_mode="${HISTORY_MODE}")" ]
   then
     # EBS Snapshot name based on current time and date
@@ -43,6 +44,7 @@ while true; do
 
     printf "%s Creating snapshot ${SNAPSHOT_NAME} in ${NAMESPACE}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
+    # Start time for calculating EBS snapshot creation speed
     start_time=$(date +%s)
 
     # Create snapshot
@@ -52,56 +54,69 @@ while true; do
         exit 1
     fi
 
+    # Give time for snapshot to be available in api
     sleep 5
 
-    # While no snapshots ready
+    # While new snapshot still in progress
     while [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' --namespace "${NAMESPACE}" -l history_mode="${HISTORY_MODE}")" ]; do
-      printf "%s Snapshot is still creating...\n" "$(date "+%Y-%m-%d %H:%M:%S\n" "$@")"
-      sleep 10
-      # Get EBS snapshot progress
+
+      # Get identifiers for in progress snapshot
+      SNAPSHOT_NAME=$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' --namespace "${NAMESPACE}" -l history_mode="${HISTORY_MODE}")
       SNAPSHOT_CONTENT=$(kubectl get volumesnapshot -n "${NAMESPACE}" "${SNAPSHOT_NAME}" -o jsonpath='{.status.boundVolumeSnapshotContentName}')
       EBS_SNAPSHOT_ID=$(kubectl get volumesnapshotcontent -n "${NAMESPACE}" "${SNAPSHOT_CONTENT}" -o jsonpath='{.status.snapshotHandle}')
       EBS_SNAPSHOT_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)
+      
+      # Print progress and wait
+      printf "%s Snapshot %s is in progress...%s done.\n" "$(date "+%Y-%m-%d %H:%M:%S\n" "$@")" "${SNAPSHOT_NAME}" "${EBS_SNAPSHOT_PROGRESS}"
+      if [ "${HISTORY_MODE}" = archive ]; then
+        sleep 3m
+      else
+        sleep 10
+      fi
 
+      # Get EBS snapshot progress, print, and wait if not finished
       while [ "${EBS_SNAPSHOT_PROGRESS}" != 100% ]; do
-        printf "%s Snapshot is still creating...%s\n" "$(date "+%Y-%m-%d %H:%M:%S\n" "$@")" "${EBS_SNAPSHOT_PROGRESS}"
+        EBS_SNAPSHOT_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)
+        printf "%s Snapshot %s is in progress...%s done.\n" "$(date "+%Y-%m-%d %H:%M:%S\n" "$@")" "${SNAPSHOT_NAME}" "${EBS_SNAPSHOT_PROGRESS}"
           if [ "${HISTORY_MODE}" = archive ]; then
-            sleep 1m 
+            sleep 3m
           else
             sleep 10
           fi
-          SNAPSHOT_CONTENT=$(kubectl get volumesnapshot -n "${NAMESPACE}" "${SNAPSHOT_NAME}" -o jsonpath='{.status.boundVolumeSnapshotContentName}')
-          EBS_SNAPSHOT_ID=$(kubectl get volumesnapshotcontent -n "${NAMESPACE}" "${SNAPSHOT_CONTENT}" -o jsonpath='{.status.snapshotHandle}')
-          EBS_SNAPSHOT_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)
       done
-
     done
+
+    # Snapshot finish time.
     end_time=$(date +%s)
     elapsed=$(( end_time - start_time ))
     printf "%s Snapshot ${SNAPSHOT_NAME} in ${NAMESPACE} finished." "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    eval "echo Elapsed time: $(date -ud "@$elapsed" +'$((%s/3600/24)) days %H hr %M min %S sec')\n"
+    eval "echo EBS Snapshot finished in: $(date -ud "@$elapsed" +'$((%s/3600/24)) days %H hr %M min %S sec')\n"
+
+  # If snapshot detected in progress
   else
-    printf "%s Snapshot already in progress...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    sleep 10
+    # Get identifiers for in progress snapshot
     SNAPSHOT_NAME=$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' --namespace "${NAMESPACE}" -l history_mode="${HISTORY_MODE}")
-    printf "%s Snapshot is %s.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${SNAPSHOT_NAME}"
-    # Get EBS snapshot progress
     SNAPSHOT_CONTENT=$(kubectl get volumesnapshot -n "${NAMESPACE}" "${SNAPSHOT_NAME}" -o jsonpath='{.status.boundVolumeSnapshotContentName}')
     EBS_SNAPSHOT_ID=$(kubectl get volumesnapshotcontent -n "${NAMESPACE}" "${SNAPSHOT_CONTENT}" -o jsonpath='{.status.snapshotHandle}')
     EBS_SNAPSHOT_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)
-
-    if [ "${EBS_SNAPSHOT_PROGRESS}" ];then
-      while [ "${EBS_SNAPSHOT_PROGRESS}" != 100% ]; do
-        printf "%s Snapshot is still creating...%s\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${EBS_SNAPSHOT_PROGRESS}"
-          if [ "${HISTORY_MODE}" = archive ]; then
-            sleep 1m 
-          else
-            sleep 
-          fi
-        SNAPSHOT_CONTENT=$(kubectl get volumesnapshot -n "${NAMESPACE}" "${SNAPSHOT_NAME}" -o jsonpath='{.status.boundVolumeSnapshotContentName}')
-        EBS_SNAPSHOT_ID=$(kubectl get volumesnapshotcontent -n "${NAMESPACE}" "${SNAPSHOT_CONTENT}" -o jsonpath='{.status.snapshotHandle}')
-        EBS_SNAPSHOT_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)
-      done
+    
+    # Print progress and wait
+    printf "%s Snapshot %s is in progress...%s done.\n" "$(date "+%Y-%m-%d %H:%M:%S\n" "$@")" "${SNAPSHOT_NAME}" "${EBS_SNAPSHOT_PROGRESS}"
+    if [ "${HISTORY_MODE}" = archive ]; then
+      sleep 3m
+    else
+      sleep 10
     fi
+
+    # Get EBS snapshot progress, print, and wait if not finished
+    while [ "${EBS_SNAPSHOT_PROGRESS}" != 100% ]; do
+      EBS_SNAPSHOT_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)
+      printf "%s Snapshot %s is in progress...%s done.\n" "$(date "+%Y-%m-%d %H:%M:%S\n" "$@")" "${SNAPSHOT_NAME}" "${EBS_SNAPSHOT_PROGRESS}"
+        if [ "${HISTORY_MODE}" = archive ]; then
+          sleep 3m
+        else
+          sleep 10
+        fi
+    done
   fi
 done   
