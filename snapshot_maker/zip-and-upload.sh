@@ -5,7 +5,15 @@ BLOCK_HASH=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH)
 BLOCK_TIMESTAMP=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_TIMESTAMP)
 TEZOS_VERSION=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_VERSION)
 NETWORK="${NAMESPACE%%-*}"
-S3_BUCKET="${NETWORK}.xtz-shots.io"
+
+# TODO DELETE ME FOR DEV
+if [ "${NETWORK}" = mainnet ]; then
+    S3_BUCKET="new-mainnet.xtz-shots.io"
+else
+    S3_BUCKET="${NETWORK}.xtz-shots.io"
+fi
+
+echo "${S3_BUCKET}"
 
 cd /
 
