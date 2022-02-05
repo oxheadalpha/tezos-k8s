@@ -69,7 +69,7 @@ while true; do
       # Get EBS snapshot progress, print, and wait if not finished
       while [ "${EBS_SNAPSHOT_PROGRESS}" != 100% ]; do
         EBS_SNAPSHOT_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)
-        printf "%s Snapshot %s is in progress...%s done.\n" "$(date "+%Y-%m-%d %H:%M:%S\n" "$@")" "${SNAPSHOT_NAME}" "${EBS_SNAPSHOT_PROGRESS}"
+        printf "%s Snapshot %s is in progress... %s done.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${SNAPSHOT_NAME}" "${EBS_SNAPSHOT_PROGRESS}"
         NEW_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)
         while [ "${NEW_PROGRESS}" = "${EBS_SNAPSHOT_PROGRESS}" ]; do
           NEW_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)
@@ -80,7 +80,7 @@ while true; do
     # Snapshot finish time.
     end_time=$(date +%s)
     elapsed=$(( end_time - start_time ))
-    printf "%s Snapshot ${SNAPSHOT_NAME} in ${NAMESPACE} finished." "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    printf "%s Snapshot ${SNAPSHOT_NAME} in ${NAMESPACE} finished.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     eval "echo EBS Snapshot finished in: $(date -ud "@$elapsed" +'$((%s/3600/24)) days %H hr %M min %S sec')\n"
 
   # If snapshot detected in progress
