@@ -723,7 +723,7 @@ bundle install
 bundle exec jekyll build
 
 # upload index.html to website
-if ! aws s3 cp _site/ s3://"${NETWORK}".xtz-shots.io --recursive --include "*"; then
+if ! aws s3 cp _site/ s3://"${S3_BUCKET}" --recursive --include "*"; then
     printf "%s Website Build & Deploy : Error uploading site to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 else
     printf "%s Website Build & Deploy  : Sucessfully uploaded website to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"

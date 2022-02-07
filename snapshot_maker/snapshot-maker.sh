@@ -57,15 +57,11 @@ while [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse
     printf "%s EBS_SNAPSHOT_PROGRESS is %s.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${EBS_SNAPSHOT_PROGRESS}"
     
     # Get EBS snapshot progress, print, and wait if not finished
-    while [ "$(kubectl get volumesnapshots "${SNAPSHOT_NAME}"  -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' --namespace "${NAMESPACE}")" ]; do
-        printf "%s Detected SNAPSHOT_NAME %s is not ready.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${SNAPSHOT_NAME}"
-        EBS_SNAPSHOT_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)
+    while [ "${EBS_SNAPSHOT_PROGRESS}" != 100% ]; do
         printf "%s Snapshot %s is in progress... %s done.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${SNAPSHOT_NAME}" "${EBS_SNAPSHOT_PROGRESS}"
-        if [ "${EBS_SNAPSHOT_PROGRESS}" != 100% ]; then  NEW_PROGRESS=EBS_SNAPSHOT_PROGRESS; fi
-        while [ "${NEW_PROGRESS}" = "${EBS_SNAPSHOT_PROGRESS}" ]; do
-            NEW_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)
-        done
     done
+
+    sleep 5
 done
 
 printf "%s EBS Snapshot finished!\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
