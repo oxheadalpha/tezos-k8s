@@ -64,9 +64,6 @@ while [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse
         NEW_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)
         while [ "${NEW_PROGRESS}" = "${EBS_SNAPSHOT_PROGRESS}" ]; do
             NEW_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)
-            if [ "${EBS_SNAPSHOT_PROGRESS}" = 100% ]; then
-                break
-            fi
         done
     done
 done
