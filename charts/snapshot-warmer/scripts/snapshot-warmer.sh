@@ -58,7 +58,7 @@ while true; do
     sleep 5
 
     # While new snapshot still in progress
-    while [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' --namespace "${NAMESPACE}" -l history_mode="${HISTORY_MODE}")" ]; do
+    while [ "$(kubectl get volumesnapshots "${SNAPSHOT_NAME}"  -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' --namespace "${NAMESPACE}")" ]; do
 
       # Get identifiers for in progress snapshot
       SNAPSHOT_NAME=$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' --namespace "${NAMESPACE}" -l history_mode="${HISTORY_MODE}")
@@ -71,7 +71,7 @@ while true; do
       printf "%s EBS_SNAPSHOT_PROGRESS is %s.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${EBS_SNAPSHOT_PROGRESS}"
       
       # Get EBS snapshot progress, print, and wait if not finished
-      while [ "${EBS_SNAPSHOT_PROGRESS}" != 100% ]; do
+      while [ "$(kubectl get volumesnapshots "${SNAPSHOT_NAME}"  -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' --namespace "${NAMESPACE}")" ]; do
         EBS_SNAPSHOT_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)
         printf "%s Snapshot %s is in progress... %s done.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${SNAPSHOT_NAME}" "${EBS_SNAPSHOT_PROGRESS}"
         NEW_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)
