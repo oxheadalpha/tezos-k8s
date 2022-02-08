@@ -11,15 +11,15 @@ ENV PYTHONUNBUFFERED=1
 
 RUN     PIP="pip --no-cache install"					\
         APK_ADD="apk add --no-cache";					\
-        $APK_ADD --virtual .build-deps gcc g++ python3-dev		\
+        $APK_ADD --virtual .build-deps gcc python3-dev			\
 				libffi-dev musl-dev make		\
-     && $APK_ADD git libsodium-dev libsecp256k1-dev gmp-dev		\
+     && $APK_ADD libsodium-dev libsecp256k1-dev gmp-dev			\
      && $APK_ADD zeromq-dev						\
      && $PIP install base58 pynacl					\
      && $PIP install pytezos requests					\
-     && $PIP install pyblake2 pysodium numpy flask \
+     && $PIP install pyblake2 pysodium flask \
      && $PIP install -e 'git+https://github.com/vbuterin/pybitcointools.git@aeb0a2bbb8bbfe421432d776c649650eaeb882a5#egg=bitcoin' \
-     && apk del .build-deps git \
+     && apk del .build-deps \
      && $APK_ADD jq netcat-openbsd curl binutils \
      && $APK_ADD lz4
 
