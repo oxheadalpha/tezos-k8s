@@ -23,7 +23,7 @@ spec:
         - name: {{ printf "%s-%s-%s" "snapshot-warmer-for" $history_mode "node" }}
           image: {{ $.Values.tezos_k8s_images.snapshot_maker }}
           imagePullPolicy: Always
-          command: ["/bin/sh"]
+          command: ["/bin/bash"]
           args:
             - "-c"
             - |
