@@ -3,22 +3,25 @@ ENV PYTHONUNBUFFERED=1
 
 #
 # Note: we install build deps for pip, then remove everything after
-# pip install.
+# pip install.  We also add `--no-cache` to pip and apk to reduce the
+# size of the generated image.
 #
 # We re-install binutils at the end because Python execve(2)s ld(1) to
 # load zeromq.
 
-RUN     apk add --no-cache --virtual .build-deps gcc g++ python3-dev	\
+RUN     PIP="pip --no-cache install"					\
+        APK_ADD="apk add --no-cache";					\
+        $APK_ADD --virtual .build-deps gcc g++ python3-dev		\
 				libffi-dev musl-dev make		\
-     && apk add git libsodium-dev libsecp256k1-dev gmp-dev			\
-     && apk add zeromq-dev						\
-     && pip install base58 pynacl					\
-     && pip install pytezos requests                                    \
-     && pip install pyblake2 pysodium numpy flask \
-     && pip install -e 'git+https://github.com/vbuterin/pybitcointools.git@aeb0a2bbb8bbfe421432d776c649650eaeb882a5#egg=bitcoin' \
+     && $APK_ADD git libsodium-dev libsecp256k1-dev gmp-dev		\
+     && $APK_ADD zeromq-dev						\
+     && $PIP install base58 pynacl					\
+     && $PIP install pytezos requests					\
+     && $PIP install pyblake2 pysodium numpy flask \
+     && $PIP install -e 'git+https://github.com/vbuterin/pybitcointools.git@aeb0a2bbb8bbfe421432d776c649650eaeb882a5#egg=bitcoin' \
      && apk del .build-deps git \
-     && apk add jq netcat-openbsd curl binutils \
-     && apk add lz4
+     && $APK_ADD jq netcat-openbsd curl binutils \
+     && $APK_ADD lz4
 
 COPY config-generator.py /
 COPY faucet-gen.py /
