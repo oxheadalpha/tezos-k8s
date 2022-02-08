@@ -20,7 +20,6 @@ import os
 import json
 import bitcoin
 import binascii
-import numpy as np
 import pysodium
 from pyblake2 import blake2b
 import unicodedata
@@ -71,8 +70,8 @@ def genesis_commitments(wallets, blind):
 def make_dummy_wallets(n, blind):
     # Not a realistic shape, but for an alphanet faucet it's better to
     # have less variance.
-    amounts = np.random.pareto(10.0, n)
-    amounts = amounts / sum(amounts) * 700e6
+    amounts = [ random.paretovariate(10.0) - 1 for i in range(n) ]
+    amounts = [ i / sum(amounts) * 700e6 for i in amounts ]
     wallets = {}
     secrets = {}
     for i in range(0, n):
@@ -103,9 +102,6 @@ if __name__ == '__main__':
     blind = args.seed.encode('utf-8')
     # initialize random functions for determinism
     random.seed(a=blind, version=2)
-    numpy_seed = random.randint(0,2**32)
-    print("numpy seed is %s" % numpy_seed)
-    np.random.seed(seed=numpy_seed)
     wallets, secrets = make_dummy_wallets(args.number_of_accounts, blind)
 
     commitments = genesis_commitments(wallets, blind)
