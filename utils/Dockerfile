@@ -16,9 +16,8 @@ RUN     PIP="pip --no-cache install"					\
      && $APK_ADD libsodium-dev libsecp256k1-dev gmp-dev			\
      && $APK_ADD zeromq-dev						\
      && $PIP install base58 pynacl					\
-     && $PIP install pytezos requests					\
+     && $PIP install mnemonic pytezos requests				\
      && $PIP install pyblake2 pysodium flask \
-     && $PIP install -e 'git+https://github.com/vbuterin/pybitcointools.git@aeb0a2bbb8bbfe421432d776c649650eaeb882a5#egg=bitcoin' \
      && apk del .build-deps \
      && $APK_ADD jq netcat-openbsd curl binutils \
      && $APK_ADD lz4
