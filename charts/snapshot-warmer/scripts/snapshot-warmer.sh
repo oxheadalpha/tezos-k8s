@@ -93,8 +93,8 @@ while true; do
       done
 
       # Snapshot may report 100% complete, but needs to be .status.readyToUse=true
-      while ! [ "$(kubectl get volumesnapshots "${SNAPSHOT_NAME}" -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' -l history_mode="${HISTORY_MODE}")" ] && [ "${EBS_SNAPSHOT_PROGRESS}" = 100% ]; do
-        if [ "$(kubectl get volumesnapshots "${SNAPSHOT_NAME}" -o jsonpath='{.items[?(.status.readyToUse==true) ].metadata.name}' -l history_mode="${HISTORY_MODE}")" ]; then
+      while ! [ "$(kubectl get volumesnapshots "${SNAPSHOT_NAME}" -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}')" ] && [ "${EBS_SNAPSHOT_PROGRESS}" = 100% ]; do
+        if [ "$(kubectl get volumesnapshots "${SNAPSHOT_NAME}" -o jsonpath='{.items[?(.status.readyToUse==true) ].metadata.name}')" ]; then
           printf "%s Snapshot %s is %s ready to use.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${SNAPSHOT_NAME}" "${EBS_SNAPSHOT_PROGRESS}"
         fi
       done
