@@ -64,19 +64,21 @@ while true; do
 
   # if snanpshots exist and are readyToUse=false
   else
-    EBS_SNAPSHOT_PROGRESS=""
-    while [ "${EBS_SNAPSHOT_PROGRESS}" != 100% ]; do
-      # monitor progress
-      SNAPSHOT_NAME=$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' -l history_mode="${HISTORY_MODE}")
-      SNAPSHOT_CONTENT=$(kubectl get volumesnapshot "${SNAPSHOT_NAME}" -o jsonpath='{.status.boundVolumeSnapshotContentName}')
-      EBS_SNAPSHOT_ID=$(kubectl get volumesnapshotcontent "${SNAPSHOT_CONTENT}" -o jsonpath='{.status.snapshotHandle}')
-      EBS_SNAPSHOT_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)
+    if [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' -l history_mode="${HISTORY_MODE}")" ]; then
+      EBS_SNAPSHOT_PROGRESS=""
+      while [ "${EBS_SNAPSHOT_PROGRESS}" != 100% ]; do
+        # monitor progress
+        SNAPSHOT_NAME=$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' -l history_mode="${HISTORY_MODE}")
+        SNAPSHOT_CONTENT=$(kubectl get volumesnapshot "${SNAPSHOT_NAME}" -o jsonpath='{.status.boundVolumeSnapshotContentName}')
+        EBS_SNAPSHOT_ID=$(kubectl get volumesnapshotcontent "${SNAPSHOT_CONTENT}" -o jsonpath='{.status.snapshotHandle}')
+        EBS_SNAPSHOT_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)
 
-      printf "%s Snapshot %s is %s done.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${SNAPSHOT_NAME}" "${EBS_SNAPSHOT_PROGRESS}"
-      NEW_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)
-      while [ "${EBS_SNAPSHOT_PROGRESS}" == "${NEW_PROGRESS}" ] && [ "${EBS_SNAPSHOT_PROGRESS}" != 100%  ]; do
+        printf "%s Snapshot %s is %s done.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${SNAPSHOT_NAME}" "${EBS_SNAPSHOT_PROGRESS}"
         NEW_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)
+        while [ "${EBS_SNAPSHOT_PROGRESS}" == "${NEW_PROGRESS}" ] && [ "${EBS_SNAPSHOT_PROGRESS}" != 100%  ]; do
+          NEW_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)
+        done
       done
-    done
+    fi
   fi
 done   
