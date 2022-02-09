@@ -11,9 +11,9 @@ while [ "$(kubectl get pods -n "${NAMESPACE}" -o 'jsonpath={..status.conditions[
 done
 
 # Delete zip-and-upload job
-if kubectl get job "${ZIP_AND_UPLOAD_JOB_NAME}" --namespace "${NAMESPACE}"; then
+if kubectl get job "${ZIP_AND_UPLOAD_JOB_NAME}"; then
     printf "%s Old zip-and-upload job exits.  Attempting to delete.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    if ! kubectl delete jobs "${ZIP_AND_UPLOAD_JOB_NAME}" --namespace "${NAMESPACE}"; then
+    if ! kubectl delete jobs "${ZIP_AND_UPLOAD_JOB_NAME}"; then
             printf "%s Error deleting zip-and-upload job.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
             exit 1
     fi
@@ -24,61 +24,43 @@ fi
 
 # Delete old PVCs
 if [ "${HISTORY_MODE}" = rolling ]; then
-    if [ "$(kubectl get pvc rolling-tarball-restore --namespace "${NAMESPACE}")" ]; then
+    if [ "$(kubectl get pvc rolling-tarball-restore)" ]; then
     printf "%s PVC Exists.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    kubectl delete pvc rolling-tarball-restore --namespace "${NAMESPACE}"
+    kubectl delete pvc rolling-tarball-restore
     sleep 5
 fi
 fi
 
-if [ "$(kubectl get pvc "${HISTORY_MODE}"-snapshot-cache-volume --namespace "${NAMESPACE}")" ]; then
+if [ "$(kubectl get pvc "${HISTORY_MODE}"-snapshot-cache-volume)" ]; then
     printf "%s PVC Exists.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    kubectl delete pvc "${HISTORY_MODE}"-snapshot-cache-volume --namespace "${NAMESPACE}"
+    kubectl delete pvc "${HISTORY_MODE}"-snapshot-cache-volume
     sleep 5
 fi
 
-if [ "$(kubectl get pvc "${HISTORY_MODE}"-snap-volume --namespace "${NAMESPACE}")" ]; then
+if [ "$(kubectl get pvc "${HISTORY_MODE}"-snap-volume)" ]; then
     printf "%s PVC Exists.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    kubectl delete pvc "${HISTORY_MODE}"-snap-volume --namespace "${NAMESPACE}"
+    kubectl delete pvc "${HISTORY_MODE}"-snap-volume
     sleep 5
 fi
 
-# We need a list of snapshots that might not have a status yet
-SNAPSHOTS_WITH_STATUS=$(kubectl get volumesnapshots -o jsonpath='{.items[?(@.status)].metadata.name}' -l history_mode="${HISTORY_MODE}")
-ALL_SNAPSHOTS=$(kubectl get volumesnapshots -o jsonpath='{.items[*].metadata.name}')
-SNAPSHOTS_WITHOUT_STATUS=$(diff  <(echo "${ALL_SNAPSHOTS}" ) <(echo "${SNAPSHOTS_WITH_STATUS}"))
-
-# while any snapshot is not ready
-while [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' -l history_mode="${HISTORY_MODE}")" ] || [ "${SNAPSHOTS_WITHOUT_STATUS}" ]; do
-    if [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' -l history_mode="${HISTORY_MODE}" | wc -w)" -gt 1 ]  || [ "$(echo "${SNAPSHOTS_WITHOUT_STATUS}" |  wc -w)" -gt 1 ]; then
-    printf "%s Too many snapshots in progress or no status.  Waiting for all snapshots to finish.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    else
-    # Get identifiers for in progress snapshot
-    SNAPSHOT_NAME=$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}')
+EBS_SNAPSHOT_PROGRESS=""
+while [ "${EBS_SNAPSHOT_PROGRESS}" != 100% ]; do
+    # monitor progress
+    SNAPSHOT_NAME=$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' -l history_mode="${HISTORY_MODE}")
     SNAPSHOT_CONTENT=$(kubectl get volumesnapshot "${SNAPSHOT_NAME}" -o jsonpath='{.status.boundVolumeSnapshotContentName}')
     EBS_SNAPSHOT_ID=$(kubectl get volumesnapshotcontent "${SNAPSHOT_CONTENT}" -o jsonpath='{.status.snapshotHandle}')
     EBS_SNAPSHOT_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)
-    
-    # Get EBS snapshot progress, print, and wait if not finished
+
     printf "%s Snapshot %s is %s done.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${SNAPSHOT_NAME}" "${EBS_SNAPSHOT_PROGRESS}"
-
-    NEW_EBS_SNAPSHOT_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)
-    while [ "${NEW_EBS_SNAPSHOT_PROGRESS}" = "${EBS_SNAPSHOT_PROGRESS}" ]  && [ "${EBS_SNAPSHOT_PROGRESS}" != 100% ]; do
-        NEW_EBS_SNAPSHOT_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)
+    NEW_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)
+    while [ "${EBS_SNAPSHOT_PROGRESS}" == "${NEW_PROGRESS}" ] && [ "${EBS_SNAPSHOT_PROGRESS}" != 100%  ]; do
+    NEW_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)
     done
-
-    # Snapshot may report 100% complete, but needs to be .status.readyToUse=true
-    while ! [ "$(kubectl get volumesnapshots "${SNAPSHOT_NAME}" -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}')" ] && [ "${EBS_SNAPSHOT_PROGRESS}" = 100% ]; do
-        if [ "$(kubectl get volumesnapshots "${SNAPSHOT_NAME}" -o jsonpath='{.items[?(.status.readyToUse==true)].metadata.name}')" ]; then
-        printf "%s Snapshot %s is %s ready to use.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${SNAPSHOT_NAME}" "${EBS_SNAPSHOT_PROGRESS}"
-        fi
-    done
-    fi
 done
 
 printf "%s EBS Snapshot finished!\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
-SNAPSHOTS=$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==true)].metadata.name}' --namespace "${NAMESPACE}" -l history_mode="${HISTORY_MODE}")
+SNAPSHOTS=$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==true)].metadata.name}' -l history_mode="${HISTORY_MODE}")
 NEWEST_SNAPSHOT=${SNAPSHOTS##* }
 
 printf "%s Latest snapshot is %s.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${NEWEST_SNAPSHOT}"
@@ -211,18 +193,28 @@ fi
 
 sleep 10
 
+JOB_ERROR=$(kubectl get pod -l job-name="${ZIP_AND_UPLOAD_JOB_NAME}" | grep -i -e error -e evicted -e pending)
+JOB_COMPLETE=$(kubectl get jobs "${ZIP_AND_UPLOAD_JOB_NAME}" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')
+
 # Wait for snapshotting job to complete
-while [ "$(kubectl get jobs "${ZIP_AND_UPLOAD_JOB_NAME}" --namespace "${NAMESPACE}" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')" != "True" ]; do
-    if kubectl get pod -l job-name="${ZIP_AND_UPLOAD_JOB_NAME}" --namespace="${NAMESPACE}"| grep -i -e error -e evicted -e pending; then
-        printf "%s Zip-and-upload job failed. This job will end and a new snapshot will be taken.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" 
-        break
-    fi
+while ! [ "${JOB_COMPLETE}" ] && ! [ "${JOB_ERROR}" ]; do
     printf "%s Waiting for zip-and-upload job to complete.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"    
-    sleep 5
+    JOB_ERROR=$(kubectl get pod -l job-name="${ZIP_AND_UPLOAD_JOB_NAME}" | grep -i -e error -e evicted -e pending)
+    JOB_COMPLETE=$(kubectl get jobs "${ZIP_AND_UPLOAD_JOB_NAME}" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')
+    while ! [ "${JOB_COMPLETE}" ] && ! [ "${JOB_ERROR}" ];do
+        JOB_ERROR=$(kubectl get pod -l job-name="${ZIP_AND_UPLOAD_JOB_NAME}" | grep -i -e error -e evicted -e pending)
+        JOB_COMPLETE=$(kubectl get jobs "${ZIP_AND_UPLOAD_JOB_NAME}" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')
+    done
 done
 
+JOB_ERROR=$(kubectl get pod -l job-name="${ZIP_AND_UPLOAD_JOB_NAME}" | grep -i -e error -e evicted -e pending)
+if [ "${JOB_ERROR}" ]; then
+    printf "%s Zip-and-upload job failed. This job will end and a new snapshot will be taken.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" 
+    exit
+fi
+
 # Job sucessful message
-if [ "$(kubectl get jobs "${ZIP_AND_UPLOAD_JOB_NAME}" --namespace "${NAMESPACE}" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')" = "True" ]; then
+if [ "$(kubectl get jobs "${ZIP_AND_UPLOAD_JOB_NAME}" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')" = "True" ]; then
     printf "%s Zip-and-upload job completed successfully.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 fi
 
@@ -233,4 +225,4 @@ kubectl delete -f volumeFromSnap.yaml  | while IFS= read -r line; do printf '%s 
 # Job deletes iself after its done
 printf "%s Deleting this job.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 JOB_NAME=snapshot-maker-"${HISTORY_MODE}"-node
-kubectl delete job "${JOB_NAME}" --namespace "${NAMESPACE}"
+kubectl delete job "${JOB_NAME}"
