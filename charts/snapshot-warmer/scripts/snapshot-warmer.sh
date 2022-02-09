@@ -100,6 +100,8 @@ while true; do
           printf "%s Snapshot %s is %s ready to use.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${SNAPSHOT_NAME}" "${EBS_SNAPSHOT_PROGRESS}"
         fi
       done
+
+      sleep 5
     done
 
     # Snapshot finish time.
