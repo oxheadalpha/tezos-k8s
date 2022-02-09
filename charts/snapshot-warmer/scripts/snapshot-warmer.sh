@@ -48,8 +48,8 @@ while true; do
   sleep 5
 
   # Sometimes a snapshot will have no status, so we have to diff a list of all snapshots with a list of snapshots that have a status. There is no filter negation in Go JsonPath that Kubectl uses.
-  SNAPSHOTS_WITH_STATUS=$(kubectl get volumesnapshots -o jsonpath='{.items[?(@.status)].metadata.name}')
-  ALL_SNAPSHOTS=$(kubectl get volumesnapshots -o jsonpath='{.items[*].metadata.name}')
+  SNAPSHOTS_WITH_STATUS=$(kubectl get volumesnapshots -o jsonpath='{.items[?(@.status)].metadata.name}' -l history_mode="${HISTORY_MODE}")
+  ALL_SNAPSHOTS=$(kubectl get volumesnapshots -o jsonpath='{.items[*].metadata.name}' -l history_mode="${HISTORY_MODE}")
   SNAPSHOTS_WITHOUT_STATUS=$(diff  <(echo "${ALL_SNAPSHOTS}" ) <(echo "${SNAPSHOTS_WITH_STATUS}"))
 
   # If no snapshots in progress and no snapshots without status then trigger a new EBS snapshot
@@ -93,8 +93,8 @@ while true; do
       done
 
       # Snapshot may report 100% complete, but needs to be .status.readyToUse=true
-      while ! [ "$(kubectl get volumesnapshots "${SNAPSHOT_NAME}" -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}')" ] && [ "${EBS_SNAPSHOT_PROGRESS}" = 100% ]; do
-        if [ "$(kubectl get volumesnapshots "${SNAPSHOT_NAME}" -o jsonpath='{.items[?(.status.readyToUse==true)].metadata.name}')" ]; then
+      while ! [ "$(kubectl get volumesnapshots "${SNAPSHOT_NAME}" -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' -l history_mode="${HISTORY_MODE}")" ] && [ "${EBS_SNAPSHOT_PROGRESS}" = 100% ]; do
+        if [ "$(kubectl get volumesnapshots "${SNAPSHOT_NAME}" -o jsonpath='{.items[?(.status.readyToUse==true) ].metadata.name}' -l history_mode="${HISTORY_MODE}")" ]; then
           printf "%s Snapshot %s is %s ready to use.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${SNAPSHOT_NAME}" "${EBS_SNAPSHOT_PROGRESS}"
         fi
       done
@@ -110,17 +110,17 @@ while true; do
   else
 
     # We need a list of snapshots that might not have a status yet
-    SNAPSHOTS_WITH_STATUS=$(kubectl get volumesnapshots -o jsonpath='{.items[?(@.status)].metadata.name}')
-    ALL_SNAPSHOTS=$(kubectl get volumesnapshots -o jsonpath='{.items[*].metadata.name}')
+    SNAPSHOTS_WITH_STATUS=$(kubectl get volumesnapshots -o jsonpath='{.items[?(@.status)].metadata.name}' -l history_mode="${HISTORY_MODE}")
+    ALL_SNAPSHOTS=$(kubectl get volumesnapshots -o jsonpath='{.items[*].metadata.name}' -l history_mode="${HISTORY_MODE}")
     SNAPSHOTS_WITHOUT_STATUS=$(diff  <(echo "${ALL_SNAPSHOTS}" ) <(echo "${SNAPSHOTS_WITH_STATUS}"))
 
     # while any snapshot is not ready
-    while [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}')" ] || [ "${SNAPSHOTS_WITHOUT_STATUS}" ]; do
-      if [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' | wc -w)" -gt 1 ]  || [ "$(echo "${SNAPSHOTS_WITHOUT_STATUS}" |  wc -w)" -gt 1 ]; then
+    while [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' -l history_mode="${HISTORY_MODE}")" ] || [ "${SNAPSHOTS_WITHOUT_STATUS}" ]; do
+      if [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' -l history_mode="${HISTORY_MODE}"| wc -w)" -gt 1 ]  || [ "$(echo "${SNAPSHOTS_WITHOUT_STATUS}" |  wc -w)" -gt 1 ]; then
         printf "%s Too many snapshots in progress or no status.  Waiting for all snapshots to finish.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
       else
         # Get identifiers for in progress snapshot
-        SNAPSHOT_NAME=$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}')
+        SNAPSHOT_NAME=$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' -l history_mode="${HISTORY_MODE}")
         SNAPSHOT_CONTENT=$(kubectl get volumesnapshot "${SNAPSHOT_NAME}" -o jsonpath='{.status.boundVolumeSnapshotContentName}')
         EBS_SNAPSHOT_ID=$(kubectl get volumesnapshotcontent "${SNAPSHOT_CONTENT}" -o jsonpath='{.status.snapshotHandle}')
         EBS_SNAPSHOT_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)

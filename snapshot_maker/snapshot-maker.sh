@@ -44,13 +44,13 @@ if [ "$(kubectl get pvc "${HISTORY_MODE}"-snap-volume --namespace "${NAMESPACE}"
 fi
 
 # We need a list of snapshots that might not have a status yet
-SNAPSHOTS_WITH_STATUS=$(kubectl get volumesnapshots -o jsonpath='{.items[?(@.status)].metadata.name}')
+SNAPSHOTS_WITH_STATUS=$(kubectl get volumesnapshots -o jsonpath='{.items[?(@.status)].metadata.name}' -l history_mode="${HISTORY_MODE}")
 ALL_SNAPSHOTS=$(kubectl get volumesnapshots -o jsonpath='{.items[*].metadata.name}')
 SNAPSHOTS_WITHOUT_STATUS=$(diff  <(echo "${ALL_SNAPSHOTS}" ) <(echo "${SNAPSHOTS_WITH_STATUS}"))
 
 # while any snapshot is not ready
-while [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}')" ] || [ "${SNAPSHOTS_WITHOUT_STATUS}" ]; do
-    if [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' | wc -w)" -gt 1 ]  || [ "$(echo "${SNAPSHOTS_WITHOUT_STATUS}" |  wc -w)" -gt 1 ]; then
+while [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' -l history_mode="${HISTORY_MODE}")" ] || [ "${SNAPSHOTS_WITHOUT_STATUS}" ]; do
+    if [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' -l history_mode="${HISTORY_MODE}" | wc -w)" -gt 1 ]  || [ "$(echo "${SNAPSHOTS_WITHOUT_STATUS}" |  wc -w)" -gt 1 ]; then
     printf "%s Too many snapshots in progress or no status.  Waiting for all snapshots to finish.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     else
     # Get identifiers for in progress snapshot
