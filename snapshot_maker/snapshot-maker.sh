@@ -66,6 +66,8 @@ while [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse
           printf "%s Snapshot %s is %s ready to use.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${SNAPSHOT_NAME}" "${EBS_SNAPSHOT_PROGRESS}"
         fi
       done
+
+      sleep 5
 done
 
 printf "%s EBS Snapshot finished!\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
