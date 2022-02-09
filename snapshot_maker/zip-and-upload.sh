@@ -571,7 +571,7 @@ ROLLING_SNAPSHOT_SHA256SUM=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.
 # rolling snapshot tezos version
 ROLLING_SNAPSHOT_TEZOS_VERSION=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-json 2>/dev/null | jq -r '.tezos_version')
 
-CLOUDFRONT_URL="https://${NETWORK}.xtz-shots.io/"
+CLOUDFRONT_URL="https://${S3_BUCKET}/"
 
 cp /snapshot-website-base/* .
 
