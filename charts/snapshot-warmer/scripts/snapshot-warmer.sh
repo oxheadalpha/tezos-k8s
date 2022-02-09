@@ -12,12 +12,12 @@ PERSISTENT_VOLUME_CLAIM="${PERSISTENT_VOLUME_CLAIM}" yq e -i '.spec.source.persi
 while true; do
 
   # Remove unlabeled snapshots
-  while [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==true)].metadata.name}' --namespace "${NAMESPACE}" -o go-template='{{len .items}}' --selector='!history_mode')" -gt 0 ]; do
-    NUMBER_OF_SNAPSHOTS=$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==true)].metadata.name}' --namespace "${NAMESPACE}" -o go-template='{{len .items}}' --selector='!history_mode')
+  while [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==true)].metadata.name}' -o go-template='{{len .items}}' --selector='!history_mode')" -gt 0 ]; do
+    NUMBER_OF_SNAPSHOTS=$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==true)].metadata.name}' -o go-template='{{len .items}}' --selector='!history_mode')
     printf "%s Number of snapshots without label is too high at ${NUMBER_OF_SNAPSHOTS} deleting 1.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    SNAPSHOTS=$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==true)].metadata.name}' --namespace "${NAMESPACE}" --selector='!history_mode')
+    SNAPSHOTS=$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==true)].metadata.name}' --selector='!history_mode')
     SNAPSHOT_TO_DELETE=${SNAPSHOTS%% *}
-    if ! kubectl delete volumesnapshots "${SNAPSHOT_TO_DELETE}" --namespace "${NAMESPACE}"; then
+    if ! kubectl delete volumesnapshots "${SNAPSHOT_TO_DELETE}"; then
       printf "%s ERROR deleting snapshot. ${SNAPSHOT_TO_DELETE}\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     fi
     while [ "$(kubectl get volumesnapshots "${SNAPSHOT_TO_DELETE}" --ignore-not-found)" ]; do
@@ -30,12 +30,12 @@ while true; do
   done
 
   # Maintain 5 snapshots of a certain history mode
-  while [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==true)].metadata.name}' --namespace "${NAMESPACE}" -o go-template='{{len .items}}' -l history_mode="${HISTORY_MODE}")" -gt 4 ]; do
-    NUMBER_OF_SNAPSHOTS=$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==true)].metadata.name}' --namespace "${NAMESPACE}" -o go-template='{{len .items}}' -l history_mode="${HISTORY_MODE}")
+  while [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==true)].metadata.name}' -o go-template='{{len .items}}' -l history_mode="${HISTORY_MODE}")" -gt 4 ]; do
+    NUMBER_OF_SNAPSHOTS=$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==true)].metadata.name}' -o go-template='{{len .items}}' -l history_mode="${HISTORY_MODE}")
     printf "%s Number of snapshots for ${HISTORY_MODE}-node is too high at ${NUMBER_OF_SNAPSHOTS} deleting 1.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    SNAPSHOTS=$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==true)].metadata.name}' --namespace "${NAMESPACE}" -l history_mode="${HISTORY_MODE}")
+    SNAPSHOTS=$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==true)].metadata.name}' -l history_mode="${HISTORY_MODE}")
     SNAPSHOT_TO_DELETE=${SNAPSHOTS%% *}
-    if ! kubectl delete volumesnapshots "${SNAPSHOT_TO_DELETE}" --namespace "${NAMESPACE}"; then
+    if ! kubectl delete volumesnapshots "${SNAPSHOT_TO_DELETE}"; then
       printf "%s ERROR deleting snapshot. ${SNAPSHOT_TO_DELETE}\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     fi
     while [ "$(kubectl get volumesnapshots "${SNAPSHOT_TO_DELETE}" --ignore-not-found)" ]; do
@@ -77,11 +77,11 @@ while true; do
     # Give time for snapshot to be available in api
     sleep 5
 
-    # while triggered snapshot is not ready
-    while ! [ "$(kubectl get volumesnapshots "${SNAPSHOT_NAME}" -o jsonpath='{.status.readyToUse}')" ]; do
+    # while specific triggered snapshot is not ready
+    while ! [ "$(kubectl get volumesnapshots "${SNAPSHOT_NAME}" -o jsonpath='{.items[?(.status.readyToUse==true)].metadata.name}')" ]; do
       # Get identifiers for in progress snapshot
-      SNAPSHOT_CONTENT=$(kubectl get volumesnapshot -n "${NAMESPACE}" "${SNAPSHOT_NAME}" -o jsonpath='{.status.boundVolumeSnapshotContentName}')
-      EBS_SNAPSHOT_ID=$(kubectl get volumesnapshotcontent -n "${NAMESPACE}" "${SNAPSHOT_CONTENT}" -o jsonpath='{.status.snapshotHandle}')
+      SNAPSHOT_CONTENT=$(kubectl get volumesnapshot "${SNAPSHOT_NAME}" -o jsonpath='{.status.boundVolumeSnapshotContentName}')
+      EBS_SNAPSHOT_ID=$(kubectl get volumesnapshotcontent "${SNAPSHOT_CONTENT}" -o jsonpath='{.status.snapshotHandle}')
       EBS_SNAPSHOT_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)
     
       # Get EBS snapshot progress, print, and wait if not finished
@@ -93,8 +93,8 @@ while true; do
       done
 
       # Snapshot may report 100% complete, but needs to be .status.readyToUse=true
-      while ! [ "$(kubectl get volumesnapshots "${SNAPSHOT_NAME}" -o jsonpath='{.status.readyToUse}')" ] && [ "${EBS_SNAPSHOT_PROGRESS}" = 100% ]; do
-        if [ "$(kubectl get volumesnapshots "${SNAPSHOT_NAME}" -o jsonpath='{.status.readyToUse}')" ]; then
+      while ! [ "$(kubectl get volumesnapshots "${SNAPSHOT_NAME}" -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}')" ] && [ "${EBS_SNAPSHOT_PROGRESS}" = 100% ]; do
+        if [ "$(kubectl get volumesnapshots "${SNAPSHOT_NAME}" -o jsonpath='{.items[?(.status.readyToUse==true)].metadata.name}')" ]; then
           printf "%s Snapshot %s is %s ready to use.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${SNAPSHOT_NAME}" "${EBS_SNAPSHOT_PROGRESS}"
         fi
       done
@@ -108,22 +108,21 @@ while true; do
 
   # If snapshot detected in progress
   else
-  
-    # while any snapshot is not ready
-    while ! [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==true)].metadata.name}')" ]; do
-      
-      # We need a list of snapshots that might not have a status yet
-      SNAPSHOTS_WITH_STATUS=$(kubectl get volumesnapshots -o jsonpath='{.items[?(@.status)].metadata.name}')
-      ALL_SNAPSHOTS=$(kubectl get volumesnapshots -o jsonpath='{.items[*].metadata.name}')
-      SNAPSHOTS_WITHOUT_STATUS=$(diff  <(echo "${ALL_SNAPSHOTS}" ) <(echo "${SNAPSHOTS_WITH_STATUS}"))
 
-      if [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' -n mainnet-shots | wc -w)" -gt 1 ]  || [ "$(echo "${SNAPSHOTS_WITHOUT_STATUS}" |  wc -w)" -gt 1 ]; then
+    # We need a list of snapshots that might not have a status yet
+    SNAPSHOTS_WITH_STATUS=$(kubectl get volumesnapshots -o jsonpath='{.items[?(@.status)].metadata.name}')
+    ALL_SNAPSHOTS=$(kubectl get volumesnapshots -o jsonpath='{.items[*].metadata.name}')
+    SNAPSHOTS_WITHOUT_STATUS=$(diff  <(echo "${ALL_SNAPSHOTS}" ) <(echo "${SNAPSHOTS_WITH_STATUS}"))
+
+    # while any snapshot is not ready
+    while [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}')" ] || [ "${SNAPSHOTS_WITHOUT_STATUS}" ]; do
+      if [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' | wc -w)" -gt 1 ]  || [ "$(echo "${SNAPSHOTS_WITHOUT_STATUS}" |  wc -w)" -gt 1 ]; then
         printf "%s Too many snapshots in progress or no status.  Waiting for all snapshots to finish.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
       else
         # Get identifiers for in progress snapshot
-        SNAPSHOT_NAME=$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==true)].metadata.name}')
-        SNAPSHOT_CONTENT=$(kubectl get volumesnapshot -n "${NAMESPACE}" "${SNAPSHOT_NAME}" -o jsonpath='{.status.boundVolumeSnapshotContentName}')
-        EBS_SNAPSHOT_ID=$(kubectl get volumesnapshotcontent -n "${NAMESPACE}" "${SNAPSHOT_CONTENT}" -o jsonpath='{.status.snapshotHandle}')
+        SNAPSHOT_NAME=$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}')
+        SNAPSHOT_CONTENT=$(kubectl get volumesnapshot "${SNAPSHOT_NAME}" -o jsonpath='{.status.boundVolumeSnapshotContentName}')
+        EBS_SNAPSHOT_ID=$(kubectl get volumesnapshotcontent "${SNAPSHOT_CONTENT}" -o jsonpath='{.status.snapshotHandle}')
         EBS_SNAPSHOT_PROGRESS=$(aws ec2 describe-snapshots --snapshot-ids "${EBS_SNAPSHOT_ID}" --query "Snapshots[*].[Progress]" --output text)
       
         # Get EBS snapshot progress, print, and wait if not finished
@@ -135,8 +134,8 @@ while true; do
         done
 
         # Snapshot may report 100% complete, but needs to be .status.readyToUse=true
-        while ! [ "$(kubectl get volumesnapshots "${SNAPSHOT_NAME}" -o jsonpath='{.status.readyToUse}')" ] && [ "${EBS_SNAPSHOT_PROGRESS}" = 100% ]; do
-          if [ "$(kubectl get volumesnapshots "${SNAPSHOT_NAME}" -o jsonpath='{.status.readyToUse}')" ]; then
+        while ! [ "$(kubectl get volumesnapshots "${SNAPSHOT_NAME}" -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}')" ] && [ "${EBS_SNAPSHOT_PROGRESS}" = 100% ]; do
+          if [ "$(kubectl get volumesnapshots "${SNAPSHOT_NAME}" -o jsonpath='{.items[?(.status.readyToUse==true)].metadata.name}')" ]; then
             printf "%s Snapshot %s is %s ready to use.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${SNAPSHOT_NAME}" "${EBS_SNAPSHOT_PROGRESS}"
           fi
         done
