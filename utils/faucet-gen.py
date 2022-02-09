@@ -18,10 +18,11 @@ import argparse
 import sys
 import os
 import json
-import bitcoin
 import binascii
 import pysodium
 from pyblake2 import blake2b
+from mnemonic import Mnemonic
+from pytezos.crypto.encoding import base58_encode, base58_decode
 import unicodedata
 from hashlib import sha256
 import random
@@ -30,13 +31,15 @@ import string
 
 EMPTY_ACCOUNT_BUFFER = 10
 
+m = Mnemonic("english")
+
 def get_keys(mnemonic, email, password):
     salt = unicodedata.normalize(
     "NFKD", (email + password))
-    seed = bitcoin.mnemonic_to_seed(mnemonic.encode('utf-8'), salt.encode('utf-8'))
+    seed = m.to_seed(mnemonic.encode('utf-8'), salt.encode('utf-8'))
     pk, sk = pysodium.crypto_sign_seed_keypair(seed[0:32])
     pkh = blake2b(pk,20).digest()
-    pkhb58 = bitcoin.bin_to_b58check(pkh, magicbyte=434591)
+    pkhb58 = base58_encode(pkh, prefix=b'tz1').decode('utf-8')
     return (sk, pk, pkh, pkhb58)
 
 def random_email():
@@ -53,14 +56,14 @@ def genesis_commitments(wallets, blind):
     commitments = []
     for pkh_b58, amount in wallets.items():
         # Public key hash corresponding to this Tezos address.
-        pkh = bitcoin.b58check_to_bin(pkh_b58)[2:]
+        pkh = base58_decode(pkh_b58.encode('utf-8'))
         # The redemption code is unique to the public key hash and deterministically
         # constructed using a secret blinding value.
         secret = secret_code(pkh, blind)
         # The redemption code is used to blind the pkh
         blinded_pkh = blake2b(pkh, 20, key=secret).digest()
         commitment = {
-            'blinded_pkh': bitcoin.bin_to_b58check(blinded_pkh, magicbyte=16921055),
+            'blinded_pkh': base58_encode(blinded_pkh, prefix=b'btz1').decode(),
             'amount': amount
         }
         commitments.append(commitment)
@@ -76,7 +79,7 @@ def make_dummy_wallets(n, blind):
     secrets = {}
     for i in range(0, n):
         entropy = blake2b(str(i).encode('utf-8'), 20, key=blind).digest()
-        mnemonic = bitcoin.mnemonic.entropy_to_words(entropy)
+        mnemonic = m.to_mnemonic(entropy).split(' ')
         password = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(10))
         email    = random_email()
         sk, pk, pkh, pkh_b58 = get_keys(' '.join(mnemonic), email, password)
