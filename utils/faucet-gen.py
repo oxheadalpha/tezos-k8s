@@ -77,6 +77,12 @@ def make_dummy_wallets(n, blind):
     amounts = [ i / sum(amounts) * 700e6 for i in amounts ]
     wallets = {}
     secrets = {}
+    # initialize random functions so that we generate a determistic
+    # set of keys based on the seed passed in.  We wait until after
+    # we have set the balances for compatibility with older code.
+    # This is also the reason that we consume an int to start.
+    random.seed(a=blind, version=2)
+    random.randint(0,2**32)
     for i in range(0, n):
         entropy = blake2b(str(i).encode('utf-8'), 20, key=blind).digest()
         mnemonic = m.to_mnemonic(entropy).split(' ')
@@ -103,8 +109,6 @@ args = parser.parse_args()
 if __name__ == '__main__':
     print(f"Seed is {args.seed}")
     blind = args.seed.encode('utf-8')
-    # initialize random functions for determinism
-    random.seed(a=blind, version=2)
     wallets, secrets = make_dummy_wallets(args.number_of_accounts, blind)
 
     commitments = genesis_commitments(wallets, blind)
