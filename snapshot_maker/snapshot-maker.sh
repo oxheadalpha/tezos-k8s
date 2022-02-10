@@ -104,6 +104,7 @@ printf "%s EBS Snapshot Restore Size is %s in bytes.\n" "$(date "+%Y-%m-%d %H:%M
 
 printf "%s EBS Snapshot size is %s.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "$(echo "${EBS_SNAPSHOT_RESTORE_SIZE}" | awk '{print $1/1024/1024/1024 "GB"}')"
 
+# size in bytes | + 20% | to GB | rounded up
 RESTORE_VOLUME_SIZE=$(echo "${EBS_SNAPSHOT_RESTORE_SIZE}" | awk '{print $1*1.2}' | awk '{print $1/1024/1024/1024}' | awk '{print ($0-int($0)>0)?int($0)+1:int($0)}')
 
 printf "%s We're rounding up and adding 20%% , volume size will be %sGB.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${RESTORE_VOLUME_SIZE}"
