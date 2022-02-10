@@ -77,6 +77,8 @@ def make_dummy_wallets(n, blind):
     amounts = [ i / sum(amounts) * 700e6 for i in amounts ]
     wallets = {}
     secrets = {}
+    # initialize random functions for determinism
+    random.seed(a=blind, version=2)
     for i in range(0, n):
         entropy = blake2b(str(i).encode('utf-8'), 20, key=blind).digest()
         mnemonic = m.to_mnemonic(entropy).split(' ')
@@ -90,6 +92,8 @@ def make_dummy_wallets(n, blind):
     return wallets, secrets
 
 parser = argparse.ArgumentParser()
+parser.add_argument("--no-check-address-reuse", help="disable address reuse check when no local node is running",
+                            type=str, default=False)
 parser.add_argument("--seed", help="a seed for deterministic faucet gen",
                             type=str)
 parser.add_argument("--number-of-accounts", help="number of faucet accounts to generate",
@@ -103,8 +107,6 @@ args = parser.parse_args()
 if __name__ == '__main__':
     print(f"Seed is {args.seed}")
     blind = args.seed.encode('utf-8')
-    # initialize random functions for determinism
-    random.seed(a=blind, version=2)
     wallets, secrets = make_dummy_wallets(args.number_of_accounts, blind)
 
     commitments = genesis_commitments(wallets, blind)
@@ -123,13 +125,16 @@ if __name__ == '__main__':
         faucet_pkhs = secrets.keys()
         balances = {}
         # TODO wait for bootstrap
-        for i, pkh in enumerate(faucet_pkhs):
-            balances[pkh] = int(requests.get("http://tezos-node-rpc:8732/chains/main/blocks/head/context/contracts/%s/balance" % pkh).json())
-            print(f"Balance for {pkh} is {balances[pkh]}")
-            if i >= EMPTY_ACCOUNT_BUFFER and set([ balances[pkh] for pkh in list(faucet_pkhs)[i - EMPTY_ACCOUNT_BUFFER:i] ]) == { 0 }:
-                # 10 past accounts are empty, assuming we have reached the end of the used faucets
-                print(f"Found the first empty faucet address: {list(faucet_pkhs)[i-10]}")
-                break
+        if not no_check_address_reuse:
+            for i, pkh in enumerate(faucet_pkhs):
+                balances[pkh] = int(requests.get("http://tezos-node-rpc:8732/chains/main/blocks/head/context/contracts/%s/balance" % pkh).json())
+                print(f"Balance for {pkh} is {balances[pkh]}")
+                if i >= EMPTY_ACCOUNT_BUFFER and set([ balances[pkh] for pkh in list(faucet_pkhs)[i - EMPTY_ACCOUNT_BUFFER:i] ]) == { 0 }:
+                    # 10 past accounts are empty, assuming we have reached the end of the used faucets
+                    print(f"Found the first empty faucet address: {list(faucet_pkhs)[i-10]}")
+                    break
+        else:
+            i = 10
         unused_secrets = { pkh: secrets[pkh] for pkh in list(faucet_pkhs)[i-10:] }
 
         with open(args.write_secret_seeds_to, 'w') as f:
