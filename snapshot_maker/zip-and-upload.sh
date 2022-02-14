@@ -573,7 +573,6 @@ if [ "${NETWORK_SUBSTRING}" = main ]; then
     TZSTATS_SUBDOMAIN=""
     TZKT_SUBDOMAIN=""
 elif [ "${NETWORK_SUBSTRING}" = hangzhou ]; then
-    TZSTATS_SUBDOMAIN="${NETWORK_SUBSTRING}."
     TZKT_SUBDOMAIN="hangzhou2net."
 else
     TZSTATS_SUBDOMAIN="${NETWORK_SUBSTRING}."
