@@ -1,2 +1,5 @@
 tezos_k8s_images:
-  snapshot_maker: tezos-k8s-snapshot-maker:latest
+  snapshot_maker: tezos-k8s-snapshot-maker:dev
+
+iam_role_arn: ""
+service_account: ""
