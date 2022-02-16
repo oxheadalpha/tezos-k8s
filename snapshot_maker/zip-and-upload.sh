@@ -617,6 +617,25 @@ home:
 # Tezos snapshots for ${NETWORK}
 
 Octez version used for snapshotting: \`${TEZOS_VERSION}\`
+## Rolling snapshot
+[Download Rolling Snapshot](${CLOUDFRONT_URL}rolling)
+
+Block height: $ROLLING_SNAPSHOT_BLOCK_HEIGHT
+
+Block hash: \`${ROLLING_SNAPSHOT_BLOCK_HASH}\`
+
+[Verify on TzStats](https://${TZSTATS_SUBDOMAIN}tzstats.com/${ROLLING_SNAPSHOT_BLOCK_HASH}){:target="_blank"} - [Verify on TzKT](https://${TZKT_SUBDOMAIN}tzkt.io/${ROLLING_SNAPSHOT_BLOCK_HASH}){:target="_blank"}
+
+Block timestamp: $ROLLING_SNAPSHOT_BLOCK_TIMESTAMP
+
+Size: ${ROLLING_SNAPSHOT_FILESIZE}
+
+Checksum (SHA256): 
+\`\`\`
+${ROLLING_SNAPSHOT_SHA256SUM}
+\`\`\`
+
+[Artifact Metadata](${CLOUDFRONT_URL}rolling-snapshot-json)
 ## Archive tarball
 [Download Archive Tarball](${CLOUDFRONT_URL}archive-tarball)
 
@@ -655,25 +674,6 @@ ${ROLLING_TARBALL_SHA256SUM}
 \`\`\`
 
 [Artifact Metadata](${CLOUDFRONT_URL}rolling-tarball-json)
-## Rolling snapshot
-[Download Rolling Snapshot](${CLOUDFRONT_URL}rolling)
-
-Block height: $ROLLING_SNAPSHOT_BLOCK_HEIGHT
-
-Block hash: \`${ROLLING_SNAPSHOT_BLOCK_HASH}\`
-
-[Verify on TzStats](https://${TZSTATS_SUBDOMAIN}tzstats.com/${ROLLING_SNAPSHOT_BLOCK_HASH}){:target="_blank"} - [Verify on TzKT](https://${TZKT_SUBDOMAIN}tzkt.io/${ROLLING_SNAPSHOT_BLOCK_HASH}){:target="_blank"}
-
-Block timestamp: $ROLLING_SNAPSHOT_BLOCK_TIMESTAMP
-
-Size: ${ROLLING_SNAPSHOT_FILESIZE}
-
-Checksum (SHA256): 
-\`\`\`
-${ROLLING_SNAPSHOT_SHA256SUM}
-\`\`\`
-
-[Artifact Metadata](${CLOUDFRONT_URL}rolling-snapshot-json)
 ## How to use
 ### Archive Tarball
 Issue the following commands:
