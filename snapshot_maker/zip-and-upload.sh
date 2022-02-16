@@ -622,7 +622,7 @@ home:
 
 Octez version used for snapshotting: \`${TEZOS_VERSION}\`
 ## Rolling snapshot
-[Download Rolling Snapshot](${CLOUDFRONT_URL}rolling)
+[Download Rolling Snapshot](${CLOUDFRONT_URL}${ROLLING_SNAPSHOT_FILENAME})
 
 Block height: $ROLLING_SNAPSHOT_BLOCK_HEIGHT
 
@@ -641,7 +641,7 @@ ${ROLLING_SNAPSHOT_SHA256SUM}
 
 [Artifact Metadata](${CLOUDFRONT_URL}rolling-snapshot-metadata)
 ## Archive tarball
-[Download Archive Tarball](${CLOUDFRONT_URL}archive-tarball)
+[Download Archive Tarball](${CLOUDFRONT_URL}${ARCHIVE_TARBALL_FILENAME})
 
 Block height: $ARCHIVE_TARBALL_BLOCK_HEIGHT
 
@@ -660,7 +660,7 @@ ${ARCHIVE_TARBALL_SHA256SUM}
 
 [Artifact Metadata](${CLOUDFRONT_URL}archive-tarball-metadata)
 ## Rolling tarball
-[Download Rolling Tarball](${CLOUDFRONT_URL}rolling-tarball)
+[Download Rolling Tarball](${CLOUDFRONT_URL}${ROLLING_TARBALL_FILENAME})
 
 Block height: $ROLLING_TARBALL_BLOCK_HEIGHT
 
@@ -717,10 +717,6 @@ tezos-node snapshot import tezos-${NETWORK}.rolling
 
 [Tezos documentation](https://tezos.gitlab.io/user/snapshots.html){:target="_blank"}.
 EOF
-
-echo "**** DEBUG OUTPUT OF index.md *****"
-cat index.md
-echo "**** end debug ****"
 
 chmod -R 777 index.md
 chown jekyll:jekyll -R /usr/gem
