@@ -70,12 +70,12 @@ if [ "${HISTORY_MODE}" = archive ]; then
 
     SHA256=$(cat archive-tarball.sha256)
 
-    FILESIZE=$(aws s3api head-object \
+    FILESIZE_BYTES=$(aws s3api head-object \
         --bucket "${S3_BUCKET}" \
         --key "${ARCHIVE_TARBALL_FILENAME}" \
         --query ContentLength \
-        --output text \
-        | awk '{ suffix="KMGT"; for(i=0; $1>1024 && i < length(suffix); i++) $1/=1024; print int($1) substr(suffix, i, 1), $3; }')
+        --output text)
+    FILESIZE=$(echo "${FILESIZE_BYTES}" | awk '{ suffix="KMGT"; for(i=0; $1>1024 && i < length(suffix); i++) $1/=1024; print int($1) substr(suffix, i, 1), $3; }' | xargs)
 
     # Add file to base.json
     # have to do it here because base.json is being overwritten
@@ -89,6 +89,7 @@ if [ "${HISTORY_MODE}" = archive ]; then
     --arg BLOCK_TIMESTAMP "$BLOCK_TIMESTAMP" \
     --arg ARCHIVE_TARBALL_FILENAME "${ARCHIVE_TARBALL_FILENAME}" \
     --arg SHA256 "${SHA256}" \
+    --arg FILESIZE_BYTES "${FILESIZE_BYTES}" \
     --arg FILESIZE "${FILESIZE}" \
     --arg TEZOS_VERSION "$TEZOS_VERSION" \
     --arg NETWORK "$NETWORK" \
@@ -103,6 +104,7 @@ if [ "${HISTORY_MODE}" = archive ]; then
                     "block_height": $BLOCK_HEIGHT,
                     "block_timestamp": $BLOCK_TIMESTAMP,
                     "sha256": $SHA256,
+                    "filesize_bytes": $FILESIZE_BYTES,
                     "filesize": $FILESIZE,
                     "tezos_version": $TEZOS_VERSION,
                     "chain_name": $NETWORK,
@@ -138,6 +140,7 @@ if [ "${HISTORY_MODE}" = archive ]; then
         --arg BLOCK_TIMESTAMP "$BLOCK_TIMESTAMP" \
         --arg ARCHIVE_TARBALL_FILENAME "$ARCHIVE_TARBALL_FILENAME" \
         --arg SHA256 "$SHA256" \
+        --arg FILESIZE_BYTES "${FILESIZE_BYTES}" \
         --arg FILESIZE "$FILESIZE" \
         --arg TEZOS_VERSION "$TEZOS_VERSION" \
         --arg NETWORK "$NETWORK" \
@@ -148,8 +151,8 @@ if [ "${HISTORY_MODE}" = archive ]; then
             "block_height": $BLOCK_HEIGHT, 
             "block_timestamp": $BLOCK_TIMESTAMP,
             "archive_tarball_filename": $ARCHIVE_TARBALL_FILENAME,
-            "filesize": $FILESIZE,
             "sha256": $SHA256,
+            "filesize_bytes": $FILESIZE_BYTES
             "filesize": $FILESIZE, 
             "tezos_version": $TEZOS_VERSION,
             "chain_name": $NETWORK,
@@ -250,12 +253,12 @@ if [ "${HISTORY_MODE}" = rolling ]; then
 
     SHA256=$(cat rolling-tarball.sha256)
 
-    FILESIZE=$(aws s3api head-object \
+    FILESIZE_BYTES=$(aws s3api head-object \
     --bucket "${S3_BUCKET}" \
     --key "${ROLLING_TARBALL_FILENAME}" \
     --query ContentLength \
-    --output text \
-    | awk '{ suffix="KMGT"; for(i=0; $1>1024 && i < length(suffix); i++) $1/=1024; print int($1) substr(suffix, i, 1), $3; }')
+    --output text)
+    FILESIZE=$(echo "${FILESIZE_BYTES}" | awk '{ suffix="KMGT"; for(i=0; $1>1024 && i < length(suffix); i++) $1/=1024; print int($1) substr(suffix, i, 1), $3; }' | xargs)
 
     # Add file to base.json
     tmp=$(mktemp)
@@ -267,6 +270,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
     --arg BLOCK_TIMESTAMP "$BLOCK_TIMESTAMP" \
     --arg ROLLING_TARBALL_FILENAME "${ROLLING_TARBALL_FILENAME}" \
     --arg SHA256 "${SHA256}" \
+    --arg FILESIZE_BYTES "${FILESIZE_BYTES}" \
     --arg FILESIZE "${FILESIZE}" \
     --arg TEZOS_VERSION "$TEZOS_VERSION" \
     --arg NETWORK "$NETWORK" \
@@ -281,6 +285,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
                     "block_height": $BLOCK_HEIGHT,
                     "block_timestamp": $BLOCK_TIMESTAMP,
                     "sha256": $SHA256,
+                    "filesize_bytes": $FILESIZE_BYTES,
                     "filesize": $FILESIZE,
                     "tezos_version": $TEZOS_VERSION,
                     "chain_name": $NETWORK,
@@ -315,6 +320,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
         --arg BLOCK_TIMESTAMP "$BLOCK_TIMESTAMP" \
         --arg ROLLING_TARBALL_FILENAME "$ROLLING_TARBALL_FILENAME" \
         --arg SHA256 "$SHA256" \
+        --arg FILESIZE_BYTES "${FILESIZE_BYTES}" \
         --arg FILESIZE "$FILESIZE" \
         --arg TEZOS_VERSION "$TEZOS_VERSION" \
         --arg NETWORK "$NETWORK" \
@@ -325,8 +331,8 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             "block_height": $BLOCK_HEIGHT, 
             "block_timestamp": $BLOCK_TIMESTAMP,
             "rolling_tarball_filename": $ROLLING_TARBALL_FILENAME,
-            "filesize": $FILESIZE,
             "sha256": $SHA256,
+            "filesize_bytes": $FILESIZE_BYTES,
             "filesize": $FILESIZE, 
             "tezos_version": $TEZOS_VERSION,
             "chain_name": $NETWORK,
@@ -391,7 +397,8 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             printf "%s Rolling Tezos : Sucessfully uploaded ${ROLLING_SNAPSHOT} to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
             printf "%s Rolling Tezos : Uploading redirect...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
-            FILESIZE=$(stat -c %s "${ROLLING_SNAPSHOT}" | awk '{ suffix="KMGT"; for(i=0; $1>1024 && i < length(suffix); i++) $1/=1024; print int($1) substr(suffix, i, 1), $3; }' )
+            FILESIZE_BYTES=$(stat -c %s "${ROLLING_SNAPSHOT}")
+            FILESIZE=$(echo "${FILESIZE_BYTES}" | awk '{ suffix="KMGT"; for(i=0; $1>1024 && i < length(suffix); i++) $1/=1024; print int($1) substr(suffix, i, 1), $3; }' | xargs )
             SHA256=$(sha256sum "${ROLLING_SNAPSHOT}" | awk '{print $1}')
 
             # Add file to base.json
@@ -404,6 +411,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             --arg BLOCK_TIMESTAMP "$BLOCK_TIMESTAMP" \
             --arg ROLLING_SNAPSHOT_FILENAME "${ROLLING_SNAPSHOT_FILENAME}" \
             --arg SHA256 "${SHA256}" \
+            --arg FILESIZE_BYTES "${FILESIZE_BYTES}" \
             --arg FILESIZE "${FILESIZE}" \
             --arg TEZOS_VERSION "$TEZOS_VERSION" \
             --arg NETWORK "$NETWORK" \
@@ -418,6 +426,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
                             "block_height": $BLOCK_HEIGHT,
                             "block_timestamp": $BLOCK_TIMESTAMP,
                             "sha256": $SHA256,
+                            "filesize_bytes": $FILESIZE_BYTES,
                             "filesize": $FILESIZE,
                             "tezos_version": $TEZOS_VERSION,
                             "chain_name": $NETWORK,
@@ -446,6 +455,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             --arg BLOCK_TIMESTAMP "$BLOCK_TIMESTAMP" \
             --arg ROLLING_SNAPSHOT_FILENAME "$ROLLING_SNAPSHOT_FILENAME" \
             --arg SHA256 "$SHA256" \
+            --arg FILESIZE_BYTES "${FILESIZE_BYTES}" \
             --arg FILESIZE "$FILESIZE" \
             --arg TEZOS_VERSION "$TEZOS_VERSION" \
             --arg NETWORK "$NETWORK" \
@@ -456,9 +466,9 @@ if [ "${HISTORY_MODE}" = rolling ]; then
                 "block_height": $BLOCK_HEIGHT, 
                 "block_timestamp": $BLOCK_TIMESTAMP,
                 "rolling_snapshot_filename": $ROLLING_SNAPSHOT_FILENAME,
+                "filesize_bytes": "$FILESIZE_BYTES",
                 "filesize": $FILESIZE,
                 "sha256": $SHA256,
-                "filesize": $FILESIZE, 
                 "tezos_version": $TEZOS_VERSION,
                 "chain_name": $NETWORK,
                 "history_mode": $HISTORY_MODE,
@@ -606,7 +616,7 @@ home:
 ---
 # Tezos snapshots for ${NETWORK}
 
-Tezos version used for snapshotting: \`${TEZOS_VERSION}\`
+Octez version used for snapshotting: \`${TEZOS_VERSION}\`
 ## Archive tarball
 [Download Archive Tarball](${CLOUDFRONT_URL}archive-tarball)
 
