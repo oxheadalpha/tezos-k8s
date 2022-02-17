@@ -2,20 +2,39 @@
 
 cd /
 
+timestamp() {
+  date "+%Y-%m-%d %H:%M:%S"
+}
+
 getSnapshotNames() {
   local readyToUse="${1##readyToUse=}"
   shift
-
   if [ -z "$readyToUse" ]; then
     echo "Error: No jsonpath for volumesnapshots' ready status was provided."
     exit 1
   fi
-
   kubectl get volumesnapshots -o jsonpath="{.items[?(.status.readyToUse==$readyToUse)].metadata.name}" --namespace "$NAMESPACE" "$@"
 }
 
-timestamp() {
-  date "+%Y-%m-%d %H:%M:%S"
+getNumberOfSnapshots() {
+  local readyToUse="$1"
+  shift
+  getSnapshotNames "$readyToUse" -o go-template='{{ len .items }}' "$@"
+}
+
+delete_old_volumesnapshots() {
+  local selector="${1##selector=}"
+  local max_snapshots="${2##max_snapshots=}"
+
+  while [ "$(getNumberOfSnapshots readyToUse=true --selector="$selector")" -gt "$max_snapshots" ]; do
+    NUMBER_OF_SNAPSHOTS=$(getNumberOfSnapshots readyToUse=true --selector="$selector")
+    printf "%s Number of snapshots with selector '$selector' is too high at $NUMBER_OF_SNAPSHOTS. Deleting 1.\n" "$(timestamp)"
+    SNAPSHOTS=$(getSnapshotNames readyToUse=true --selector="$selector")
+    if ! kubectl delete volumesnapshots "${SNAPSHOTS%% *}" --namespace "${NAMESPACE}"; then
+      printf "%s ERROR deleting snapshot. ${SNAPSHOTS%% *}\n" "$(timestamp)"
+    fi
+    sleep 10
+  done
 }
 
 yq e -i '.metadata.namespace=strenv(NAMESPACE)' createVolumeSnapshot.yaml
@@ -26,26 +45,9 @@ yq e -i '.spec.source.persistentVolumeClaimName=strenv(PERSISTENT_VOLUME_CLAIM)'
 while true; do
 
   # Remove unlabeled snapshots
-  while [ "$(getSnapshotNames readyToUse=true -o go-template='{{len .items}}' --selector='!history_mode')" -gt 0 ]; do
-    NUMBER_OF_SNAPSHOTS=$(getSnapshotNames readyToUse=true -o go-template='{{len .items}}' --selector='!history_mode')
-    printf "%s Number of snapshots without label is too high at ${NUMBER_OF_SNAPSHOTS} deleting 1.\n" "$(timestamp)"
-    SNAPSHOTS=$(getSnapshotNames readyToUse=true --selector='!history_mode')
-    if ! kubectl delete volumesnapshots "${SNAPSHOTS%% *}" --namespace "${NAMESPACE}"; then
-      printf "%s ERROR deleting snapshot. ${SNAPSHOTS%% *}\n" "$(timestamp)"
-    fi
-    sleep 10
-  done
-
+  delete_old_volumesnapshots selector='!history_mode' max_snapshots=0
   # Maintain 4 snapshots of a certain history mode
-  while [ "$(getSnapshotNames readyToUse=true -o go-template='{{len .items}}' -l history_mode="${HISTORY_MODE}")" -gt 4 ]; do
-    NUMBER_OF_SNAPSHOTS=$(getSnapshotNames readyToUse=true -o go-template='{{len .items}}' -l history_mode="${HISTORY_MODE}")
-    printf "%s Number of snapshots for ${HISTORY_MODE}-node is too high at ${NUMBER_OF_SNAPSHOTS} deleting 1.\n" "$(timestamp)"
-    SNAPSHOTS=$(getSnapshotNames readyToUse=true -l history_mode="${HISTORY_MODE}")
-    if ! kubectl delete volumesnapshots "${SNAPSHOTS%% *}" --namespace "${NAMESPACE}"; then
-      printf "%s ERROR deleting snapshot. ${SNAPSHOTS%% *}\n" "$(timestamp)"
-    fi
-    sleep 10
-  done
+  delete_old_volumesnapshots selector="history_mode=$HISTORY_MODE" max_snapshots=4
 
   if ! [ "$(getSnapshotNames readyToUse=false -l history_mode="${HISTORY_MODE}")" ]; then
     # EBS Snapshot name based on current time and date
@@ -86,7 +88,7 @@ while true; do
 
     done
     end_time=$(date +%s)
-    elapsed=$(( end_time - start_time ))
+    elapsed=$((end_time - start_time))
     printf "%s Snapshot ${SNAPSHOT_NAME} in ${NAMESPACE} finished." "$(timestamp)"
     eval "echo Elapsed time: $(date -ud "@$elapsed" +'$((%s/3600/24)) days %H hr %M min %S sec')\n"
   else
