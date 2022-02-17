@@ -2,12 +2,10 @@
 
 cd /
 
-## Snapshot Namespace
-NAMESPACE="${NAMESPACE}" yq e -i '.metadata.namespace=strenv(NAMESPACE)' createVolumeSnapshot.yaml
-PERSISTENT_VOLUME_CLAIM=var-volume-snapshot-"${HISTORY_MODE}"-node-0
-
-HISTORY_MODE="${HISTORY_MODE}" yq e -i '.metadata.labels.history_mode=strenv(HISTORY_MODE)' createVolumeSnapshot.yaml
-PERSISTENT_VOLUME_CLAIM="${PERSISTENT_VOLUME_CLAIM}" yq e -i '.spec.source.persistentVolumeClaimName=strenv(PERSISTENT_VOLUME_CLAIM)' createVolumeSnapshot.yaml
+yq e -i '.metadata.namespace=strenv(NAMESPACE)' createVolumeSnapshot.yaml
+yq e -i '.metadata.labels.history_mode=strenv(HISTORY_MODE)' createVolumeSnapshot.yaml
+export PERSISTENT_VOLUME_CLAIM="var-volume-snapshot-$HISTORY_MODE-node-0"
+yq e -i '.spec.source.persistentVolumeClaimName=strenv(PERSISTENT_VOLUME_CLAIM)' createVolumeSnapshot.yaml
 
 while true; do
 
@@ -32,14 +30,14 @@ while true; do
     fi
     sleep 10
   done
-  
+
   if ! [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' --namespace "${NAMESPACE}" -l history_mode="${HISTORY_MODE}")" ]
   then
     # EBS Snapshot name based on current time and date
-    SNAPSHOT_NAME=$(date "+%Y-%m-%d-%H-%M-%S" "$@")-$HISTORY_MODE-node-snapshot
-
+    current_date=$(date "+%Y-%m-%d-%H-%M-%S" "$@")
+    export SNAPSHOT_NAME="$current_date-$HISTORY_MODE-node-snapshot"
     # Update volume snapshot name
-    SNAPSHOT_NAME="${SNAPSHOT_NAME}" yq e -i '.metadata.name=strenv(SNAPSHOT_NAME)' createVolumeSnapshot.yaml
+    yq e -i '.metadata.name=strenv(SNAPSHOT_NAME)' createVolumeSnapshot.yaml
 
     printf "%s Creating snapshot ${SNAPSHOT_NAME} in ${NAMESPACE}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
@@ -66,7 +64,7 @@ while true; do
       # while [ "${EBS_SNAPSHOT_PROGRESS}" != 100% ]; do
       #   printf "%s Snapshot is still creating...%s\n" "$(date "+%Y-%m-%d %H:%M:%S\n" "$@")" "${EBS_SNAPSHOT_PROGRESS}"
       #     if [ "${HISTORY_MODE}" = archive ]; then
-      #       sleep 1m 
+      #       sleep 1m
       #     else
       #       sleep 10
       #     fi
@@ -91,11 +89,11 @@ while true; do
     #   while [ "${EBS_SNAPSHOT_PROGRESS}" != 100% ]; do
     #     printf "%s Snapshot is still creating...%s\n" "$(date "+%Y-%m-%d %H:%M:%S\n" "$@")" "${EBS_SNAPSHOT_PROGRESS}"
     #       if [ "${HISTORY_MODE}" = archive ]; then
-    #         sleep 1m 
+    #         sleep 1m
     #       else
     #         sleep 10
     #       fi
     #   done
     # fi
   fi
-done   
+done
