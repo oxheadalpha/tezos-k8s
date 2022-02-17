@@ -14,6 +14,10 @@ getSnapshotNames() {
   kubectl get volumesnapshots -o jsonpath="{.items[?(.status.readyToUse==$readyToUse)].metadata.name}" --namespace "$NAMESPACE" "$@"
 }
 
+timestamp() {
+  date "+%Y-%m-%d %H:%M:%S"
+}
+
 yq e -i '.metadata.namespace=strenv(NAMESPACE)' createVolumeSnapshot.yaml
 yq e -i '.metadata.labels.history_mode=strenv(HISTORY_MODE)' createVolumeSnapshot.yaml
 export PERSISTENT_VOLUME_CLAIM="var-volume-snapshot-$HISTORY_MODE-node-0"
@@ -24,10 +28,10 @@ while true; do
   # Remove unlabeled snapshots
   while [ "$(getSnapshotNames readyToUse=true -o go-template='{{len .items}}' --selector='!history_mode')" -gt 0 ]; do
     NUMBER_OF_SNAPSHOTS=$(getSnapshotNames readyToUse=true -o go-template='{{len .items}}' --selector='!history_mode')
-    printf "%s Number of snapshots without label is too high at ${NUMBER_OF_SNAPSHOTS} deleting 1.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    printf "%s Number of snapshots without label is too high at ${NUMBER_OF_SNAPSHOTS} deleting 1.\n" "$(timestamp)"
     SNAPSHOTS=$(getSnapshotNames readyToUse=true --selector='!history_mode')
     if ! kubectl delete volumesnapshots "${SNAPSHOTS%% *}" --namespace "${NAMESPACE}"; then
-      printf "%s ERROR deleting snapshot. ${SNAPSHOTS%% *}\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+      printf "%s ERROR deleting snapshot. ${SNAPSHOTS%% *}\n" "$(timestamp)"
     fi
     sleep 10
   done
@@ -35,10 +39,10 @@ while true; do
   # Maintain 4 snapshots of a certain history mode
   while [ "$(getSnapshotNames readyToUse=true -o go-template='{{len .items}}' -l history_mode="${HISTORY_MODE}")" -gt 4 ]; do
     NUMBER_OF_SNAPSHOTS=$(getSnapshotNames readyToUse=true -o go-template='{{len .items}}' -l history_mode="${HISTORY_MODE}")
-    printf "%s Number of snapshots for ${HISTORY_MODE}-node is too high at ${NUMBER_OF_SNAPSHOTS} deleting 1.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    printf "%s Number of snapshots for ${HISTORY_MODE}-node is too high at ${NUMBER_OF_SNAPSHOTS} deleting 1.\n" "$(timestamp)"
     SNAPSHOTS=$(getSnapshotNames readyToUse=true -l history_mode="${HISTORY_MODE}")
     if ! kubectl delete volumesnapshots "${SNAPSHOTS%% *}" --namespace "${NAMESPACE}"; then
-      printf "%s ERROR deleting snapshot. ${SNAPSHOTS%% *}\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+      printf "%s ERROR deleting snapshot. ${SNAPSHOTS%% *}\n" "$(timestamp)"
     fi
     sleep 10
   done
@@ -50,13 +54,13 @@ while true; do
     # Update volume snapshot name
     yq e -i '.metadata.name=strenv(SNAPSHOT_NAME)' createVolumeSnapshot.yaml
 
-    printf "%s Creating snapshot ${SNAPSHOT_NAME} in ${NAMESPACE}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    printf "%s Creating snapshot ${SNAPSHOT_NAME} in ${NAMESPACE}.\n" "$(timestamp)"
 
     start_time=$(date +%s)
 
     # Create snapshot
     if ! kubectl apply -f createVolumeSnapshot.yaml; then
-      printf "%s ERROR creating volumeSnapshot ${SNAPSHOT_NAME} in ${NAMESPACE} .\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+      printf "%s ERROR creating volumeSnapshot ${SNAPSHOT_NAME} in ${NAMESPACE} .\n" "$(timestamp)"
       exit 1
     fi
 
@@ -64,7 +68,7 @@ while true; do
 
     # While no snapshots ready
     while [ "$(getSnapshotNames readyToUse=false -l history_mode="${HISTORY_MODE}")" ]; do
-      printf "%s Snapshot is still creating...n" "$(date "+%Y-%m-%d %H:%M:%S\n" "$@")"
+      printf "%s Snapshot is still creating...\n" "$(timestamp)"
       sleep 10
       # # Get EBS snapshot progress
       # SNAPSHOT_CONTENT=$(kubectl get volumesnapshot -n "${NAMESPACE}" "${SNAPSHOT_NAME}" -o jsonpath='{.status.boundVolumeSnapshotContentName}')
@@ -83,13 +87,13 @@ while true; do
     done
     end_time=$(date +%s)
     elapsed=$(( end_time - start_time ))
-    printf "%s Snapshot ${SNAPSHOT_NAME} in ${NAMESPACE} finished." "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    printf "%s Snapshot ${SNAPSHOT_NAME} in ${NAMESPACE} finished." "$(timestamp)"
     eval "echo Elapsed time: $(date -ud "@$elapsed" +'$((%s/3600/24)) days %H hr %M min %S sec')\n"
   else
-    printf "%s Snapshot already in progress...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    printf "%s Snapshot already in progress...\n" "$(timestamp)"
     sleep 10
     # SNAPSHOT_NAME=$(kubectl  aget volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' --namespace "${NAMESPACE}" -l history_mode="${HISTORY_MODE}")
-    # printf "%s Snapshot is %s.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${SNAPSHOT_NAME}"
+    # printf "%s Snapshot is %s.\n" "$(timestamp)" "${SNAPSHOT_NAME}"
     # # Get EBS snapshot progress
     # SNAPSHOT_CONTENT=$(kubectl get volumesnapshot -n "${NAMESPACE}" "${SNAPSHOT_NAME}" -o jsonpath='{.status.boundVolumeSnapshotContentName}')
     # EBS_SNAPSHOT_ID=$(kubectl get volumesnapshotcontent -n "${NAMESPACE}" "${SNAPSHOT_CONTENT}" -o jsonpath='{.status.snapshotHandle}')
