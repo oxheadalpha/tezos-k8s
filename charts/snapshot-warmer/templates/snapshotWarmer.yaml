@@ -36,8 +36,10 @@ spec:
           env:
             - name: NAMESPACE
               value: {{ $.Release.Namespace }}
-            - name: HISTORY_MODE
-              value: {{ $.history_mode }}
+            - name: NODE_CLASS
+              value: {{ $node }}
+            - name: NODE_CONFIG
+              values: {{ $config | toJson }}
 ---
 {{- end }}
 {{- end }}

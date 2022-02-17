@@ -37,9 +37,19 @@ delete_old_volumesnapshots() {
   done
 }
 
+HISTORY_MODE="$(echo "$NODE_CONFIG" | jq -r ".history_mode")"
+TARGET_VOLUME="$(echo "$NODE_CONFIG" | jq ".target_volume")"
+PERSISTENT_VOLUME_CLAIM="$(
+  kubectl get po -n "$NAMESPACE" -l node_class="$NODE_CLASS" \
+    -o jsonpath="{.items[0].spec.volumes[?(@.name==$TARGET_VOLUME)].persistentVolumeClaim.claimName}"
+)"
+
+# For yq to work, the values resulting from the above cmds need to be exported
+export HISTORY_MODE
+export PERSISTENT_VOLUME_CLAIM
+
 yq e -i '.metadata.namespace=strenv(NAMESPACE)' createVolumeSnapshot.yaml
 yq e -i '.metadata.labels.history_mode=strenv(HISTORY_MODE)' createVolumeSnapshot.yaml
-export PERSISTENT_VOLUME_CLAIM="var-volume-snapshot-$HISTORY_MODE-node-0"
 yq e -i '.spec.source.persistentVolumeClaimName=strenv(PERSISTENT_VOLUME_CLAIM)' createVolumeSnapshot.yaml
 
 while true; do
