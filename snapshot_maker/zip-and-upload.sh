@@ -152,7 +152,7 @@ if [ "${HISTORY_MODE}" = archive ]; then
             "block_timestamp": $BLOCK_TIMESTAMP,
             "archive_tarball_filename": $ARCHIVE_TARBALL_FILENAME,
             "sha256": $SHA256,
-            "filesize_bytes": $FILESIZE_BYTES
+            "filesize_bytes": $FILESIZE_BYTES,
             "filesize": $FILESIZE, 
             "tezos_version": $TEZOS_VERSION,
             "chain_name": $NETWORK,
@@ -610,7 +610,7 @@ author:
     title_url: 'https://medium.com/the-aleph'
     external_url: true
     description: A Tezos core development company, providing common goods for the Tezos ecosystem. <a href="https://medium.com/the-aleph" target="_blank">Learn more</a>.
-# Micro navigation
+# Micro navigation 
 micro_nav: true
 # Page navigation
 page_nav:
