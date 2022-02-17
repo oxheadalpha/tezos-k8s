@@ -320,7 +320,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
         --arg BLOCK_TIMESTAMP "$BLOCK_TIMESTAMP" \
         --arg ROLLING_TARBALL_FILENAME "$ROLLING_TARBALL_FILENAME" \
         --arg SHA256 "$SHA256" \
-        --arg FILESIZE_BYTES "${FILESIZE_BYTES}" \
+        --arg FILESIZE_BYTES "$FILESIZE_BYTES" \
         --arg FILESIZE "$FILESIZE" \
         --arg TEZOS_VERSION "$TEZOS_VERSION" \
         --arg NETWORK "$NETWORK" \
@@ -409,9 +409,9 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             --arg BLOCK_HASH "$BLOCK_HASH" \
             --arg BLOCK_HEIGHT "$BLOCK_HEIGHT" \
             --arg BLOCK_TIMESTAMP "$BLOCK_TIMESTAMP" \
-            --arg ROLLING_SNAPSHOT_FILENAME "${ROLLING_SNAPSHOT_FILENAME}" \
-            --arg SHA256 "${SHA256}" \
-            --arg FILESIZE_BYTES "${FILESIZE_BYTES}" \
+            --arg ROLLING_SNAPSHOT_FILENAME "$ROLLING_SNAPSHOT_FILENAME" \
+            --arg SHA256 "$SHA256" \
+            --arg FILESIZE_BYTES "$FILESIZE_BYTES" \
             --arg FILESIZE "${FILESIZE}" \
             --arg TEZOS_VERSION "$TEZOS_VERSION" \
             --arg NETWORK "$NETWORK" \
@@ -455,7 +455,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             --arg BLOCK_TIMESTAMP "$BLOCK_TIMESTAMP" \
             --arg ROLLING_SNAPSHOT_FILENAME "$ROLLING_SNAPSHOT_FILENAME" \
             --arg SHA256 "$SHA256" \
-            --arg FILESIZE_BYTES "${FILESIZE_BYTES}" \
+            --arg FILESIZE_BYTES "$FILESIZE_BYTES" \
             --arg FILESIZE "$FILESIZE" \
             --arg TEZOS_VERSION "$TEZOS_VERSION" \
             --arg NETWORK "$NETWORK" \
