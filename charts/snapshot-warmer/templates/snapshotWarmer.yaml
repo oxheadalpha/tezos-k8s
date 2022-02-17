@@ -23,7 +23,7 @@ spec:
       labels:
         app: {{ include "snapshot-warmer.name" $ }}
     spec:
-      serviceAccountName: snapshot-maker-sa
+      serviceAccountName: {{ $.Values.service_account }}
       containers:
         - name: {{ include "snapshot-warmer.name" $ }}
           image: {{ $.Values.tezos_k8s_images.snapshot_maker }}
@@ -41,6 +41,14 @@ spec:
 ---
 {{- end }}
 {{- end }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.service_account }}
+  namespace: {{ $.Release.Namespace }}
+  annotations:
+    eks.amazonaws.com/role-arn: {{ .Values.iam_role_arn }}
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -75,14 +83,6 @@ roleRef:
   name: modify-volumesnapshots
   apiGroup: rbac.authorization.k8s.io
 ---
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: {{ .Values.service_account }}
-  namespace: {{ $.Release.Namespace }}
-  annotations:
-    eks.amazonaws.com/role-arn: {{ .Values.iam_role_arn }}
----
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -94,5 +94,5 @@ roleRef:
 subjects:
 - apiGroup: ""
   kind: ServiceAccount
-  name: snapshot-maker-sa
+  name: {{ .Values.service_account }}
   namespace: {{ $.Release.Namespace }}
