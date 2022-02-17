@@ -87,10 +87,10 @@ if [ "${HISTORY_MODE}" = archive ]; then
     --arg BLOCK_HASH "$BLOCK_HASH" \
     --arg BLOCK_HEIGHT "$BLOCK_HEIGHT" \
     --arg BLOCK_TIMESTAMP "$BLOCK_TIMESTAMP" \
-    --arg ARCHIVE_TARBALL_FILENAME "${ARCHIVE_TARBALL_FILENAME}" \
-    --arg SHA256 "${SHA256}" \
-    --arg FILESIZE_BYTES "${FILESIZE_BYTES}" \
-    --arg FILESIZE "${FILESIZE}" \
+    --arg ARCHIVE_TARBALL_FILENAME "$ARCHIVE_TARBALL_FILENAME" \
+    --arg SHA256 "$SHA256" \
+    --arg FILESIZE_BYTES "$FILESIZE_BYTES" \
+    --arg FILESIZE "$FILESIZE" \
     --arg TEZOS_VERSION "$TEZOS_VERSION" \
     --arg NETWORK "$NETWORK" \
     --arg HISTORY_MODE "archive" \
@@ -140,7 +140,7 @@ if [ "${HISTORY_MODE}" = archive ]; then
         --arg BLOCK_TIMESTAMP "$BLOCK_TIMESTAMP" \
         --arg ARCHIVE_TARBALL_FILENAME "$ARCHIVE_TARBALL_FILENAME" \
         --arg SHA256 "$SHA256" \
-        --arg FILESIZE_BYTES "${FILESIZE_BYTES}" \
+        --arg FILESIZE_BYTES "$FILESIZE_BYTES" \
         --arg FILESIZE "$FILESIZE" \
         --arg TEZOS_VERSION "$TEZOS_VERSION" \
         --arg NETWORK "$NETWORK" \
@@ -268,10 +268,10 @@ if [ "${HISTORY_MODE}" = rolling ]; then
     --arg BLOCK_HASH "$BLOCK_HASH" \
     --arg BLOCK_HEIGHT "$BLOCK_HEIGHT" \
     --arg BLOCK_TIMESTAMP "$BLOCK_TIMESTAMP" \
-    --arg ROLLING_TARBALL_FILENAME "${ROLLING_TARBALL_FILENAME}" \
-    --arg SHA256 "${SHA256}" \
-    --arg FILESIZE_BYTES "${FILESIZE_BYTES}" \
-    --arg FILESIZE "${FILESIZE}" \
+    --arg ROLLING_TARBALL_FILENAME "$ROLLING_TARBALL_FILENAME" \
+    --arg SHA256 "$SHA256" \
+    --arg FILESIZE_BYTES "$FILESIZE_BYTES" \
+    --arg FILESIZE "$FILESIZE" \
     --arg TEZOS_VERSION "$TEZOS_VERSION" \
     --arg NETWORK "$NETWORK" \
     --arg HISTORY_MODE "rolling" \
@@ -412,7 +412,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             --arg ROLLING_SNAPSHOT_FILENAME "$ROLLING_SNAPSHOT_FILENAME" \
             --arg SHA256 "$SHA256" \
             --arg FILESIZE_BYTES "$FILESIZE_BYTES" \
-            --arg FILESIZE "${FILESIZE}" \
+            --arg FILESIZE "$FILESIZE" \
             --arg TEZOS_VERSION "$TEZOS_VERSION" \
             --arg NETWORK "$NETWORK" \
             --arg HISTORY_MODE "rolling" \
@@ -719,6 +719,7 @@ tezos-node snapshot import tezos-${NETWORK}.rolling
 EOF
 
 chmod -R 777 index.md
+chmod -R 777 _data
 chown jekyll:jekyll -R /usr/gem
 
 # convert to index.html with jekyll
