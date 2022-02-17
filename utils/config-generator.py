@@ -53,7 +53,9 @@ SHOULD_GENERATE_UNSAFE_DETERMINISTIC_DATA = CHAIN_PARAMS.get(
 
 # If there are no genesis params, this is a public chain.
 THIS_IS_A_PUBLIC_NET = True if not NETWORK_CONFIG.get("genesis") else False
-
+JOIN_PUBLIC_NETWORK =  CHAIN_PARAMS.get("join_public_network", THIS_IS_A_PUBLIC_NET)
+if not THIS_IS_A_PUBLIC_NET and JOIN_PUBLIC_NETWORK:
+        raise exception("Instruction was given to join a public network while defining a private chain")
 
 def main():
     all_accounts = ACCOUNTS
@@ -109,7 +111,7 @@ def main():
             if bootstrap_peers == []:
                 bootstrap_peers.extend(get_zerotier_bootstrap_peer_ips())
 
-        if THIS_IS_A_PUBLIC_NET:
+        if JOIN_PUBLIC_NETWORK:
             with open("/etc/tezos/data/config.json", "r") as f:
                 bootstrap_peers.extend(json.load(f)["p2p"]["bootstrap-peers"])
         else:

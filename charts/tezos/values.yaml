@@ -243,6 +243,14 @@ expected_proof_of_work: 26
 node_config_network:
   chain_name: mainnet
 
+# Setting node_config_network with a chain_name assumes the network is public.
+# tezos-k8s will then configure the nodes to connect to boot-nodes for the selected chain.
+# This may not always be desired. For example, you may want to run a mainnet replica
+# in isolation with yes-nodes.
+# Uncomment the line below to remove boot-node configuration from nodes on a public
+# network. The nodes will not establish any connection outside of the cluster. 
+# join_public_network: false
+  
 protocols:
   # Tezos builds baker binaries for every supported protocol.
   # List here the protocols that you wish to run bakers for.
