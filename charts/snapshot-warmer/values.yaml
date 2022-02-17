@@ -3,3 +3,9 @@ tezos_k8s_images:
 
 iam_role_arn: ""
 service_account: ""
+
+nodes:
+  snapshot-archive-node:
+    history_mode: archive
+  snapshot-rolling-node:
+    history_mode: rolling
