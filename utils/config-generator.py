@@ -15,6 +15,7 @@ from base58 import b58encode_check
 
 ACCOUNTS = json.loads(os.environ["ACCOUNTS"])
 CHAIN_PARAMS = json.loads(os.environ["CHAIN_PARAMS"])
+DATA_DIR = "/var/tezos/node/data"
 NODE_GLOBALS = json.loads(os.environ["NODE_GLOBALS"]) or {}
 NODES = json.loads(os.environ["NODES"])
 SIGNERS = json.loads(os.environ["SIGNERS"])
@@ -140,6 +141,13 @@ def main():
         with open("/etc/tezos/config.json", "w") as json_file:
             print(config_json, file=json_file)
 
+        if MY_POD_CONFIG.get("identity", False):
+            print("\nWriting identity.json file from config")
+            os.makedirs(DATA_DIR,exist_ok=True)
+            os.chmod(DATA_DIR, 0o777)
+            with open(f"{DATA_DIR}/identity.json", "w") as json_file:
+                print(json.dumps(MY_POD_CONFIG.get("identity")), file=json_file)
+            os.chmod(f"{DATA_DIR}/identity.json", 0o777)
 
 # If NETWORK_CONFIG["genesis"]["block"] hasn't been specified, we generate a
 # deterministic one.
@@ -529,7 +537,7 @@ def create_node_config_json(
     """Create the node's config.json file"""
 
     computed_node_config = {
-        "data-dir": "/var/tezos/node/data",
+        "data-dir": DATA_DIR,
         "rpc": {
             "listen-addrs": [f"{os.getenv('MY_POD_IP')}:8732", "127.0.0.1:8732"],
             "acl": [ { "address": os.getenv('MY_POD_IP'), "blacklist": [] } ]

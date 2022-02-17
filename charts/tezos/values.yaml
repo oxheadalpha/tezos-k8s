@@ -141,6 +141,14 @@ accounts: {}
 #         config:
 #           shell:
 #             history_mode: rolling
+#         # optional - pass a node identity so it is not generated at first boot
+#         # This is useful for local storage nodes which must do that at every boot
+#         # The structure must match the node's identity.json file
+#         identity:
+#            peer_id: id...
+#            public_key: ...
+#            private_key: ...
+#            proof_of_work_stamp: ...
 #   rolling-node:
 #     labels:
 #       # Example labels you might use to specify certain attributes of your nodes.

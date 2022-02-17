@@ -46,6 +46,7 @@ EOM
 # variables and we are not guaranteed to have jq available on an arbitrary
 # tezos docker image.
 
+set +x
 MY_CLASS=$(echo $NODES | jq -r ".\"${MY_NODE_CLASS}\"")
 AM_I_BAKER=0
 if [ "$MY_CLASS" != null ]; then
