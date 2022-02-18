@@ -44,7 +44,9 @@ PERSISTENT_VOLUME_CLAIM="$(
     -o jsonpath="{.items[0].spec.volumes[?(@.name==$TARGET_VOLUME)].persistentVolumeClaim.claimName}"
 )"
 
-# For yq to work, the values resulting from the above cmds need to be exported
+# For yq to work, the values resulting from the above cmds need to be exported.
+# We don't export them inline because of
+# https://github.com/koalaman/shellcheck/wiki/SC2155
 export HISTORY_MODE
 export PERSISTENT_VOLUME_CLAIM
 
