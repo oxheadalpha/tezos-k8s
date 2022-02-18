@@ -272,7 +272,7 @@ protocols:
 #     min_proposal_quorum: 500
 #     initial_endorsers: 192
 #     delay_per_missing_endorsement: "2"
-#     liquidity_baking_escape_ema_threshold: 666667
+#     liquidity_baking_escape_ema_threshold: 1000000
 #     liquidity_baking_subsidy: '2500000'
 #     liquidity_baking_sunset_level: 10000000
 #     minimal_block_delay: '5'
