@@ -2,6 +2,8 @@ set -x
 
 set
 
+# ensure we can run tezos-client commands without specifying client dir
+ln -s /var/tezos/client /home/tezos/.tezos-client
 #
 # Not every error is fatal on start.  In particular, with zerotier,
 # the listen-addr may not yet be bound causing tezos-node to fail.
