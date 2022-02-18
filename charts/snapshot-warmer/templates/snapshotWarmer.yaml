@@ -39,7 +39,7 @@ spec:
             - name: NODE_CLASS
               value: {{ $node }}
             - name: NODE_CONFIG
-              values: {{ $config | toJson }}
+              values: {{ $config | toJson | quote }}
 ---
 {{- end }}
 {{- end }}
