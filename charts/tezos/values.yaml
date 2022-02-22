@@ -92,6 +92,11 @@ accounts: {}
 ##   - "bake_using_account": Account name that should be used for baking.
 ##   - "bake_using_accounts": List of account names that should be used for baking.
 ##   - "is_bootstrap_node": Is this node a bootstrap peer.
+##   - "identity": An optional map containing a pre-generated Tezos node
+##                 identity. The identity file will be created at
+##                 /var/tezos/node/data/identity.json. Required fields are
+##                 "peer_id", "public_key", "secret_key", and
+##                 "proof_of_work_timestamp".
 ##   - "config": same as the outer level, pass through to config.json.  At
 ##               the instance level, it overrides the statefulset level.
 ## - "node_selector": Specify a kubernetes node selector in 'key: value' format
@@ -147,7 +152,7 @@ accounts: {}
 #         identity:
 #            peer_id: id...
 #            public_key: ...
-#            private_key: ...
+#            secret_key: ...
 #            proof_of_work_stamp: ...
 #   rolling-node:
 #     labels:
