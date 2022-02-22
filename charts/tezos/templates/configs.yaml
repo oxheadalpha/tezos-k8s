@@ -17,8 +17,20 @@ data:
   ROLLING_TARBALL_URL: "{{ .Values.rolling_tarball_url }}"
   NODE_GLOBALS: |
 {{ .Values.node_globals | mustToPrettyJson | indent 4 }}
+
   NODES: |
-{{ .Values.nodes | mustToPrettyJson | indent 4 }}
+{{/*
+  Remove "identity" field from nodes. Creates a deep copy because
+  "unset" modifies the object.
+*/}}
+{{ $nodes_copy := deepCopy .Values.nodes }}
+{{- range $node_class, $node_config := $nodes_copy }}
+  {{- range $_, $instance_config := $node_config.instances }}
+    {{- $_ := unset $instance_config "identity" }}
+  {{- end }}
+{{- end }}
+{{ $nodes_copy | mustToPrettyJson | indent 4 }}
+
   SIGNERS: |
 {{ .Values.signers | mustToPrettyJson | indent 4 }}
 kind: ConfigMap
