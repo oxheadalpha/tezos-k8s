@@ -4,11 +4,12 @@ import json
 import os
 import requests
 import socket
+from grp import getgrnam
 from hashlib import blake2b
-from json.decoder import JSONDecodeError
-from operator import itemgetter
 from pathlib import Path
 from re import sub
+from shutil import chown
+
 
 from pytezos import pytezos
 from base58 import b58encode_check
@@ -18,6 +19,7 @@ CHAIN_PARAMS = json.loads(os.environ["CHAIN_PARAMS"])
 DATA_DIR = "/var/tezos/node/data"
 NODE_GLOBALS = json.loads(os.environ["NODE_GLOBALS"]) or {}
 NODES = json.loads(os.environ["NODES"])
+NODE_IDENTITIES = json.loads(os.getenv("NODE_IDENTITIES", ""))
 SIGNERS = json.loads(os.environ["SIGNERS"])
 
 MY_POD_NAME = os.environ["MY_POD_NAME"]
@@ -67,6 +69,10 @@ def main():
     if MY_POD_NAME in BAKING_NODES:
         # If this node is a baker, it must have an account with a secret key.
         verify_this_bakers_account(all_accounts)
+
+    # Create the node's identity.json if its values are provided
+    if NODE_IDENTITIES.get(MY_POD_NAME, False):
+        create_node_identity_json()
 
     main_parser = argparse.ArgumentParser()
     main_parser.add_argument(
@@ -141,13 +147,6 @@ def main():
         with open("/etc/tezos/config.json", "w") as json_file:
             print(config_json, file=json_file)
 
-        if MY_POD_CONFIG.get("identity", False):
-            print("\nWriting identity.json file from config")
-            os.makedirs(DATA_DIR,exist_ok=True)
-            os.chmod(DATA_DIR, 0o777)
-            with open(f"{DATA_DIR}/identity.json", "w") as json_file:
-                print(json.dumps(MY_POD_CONFIG.get("identity")), file=json_file)
-            os.chmod(f"{DATA_DIR}/identity.json", 0o777)
 
 # If NETWORK_CONFIG["genesis"]["block"] hasn't been specified, we generate a
 # deterministic one.
@@ -423,6 +422,29 @@ def import_keys(all_accounts):
     json.dump(public_key_hashs, open(tezdir + "/public_key_hashs", "w"), indent=4)
 
 
+def create_node_identity_json():
+    identity_file_path = f"{DATA_DIR}/identity.json"
+    path = Path(identity_file_path)
+    if path.exists() and path.stat().st_size > 0:
+        return
+
+    # Manually create the data directory and identity.json, and give the
+    # same dir/file permissions that tezos gives when it creates them.
+    print("\nWriting identity.json file from the instance config")
+
+    os.makedirs(DATA_DIR, 0o700, exist_ok=True)
+    with open(
+        identity_file_path,
+        "w",
+        opener=lambda path, flags: os.open(path, flags, 0o644),
+    ) as identity_file:
+        print(json.dumps(NODE_IDENTITIES.get(MY_POD_NAME)), file=identity_file)
+
+    nogroup = getgrnam("nogroup").gr_gid
+    chown(DATA_DIR, user=100, group=nogroup)
+    chown(identity_file_path, user=100, group=nogroup)
+
+
 #
 # get_genesis_accounts_pubkey_and_balance(accounts) returns a list
 # of lists: [ [key1, balance2], [key2, balance2], ... ] for all of
@@ -431,8 +453,6 @@ def import_keys(all_accounts):
 # start.  If just a public key hash is provided, then it is not.  We
 # use a public key if the property "is_bootstrap_baker_account" is
 # either absent or true.
-
-
 def get_genesis_accounts_pubkey_and_balance(accounts):
     pubkey_and_balance_pairs = []
 

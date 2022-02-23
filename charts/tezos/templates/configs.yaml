@@ -23,7 +23,7 @@ data:
   Remove "identity" field from nodes. Creates a deep copy because
   "unset" modifies the object.
 */}}
-{{ $nodes_copy := deepCopy .Values.nodes }}
+{{- $nodes_copy := deepCopy .Values.nodes }}
 {{- range $node_class, $node_config := $nodes_copy }}
   {{- range $_, $instance_config := $node_config.instances }}
     {{- $_ := unset $instance_config "identity" }}
