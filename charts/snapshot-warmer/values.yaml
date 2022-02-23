@@ -1,2 +1,13 @@
 tezos_k8s_images:
-  snapshot_maker: tezos-k8s-snapshot-maker:latest
+  snapshot_maker: tezos-k8s-snapshot-maker:dev
+
+iam_role_arn: ""
+service_account: ""
+
+nodes:
+  snapshot-archive-node:
+    history_mode: archive
+    target_volume: var-volume
+  snapshot-rolling-node:
+    history_mode: rolling
+    target_volume: var-volume

@@ -10,7 +10,7 @@ For 1 Kubernetes Namespace this Helm Chart creates -
 
 This continuously takes AWS EBS Volume Snapshots of a Tezos-node and makes them available as Kubernetes VolumeSnapshots.
 
-The reason for this is the longer you wait to take an EBS snapshot, the longer it takes to actually create the snapshot of an AWS EBS Volume.  
+The reason for this is the longer you wait to take an EBS snapshot, the longer it takes to actually create the snapshot of an AWS EBS Volume.
 
 If we continuously take snapshots, this assures that the artifact creation process does not have to wait for a snapshot to complete and also always has the newest data to work with.
 
@@ -22,44 +22,23 @@ All of these resources can be deployed to a real AWS EKS cluster with https://gi
 
 ## Setup
 
-If your `values.yaml` needs at least 2 Tezos nodes, 1 with **archive** history mode, and another **rolling** history mode.
+You should have 2 Tezos nodes deployed in your cluster. One with **archive** history mode, and the other with **rolling** history mode.
+The `values.yaml` should reference these 2 nodes:
 
 ```yaml
+# `nodes` contains the names of the nodes deployed. Each node specifies
+# their `target_volume` to snapshot and their `history_mode`.
 nodes:
-  rolling-node: null
   snapshot-archive-node:
-  ... 
-    instances:
-      - ...
-        config:
-          shell:
-            history_mode: archive
-      - ...
+    history_mode: archive
+    target_volume: var-volume
   snapshot-rolling-node:
-  ...
-    instances:
-      - ...
-        config:
-          shell:
-            history_mode: rolling
-      - ...
+    history_mode: rolling
+    target_volume: var-volume
+
 ```
-
-The Helm template loops over **the first** in each type array `snapshot-archive-node` and `snapshot-rolling-node`. If you have multiple rolling/archive nodes only the first one of each type is targeted by the snapshot scheduler.
-
-No additonal values are required other than those required by Tezos-K8s itself.
-
-Deploy with https://github.com/oxheadalpha/oxheadinfra
-
 ## How it works
-
-Overview of the Snapshot Scheduler workflow.
-
-### Deployments
-
-Overview of Kubernetes Deployments created by this workflow.
-
-#### Snapshot Warmer Deployment
+### Snapshot Warmer Deployment
 
 This Kubernetes Deployment runs the `snapshot_maker` container located in the root of the `tezos-k8s` repository.
 
@@ -67,9 +46,9 @@ The entrypoint is overridden and the `snapshot-warmer/scripts/snapshotwarmer.sh`
 
 This script runs indefinitely and performs the following steps -
 
-1. Removes unlabeled VolumeSnapshots. VolumeSnapshots need to be labeled with their respective `history mode` in order for them to be used later with the snapshot engine system.
-2. Maintains 4 snapshots of a particular `history mode` label.  There isn't any particular reason for this, other than to keep the list of snapshots concise.  "Maintains" meaning deletes the oldest snapshots once the count is over 4.
+1. Removes unlabeled VolumeSnapshots. VolumeSnapshots need to be labeled with their respective `history_mode` in order for them to be used later with the snapshot engine system.
+2. Maintains 4 snapshots of a particular `history_mode` label.  There isn't any particular reason for this, other than to keep the list of snapshots concise.  "Maintains" meaning deletes the oldest snapshots once the count is over 4.
 3. If there are not any snapshots in progress, then a new one is triggered named with the current time and date.
 4. It waits until the snapshot is ready to use.
 
-The script will detect a snapshot in progress and wait if it is started if a snapshot is currently creating. This is to prevent runaway snapshot creation as more in-progress snapshots slows down the process altogether. We keep it to 1 at a time for optimal speed.
+We create only one snapshot at a time as having more than one in-progress slows down the snapshot process altogether.
