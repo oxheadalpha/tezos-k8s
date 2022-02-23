@@ -19,7 +19,7 @@ CHAIN_PARAMS = json.loads(os.environ["CHAIN_PARAMS"])
 DATA_DIR = "/var/tezos/node/data"
 NODE_GLOBALS = json.loads(os.environ["NODE_GLOBALS"]) or {}
 NODES = json.loads(os.environ["NODES"])
-NODE_IDENTITIES = json.loads(os.getenv("NODE_IDENTITIES", ""))
+NODE_IDENTITIES = json.loads(os.getenv("NODE_IDENTITIES", "{}"))
 SIGNERS = json.loads(os.environ["SIGNERS"])
 
 MY_POD_NAME = os.environ["MY_POD_NAME"]
