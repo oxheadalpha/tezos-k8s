@@ -2,6 +2,10 @@
 {{- if $val }}
   {{- $_ := set $ "node_class" $key }}
   {{- $_ := set $ "node_vals" $val }}
+  {{- $_ := set $ "node_identities" dict }}
+
+  {{- include "tezos.includeNodeIdentitySecret" $ }}
+
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:

@@ -88,18 +88,23 @@ accounts: {}
 ## - "local_storage": use local storage instead of a volume. The storage will be
 ##                  wiped when the node restarts for any reason. Useful when
 ##                  faster IO is desired. Defaults to false.
-## - "instances": a list of nodes to fire up, each is a dictionary defining:
-##   - "bake_using_account": Account name that should be used for baking.
-##   - "bake_using_accounts": List of account names that should be used for baking.
-##   - "is_bootstrap_node": Is this node a bootstrap peer.
-##   - "config": same as the outer level, pass through to config.json.  At
-##               the instance level, it overrides the statefulset level.
+## - "labels": https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+##      NOTE: the labels appType, node_class, and baking_node are set
+##      automatically for you.
 ## - "node_selector": Specify a kubernetes node selector in 'key: value' format
 ##     for your tezos nodes.
-## - "labels": https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
-##   NOTE: the labels appType, node_class, and baking_node are set
-##         automatically for you.
-##
+## - "instances": a list of nodes to fire up, each is a dictionary defining:
+##    - "bake_using_account": Account name that should be used for baking.
+##    - "bake_using_accounts": List of account names that should be used for baking.
+##    - "config": Same as the outer statefulset level "config". It overrides the
+##                statefulset level.
+##    - "is_bootstrap_node": Is this node a bootstrap peer.
+##    - "identity": An optional map containing a pre-generated Tezos node
+##                 identity. This is useful for local storage nodes which would
+##                 need to generate an identity at every boot. The identity file
+##                 will be created at /var/tezos/node/data/identity.json.
+##                 Required fields are "peer_id", "public_key", "secret_key",
+##                 and "proof_of_work_timestamp".
 ##
 ## Defaults are filled in for most of the above values.  You can also provide
 ## global defaults for all nodes via a node_globals: section which is also
@@ -141,13 +146,10 @@ accounts: {}
 #         config:
 #           shell:
 #             history_mode: rolling
-#         # optional - pass a node identity so it is not generated at first boot
-#         # This is useful for local storage nodes which must do that at every boot
-#         # The structure must match the node's identity.json file
 #         identity:
 #            peer_id: id...
 #            public_key: ...
-#            private_key: ...
+#            secret_key: ...
 #            proof_of_work_stamp: ...
 #   rolling-node:
 #     labels:

@@ -45,6 +45,10 @@
     - "config-generator"
     - "--generate-config-json"
   envFrom:
+    {{- if len .node_identities }}
+    - secretRef:
+        name: {{ .node_class }}-indentities-secret
+    {{- end }}
     - secretRef:
         name: tezos-secret
     - configMapRef:
