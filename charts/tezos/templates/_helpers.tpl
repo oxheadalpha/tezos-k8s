@@ -86,11 +86,36 @@
   Returns a string "true" or empty string which is falsey.
 */}}
 {{- define "tezos.shouldConfigInit" }}
-{{- if not (.Values.node_config_network.genesis) }}
-{{- "true" }}
-{{- else }}
-{{- "" }}
+  {{- if not (.Values.node_config_network.genesis) }}
+    {{- "true" }}
+  {{- else }}
+    {{- "" }}
+  {{- end }}
 {{- end }}
+
+{{/*
+  If a Tezos node identity is defined for an instance, create a secret
+  for its node class. All identities for all instances of the node
+  class will be stored in it. Each instance will look up its identity
+  values by its hostname, e.g. archive-node-0.
+  Returns a string "true" or empty string which is falsey.
+*/}}
+{{- define "tezos.includeNodeIdentitySecret" }}
+  {{- range $index, $config := $.node_vals.instances }}
+    {{- if .identity }}
+      {{- $_ := set $.node_identities (print $.node_class "-" $index) .identity }}
+    {{- end }}
+  {{- end }}
+  {{- if len $.node_identities }}
+apiVersion: v1
+data:
+  NODE_IDENTITIES: {{ $.node_identities | toJson | b64enc }}
+kind: Secret
+metadata:
+  name: {{ $.node_class }}-indentities-secret
+  namespace: {{ $.Release.Namespace }}
+---
+  {{- end }}
 {{- end }}
 
 {{/*
