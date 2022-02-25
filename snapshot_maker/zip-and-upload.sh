@@ -135,29 +135,29 @@ if [ "${HISTORY_MODE}" = archive ]; then
 
         # Create archive tarball metadata json
         jq -n \
-        --arg BLOCK_HASH "$BLOCK_HASH" \
-        --arg BLOCK_HEIGHT "$BLOCK_HEIGHT" \
-        --arg BLOCK_TIMESTAMP "$BLOCK_TIMESTAMP" \
-        --arg ARCHIVE_TARBALL_FILENAME "$ARCHIVE_TARBALL_FILENAME" \
-        --arg SHA256 "$SHA256" \
-        --arg FILESIZE_BYTES "$FILESIZE_BYTES" \
-        --arg FILESIZE "$FILESIZE" \
-        --arg TEZOS_VERSION "$TEZOS_VERSION" \
-        --arg NETWORK "$NETWORK" \
+        --arg BLOCK_HASH "${BLOCK_HASH}" \
+        --arg BLOCK_HEIGHT "${BLOCK_HEIGHT}" \
+        --arg BLOCK_TIMESTAMP "${BLOCK_TIMESTAMP}" \
+        --arg ARCHIVE_TARBALL_FILENAME "${ARCHIVE_TARBALL_FILENAME}" \
+        --arg SHA256 "${SHA256}" \
+        --arg FILESIZE_BYTES "${FILESIZE_BYTES}" \
+        --arg FILESIZE "${FILESIZE}" \
+        --arg TEZOS_VERSION "${TEZOS_VERSION}" \
+        --arg NETWORK "${NETWORK}" \
         --arg HISTORY_MODE "archive" \
         --arg ARTIFACT_TYPE "tarball" \
         '{
-            "block_hash": '\"$BLOCK_HASH\"', 
-            "block_height": '\"$BLOCK_HEIGHT\"', 
-            "block_timestamp": '\"$BLOCK_TIMESTAMP\"',
-            "archive_tarball_filename": '\"$ARCHIVE_TARBALL_FILENAME\"',
-            "sha256": '\"$SHA256\"',
-            "filesize_bytes": '\"$FILESIZE_BYTES\"',
-            "filesize": '\"$FILESIZE\"', 
-            "tezos_version": '\"$TEZOS_VERSION\"',
-            "chain_name": '\"$NETWORK\"',
-            "history_mode": '\"$HISTORY_MODE\"',
-            "artifact_type": '\"$ARTIFACT_TYPE\"'
+            "block_hash": $BLOCK_HASH, 
+            "block_height": $BLOCK_HEIGHT, 
+            "block_timestamp": $BLOCK_TIMESTAMP,
+            "archive_tarball_filename": $ARCHIVE_TARBALL_FILENAME,
+            "sha256": $SHA256,
+            "filesize_bytes": $FILESIZE_BYTES,
+            "filesize": $FILESIZE, 
+            "tezos_version": $TEZOS_VERSION,
+            "chain_name": $NETWORK,
+            "history_mode": $HISTORY_MODE,
+            "artifact_type": $ARTIFACT_TYPE
         }' \
         > "${ARCHIVE_TARBALL_FILENAME}".json
 
