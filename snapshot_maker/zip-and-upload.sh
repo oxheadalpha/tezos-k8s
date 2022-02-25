@@ -147,17 +147,17 @@ if [ "${HISTORY_MODE}" = archive ]; then
         --arg HISTORY_MODE "archive" \
         --arg ARTIFACT_TYPE "tarball" \
         '{
-            "block_hash": $BLOCK_HASH, 
-            "block_height": $BLOCK_HEIGHT, 
-            "block_timestamp": $BLOCK_TIMESTAMP,
-            "archive_tarball_filename": $ARCHIVE_TARBALL_FILENAME,
-            "sha256": $SHA256,
-            "filesize_bytes": $FILESIZE_BYTES,
-            "filesize": $FILESIZE, 
-            "tezos_version": $TEZOS_VERSION,
-            "chain_name": $NETWORK,
-            "history_mode": $HISTORY_MODE,
-            "artifact_type": $ARTIFACT_TYPE
+            "block_hash": '\"$BLOCK_HASH\"', 
+            "block_height": '\"$BLOCK_HEIGHT\"', 
+            "block_timestamp": '\"$BLOCK_TIMESTAMP\"',
+            "archive_tarball_filename": '\"$ARCHIVE_TARBALL_FILENAME\"',
+            "sha256": '\"$SHA256\"',
+            "filesize_bytes": '\"$FILESIZE_BYTES\"',
+            "filesize": '\"$FILESIZE\"', 
+            "tezos_version": '\"$TEZOS_VERSION\"',
+            "chain_name": '\"$NETWORK\"',
+            "history_mode": '\"$HISTORY_MODE\"',
+            "artifact_type": '\"$ARTIFACT_TYPE\"'
         }' \
         > "${ARCHIVE_TARBALL_FILENAME}".json
 
