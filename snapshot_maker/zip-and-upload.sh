@@ -732,3 +732,7 @@ if ! aws s3 cp _site/ s3://"${S3_BUCKET}" --recursive --include "*"; then
 else
     printf "%s Website Build & Deploy  : Sucessfully uploaded website to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 fi
+
+# invalidate cloudfront cache
+CLOUDFRONT_DISTRIBUTION_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[*].{id:Id,origin:Origins.Items[0].Id}[?origin=='${NETWORK}.xtz-shots.io.s3-website.us-east-2.amazonaws.com'].id" --output text)
+aws cloudfront create-invalidation --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" --paths "/*" > /dev/null
