@@ -192,6 +192,10 @@ while [ "$(kubectl get jobs "zip-and-upload-${HISTORY_MODE}" --namespace "${NAME
     else
         printf "%s Waiting for zip-and-upload job to complete.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"    
         while [ "$(kubectl get jobs "zip-and-upload-${HISTORY_MODE}" --namespace "${NAMESPACE}" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')" != "True" ]; do
+            if kubectl get pod -l job-name=zip-and-upload-"${HISTORY_MODE}" --namespace="${NAMESPACE}"| grep -i -e error -e evicted -e pending; then
+                printf "%s Zip-and-upload job failed. This job will end and a new snapshot will be taken.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" 
+                break 3
+            fi
             if ! [ "$(kubectl get jobs "zip-and-upload-${HISTORY_MODE}" --namespace "${NAMESPACE}" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')" != "True" ]; then
                 break
             fi
