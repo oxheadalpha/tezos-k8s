@@ -642,7 +642,7 @@ Checksum (SHA256):
 ${ROLLING_SNAPSHOT_SHA256SUM}
 \`\`\`
 
-[Artifact Metadata](${CLOUDFRONT_URL}rolling-snapshot-metadata)
+[Artifact Metadata](${CLOUDFRONT_URL}rolling-snapshot-metadata?)
 ## Archive tarball
 [Download Archive Tarball](${CLOUDFRONT_URL}${ARCHIVE_TARBALL_FILENAME})
 
@@ -661,7 +661,7 @@ Checksum (SHA256):
 ${ARCHIVE_TARBALL_SHA256SUM}
 \`\`\`
 
-[Artifact Metadata](${CLOUDFRONT_URL}archive-tarball-metadata)
+[Artifact Metadata](${CLOUDFRONT_URL}archive-tarball-metadata?)
 ## Rolling tarball
 [Download Rolling Tarball](${CLOUDFRONT_URL}${ROLLING_TARBALL_FILENAME})
 
@@ -680,7 +680,7 @@ Checksum (SHA256):
 ${ROLLING_TARBALL_SHA256SUM}
 \`\`\`
 
-[Artifact Metadata](${CLOUDFRONT_URL}rolling-tarball-metadata)
+[Artifact Metadata](${CLOUDFRONT_URL}rolling-tarball-metadata?)
 ## How to use
 ### Archive Tarball
 Issue the following commands:
