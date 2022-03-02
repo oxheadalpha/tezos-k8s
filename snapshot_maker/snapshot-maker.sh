@@ -188,15 +188,21 @@ sleep 5
 while [ "$(kubectl get jobs "zip-and-upload-${HISTORY_MODE}" --namespace "${NAMESPACE}" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')" != "True" ]; do
     if kubectl get pod -l job-name=zip-and-upload-"${HISTORY_MODE}" --namespace="${NAMESPACE}"| grep -i -e error -e evicted -e pending; then
         printf "%s Zip-and-upload job failed. This job will end and a new snapshot will be taken.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" 
-        printf "%s Deleting temporary snapshot volume.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-        break
+        break 2
     else
-        printf "%s Zip-and-upload job completed successfully.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-        printf "%s Deleting temporary snapshot volume.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+        printf "%s Waiting for zip-and-upload job to complete.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"    
+        while [ "$(kubectl get jobs "zip-and-upload-${HISTORY_MODE}" --namespace "${NAMESPACE}" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')" != "True" ]; do
+            if ! [ "$(kubectl get jobs "zip-and-upload-${HISTORY_MODE}" --namespace "${NAMESPACE}" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')" != "True" ]; then
+                break
+            fi
+        done
     fi
-    printf "%s Waiting for zip-and-upload job to complete.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"    
-    sleep 60
 done
 
+if ! [ "$(kubectl get jobs "zip-and-upload-${HISTORY_MODE}" --namespace "${NAMESPACE}" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')" != "True" ]; then
+    printf "%s Zip-and-upload job completed successfully.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+fi
+
+printf "%s Deleting temporary snapshot volume.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 kubectl delete -f volumeFromSnap.yaml  | while IFS= read -r line; do printf '%s %s\n' "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "$line"; done
 kubectl delete job snapshot-maker --namespace "${NAMESPACE}"

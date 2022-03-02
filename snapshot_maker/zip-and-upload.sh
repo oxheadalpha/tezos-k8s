@@ -736,6 +736,23 @@ else
     printf "%s Website Build & Deploy  : Sucessfully uploaded website to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 fi
 
+REDIRECTS=(
+"archive-tarball"
+"rolling-tarball"
+"rolling"
+"rolling-snapshot-metadata"
+"archive-tarball-metadata"
+"rolling-tarball-metadata"
+)
+
 # invalidate cloudfront cache
 CLOUDFRONT_DISTRIBUTION_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[*].{id:Id,origin:Origins.Items[0].Id}[?origin=='${NETWORK}.xtz-shots.io.s3-website.us-east-2.amazonaws.com'].id" --output text)
-aws cloudfront create-invalidation --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" --paths "/*" > /dev/null
+
+for REDIRECT in "${REDIRECTS[@]}"
+do
+    if ! aws cloudfront create-invalidation --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" --paths "/${REDIRECT}" >/dev/null 2>&1; then
+        printf "%s Website Build & Deploy : ERROR Cloudfront cache of file %s was NOT invalidated.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"  "${REDIRECT}"
+    else
+        printf "%s Website Build & Deploy : Cloudfront cache of file %s was sucessfully invalidated.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"  "${REDIRECT}"
+    fi
+done
