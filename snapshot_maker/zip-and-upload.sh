@@ -736,13 +736,16 @@ else
     printf "%s Website Build & Deploy  : Sucessfully uploaded website to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 fi
 
+[ "${HISTORY_MODE}" == "rolling" ] && 
 REDIRECTS=(
-"archive-tarball"
 "rolling-tarball"
 "rolling"
 "rolling-snapshot-metadata"
-"archive-tarball-metadata"
 "rolling-tarball-metadata"
+) ||
+REDIRECTS=(
+"archive-tarball"
+"archive-tarball-metadata"
 )
 
 # invalidate cloudfront cache
