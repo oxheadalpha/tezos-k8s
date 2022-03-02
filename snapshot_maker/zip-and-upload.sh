@@ -398,8 +398,8 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             printf "%s Rolling Tezos : Uploading redirect...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
             FILESIZE_BYTES=$(stat -c %s "${ROLLING_SNAPSHOT}")
-            printf "FILESIZE_BYTES COMMAND=%s" "$(stat -c %s "${ROLLING_SNAPSHOT}")"
-            printf "FILESIZE_BYTES VARIABLE=%s" "${FILESIZE_BYTES}"
+            printf "FILESIZE_BYTES COMMAND=%s\n" "$(stat -c %s "${ROLLING_SNAPSHOT}")"
+            printf "FILESIZE_BYTES VARIABLE=%s\n" "${FILESIZE_BYTES}"
 
             FILESIZE=$(echo "${FILESIZE_BYTES}" | awk '{ suffix="KMGT"; for(i=0; $1>1024 && i < length(suffix); i++) $1/=1024; print int($1) substr(suffix, i, 1), $3; }' | xargs )
             SHA256=$(sha256sum "${ROLLING_SNAPSHOT}" | awk '{print $1}')
@@ -469,7 +469,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
                 "block_height": $BLOCK_HEIGHT, 
                 "block_timestamp": $BLOCK_TIMESTAMP,
                 "rolling_snapshot_filename": $ROLLING_SNAPSHOT_FILENAME,
-                "filesize_bytes": "$FILESIZE_BYTES",
+                "filesize_bytes": $FILESIZE_BYTES,
                 "filesize": $FILESIZE,
                 "sha256": $SHA256,
                 "tezos_version": $TEZOS_VERSION,
