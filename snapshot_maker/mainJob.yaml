@@ -29,7 +29,7 @@ spec:
 
               tezos-node config init \
               --config-file /home/tezos/.tezos-node/config.json \
-              --network "${NETWORK}" \
+              --network ithacanet \
               --data-dir /var/tezos/node/data
 
               tezos-node run --connections 0 --config-file /home/tezos/.tezos-node/config.json --rpc-addr=127.0.0.1:8732 &
@@ -38,7 +38,11 @@ spec:
 
               until wget -qO-  http://localhost:8732/chains/main/blocks/head/header >/dev/null 2>&1; do
                   printf "%s Waiting for node RPC to come online.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-                  sleep 20
+                  until wget -qO-  http://localhost:8732/chains/main/blocks/head/header >/dev/null 2>&1; do
+                    if  wget -qO-  http://localhost:8732/chains/main/blocks/head/header >/dev/null 2>&1; then
+                      break
+                    fi
+                  done
               done
 
               if ! wget -qO-  http://localhost:8732/chains/main/blocks/head/header >/dev/null 2>&1; then
@@ -46,7 +50,9 @@ spec:
                 exit 1
               else
                 printf "%s Node online! Storage is initialized.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-                wget -qO-  http://localhost:8732/chains/main/blocks/head/header | sed -E 's/.*"hash":"?([^,"]*)"?.*/\1/' > /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH
+                
+                HEAD_BLOCK=$(wget -qO-  http://localhost:8732/chains/main/blocks/head/header | sed -E 's/.*"hash":"?([^,"]*)"?.*/\1/')
+                wget -qO-  http://localhost:8732/chains/main/blocks/"${HEAD_BLOCK}"~2/header | sed -E 's/.*"hash":"?([^,"]*)"?.*/\1/' > /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH
                 wget -qO-  http://localhost:8732/chains/main/blocks/head/header | sed -E 's/.*"level":"?([^,"]*)"?.*/\1/' > /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HEIGHT
                 wget -qO-  http://localhost:8732/chains/main/blocks/head/header | sed -E 's/.*"timestamp":"?([^,"]*)"?.*/\1/' > /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_TIMESTAMP
                 /usr/local/bin/tezos-node --version > /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_VERSION
