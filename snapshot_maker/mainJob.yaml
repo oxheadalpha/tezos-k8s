@@ -29,7 +29,7 @@ spec:
 
               tezos-node config init \
               --config-file /home/tezos/.tezos-node/config.json \
-              --network ithacanet \
+              --network "${NETWORK}" \
               --data-dir /var/tezos/node/data
 
               tezos-node run --connections 0 --config-file /home/tezos/.tezos-node/config.json --rpc-addr=127.0.0.1:8732 &
