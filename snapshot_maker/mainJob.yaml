@@ -50,9 +50,13 @@ spec:
                 exit 1
               else
                 printf "%s Node online! Storage is initialized.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-                
-                HEAD_BLOCK=$(wget -qO-  http://localhost:8732/chains/main/blocks/head/header | sed -E 's/.*"hash":"?([^,"]*)"?.*/\1/')
-                wget -qO-  http://localhost:8732/chains/main/blocks/"${HEAD_BLOCK}"~2/header | sed -E 's/.*"hash":"?([^,"]*)"?.*/\1/' > /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH
+                if [ "${HISTORY_MODE}" = archive ]; then
+                  TARGET="head"
+                else
+                  HEAD_BLOCK=$(wget -qO-  http://localhost:8732/chains/main/blocks/head/header | sed -E 's/.*"hash":"?([^,"]*)"?.*/\1/')
+                  TARGET="${HEAD_BLOCK}~2"
+              fi
+                wget -qO-  http://localhost:8732/chains/main/blocks/"${TARGET}"/header | sed -E 's/.*"hash":"?([^,"]*)"?.*/\1/' > /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH
                 wget -qO-  http://localhost:8732/chains/main/blocks/head/header | sed -E 's/.*"level":"?([^,"]*)"?.*/\1/' > /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HEIGHT
                 wget -qO-  http://localhost:8732/chains/main/blocks/head/header | sed -E 's/.*"timestamp":"?([^,"]*)"?.*/\1/' > /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_TIMESTAMP
                 /usr/local/bin/tezos-node --version > /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_VERSION
