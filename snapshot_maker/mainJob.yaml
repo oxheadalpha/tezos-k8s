@@ -98,7 +98,7 @@ spec:
                 fi
 
                 # Query running node with snapshot block level to get hash
-                RUNNING_NODE_BLOCK_HASH=$(wget -qO-  http://snapshot-archive-node."${NAMESPACE}".svc:87322/chains/main/blocks/"${SNAPSHOT_BLOCK_LEVEL}"/header | sed -E 's/.*"hash":"?([^,"]*)"?.*/\1/')
+                RUNNING_NODE_BLOCK_HASH=$(wget -qO-  http://snapshot-archive-node."${NAMESPACE}".svc:8732/chains/main/blocks/"${SNAPSHOT_BLOCK_LEVEL}"/header | sed -E 's/.*"hash":"?([^,"]*)"?.*/\1/')
                 SNAPSHOT_BLOCK_HASH=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH)
 
                 # Check if this matches our snapshot hash, if not toss this job. If so, then block is finalized.
