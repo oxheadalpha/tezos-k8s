@@ -58,15 +58,16 @@ spec:
 
               # If somehow we skip the above waiting loop, this kills the job if the RPC is not online.
               if ! wget -qO-  http://localhost:8732/chains/main/blocks/head/header >/dev/null 2>&1; then
-              printf "%s RPC is not online! Exiting...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-              exit 1
+                printf "%s RPC is not online! Exiting...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+                exit 1
 
               # Otherwise if RPC is online, then our storage is valid and we can check if the block 
               # is finalized and get our metadata from the RPC endpoint.
               else
-              printf "%s Node online! Storage is initialized.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+                printf "%s Node online! Storage is initialized.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
               if [ "${HISTORY_MODE}" = archive ]; then
                 TARGET="head"
+
               # Tezos devs have advised us that it is safer to target HEAD~2 for rolling artifacts.
               else
                 HEAD_BLOCK=$(wget -qO-  http://localhost:8732/chains/main/blocks/head/header | sed -E 's/.*"hash":"?([^,"]*)"?.*/\1/')
@@ -78,7 +79,6 @@ spec:
 
               # Get BLOCK_HEIGHT from RPC
               wget -qO-  http://localhost:8732/chains/main/blocks/head/header | sed -E 's/.*"level":"?([^,"]*)"?.*/\1/' > /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HEIGHT
-
 
               # We need to check if the block is finalized for archive nodes since we aren't getting
               # validation by a Tezos snapshot like our rolling tarball. We are just zipping up the data dir from an archive node.
