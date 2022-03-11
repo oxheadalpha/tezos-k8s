@@ -8,8 +8,11 @@ NODE_DATA_DIR="$TEZ_VAR/node/data"
 
 proto_command="{{ .command_in_tpl }}"
 
+echo '{"liquidity_baking_toggle_vote": "pass"}' > /etc/tezos/per_block_votes.json
+
 if [ "${DAEMON}" == "baker" ]; then
-    extra_args="with local node $NODE_DATA_DIR"
+    # we pass both a vote argument and a votefile argument; vote argument is mandatory as a fallback
+    extra_args="with local node $NODE_DATA_DIR --liquidity-baking-toggle-vote on --votefile /etc/tezos/per_block_votes.json"
 fi
 
 my_baker_account="$(cat /etc/tezos/baker-account )"
