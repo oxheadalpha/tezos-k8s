@@ -43,6 +43,13 @@ run_test() {
 }
 
 run_tests() {
+	if [ $# -gt 0 ]; then
+		for i; do
+			run_test "test/charts/$i.in"
+		done
+		return
+	fi
+
 	for i in test/charts/*.in; do
 		run_test $i
 	done
@@ -104,6 +111,6 @@ shift $(expr $OPTIND - 1)
 
 case "$JOB" in
 	list)		list_tests;;
-	run_tests)	run_tests;;
+	run_tests)	run_tests "$@";;
 	regen)		regen "$@";;
 esac
