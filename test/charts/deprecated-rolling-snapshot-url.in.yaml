@@ -1,0 +1,3 @@
+# This is a simple test of the deprecated snapshot support
+
+rolling_snapshot_url: http://foo.bar

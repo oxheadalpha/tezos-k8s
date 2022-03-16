@@ -26,11 +26,25 @@ data:
         },
       "protocol_activation": null
     }
-  FULL_SNAPSHOT_URL: "https://mainnet.xtz-shots.io/full"
+  FULL_SNAPSHOT_URL: ""
   FULL_TARBALL_URL: ""
-  ROLLING_SNAPSHOT_URL: "https://mainnet.xtz-shots.io/rolling"
+  ROLLING_SNAPSHOT_URL: ""
   ROLLING_TARBALL_URL: ""
-  ARCHIVE_TARBALL_URL: "https://mainnet.xtz-shots.io/archive-tarball"
+  ARCHIVE_TARBALL_URL: ""
+  SNAPSHOTS: |
+    {
+      "archive": {
+        "tarball": "https://mainnet.xtz-shots.io/archive-tarball"
+      },
+      "full": {
+        "snapshot": "https://mainnet.xtz-shots.io/full",
+        "tarball": "https://mainnet.xtz-shots.io/full-tarball"
+      },
+      "rolling": {
+        "snapshot": "https://mainnet.xtz-shots.io/rolling",
+        "tarball": "https://mainnet.xtz-shots.io/rolling-tarball"
+      }
+    }
   NODE_GLOBALS: |
     {
       "env": {
@@ -43,7 +57,8 @@ data:
         "snapshot-downloader": {
           "key": "outer-container"
         }
-      }
+      },
+      "snapshot": "snapshot"
     }
 
   NODES: |
@@ -94,7 +109,8 @@ data:
           "octez_node",
           "logger",
           "metrics"
-        ]
+        ],
+        "snapshot": "tarball"
       }
     }
 

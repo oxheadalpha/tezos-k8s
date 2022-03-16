@@ -26,7 +26,7 @@ data:
         },
       "protocol_activation": null
     }
-  FULL_SNAPSHOT_URL: ""
+  FULL_SNAPSHOT_URL: "http://foo.bar"
   FULL_TARBALL_URL: ""
   ROLLING_SNAPSHOT_URL: ""
   ROLLING_TARBALL_URL: ""

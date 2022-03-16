@@ -81,6 +81,8 @@ data:
   ROLLING_SNAPSHOT_URL: ""
   ROLLING_TARBALL_URL: ""
   ARCHIVE_TARBALL_URL: ""
+  SNAPSHOTS: |
+    {}
   NODE_GLOBALS: |
     {
       "env": {}

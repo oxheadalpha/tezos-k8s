@@ -125,6 +125,8 @@ accounts: {}
 ##                    chain with external bakers, such as a new test chain.
 ##                    Otherwise, the chain may become unreachable externally
 ##                    while waiting for other nodes to come online.
+## - "snapshot": enum of "snapshot", "tarball", or "none" defaulting to none.
+##               This determines what kind of snapshot to download, if any.
 ## - "instances": a list of nodes to fire up, each is a dictionary defining:
 ##    - "bake_using_account": Account name that should be used for baking.
 ##    - "bake_using_accounts": List of account names that should be used for baking.
@@ -208,6 +210,7 @@ node_globals:
 
 nodes:
   rolling-node:
+    snapshot: snapshot
 #    labels:
 #      rpc_node: "true"
 #      peer_node: "true"
@@ -237,17 +240,24 @@ signers: {}
 #    sign_for_accounts:
 #    - baker0
 
-## Where full and rolling history mode nodes will get their Tezos snapshots from.
-full_snapshot_url: https://mainnet.xtz-shots.io/full
-rolling_snapshot_url: https://mainnet.xtz-shots.io/rolling
+##
+## Where to find snapshots and tarballs of various forms.  We call
+## it a snapshot if it's a standard Tezos snapshot.  A tarball is
+## an LZ4-compressed tarball which is unpacked without being checked.
+## It is therefore faster and less safe.  This data structure merely
+## defines the URLs, not whether to actually use a snapshot or tarball.
 
-## Alternatively to a Tezos snapshot, you can download an LZ4-compressed
-## filesystem tar of a node's data directory by setting `archive_tarball_url`
-## and `rolling_tarball_url` fields to the URL of the file. NOTE:
-## `rolling_tarball_url` and `rolling_snapshot_url` are mutually exclusive and
-## cannot both be specified at the same time.
-archive_tarball_url: https://mainnet.xtz-shots.io/archive-tarball
-# rolling_tarball_url: "https://mainnet.xtz-shots.io/rolling-tarball
+snapshots:
+  mainnet:
+    rolling:
+      snapshot: https://mainnet.xtz-shots.io/rolling
+      tarball:  https://mainnet.xtz-shots.io/rolling-tarball
+    full:
+      snapshot: https://mainnet.xtz-shots.io/full
+      tarball:  https://mainnet.xtz-shots.io/full-tarball
+    archive:
+      tarball:  https://mainnet.xtz-shots.io/archive-tarball
+
 
 # List of peers for nodes to connect to. Gets set under config.json `p2p` field
 bootstrap_peers: []

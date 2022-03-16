@@ -66,8 +66,12 @@
 {{/*
   Checks if a snapshot/tarball should be downloaded.
   Returns a string "true" or empty string which is falsey.
+
+  We maintain compatibility with the older mechanism for defining
+  snapshots using "tezos.deprecatedShouldDownloadSnapshot".  This
+  should be removed before a major bump in the version.
 */}}
-{{- define "tezos.shouldDownloadSnapshot" -}}
+{{- define "tezos.deprecatedShouldDownloadSnapshot" -}}
   {{- if or (.Values.full_snapshot_url) (.Values.full_tarball_url)
             (.Values.rolling_snapshot_url) (.Values.rolling_tarball_url)
             (.Values.archive_tarball_url) }}
@@ -78,6 +82,15 @@
     {{- else }}
       {{- "true" }}
     {{- end }}
+  {{- end }}
+{{- end }}
+
+{{- define "tezos.shouldDownloadSnapshot" -}}
+  {{- if or (include "tezos.deprecatedShouldDownloadSnapshot" .)
+            (hasKey $.node_vals "snapshot")
+            (and (hasKey .Values "node_globals")
+                 (hasKey (.Values.node_globals | default dict) "snapshot")) }}
+    {{- "true" }}
   {{- else }}
     {{- "" }}
   {{- end }}

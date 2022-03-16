@@ -30,7 +30,7 @@ data:
   FULL_TARBALL_URL: ""
   ROLLING_SNAPSHOT_URL: ""
   ROLLING_TARBALL_URL: ""
-  ARCHIVE_TARBALL_URL: ""
+  ARCHIVE_TARBALL_URL: "http://foo.bar"
   SNAPSHOTS: |
     {
       "archive": {

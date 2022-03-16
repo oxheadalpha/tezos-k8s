@@ -16,6 +16,11 @@ data:
   ROLLING_SNAPSHOT_URL: "{{ .Values.rolling_snapshot_url }}"
   ROLLING_TARBALL_URL: "{{ .Values.rolling_tarball_url }}"
   ARCHIVE_TARBALL_URL: "{{ .Values.archive_tarball_url }}"
+  SNAPSHOTS: |
+{{ get .Values.snapshots .Values.node_config_network.chain_name
+	| default (get .Values.snapshots "default")
+	| default dict
+	| mustToPrettyJson | indent 4 }}
   NODE_GLOBALS: |
 {{ .Values.node_globals | mustToPrettyJson | indent 4 }}
 
