@@ -520,70 +520,77 @@ cd /srv/jekyll || exit
 
 # Get latest values from JSONS
 
+# TODO:
+# - ONLY CURL ONCE
+# - SHOULD ERROR?? WHY REDIRECT TO dev/null? JEKYLL FAILS IF CURL RETURNS HTML AND PUTS THAT INTO THE FILES
+URL="http://${S3_BUCKET}.s3-website.us-east-1.amazonaws.com"
 #
 # archive tarball
 #
 
 # archive tarball filename
-ARCHIVE_TARBALL_FILENAME=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-metadata 2>/dev/null | jq -r '.archive_tarball_filename')
+ARCHIVE_TARBALL_FILENAME=$(curl -L $URL/archive-tarball-metadata 2>/dev/null | jq -r '.archive_tarball_filename')
 # archive tarball block hash
-ARCHIVE_TARBALL_BLOCK_HASH=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-metadata 2>/dev/null | jq -r '.block_hash')
+ARCHIVE_TARBALL_BLOCK_HASH=$(curl -L $URL/archive-tarball-metadata 2>/dev/null | jq -r '.block_hash')
 # archive tarball block level
-ARCHIVE_TARBALL_BLOCK_HEIGHT=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-metadata 2>/dev/null | jq -r '.block_height')
+ARCHIVE_TARBALL_BLOCK_HEIGHT=$(curl -L $URL/archive-tarball-metadata 2>/dev/null | jq -r '.block_height')
 # archive tarball block timestamp
-ARCHIVE_TARBALL_BLOCK_TIMESTAMP=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-metadata 2>/dev/null | jq -r '.block_timestamp')
+ARCHIVE_TARBALL_BLOCK_TIMESTAMP=$(curl -L $URL/archive-tarball-metadata 2>/dev/null | jq -r '.block_timestamp')
 # archive tarball filesize
-ARCHIVE_TARBALL_FILESIZE=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-metadata 2>/dev/null | jq -r '.filesize')
+ARCHIVE_TARBALL_FILESIZE=$(curl -L $URL/archive-tarball-metadata 2>/dev/null | jq -r '.filesize')
 # archive tarball sha256 sum
-ARCHIVE_TARBALL_SHA256SUM=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-metadata 2>/dev/null | jq -r '.sha256')
+ARCHIVE_TARBALL_SHA256SUM=$(curl -L $URL/archive-tarball-metadata 2>/dev/null | jq -r '.sha256')
 # archive tarball tezos version
-ARCHIVE_TARBALL_TEZOS_VERSION=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-metadata 2>/dev/null | jq -r '.tezos_version')
+ARCHIVE_TARBALL_TEZOS_VERSION=$(curl -L $URL/archive-tarball-metadata 2>/dev/null | jq -r '.tezos_version')
 
 #
 # rolling tarball
 #
 
 # rolling tarball filename
-ROLLING_TARBALL_FILENAME=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-metadata 2>/dev/null | jq -r '.rolling_tarball_filename')
+ROLLING_TARBALL_FILENAME=$(curl -L $URL/rolling-tarball-metadata 2>/dev/null | jq -r '.rolling_tarball_filename')
 # rolling tarball block hash
-ROLLING_TARBALL_BLOCK_HASH=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-metadata 2>/dev/null | jq -r '.block_hash')
+ROLLING_TARBALL_BLOCK_HASH=$(curl -L $URL/rolling-tarball-metadata 2>/dev/null | jq -r '.block_hash')
 # rolling tarball block level
-ROLLING_TARBALL_BLOCK_HEIGHT=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-metadata 2>/dev/null | jq -r '.block_height')
+ROLLING_TARBALL_BLOCK_HEIGHT=$(curl -L $URL/rolling-tarball-metadata 2>/dev/null | jq -r '.block_height')
 # rolling tarball block timestamp
-ROLLING_TARBALL_BLOCK_TIMESTAMP=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-metadata 2>/dev/null | jq -r '.block_timestamp')
+ROLLING_TARBALL_BLOCK_TIMESTAMP=$(curl -L $URL/rolling-tarball-metadata 2>/dev/null | jq -r '.block_timestamp')
 # rolling tarball filesize
-ROLLING_TARBALL_FILESIZE=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-metadata 2>/dev/null | jq -r '.filesize')
+ROLLING_TARBALL_FILESIZE=$(curl -L $URL/rolling-tarball-metadata 2>/dev/null | jq -r '.filesize')
 # rolling tarball sha256 sum
-ROLLING_TARBALL_SHA256SUM=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-metadata 2>/dev/null | jq -r '.sha256')
+ROLLING_TARBALL_SHA256SUM=$(curl -L $URL/rolling-tarball-metadata 2>/dev/null | jq -r '.sha256')
 # rolling tarball tezos version
-ROLLING_TARBALL_TEZOS_VERSION=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-metadata 2>/dev/null | jq -r '.tezos_version')
+ROLLING_TARBALL_TEZOS_VERSION=$(curl -L $URL/rolling-tarball-metadata 2>/dev/null | jq -r '.tezos_version')
 
 #
 # rolling snapshot
 #
 
 # rolling snapshot filename
-ROLLING_SNAPSHOT_FILENAME=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-metadata 2>/dev/null | jq -r '.rolling_snapshot_filename')
+ROLLING_SNAPSHOT_FILENAME=$(curl -L $URL/rolling-snapshot-metadata 2>/dev/null | jq -r '.rolling_snapshot_filename')
 # rolling snapshot block hash
-ROLLING_SNAPSHOT_BLOCK_HASH=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-metadata 2>/dev/null | jq -r '.block_hash')
+ROLLING_SNAPSHOT_BLOCK_HASH=$(curl -L $URL/rolling-snapshot-metadata 2>/dev/null | jq -r '.block_hash')
 # rolling snapshot block level
-ROLLING_SNAPSHOT_BLOCK_HEIGHT=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-metadata 2>/dev/null | jq -r '.block_height')
+ROLLING_SNAPSHOT_BLOCK_HEIGHT=$(curl -L $URL/rolling-snapshot-metadata 2>/dev/null | jq -r '.block_height')
 # rolling snapshot block timestamp
-ROLLING_SNAPSHOT_BLOCK_TIMESTAMP=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-metadata 2>/dev/null | jq -r '.block_timestamp')
+ROLLING_SNAPSHOT_BLOCK_TIMESTAMP=$(curl -L $URL/rolling-snapshot-metadata 2>/dev/null | jq -r '.block_timestamp')
 # rolling snapshot filesize
-ROLLING_SNAPSHOT_FILESIZE=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-metadata 2>/dev/null | jq -r '.filesize')
+ROLLING_SNAPSHOT_FILESIZE=$(curl -L $URL/rolling-snapshot-metadata 2>/dev/null | jq -r '.filesize')
 # rolling snapshot sha256 sum
-ROLLING_SNAPSHOT_SHA256SUM=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-metadata 2>/dev/null | jq -r '.sha256')
+ROLLING_SNAPSHOT_SHA256SUM=$(curl -L $URL/rolling-snapshot-metadata 2>/dev/null | jq -r '.sha256')
 # rolling snapshot tezos version
-ROLLING_SNAPSHOT_TEZOS_VERSION=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-metadata 2>/dev/null | jq -r '.tezos_version')
+ROLLING_SNAPSHOT_TEZOS_VERSION=$(curl -L $URL/rolling-snapshot-metadata 2>/dev/null | jq -r '.tezos_version')
 
 CLOUDFRONT_URL="https://${S3_BUCKET}/"
 
-cp /snapshot-website-base/* .
+# TODO: WHY THE NEED TO COPY? JUST cd
+# cp /snapshot-website-base/* .
 
-curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-metadata -o _data/archive-tarball-metadata.json --create-dirs --silent
-curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-metadata -o _data/rolling-tarball-metadata.json --create-dirs --silent
-curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-metadata -o _data/rolling-snapshot-metadata.json --create-dirs --silent
+cd /snapshot-website-base || exit
+
+curl -L $URL/archive-tarball-metadata -o _data/archive-tarball-metadata.json --create-dirs --silent
+curl -L $URL/rolling-tarball-metadata -o _data/rolling-tarball-metadata.json --create-dirs --silent
+curl -L $URL/rolling-snapshot-metadata -o _data/rolling-snapshot-metadata.json --create-dirs --silent
 
 NETWORK_SUBSTRING="${NETWORK%%net*}"
 if [ "${NETWORK_SUBSTRING}" = main ]; then
@@ -609,14 +616,14 @@ keywords:
 comments: false
 # Hero section
 title: Tezos snapshots for ${NETWORK}
-description: 
+description:
 # Author box
 author:
     title: Brought to you by Oxhead Alpha
     title_url: 'https://medium.com/the-aleph'
     external_url: true
     description: A Tezos core development company, providing common goods for the Tezos ecosystem. <a href="https://medium.com/the-aleph" target="_blank">Learn more</a>.
-# Micro navigation 
+# Micro navigation
 micro_nav: true
 # Page navigation
 page_nav:
@@ -640,7 +647,7 @@ Block timestamp: $ROLLING_SNAPSHOT_BLOCK_TIMESTAMP
 
 Size: ${ROLLING_SNAPSHOT_FILESIZE}
 
-Checksum (SHA256): 
+Checksum (SHA256):
 \`\`\`
 ${ROLLING_SNAPSHOT_SHA256SUM}
 \`\`\`
@@ -659,7 +666,7 @@ Block timestamp: $ARCHIVE_TARBALL_BLOCK_TIMESTAMP
 
 Size: ${ARCHIVE_TARBALL_FILESIZE}
 
-Checksum (SHA256): 
+Checksum (SHA256):
 \`\`\`
 ${ARCHIVE_TARBALL_SHA256SUM}
 \`\`\`
@@ -678,7 +685,7 @@ Block timestamp: $ROLLING_TARBALL_BLOCK_TIMESTAMP
 
 Size: ${ROLLING_TARBALL_FILESIZE}
 
-Checksum (SHA256): 
+Checksum (SHA256):
 \`\`\`
 ${ROLLING_TARBALL_SHA256SUM}
 \`\`\`
@@ -724,12 +731,9 @@ tezos-node snapshot import tezos-${NETWORK}.rolling
 [Tezos documentation](https://tezos.gitlab.io/user/snapshots.html){:target="_blank"}.
 EOF
 
+# TODO: Can this be done in the container?
 chmod -R 777 index.md
 chmod -R 777 _data
-chown jekyll:jekyll -R /usr/gem
-
-# convert to index.html with jekyll
-bundle install
 bundle exec jekyll build
 
 # upload index.html to website
