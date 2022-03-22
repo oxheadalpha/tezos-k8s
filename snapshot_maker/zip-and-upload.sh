@@ -57,6 +57,12 @@ if [ "${HISTORY_MODE}" = archive ]; then
     ARCHIVE_TARBALL_FILENAME=tezos-"${NETWORK}"-archive-tarball-"${BLOCK_HEIGHT}".lz4
     printf "%s Archive tarball filename is ${ARCHIVE_TARBALL_FILENAME}\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
+    # If you upload a file bigger than 50GB, you have to do a mulitpart upload with a part size between 1 and 10000.
+    # Instead of guessing size, you can use expected-size which tells S3 how big the file is and it calculates the size for you.
+    # However if the file gets bigger than your expected size, the multipart upload fails because it uses a part size outside of the bounds (1-10000)
+    # This gets the old archive tarball size and then adds 10%.  Archive tarballs dont seem to grow more than that.
+    EXPECTED_SIZE=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-metadata 2>/dev/null | jq -r '.filesize_bytes' | awk '{print $1*1.1}' | awk '{print ($0-int($0)>0)?int($0)+1:int($0)}')
+
     # LZ4 /var/tezos/node selectively and upload to S3
     printf "%s Archive Tarball : Tarballing /var/tezos/node, LZ4ing, and uploading to S3...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     tar cvf - . \
@@ -66,7 +72,7 @@ if [ "${HISTORY_MODE}" = archive ]; then
     --exclude='./lost+found' \
     -C /var/tezos \
     | lz4 | tee >(sha256sum | awk '{print $1}' > archive-tarball.sha256) \
-    | aws s3 cp - s3://"${S3_BUCKET}"/"${ARCHIVE_TARBALL_FILENAME}" --expected-size 322122547200
+    | aws s3 cp - s3://"${S3_BUCKET}"/"${ARCHIVE_TARBALL_FILENAME}" --expected-size "${EXPECTED_SIZE}"
 
     SHA256=$(cat archive-tarball.sha256)
 
@@ -241,6 +247,12 @@ if [ "${HISTORY_MODE}" = rolling ]; then
     # LZ4 /"${HISTORY_MODE}"-snapshot-cache-volume/var/tezos/node selectively and upload to S3
     printf "%s ********************* Rolling Tarball *********************\\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
+    # If you upload a file bigger than 50GB, you have to do a mulitpart upload with a part size between 1 and 10000.
+    # Instead of guessing size, you can use expected-size which tells S3 how big the file is and it calculates the size for you.
+    # However if the file gets bigger than your expected size, the multipart upload fails because it uses a part size outside of the bounds (1-10000)
+    # This gets the old rolling tarball size and then adds 10%.  rolling tarballs dont seem to grow more than that.
+    EXPECTED_SIZE=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-metadata 2>/dev/null | jq -r '.filesize_bytes' | awk '{print $1*1.1}' | awk '{print ($0-int($0)>0)?int($0)+1:int($0)}')
+
     printf "%s Rolling Tarball : Tarballing /rolling-tarball-restore/var/tezos/node, LZ4ing, and uploading to S3...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     tar cvf - . \
     --exclude='node/data/identity.json' \
@@ -249,7 +261,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
     --exclude='./lost+found' \
     -C /rolling-tarball-restore/var/tezos \
     | lz4 | tee >(sha256sum | awk '{print $1}' > rolling-tarball.sha256) \
-    | aws s3 cp - s3://"${S3_BUCKET}"/"${ROLLING_TARBALL_FILENAME}" --expected-size 322122547200
+    | aws s3 cp - s3://"${S3_BUCKET}"/"${ROLLING_TARBALL_FILENAME}" --expected-size "${EXPECTED_SIZE}"
 
     SHA256=$(cat rolling-tarball.sha256)
 
