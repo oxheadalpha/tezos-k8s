@@ -6,7 +6,7 @@ favicon: "./favicon.ico" # set the favicon of the site
 
 show_excerpts: false # set to true to show excerpts on the homepage
 
-remote_theme: oxheadalpha/xtz-shots-website
+remote_theme: oxheadalpha/xtz-shots-website@snapshots-md-updates
 # Theme settings
 doks:
     baseurl:
