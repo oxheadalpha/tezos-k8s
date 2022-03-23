@@ -542,7 +542,7 @@ jq -n \
 }' > tezos-metadata.json
 
 # TODO: Can this be done in the container?
-chmod -R 777 snapshot.md
+chmod -R 777 index.md
 chmod -R 777 _data
 bundle exec jekyll build
 
