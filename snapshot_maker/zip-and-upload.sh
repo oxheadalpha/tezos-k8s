@@ -525,28 +525,29 @@ cd /srv/jekyll || exit
 # - SHOULD ERROR?? WHY REDIRECT TO dev/null? JEKYLL FAILS IF CURL RETURNS HTML AND PUTS THAT INTO THE FILES
 URL="http://${S3_BUCKET}.s3-website.us-east-1.amazonaws.com"
 
+# clone https://github.com/oxheadalpha/xtz-shots-website
+git clone https://github.com/oxheadalpha/xtz-shots-website
 
-# TODO: WHY THE NEED TO COPY? JUST cd
-# cp /snapshot-website-base/* .
-
-cd /snapshot-website-base || exit
+# cd to xtz-shots-website
+cd xtz-shots-website || exit
 
 curl -L $URL/archive-tarball-metadata -o _data/archive-tarball.json --create-dirs --silent
 curl -L $URL/rolling-tarball-metadata -o _data/rolling-tarball-metadata.json --create-dirs --silent
 curl -L $URL/rolling-snapshot-metadata -o _data/rolling-snapshot.json --create-dirs --silent
+
 jq -n \
 --arg NETWORK "$NETWORK" \
 '{
   "network": $NETWORK
 }' > tezos-metadata.json
 
-# 3 Random alphanumeric characters tricks browser into not caching
-CHARS=$(LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 3 ; echo '')
-
 # TODO: Can this be done in the container?
-chmod -R 777 index.md
+chmod -R 777 snapshot.md
 chmod -R 777 _data
 bundle exec jekyll build
+
+# mv _site/snapshots/index.html to _site/index.html
+mv _site/snapshot/* .
 
 # upload index.html to website
 if ! aws s3 cp _site/ s3://"${S3_BUCKET}" --recursive --include "*"; then
