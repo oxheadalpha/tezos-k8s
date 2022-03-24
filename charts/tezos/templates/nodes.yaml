@@ -38,7 +38,9 @@ spec:
         {{- include "tezos.container.logger"    $ | indent 8 }}
         {{- include "tezos.container.metrics"   $ | indent 8 }}
         {{- include "tezos.container.zerotier"  $ | indent 8 }}
+        {{- if not (eq  $.node_vals.readiness_probe false) }}
         {{- include "tezos.container.sidecar"   $ | indent 8 }}
+        {{- end }}
       initContainers:
         {{- include "tezos.init_container.config_init"         $ | indent 8 }}
         {{- include "tezos.init_container.zerotier"            $ | indent 8 }}

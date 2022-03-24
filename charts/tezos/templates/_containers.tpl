@@ -160,10 +160,12 @@
       name: config-volume
     - mountPath: /var/tezos
       name: var-volume
+{{- if not (eq  $.node_vals.readiness_probe false) }}
   readinessProbe:
     httpGet:
       path: /is_synced
       port: 31732
+{{- end }}
 {{- end }}
 {{- end }}
 
