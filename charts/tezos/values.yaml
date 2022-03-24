@@ -8,7 +8,7 @@ is_invitation: false
 
 # Images not part of the tezos-k8s repo go here
 images:
-  octez: tezos/tezos:v11-release
+  octez: tezos/tezos:v12-release
   tezedge: tezedge/tezedge:v1.6.8
 # Images that are part of the tezos-k8s repo go here with 'dev' tag
 tezos_k8s_images:

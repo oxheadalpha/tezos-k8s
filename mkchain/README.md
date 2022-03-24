@@ -86,7 +86,7 @@ You can explicitly specify some values by:
 |                                  | --number-of-nodes        | Number of non-baking nodes in the cluster                      | 0                       |
 | bootstrap_peers                  | --bootstrap-peers        | Peer ips to connect to                                         | []                      |
 | expected_proof_of_work           | --expected-proof-of-work | Node identity generation difficulty                            | 0                       |
-| images.octez                     | --octez-docker-image     | Version of the Octez docker image to run                       | tezos/tezos:v11-release |
+| images.octez                     | --octez-docker-image     | Version of the Octez docker image to run                       | tezos/tezos:v12-release |
 |                                  | --use-docker (--no...)   | Use (or don't use) docker to generate keys rather than pytezos | autodetect              |
 | zerotier_config.zerotier_network | --zerotier-network       | Zerotier network id for external chain access                  |                         |
 | zerotier_config.zerotier_token   | --zerotier-token         | Zerotier token for external chain access                       |                         |

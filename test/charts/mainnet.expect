@@ -28,11 +28,13 @@ data:
     }
   FULL_SNAPSHOT_URL: "https://mainnet.xtz-shots.io/full"
   ROLLING_SNAPSHOT_URL: "https://mainnet.xtz-shots.io/rolling"
-  ARCHIVE_TARBALL_URL: "http://tezos-tarballs.s3-website.us-east-2.amazonaws.com/mainnet-archive-tarball"
+  ARCHIVE_TARBALL_URL: "https://mainnet.xtz-shots.io/archive-tarball"
   ROLLING_TARBALL_URL: ""
   NODE_GLOBALS: |
     null
+
   NODES: |
+
     {
       "rolling-node": {
         "instances": [
@@ -51,6 +53,7 @@ data:
         "storage_size": "100Gi"
       }
     }
+
   SIGNERS: |
     {}
 kind: ConfigMap
@@ -105,7 +108,7 @@ spec:
       containers:        
         
         - name: octez-node
-          image: "tezos/tezos:v11-release"
+          image: "tezos/tezos:v12-release"
           command:
             - /bin/sh
           args:
@@ -115,6 +118,8 @@ spec:
               
               set
               
+              # ensure we can run tezos-client commands without specifying client dir
+              ln -s /var/tezos/client /home/tezos/.tezos-client
               #
               # Not every error is fatal on start.  In particular, with zerotier,
               # the listen-addr may not yet be bound causing tezos-node to fail.
@@ -146,7 +151,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /is_synced
-              port: 31732                                                
+              port: 31732                                                        
         - command:
             - python
           args:
@@ -201,7 +206,7 @@ spec:
           imagePullPolicy: IfNotPresent
           name: sidecar
       initContainers:        
-        - image: "tezos/tezos:v11-release"
+        - image: "tezos/tezos:v12-release"
           command:
             - /bin/sh
           args:
@@ -300,7 +305,7 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: rolling-node        
-        - image: "tezos/tezos:v11-release"
+        - image: "tezos/tezos:v12-release"
           imagePullPolicy: IfNotPresent
           name: snapshot-importer
           command:
