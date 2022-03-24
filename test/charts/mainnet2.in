@@ -1,7 +1,7 @@
 nodes:
   country-town:
     images:
-      octez: tezos/tezos:v11-release
+      octez: tezos/tezos:v12-release
     runs: [ octez_node, logger, metrics ]
     instances:
     - config:

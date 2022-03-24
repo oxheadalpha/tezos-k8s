@@ -47,7 +47,7 @@ full_snapshot_url: null
 rolling_snapshot_url: null
 archive_tarball_url: null
 images:
-  octez: 'tezos/tezos:v11-release'
+  octez: 'tezos/tezos:v12-release'
 is_invitation: false
 node_config_network:
   activation_account_name: tezos-baking-node-0

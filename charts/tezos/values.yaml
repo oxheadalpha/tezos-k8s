@@ -8,7 +8,7 @@ is_invitation: false
 
 # Images not part of the tezos-k8s repo go here
 images:
-  octez: tezos/tezos:v11-release
+  octez: tezos/tezos:v12-release
   tezedge: tezedge/tezedge:v1.6.8
 # Images that are part of the tezos-k8s repo go here with 'dev' tag
 tezos_k8s_images:
@@ -93,6 +93,15 @@ accounts: {}
 ##      automatically for you.
 ## - "node_selector": Specify a kubernetes node selector in 'key: value' format
 ##     for your tezos nodes.
+## - "readiness_probe": Attach a probe to the node. The probe checks whether
+##                    the most recent block is recent enough. If not, the
+##                    services will be unreachable. Defaults to True.
+##                    True is good for RPC nodes, private nodes, and
+##                    self-contained private chains.
+##                    Recommended to set to False when bootstrapping a new
+##                    chain with external bakers, such as a new test chain.
+##                    Otherwise, the chain may become unreachable externally
+##                    while waiting for other nodes to come online.
 ## - "instances": a list of nodes to fire up, each is a dictionary defining:
 ##    - "bake_using_account": Account name that should be used for baking.
 ##    - "bake_using_accounts": List of account names that should be used for baking.

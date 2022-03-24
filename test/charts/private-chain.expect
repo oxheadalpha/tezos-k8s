@@ -80,7 +80,9 @@ data:
   ROLLING_TARBALL_URL: ""
   NODE_GLOBALS: |
     null
+
   NODES: |
+
     {
       "af": {
         "instances": [
@@ -152,6 +154,7 @@ data:
         "storage_size": "15Gi"
       }
     }
+
   SIGNERS: |
     {
       "tezos-signer-0": {
@@ -274,9 +277,9 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume                
         
-        - image: "tezos/tezos:v11-release"
+        - image: "tezos/tezos:v12-release"
           command:
             - /bin/sh
           args:
@@ -290,7 +293,7 @@ spec:
               NODE_DIR="$TEZ_VAR/node"
               NODE_DATA_DIR="$TEZ_VAR/node/data"
               
-              proto_command="010-PtGRANAD"
+              proto_command="011-PtHangz2"
               
               if [ "${DAEMON}" == "baker" ]; then
                   extra_args="with local node $NODE_DATA_DIR"
@@ -301,6 +304,9 @@ spec:
               CLIENT="$TEZ_BIN/tezos-client -d $CLIENT_DIR"
               CMD="$TEZ_BIN/tezos-$DAEMON-$proto_command -d $CLIENT_DIR"
               
+              # ensure we can run tezos-client commands without specifying client dir
+              ln -s /var/tezos/client /home/tezos/.tezos-client
+              
               while ! $CLIENT rpc get chains/main/blocks/head; do
                   sleep 5
               done
@@ -308,7 +314,7 @@ spec:
               exec $CMD run ${extra_args} ${my_baker_account}
               
           imagePullPolicy: IfNotPresent
-          name: baker-010-ptgranad
+          name: baker-011-pthangz2
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -332,7 +338,7 @@ spec:
               value: af
             - name: DAEMON
               value: baker
-        - image: "tezos/tezos:v11-release"
+        - image: "tezos/tezos:v12-release"
           command:
             - /bin/sh
           args:
@@ -346,7 +352,7 @@ spec:
               NODE_DIR="$TEZ_VAR/node"
               NODE_DATA_DIR="$TEZ_VAR/node/data"
               
-              proto_command="010-PtGRANAD"
+              proto_command="011-PtHangz2"
               
               if [ "${DAEMON}" == "baker" ]; then
                   extra_args="with local node $NODE_DATA_DIR"
@@ -357,6 +363,9 @@ spec:
               CLIENT="$TEZ_BIN/tezos-client -d $CLIENT_DIR"
               CMD="$TEZ_BIN/tezos-$DAEMON-$proto_command -d $CLIENT_DIR"
               
+              # ensure we can run tezos-client commands without specifying client dir
+              ln -s /var/tezos/client /home/tezos/.tezos-client
+              
               while ! $CLIENT rpc get chains/main/blocks/head; do
                   sleep 5
               done
@@ -364,7 +373,7 @@ spec:
               exec $CMD run ${extra_args} ${my_baker_account}
               
           imagePullPolicy: IfNotPresent
-          name: endorser-010-ptgranad
+          name: endorser-011-pthangz2
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -589,7 +598,7 @@ spec:
       containers:        
         
         - name: octez-node
-          image: "tezos/tezos:v11-release"
+          image: "tezos/tezos:v12-release"
           command:
             - /bin/sh
           args:
@@ -599,6 +608,8 @@ spec:
               
               set
               
+              # ensure we can run tezos-client commands without specifying client dir
+              ln -s /var/tezos/client /home/tezos/.tezos-client
               #
               # Not every error is fatal on start.  In particular, with zerotier,
               # the listen-addr may not yet be bound causing tezos-node to fail.
@@ -630,7 +641,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /is_synced
-              port: 31732                                                
+              port: 31732                                                        
         - command:
             - python
           args:
@@ -780,6 +791,8 @@ spec:
               
               set
               
+              # ensure we can run tezos-client commands without specifying client dir
+              ln -s /var/tezos/client /home/tezos/.tezos-client
               #
               # Not every error is fatal on start.  In particular, with zerotier,
               # the listen-addr may not yet be bound causing tezos-node to fail.
@@ -811,7 +824,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /is_synced
-              port: 31732                
+              port: 31732                        
         
         - image: "tezos/tezos:v10-release"
           command:
@@ -827,7 +840,7 @@ spec:
               NODE_DIR="$TEZ_VAR/node"
               NODE_DATA_DIR="$TEZ_VAR/node/data"
               
-              proto_command="010-PtGRANAD"
+              proto_command="011-PtHangz2"
               
               if [ "${DAEMON}" == "baker" ]; then
                   extra_args="with local node $NODE_DATA_DIR"
@@ -838,6 +851,9 @@ spec:
               CLIENT="$TEZ_BIN/tezos-client -d $CLIENT_DIR"
               CMD="$TEZ_BIN/tezos-$DAEMON-$proto_command -d $CLIENT_DIR"
               
+              # ensure we can run tezos-client commands without specifying client dir
+              ln -s /var/tezos/client /home/tezos/.tezos-client
+              
               while ! $CLIENT rpc get chains/main/blocks/head; do
                   sleep 5
               done
@@ -845,7 +861,7 @@ spec:
               exec $CMD run ${extra_args} ${my_baker_account}
               
           imagePullPolicy: IfNotPresent
-          name: baker-010-ptgranad
+          name: baker-011-pthangz2
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -883,7 +899,7 @@ spec:
               NODE_DIR="$TEZ_VAR/node"
               NODE_DATA_DIR="$TEZ_VAR/node/data"
               
-              proto_command="010-PtGRANAD"
+              proto_command="011-PtHangz2"
               
               if [ "${DAEMON}" == "baker" ]; then
                   extra_args="with local node $NODE_DATA_DIR"
@@ -894,6 +910,9 @@ spec:
               CLIENT="$TEZ_BIN/tezos-client -d $CLIENT_DIR"
               CMD="$TEZ_BIN/tezos-$DAEMON-$proto_command -d $CLIENT_DIR"
               
+              # ensure we can run tezos-client commands without specifying client dir
+              ln -s /var/tezos/client /home/tezos/.tezos-client
+              
               while ! $CLIENT rpc get chains/main/blocks/head; do
                   sleep 5
               done
@@ -901,7 +920,7 @@ spec:
               exec $CMD run ${extra_args} ${my_baker_account}
               
           imagePullPolicy: IfNotPresent
-          name: endorser-010-ptgranad
+          name: endorser-011-pthangz2
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -1127,7 +1146,7 @@ spec:
       containers:        
         
         - name: octez-node
-          image: "tezos/tezos:v11-release"
+          image: "tezos/tezos:v12-release"
           command:
             - /bin/sh
           args:
@@ -1137,6 +1156,8 @@ spec:
               
               set
               
+              # ensure we can run tezos-client commands without specifying client dir
+              ln -s /var/tezos/client /home/tezos/.tezos-client
               #
               # Not every error is fatal on start.  In particular, with zerotier,
               # the listen-addr may not yet be bound causing tezos-node to fail.
@@ -1168,9 +1189,9 @@ spec:
           readinessProbe:
             httpGet:
               path: /is_synced
-              port: 31732                
+              port: 31732                        
         
-        - image: "tezos/tezos:v11-release"
+        - image: "tezos/tezos:v12-release"
           command:
             - /bin/sh
           args:
@@ -1184,7 +1205,7 @@ spec:
               NODE_DIR="$TEZ_VAR/node"
               NODE_DATA_DIR="$TEZ_VAR/node/data"
               
-              proto_command="010-PtGRANAD"
+              proto_command="011-PtHangz2"
               
               if [ "${DAEMON}" == "baker" ]; then
                   extra_args="with local node $NODE_DATA_DIR"
@@ -1195,6 +1216,9 @@ spec:
               CLIENT="$TEZ_BIN/tezos-client -d $CLIENT_DIR"
               CMD="$TEZ_BIN/tezos-$DAEMON-$proto_command -d $CLIENT_DIR"
               
+              # ensure we can run tezos-client commands without specifying client dir
+              ln -s /var/tezos/client /home/tezos/.tezos-client
+              
               while ! $CLIENT rpc get chains/main/blocks/head; do
                   sleep 5
               done
@@ -1202,7 +1226,7 @@ spec:
               exec $CMD run ${extra_args} ${my_baker_account}
               
           imagePullPolicy: IfNotPresent
-          name: baker-010-ptgranad
+          name: baker-011-pthangz2
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -1226,7 +1250,7 @@ spec:
               value: us
             - name: DAEMON
               value: baker
-        - image: "tezos/tezos:v11-release"
+        - image: "tezos/tezos:v12-release"
           command:
             - /bin/sh
           args:
@@ -1240,7 +1264,7 @@ spec:
               NODE_DIR="$TEZ_VAR/node"
               NODE_DATA_DIR="$TEZ_VAR/node/data"
               
-              proto_command="010-PtGRANAD"
+              proto_command="011-PtHangz2"
               
               if [ "${DAEMON}" == "baker" ]; then
                   extra_args="with local node $NODE_DATA_DIR"
@@ -1251,6 +1275,9 @@ spec:
               CLIENT="$TEZ_BIN/tezos-client -d $CLIENT_DIR"
               CMD="$TEZ_BIN/tezos-$DAEMON-$proto_command -d $CLIENT_DIR"
               
+              # ensure we can run tezos-client commands without specifying client dir
+              ln -s /var/tezos/client /home/tezos/.tezos-client
+              
               while ! $CLIENT rpc get chains/main/blocks/head; do
                   sleep 5
               done
@@ -1258,7 +1285,7 @@ spec:
               exec $CMD run ${extra_args} ${my_baker_account}
               
           imagePullPolicy: IfNotPresent
-          name: endorser-010-ptgranad
+          name: endorser-011-pthangz2
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -1419,7 +1446,7 @@ spec:
     spec:
       containers:
       - name: tezos-signer
-        image: "tezos/tezos:v11-release"
+        image: "tezos/tezos:v12-release"
         ports:
         - containerPort: 6732
           name: signer
@@ -1482,7 +1509,7 @@ spec:
       name: activate-job
     spec:
       containers:
-        - image: "tezos/tezos:v11-release"
+        - image: "tezos/tezos:v12-release"
           command:
             - /bin/sh
           args:
