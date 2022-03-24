@@ -525,10 +525,10 @@ cd /srv/jekyll || exit
 # - SHOULD ERROR?? WHY REDIRECT TO dev/null? JEKYLL FAILS IF CURL RETURNS HTML AND PUTS THAT INTO THE FILES
 URL="http://${S3_BUCKET}.s3-website.us-east-1.amazonaws.com"
 
-# clone https://github.com/oxheadalpha/xtz-shots-website
-git clone https://github.com/oxheadalpha/xtz-shots-website
+# Get latest website files
+git clone https://github.com/oxheadalpha/xtz-shots-website --depth 1
 
-# cd to xtz-shots-website
+# Enter new cloned repo folder.
 cd xtz-shots-website || exit
 
 curl -L $URL/archive-tarball-metadata -o _data/archive-tarball.json --create-dirs --silent
