@@ -547,7 +547,7 @@ chmod -R 777 _data
 bundle exec jekyll build
 
 # mv _site/snapshots/index.html to _site/index.html
-mv _site/snapshot/*
+mv _site/snapshot/* .
 
 # upload index.html to website
 if ! aws s3 cp _site/ s3://"${S3_BUCKET}" --recursive --include "*"; then
