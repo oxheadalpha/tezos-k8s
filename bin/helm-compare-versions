@@ -3,7 +3,7 @@
 copy_vals() {
 
 	NEWLOC="$(mktemp "$MYDIR/valuesXXXXXX")"
-	cp $1 $NEWLOC
+	cp "test/charts/$1.in.yaml" $NEWLOC
 	echo $NEWLOC
 }
 
@@ -56,8 +56,8 @@ if [ -z "$NEW_VALUES" ]; then
 	NEW_VALUES="$OLD_VALUES"
 fi
 
-[ ! -f "$NEW_VALUES" ] && NEW_VALUES="$(copy_vals test/charts/$NEW_VALUES.in)"
-[ ! -f "$OLD_VALUES" ] && OLD_VALUES="$(copy_vals test/charts/$OLD_VALUES.in)"
+[ ! -f "$NEW_VALUES" ] && NEW_VALUES="$(copy_vals $NEW_VALUES)"
+[ ! -f "$OLD_VALUES" ] && OLD_VALUES="$(copy_vals $OLD_VALUES)"
 
 CHART1=
 CHART2=

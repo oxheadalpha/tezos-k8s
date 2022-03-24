@@ -2,19 +2,19 @@
 
 #
 # test-charts runs "helm template" with a list of values files which
-# are found in test/charts/*.in.  Corresponding to each file, there is
-# a file called test/charts/*.expect.  This is the expected output of
+# are found in test/charts/*.in.yaml.  Corresponding to each file, there is
+# a file called test/charts/*.expect.yaml.  This is the expected output of
 # the template expansion.
 #
 # Running test-charts with no arguments will run all of the tests stopping
 # on the first failure at which point it will emit a unified diff of the
 # changes and exit nonzero.
 #
-# The -l flag will list all of the tests (without the .in suffix)
+# The -l flag will list all of the tests (without the .in.yaml suffix)
 #
 # The -r flag will regenerate the expect file corresponding to one or
 # more of the tests.  These must be provided as arguments on the command
-# line and said arguments do not include the  .in suffix.
+# line and said arguments do not include the  .in.yaml suffix.
 
 OUT=
 
@@ -26,7 +26,7 @@ trap cleanup EXIT INT PIPE
 run_test() {
 	IN="$1"
 	OUT="$(mktemp /tmp/chartXXXXXX)"
-	EXPECT="${1%.in}.expect"
+	EXPECT="${1%.in.yaml}.expect.yaml"
 
 	echo "Testing $IN"
 
@@ -45,29 +45,29 @@ run_test() {
 run_tests() {
 	if [ $# -gt 0 ]; then
 		for i; do
-			run_test "test/charts/$i.in"
+			run_test "test/charts/$i.in.yaml"
 		done
 		return
 	fi
 
-	for i in test/charts/*.in; do
+	for i in test/charts/*.in.yaml; do
 		run_test $i
 	done
 }
 
 list_tests() {
-	ls test/charts/*.in | sed 's,^test/charts/\(.*\).in,\1,'
+	ls test/charts/*.in.yaml | sed 's,^test/charts/\(.*\).in.yaml,\1,'
 }
 
 regen() {
 	for i; do
-		IN="test/charts/$i.in"
+		IN="test/charts/$i.in.yaml"
 		if ! [ -f "$IN" ]; then
 			echo Test $i doesn\'t exist.
 			exit 1
 		fi
 		echo "Regenerating $IN"
-		EXPECT="${IN%.in}.expect"
+		EXPECT="${IN%.in.yaml}.expect.yaml"
 		helm template --values "$IN" -n testing charts/tezos > $EXPECT
 	done
 }
