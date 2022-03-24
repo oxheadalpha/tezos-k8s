@@ -356,6 +356,7 @@ Also start endorser for protocols that need it.
 {{- end }}
 
 {{- define "tezos.container.sidecar" }}
+{{- if not (eq $.node_vals.readiness_probe false) }}
 - command:
     - python
   args:
@@ -365,6 +366,7 @@ Also start endorser for protocols that need it.
   image: {{ .Values.tezos_k8s_images.utils }}
   imagePullPolicy: IfNotPresent
   name: sidecar
+{{- end }}
 {{- end }}
 
 {{- define "tezos.container.zerotier" }}
