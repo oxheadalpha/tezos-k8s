@@ -83,7 +83,7 @@ def get_genesis_vanity_chain_id(seed_len=16):
 
     return (
         run_docker(
-            "registry.gitlab.com/tezos/flextesa:01e3f596-run",
+            "registry.gitlab.com/tezos/flextesa:03668c43-run",
             "flextesa",
             "vani",
             '""',
