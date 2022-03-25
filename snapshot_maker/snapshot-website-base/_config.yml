@@ -1,0 +1,57 @@
+title: Tezos Snapshots
+author: Oxhead Alpha
+description: > # this means to ignore newlines until "show_excerpts:"
+  Tezos Snapshots
+favicon: "./favicon.ico" # set the favicon of the site 
+
+show_excerpts: false # set to true to show excerpts on the homepage
+
+remote_theme: oxheadalpha/xtz-shots-website@snapshots-md-updates
+# Theme settings
+doks:
+    baseurl:
+    color_theme: blue # Available themes: blue (default), green, purple, red and yellow
+    header:
+        logo:
+            text: XTZ-Shots
+            image:
+            logo_url: 'https://xtz-shots.io/index.html'
+        nav:
+            - item_name: Mainnet
+              item_url: 'https://mainnet.xtz-shots.io/'
+            - item_name: Ithacanet
+              item_url: 'https://ithacanet.xtz-shots.io/'
+            - item_name: Hangzhounet
+              item_url: 'https://hangzhounet.xtz-shots.io/'
+
+    footer:
+        content:
+            logo:
+                text: XTZ-Shots
+                image:
+            copyright: Copyright &copy; 2022. - Oxhead Alpha <br>All rights reserved.
+        social_list:
+            - network_name: github
+              profile_url: 'https://github.com/oxheadalpha'
+            - network_name: twitter
+              profile_url: 'https://twitter.com/oxheadalpha'
+    google_analytics:
+        tracking_code: # Add your Google Analytics tracking code to activate Google Analytics
+    comments:
+        disqus_forum_shortname: # Add your disqus forum shortname to activate comments
+
+# SASS settings
+sass:
+    sass_dir: ./_sass
+    style: :compressed
+
+# Jekyll settings
+layouts_dir: ./_layouts
+includes_dir: ./_includes
+exclude: [ 'README.md', 'CHANGELOG.md' ]
+permalink: /:title/
+
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+  - jekyll-remote-theme

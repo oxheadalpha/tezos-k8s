@@ -516,40 +516,33 @@ else
   printf "%s Skipping rolling snapshot import and export because this is an archive job.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 fi
 
+# Need to be in this dir for jekyll to run.
+# Container-specific requirement
 cd /srv/jekyll || exit
 
-# Get latest values from JSONS
+# Copy config and gemfile to current dir
+cp /snapshot-website-base/* .
 
-# TODO:
-# - ONLY CURL ONCE
-# - SHOULD ERROR?? WHY REDIRECT TO dev/null? JEKYLL FAILS IF CURL RETURNS HTML AND PUTS THAT INTO THE FILES
-URL="http://${S3_BUCKET}.s3-website.us-east-1.amazonaws.com"
+# Grab latest metadata and put in _data
+curl -L "${S3_BUCKET}"/archive-tarball-metadata -o _data/archive-tarball.json --create-dirs --silent
+curl -L "${S3_BUCKET}"/rolling-tarball-metadata -o _data/rolling-tarball-metadata.json --create-dirs --silent
+curl -L "${S3_BUCKET}"/rolling-snapshot-metadata -o _data/rolling-snapshot.json --create-dirs --silent
 
-# Get latest website files
-git clone https://github.com/oxheadalpha/xtz-shots-website --depth 1
-
-# Enter new cloned repo folder.
-cd xtz-shots-website || exit
-
-curl -L $URL/archive-tarball-metadata -o _data/archive-tarball.json --create-dirs --silent
-curl -L $URL/rolling-tarball-metadata -o _data/rolling-tarball-metadata.json --create-dirs --silent
-curl -L $URL/rolling-snapshot-metadata -o _data/rolling-snapshot.json --create-dirs --silent
-
+# Store network name for liquid templating
 jq -n \
 --arg NETWORK "$NETWORK" \
 '{
   "network": $NETWORK
 }' > tezos-metadata.json
 
-# TODO: Can this be done in the container?
-chmod -R 777 snapshot.md
+# Grab liquid-templated chain website page
+curl -o index.md https://raw.githubusercontent.com/oxheadalpha/xtz-shots-website/snapshots-md-updates/snapshot.md
+
+chmod -R 777 index.md
 chmod -R 777 _data
 bundle exec jekyll build
 
-# mv _site/snapshots/index.html to _site/index.html
-mv _site/snapshot/* .
-
-# upload index.html to website
+# Upload chain page (index.html and assets for NETWORK.xtz-shots.io) to root of website bucket
 if ! aws s3 cp _site/ s3://"${S3_BUCKET}" --recursive --include "*"; then
     printf "%s Website Build & Deploy : Error uploading site to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 else
