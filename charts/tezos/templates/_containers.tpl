@@ -356,7 +356,7 @@ Also start endorser for protocols that need it.
 {{- end }}
 
 {{- define "tezos.container.sidecar" }}
-{{- if or (not (hasKey $.node_vals "readiness_probe")) (not (eq $.node_vals.readiness_probe false)) }}
+{{- if not (and (hasKey $.node_vals "readiness_probe") (eq $.node_vals.readiness_probe false)) }}
 - command:
     - python
   args:
