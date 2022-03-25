@@ -160,7 +160,7 @@
       name: config-volume
     - mountPath: /var/tezos
       name: var-volume
-{{- if not (eq  $.node_vals.readiness_probe false) }}
+{{- if or (not (hasKey $.node_vals "readiness_probe")) (not (eq $.node_vals.readiness_probe false)) }}
   readinessProbe:
     httpGet:
       path: /is_synced
@@ -356,7 +356,7 @@ Also start endorser for protocols that need it.
 {{- end }}
 
 {{- define "tezos.container.sidecar" }}
-{{- if not (eq $.node_vals.readiness_probe false) }}
+{{- if or (not (hasKey $.node_vals "readiness_probe")) (not (eq $.node_vals.readiness_probe false)) }}
 - command:
     - python
   args:
