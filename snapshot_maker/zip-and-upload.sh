@@ -533,13 +533,12 @@ jq -n \
 --arg NETWORK "$NETWORK" \
 '{
   "network": $NETWORK
-}' > tezos-metadata.json
+}' > _data/tezos-metadata.json
 
 # Grab liquid-templated chain website page
 curl -o index.md https://raw.githubusercontent.com/oxheadalpha/xtz-shots-website/snapshots-md-updates/snapshot.md
 
-chmod -R 777 index.md
-chmod -R 777 _data
+chmod -R 777 ./*
 bundle exec jekyll build
 
 # Upload chain page (index.html and assets for NETWORK.xtz-shots.io) to root of website bucket
