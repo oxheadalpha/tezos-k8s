@@ -98,7 +98,6 @@
   for its node class. All identities for all instances of the node
   class will be stored in it. Each instance will look up its identity
   values by its hostname, e.g. archive-node-0.
-  Returns a string "true" or empty string which is falsey.
 */}}
 {{- define "tezos.includeNodeIdentitySecret" }}
   {{- range $index, $config := $.node_vals.instances }}
