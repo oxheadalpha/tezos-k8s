@@ -20,16 +20,21 @@ data:
 
   NODES: |
 {{/*
-  Remove "identity" field from nodes. Creates a deep copy because
-  "unset" modifies the object.
+  Don't add node classes without configuration to the configmap.
+  Also remove the secret "identity" field on node instances. Creates
+  a deep copy because "unset" modifies the object.
 */}}
 {{- $nodes_copy := deepCopy .Values.nodes }}
 {{- range $node_class, $node_config := $nodes_copy }}
-  {{- range $_, $instance_config := $node_config.instances }}
-    {{- $_ := unset $instance_config "identity" }}
+  {{- if $node_config }}
+    {{- range $_, $instance_config := $node_config.instances }}
+      {{- $_ := unset $instance_config "identity" }}
+    {{- end }}
+  {{- else }}
+    {{- $_ := unset $nodes_copy $node_class }}
   {{- end }}
 {{- end }}
-{{ $nodes_copy | mustToPrettyJson | indent 4 }}
+{{- $nodes_copy | mustToPrettyJson | indent 4 }}
 
   SIGNERS: |
 {{ .Values.signers | mustToPrettyJson | indent 4 }}
