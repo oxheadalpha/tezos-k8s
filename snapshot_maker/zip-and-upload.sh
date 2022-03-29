@@ -537,7 +537,7 @@ cp /snapshot-website-base/* .
 
 # Grab latest metadata and put in _data
 curl -L "${S3_BUCKET}"/archive-tarball-metadata -o _data/archive_tarball.json --create-dirs --silent
-curl -L "${S3_BUCKET}"/rolling-tarball-metadata -o _data/rolling_tarball_metadata.json --create-dirs --silent
+curl -L "${S3_BUCKET}"/rolling-tarball-metadata -o _data/rolling_tarball.json --create-dirs --silent
 curl -L "${S3_BUCKET}"/rolling-snapshot-metadata -o _data/rolling_snapshot.json --create-dirs --silent
 
 # Store network name for liquid templating
