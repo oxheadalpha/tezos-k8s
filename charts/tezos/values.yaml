@@ -10,6 +10,7 @@ is_invitation: false
 images:
   octez: tezos/tezos:v12-release
   tezedge: tezedge/tezedge:v1.6.8
+  tacoinfraRemoteSigner: tacoinfra-remote-signer
 # Images that are part of the tezos-k8s repo go here with 'dev' tag
 tezos_k8s_images:
   utils: tezos-k8s-utils:dev
@@ -20,7 +21,7 @@ tezos_k8s_images:
 tzkt_indexer_statefulset:
   name: tzkt-indexer
 signer_statefulset:
-  name: tezos-signer
+  name: tezos-k8s-signer
   pod_type: signing
 chain_initiator_job:
   name: chain-initiator
@@ -198,10 +199,19 @@ services:
 
 # Define and use external remote signers.
 # Bakers automatically use signers when configured.
-signers: {}
-#  tezos-signer-0:
-#    sign_for_accounts:
-#    - baker0
+remoteSigners: {}
+  # tezos-k8s-signer:
+  #   signerType: tezos-k8s
+  #   signForAccounts:
+  #     - baker0
+  # tacoinfra-signer:
+  #   signerType: tacoinfra
+  #   signForAccounts:
+  #     - baker1
+  #   replicas: 2
+  #   tacoinfraConfig:
+  #     username: username
+  #     password: password
 
 ## Where full and rolling history mode nodes will get their Tezos snapshots from.
 full_snapshot_url: https://mainnet.xtz-shots.io/full

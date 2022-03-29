@@ -1,0 +1,118 @@
+{{- range $signerName, $signerConfig := .Values.remoteSigners }}
+{{- if eq $signerConfig.signerType "tacoinfra" }}
+    {{- $_ := set $ "signerName" $signerName }}
+    {{- $_ := set $ "signerConfig" $signerConfig }}
+
+    {{- include "tacoinfra-remote-signer.serviceAccount" $ }}
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $signerName }}
+  labels:
+    {{- include "tacoinfra-remote-signer.labels" $ | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 5000
+      targetPort: http
+      protocol: TCP
+  selector:
+    appType: tacoinfra-remote-signer
+    signerName: {{ $signerName }}
+---
+
+apiVersion: v1
+data:
+  CONFIG: |
+{{ $signerConfig.config | toJson | b64enc | indent 4 }}
+kind: Secret
+metadata:
+  name: {{ $signerName }}
+  namespace: {{ $.Release.Namespace }}
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $signerName }}
+  labels:
+    {{- include "tacoinfra-remote-signer.labels" $ | nindent 4 }}
+spec:
+  replicas: {{ $signerConfig.replicas }}
+  selector:
+    matchLabels:
+      appType: tacoinfra-remote-signer
+      signerName: {{ $signerName }}
+      {{- include "tacoinfra-remote-signer.selectorLabels" $ | nindent 6 }}
+  template:
+    metadata:
+      {{- with $signerConfig.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        appType: tacoinfra-remote-signer
+        signerName: {{ $signerName }}
+        {{- include "tacoinfra-remote-signer.selectorLabels" $ | nindent 8 }}
+    spec:
+      {{- with $signerConfig.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ default "" $signerConfig.serviceAccountName }}
+      {{- with $signerConfig.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: remote-signer
+          securityContext:
+            {{- toYaml $signerConfig.securityContext | nindent 12 }}
+          {{- $signerImage := $signerConfig.image | default dict }}
+          image: "{{ $signerImage.name | default $.Values.images.tacoinfraRemoteSigner }}"
+          imagePullPolicy: {{ default "IfNotPresent" $signerImage.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 5000
+              protocol: TCP
+          env:
+            - name: ACCOUNTS
+              value: {{ $signerConfig.signForAccounts | toJson }}
+          volumeMounts:
+            - name: {{ $signerName }}
+              mountPath: "???"
+              readOnly: true
+          # livenessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          # readinessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          {{- with $signerConfig.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: {{ $signerName }}
+          secret:
+            secretName: {{ $signerName }}
+      {{- with $signerConfig.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $signerConfig.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $signerConfig.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+---
+{{- end -}}
+{{- end -}}

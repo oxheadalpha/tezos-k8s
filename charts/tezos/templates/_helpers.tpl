@@ -19,20 +19,11 @@
   Returns a string "true" or empty string which is falsey.
 */}}
 {{- define "tezos.shouldWaitForDNSNode" -}}
-{{- if and (not .Values.is_invitation) (hasKey .Values.node_config_network "genesis")}}
-{{- "true" }}
-{{- else }}
-{{- "" }}
-{{- end }}
-{{- end }}
-
-{{- define "tezos.shouldDeploySignerStatefulset" -}}
-{{- $signers := .Values.signers | default dict }}
-{{- if and (not .Values.is_invitation) ($signers | len) }}
-{{- "true" }}
-{{- else }}
-{{- "" }}
-{{- end }}
+  {{- if and (not .Values.is_invitation) (hasKey .Values.node_config_network "genesis")}}
+    {{- "true" }}
+  {{- else }}
+    {{- "" }}
+  {{- end }}
 {{- end }}
 
 {{/*
@@ -132,4 +123,42 @@ metadata:
     {{- end }}
   {{- end }}
 
+{{- end }}
+
+{{- /*
+  Create dict of dicts of remote signers meant to be set in the
+  tezos-config configMap. Returns dict as json so it can be
+  parseable via templating with "include". We make some assertions
+  and fail if they don't pass. We also remove sensitive data from
+  the signers that should not be stored in the configMap.
+*/ -}}
+{{- define "tezos.getRemoteSigners" }}
+  {{- $signers := dict "tacoinfraSigners" dict "tezosK8sSigners" dict }}
+  {{- $accountsToSignFor := dict }}
+
+  {{- range $signerName, $signerConfig := .Values.remoteSigners }}
+    {{- if $signerConfig }}
+
+      {{- range $account := $signerConfig.signForAccounts }}
+        {{- if hasKey $accountsToSignFor $account }}
+          {{- fail (printf "Account '%s' is specified by more than one remote signer" $account) }}
+        {{- else }}
+          {{- $_ := set $accountsToSignFor $account "" }}
+        {{- end }}
+      {{- end }}
+
+      {{- if eq $signerConfig.signerType "tacoinfra" }}
+        {{- if not $signerConfig.tacoinfraConfig }}
+          {{- fail (printf "Tacoinfra signer '%s' is missing 'tacoinfraConfig' field" $signerName) }}
+        {{- end }}
+        {{- /* Omit sensitive "tacoinfraConfig" field from signers */ -}}
+        {{- $_ := set $signers.tacoinfraSigners $signerName (omit $signerConfig "tacoinfraConfig") }}
+
+      {{- else if eq $signerConfig.signerType "tezos-k8s" }}
+        {{- $_ := set $signers.tezosK8sSigners $signerName $signerConfig }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+
+  {{- $signers | toJson }}
 {{- end }}

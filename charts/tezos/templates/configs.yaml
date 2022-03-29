@@ -1,4 +1,8 @@
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tezos-config
+  namespace: {{ .Release.Namespace }}
 data:
   CHAIN_NAME: "{{ .Values.node_config_network.chain_name }}"
   CHAIN_PARAMS: |
@@ -36,13 +40,15 @@ data:
 {{- end }}
 {{- $nodes_copy | mustToPrettyJson | indent 4 }}
 
-  SIGNERS: |
-{{ .Values.signers | mustToPrettyJson | indent 4 }}
-kind: ConfigMap
-metadata:
-  name: tezos-config
-  namespace: {{ .Release.Namespace }}
+
+{{- $signers := include "tezos.getRemoteSigners" . | fromJson }}
+  TEZOS_K8S_SIGNERS: |
+{{ get $signers "tezosK8sSigners" | mustToPrettyJson | indent 4 }}
+  TACOINFRA_SIGNERS: |
+{{ get $signers "tacoinfraSigners" | mustToPrettyJson | indent 4 }}
+
 ---
+
 {{- if (include "tezos.doesZerotierConfigExist" .) }}
 apiVersion: v1
 data:
@@ -56,6 +62,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 {{- end }}
 ---
+
 apiVersion: v1
 data:
   ACCOUNTS: |

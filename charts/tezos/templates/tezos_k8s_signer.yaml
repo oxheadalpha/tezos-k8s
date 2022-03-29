@@ -1,4 +1,18 @@
-{{- if (include "tezos.shouldDeploySignerStatefulset" .) }}
+{{- $tezosK8sSigners := get (include "tezos.getRemoteSigners" . | fromJson) "tezosK8sSigners" }}
+{{- if and (not .Values.is_invitation) (len $tezosK8sSigners) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.signer_statefulset.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  clusterIP: None
+  ports:
+    - port: 6732
+      name: signer
+  selector:
+    app: {{ .Values.signer_statefulset.name }}
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -6,7 +20,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   podManagementPolicy: Parallel
-  replicas: {{ .Values.signers | len }}
+  replicas: {{ len $tezosK8sSigners }}
   serviceName: {{ .Values.signer_statefulset.name }}
   selector:
     matchLabels:
@@ -57,18 +71,5 @@ spec:
       volumes:
         - emptyDir: {}
           name: var-volume
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ .Values.signer_statefulset.name }}
-  namespace: {{ .Release.Namespace }}
-spec:
-  clusterIP: None
-  ports:
-    - port: 6732
-      name: signer
-  selector:
-    app: {{ .Values.signer_statefulset.name }}
 ---
 {{- end }}
