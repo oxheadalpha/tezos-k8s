@@ -3,12 +3,12 @@
   Returns a string "true" or empty string which is falsey.
 */}}
 {{- define "tezos.doesZerotierConfigExist" -}}
-{{- $zerotier_config := .Values.zerotier_config | default dict }}
-{{- if and ($zerotier_config.zerotier_network)  ($zerotier_config.zerotier_token) }}
-{{- "true" }}
-{{- else }}
-{{- "" }}
-{{- end }}
+  {{- $zerotier_config := .Values.zerotier_config | default dict }}
+  {{- if and ($zerotier_config.zerotier_network)  ($zerotier_config.zerotier_token) }}
+    {{- "true" }}
+  {{- else }}
+    {{- "" }}
+  {{- end }}
 {{- end }}
 
 {{/*
@@ -41,12 +41,12 @@
   Returns a string "true" or empty string which is falsey.
 */}}
 {{- define "tezos.shouldActivateProtocol" -}}
-{{ $activation := .Values.activation | default dict }}
-{{- if and ($activation.protocol_hash)  ($activation.protocol_parameters) }}
-{{- "true" }}
-{{- else }}
-{{- "" }}
-{{- end }}
+  {{ $activation := .Values.activation | default dict }}
+  {{- if and ($activation.protocol_hash)  ($activation.protocol_parameters) }}
+    {{- "true" }}
+  {{- else }}
+    {{- "" }}
+  {{- end }}
 {{- end }}
 
 {{/*
@@ -55,12 +55,12 @@
   Returns a string "true" or empty string which is falsey.
 */}}
 {{- define "tezos.shouldInitializeFaucet" -}}
-{{ $faucet := .Values.activation.faucet | default dict }}
-{{- if and ($faucet.seed)  ($faucet.number_of_accounts) }}
-{{- "true" }}
-{{- else }}
-{{- "" }}
-{{- end }}
+  {{ $faucet := .Values.activation.faucet | default dict }}
+  {{- if and ($faucet.seed)  ($faucet.number_of_accounts) }}
+    {{- "true" }}
+  {{- else }}
+    {{- "" }}
+  {{- end }}
 {{- end }}
 
 {{/*
