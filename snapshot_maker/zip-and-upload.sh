@@ -540,6 +540,9 @@ curl -L "${S3_BUCKET}"/archive-tarball-metadata -o _data/archive-tarball.json --
 curl -L "${S3_BUCKET}"/rolling-tarball-metadata -o _data/rolling-tarball-metadata.json --create-dirs --silent
 curl -L "${S3_BUCKET}"/rolling-snapshot-metadata -o _data/rolling-snapshot.json --create-dirs --silent
 
+#DEBUG
+cat _data/archive-tarball.json
+
 # Store network name for liquid templating
 jq -n \
 --arg NETWORK "$NETWORK" \
@@ -550,7 +553,7 @@ jq -n \
 # Grab liquid-templated chain website page
 curl -o index.md https://raw.githubusercontent.com/oxheadalpha/xtz-shots-website/snapshots-md-updates/snapshot.md
 
-chmod -R 777 ./*
+chown -R jekyll:jekyll ./*
 bundle exec jekyll build
 
 # Upload chain page (index.html and assets for NETWORK.xtz-shots.io) to root of website bucket

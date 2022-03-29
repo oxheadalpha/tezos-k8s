@@ -2,16 +2,15 @@ FROM jekyll/jekyll:4.2.0
 
 ENV GLIBC_VER=2.31-r0
 
-# #
-# # Installs lz4, jq, yq, kubectl, and awscliv2
-# #
+#
+# Installs lz4, jq, yq, kubectl, and awscliv2
+#
 RUN apk --no-cache add \
         binutils \
         curl \
         lz4 \
         jq  \
         bash \
-        git \
     && wget -q -O /usr/bin/yq $(wget -q -O - https://api.github.com/repos/mikefarah/yq/releases/latest \
         | jq -r '.assets[] | select(.name == "yq_linux_amd64") | .browser_download_url') \
     && chmod +x /usr/bin/yq \
