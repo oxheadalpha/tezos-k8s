@@ -536,19 +536,22 @@ cd /srv/jekyll || exit
 cp /snapshot-website-base/* .
 
 # Grab latest metadata and put in _data
-curl -L "${S3_BUCKET}"/archive-tarball-metadata -o _data/archive-tarball.json --create-dirs --silent
-curl -L "${S3_BUCKET}"/rolling-tarball-metadata -o _data/rolling-tarball-metadata.json --create-dirs --silent
-curl -L "${S3_BUCKET}"/rolling-snapshot-metadata -o _data/rolling-snapshot.json --create-dirs --silent
+curl -L "${S3_BUCKET}"/archive-tarball-metadata -o _data/archive_tarball.json --create-dirs --silent
+curl -L "${S3_BUCKET}"/rolling-tarball-metadata -o _data/rolling_tarball_metadata.json --create-dirs --silent
+curl -L "${S3_BUCKET}"/rolling-snapshot-metadata -o _data/rolling_snapshot.json --create-dirs --silent
 
 # Store network name for liquid templating
 jq -n \
 --arg NETWORK "$NETWORK" \
 '{
   "network": $NETWORK
-}' > _data/tezos-metadata.json
+}' > _data/tezos_metadata.json
 
 # Grab liquid-templated chain website page
 curl -o index.md https://raw.githubusercontent.com/oxheadalpha/xtz-shots-website/snapshots-md-updates/snapshot.md
+
+# Update chain name for page title using variable
+sed -i'' -e 's/${NETWORK}/'"${NETWORK}"'/g' index.md
 
 chown -R jekyll:jekyll ./*
 bundle exec jekyll build
