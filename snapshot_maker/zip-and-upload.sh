@@ -540,9 +540,6 @@ curl -L "${S3_BUCKET}"/archive-tarball-metadata -o _data/archive-tarball.json --
 curl -L "${S3_BUCKET}"/rolling-tarball-metadata -o _data/rolling-tarball-metadata.json --create-dirs --silent
 curl -L "${S3_BUCKET}"/rolling-snapshot-metadata -o _data/rolling-snapshot.json --create-dirs --silent
 
-#DEBUG
-cat _data/archive-tarball.json
-
 # Store network name for liquid templating
 jq -n \
 --arg NETWORK "$NETWORK" \
