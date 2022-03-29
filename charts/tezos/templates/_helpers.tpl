@@ -155,7 +155,9 @@ metadata:
         {{- $_ := set $signers.tacoinfraSigners $signerName (omit $signerConfig "tacoinfraConfig") }}
 
       {{- else if eq $signerConfig.signerType "tezos-k8s" }}
-        {{- $_ := set $signers.tezosK8sSigners $signerName $signerConfig }}
+        {{- $_ := set $signerConfig "name" $signerName }}
+        {{- $podName := print $.Values.tezos_k8s_signer_statefulset.name "-" (len $signers.tezosK8sSigners) }}
+        {{- $_ := set $signers.tezosK8sSigners $podName $signerConfig }}
       {{- end }}
     {{- end }}
   {{- end }}

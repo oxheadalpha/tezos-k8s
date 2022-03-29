@@ -20,7 +20,7 @@ DATA_DIR = "/var/tezos/node/data"
 NODE_GLOBALS = json.loads(os.environ["NODE_GLOBALS"]) or {}
 NODES = json.loads(os.environ["NODES"])
 NODE_IDENTITIES = json.loads(os.getenv("NODE_IDENTITIES", "{}"))
-SIGNERS = json.loads(os.environ["SIGNERS"])
+TEZOS_K8S_SIGNERS = json.loads(os.environ["TEZOS_K8S_SIGNERS"])
 
 MY_POD_NAME = os.environ["MY_POD_NAME"]
 MY_POD_TYPE = os.environ["MY_POD_TYPE"]
@@ -43,7 +43,7 @@ for cl, val in NODES.items():
                     BAKING_NODES[name] = inst
 
 if MY_POD_TYPE == "signing":
-    MY_POD_CONFIG = SIGNERS[MY_POD_NAME]
+    MY_POD_CONFIG = TEZOS_K8S_SIGNERS[MY_POD_NAME]
 
 NETWORK_CONFIG = CHAIN_PARAMS["network"]
 
@@ -310,7 +310,7 @@ def expose_secret_key(account_name):
         return NETWORK_CONFIG["activation_account_name"] == account_name
 
     if MY_POD_TYPE == "signing":
-        return account_name in MY_POD_CONFIG.get("sign_for_accounts")
+        return account_name in MY_POD_CONFIG.get("signForAccounts")
 
     if MY_POD_TYPE == "node":
         if MY_POD_CONFIG.get("bake_using_account", "") == account_name:
@@ -336,9 +336,9 @@ def pod_requires_secret_key(account_name):
 
 
 def remote_signer(account_name, key):
-    for k, v in SIGNERS.items():
-        if account_name in v["sign_for_accounts"]:
-            return f"http://{k}.tezos-signer:6732/{key.public_key_hash()}"
+    for signer_name, signer_config in TEZOS_K8S_SIGNERS.items():
+        if account_name in signer_config["signForAccounts"]:
+            return f"http://{signer_name}.tezos-k8s-signer:6732/{key.public_key_hash()}"
     return None
 
 

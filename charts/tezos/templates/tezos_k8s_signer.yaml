@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.signer_statefulset.name }}
+  name: {{ .Values.tezos_k8s_signer_statefulset.name }}
   namespace: {{ .Release.Namespace }}
 spec:
   clusterIP: None
@@ -11,24 +11,24 @@ spec:
     - port: 6732
       name: signer
   selector:
-    app: {{ .Values.signer_statefulset.name }}
+    app: {{ .Values.tezos_k8s_signer_statefulset.name }}
 ---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ .Values.signer_statefulset.name }}
+  name: {{ .Values.tezos_k8s_signer_statefulset.name }}
   namespace: {{ .Release.Namespace }}
 spec:
   podManagementPolicy: Parallel
   replicas: {{ len $tezosK8sSigners }}
-  serviceName: {{ .Values.signer_statefulset.name }}
+  serviceName: {{ .Values.tezos_k8s_signer_statefulset.name }}
   selector:
     matchLabels:
-      app: {{ .Values.signer_statefulset.name }}
+      app: {{ .Values.tezos_k8s_signer_statefulset.name }}
   template:
     metadata:
       labels:
-        app: {{ .Values.signer_statefulset.name }}
+        app: {{ .Values.tezos_k8s_signer_statefulset.name }}
     spec:
       containers:
       - name: tezos-signer
@@ -62,7 +62,7 @@ spec:
               fieldRef:
                 fieldPath: metadata.name
           - name: MY_POD_TYPE
-            value: {{ .Values.signer_statefulset.pod_type }}
+            value: {{ .Values.tezos_k8s_signer_statefulset.pod_type }}
         volumeMounts:
           - mountPath: /var/tezos
             name: var-volume
