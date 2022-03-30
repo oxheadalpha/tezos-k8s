@@ -1,6 +1,6 @@
 # Snapshot Scheduler
 
-For 1 Kubernetes Namespace this Helm chart creates -
+This Helm chart creates:
 
 * 2 Kubernetes **Deployments**
 * 1 Kubernetes **Configmap**
