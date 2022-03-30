@@ -43,7 +43,7 @@ spec:
               # Time validation to 2 minutes. If this takes longer then there is a tezos error
               # and this job is tossed.
               # Tezos does not exit on error so we have to time the job.
-              sleep 2m && kill -s SIGINT 1 &
+              sleep 30m && kill -s SIGINT 1 &
 
               # Replace this with kubectl wait.  These loops wait on the RPC to come online and prevent log from printing same line
               # over and over and over again.  This prints one line and waits for the RPC to come online for a clean log.
