@@ -1,4 +1,4 @@
-FROM jekyll/jekyll:builder
+FROM jekyll/jekyll:4.2.0
 
 ENV GLIBC_VER=2.31-r0
 
@@ -40,6 +40,14 @@ RUN apk --no-cache add \
         binutils \
     && rm -rf /var/cache/apk/*
 
+RUN chown jekyll:jekyll -R /usr/gem
+
+# TODO: Make file structure organized like  with /scripts and /templates
+WORKDIR /snapshot-website-base
+COPY --chown=jekyll:jekyll snapshot-website-base/Gem* /
+RUN bundle install
+WORKDIR /
 COPY . /
+RUN chown -R jekyll:jekyll /snapshot-website-base
 
 ENTRYPOINT ["/entrypoint.sh"]

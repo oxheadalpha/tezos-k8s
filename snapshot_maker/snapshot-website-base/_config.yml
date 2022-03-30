@@ -5,6 +5,9 @@ description: > # this means to ignore newlines until "show_excerpts:"
 favicon: "./favicon.ico" # set the favicon of the site 
 
 show_excerpts: false # set to true to show excerpts on the homepage
+# url becomes localhost in development environments
+url: https://xtz-shots.io
+domain_name: xtz-shots.io
 
 remote_theme: oxheadalpha/xtz-shots-website
 # Theme settings

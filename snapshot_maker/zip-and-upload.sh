@@ -156,7 +156,7 @@ if [ "${HISTORY_MODE}" = archive ]; then
             "block_hash": $BLOCK_HASH, 
             "block_height": $BLOCK_HEIGHT, 
             "block_timestamp": $BLOCK_TIMESTAMP,
-            "archive_tarball_filename": $ARCHIVE_TARBALL_FILENAME,
+            "filename": $ARCHIVE_TARBALL_FILENAME,
             "sha256": $SHA256,
             "filesize_bytes": $FILESIZE_BYTES,
             "filesize": $FILESIZE, 
@@ -342,7 +342,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             "block_hash": $BLOCK_HASH, 
             "block_height": $BLOCK_HEIGHT, 
             "block_timestamp": $BLOCK_TIMESTAMP,
-            "rolling_tarball_filename": $ROLLING_TARBALL_FILENAME,
+            "filename": $ROLLING_TARBALL_FILENAME,
             "sha256": $SHA256,
             "filesize_bytes": $FILESIZE_BYTES,
             "filesize": $FILESIZE, 
@@ -480,7 +480,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
                 "block_hash": $BLOCK_HASH, 
                 "block_height": $BLOCK_HEIGHT, 
                 "block_timestamp": $BLOCK_TIMESTAMP,
-                "rolling_snapshot_filename": $ROLLING_SNAPSHOT_FILENAME,
+                "filename": $ROLLING_SNAPSHOT_FILENAME,
                 "filesize_bytes": $FILESIZE_BYTES,
                 "filesize": $FILESIZE,
                 "sha256": $SHA256,
@@ -528,223 +528,35 @@ else
   printf "%s Skipping rolling snapshot import and export because this is an archive job.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 fi
 
+# Need to be in this dir for jekyll to run.
+# Container-specific requirement
 cd /srv/jekyll || exit
 
-# Get latest values from JSONS
-
-#
-# archive tarball
-#
-
-# archive tarball filename
-ARCHIVE_TARBALL_FILENAME=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-metadata 2>/dev/null | jq -r '.archive_tarball_filename')
-# archive tarball block hash
-ARCHIVE_TARBALL_BLOCK_HASH=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-metadata 2>/dev/null | jq -r '.block_hash')
-# archive tarball block level
-ARCHIVE_TARBALL_BLOCK_HEIGHT=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-metadata 2>/dev/null | jq -r '.block_height')
-# archive tarball block timestamp
-ARCHIVE_TARBALL_BLOCK_TIMESTAMP=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-metadata 2>/dev/null | jq -r '.block_timestamp')
-# archive tarball filesize
-ARCHIVE_TARBALL_FILESIZE=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-metadata 2>/dev/null | jq -r '.filesize')
-# archive tarball sha256 sum
-ARCHIVE_TARBALL_SHA256SUM=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-metadata 2>/dev/null | jq -r '.sha256')
-# archive tarball tezos version
-ARCHIVE_TARBALL_TEZOS_VERSION=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-metadata 2>/dev/null | jq -r '.tezos_version')
-
-#
-# rolling tarball
-#
-
-# rolling tarball filename
-ROLLING_TARBALL_FILENAME=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-metadata 2>/dev/null | jq -r '.rolling_tarball_filename')
-# rolling tarball block hash
-ROLLING_TARBALL_BLOCK_HASH=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-metadata 2>/dev/null | jq -r '.block_hash')
-# rolling tarball block level
-ROLLING_TARBALL_BLOCK_HEIGHT=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-metadata 2>/dev/null | jq -r '.block_height')
-# rolling tarball block timestamp
-ROLLING_TARBALL_BLOCK_TIMESTAMP=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-metadata 2>/dev/null | jq -r '.block_timestamp')
-# rolling tarball filesize
-ROLLING_TARBALL_FILESIZE=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-metadata 2>/dev/null | jq -r '.filesize')
-# rolling tarball sha256 sum
-ROLLING_TARBALL_SHA256SUM=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-metadata 2>/dev/null | jq -r '.sha256')
-# rolling tarball tezos version
-ROLLING_TARBALL_TEZOS_VERSION=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-metadata 2>/dev/null | jq -r '.tezos_version')
-
-#
-# rolling snapshot
-#
-
-# rolling snapshot filename
-ROLLING_SNAPSHOT_FILENAME=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-metadata 2>/dev/null | jq -r '.rolling_snapshot_filename')
-# rolling snapshot block hash
-ROLLING_SNAPSHOT_BLOCK_HASH=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-metadata 2>/dev/null | jq -r '.block_hash')
-# rolling snapshot block level
-ROLLING_SNAPSHOT_BLOCK_HEIGHT=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-metadata 2>/dev/null | jq -r '.block_height')
-# rolling snapshot block timestamp
-ROLLING_SNAPSHOT_BLOCK_TIMESTAMP=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-metadata 2>/dev/null | jq -r '.block_timestamp')
-# rolling snapshot filesize
-ROLLING_SNAPSHOT_FILESIZE=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-metadata 2>/dev/null | jq -r '.filesize')
-# rolling snapshot sha256 sum
-ROLLING_SNAPSHOT_SHA256SUM=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-metadata 2>/dev/null | jq -r '.sha256')
-# rolling snapshot tezos version
-ROLLING_SNAPSHOT_TEZOS_VERSION=$(curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-metadata 2>/dev/null | jq -r '.tezos_version')
-
-CLOUDFRONT_URL="https://${S3_BUCKET}/"
-
+# Copy config and gemfile to current dir
 cp /snapshot-website-base/* .
 
-curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/archive-tarball-metadata -o _data/archive-tarball-metadata.json --create-dirs --silent
-curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-tarball-metadata -o _data/rolling-tarball-metadata.json --create-dirs --silent
-curl -L http://"${S3_BUCKET}".s3-website.us-east-2.amazonaws.com/rolling-snapshot-metadata -o _data/rolling-snapshot-metadata.json --create-dirs --silent
+# Grab latest metadata and put in _data
+curl -L "${S3_BUCKET}"/archive-tarball-metadata -o _data/archive_tarball.json --create-dirs --silent
+curl -L "${S3_BUCKET}"/rolling-tarball-metadata -o _data/rolling_tarball.json --create-dirs --silent
+curl -L "${S3_BUCKET}"/rolling-snapshot-metadata -o _data/rolling_snapshot.json --create-dirs --silent
 
-NETWORK_SUBSTRING="${NETWORK%%net*}"
-if [ "${NETWORK_SUBSTRING}" = main ]; then
-    TZSTATS_SUBDOMAIN=""
-    TZKT_SUBDOMAIN=""
-elif [ "${NETWORK_SUBSTRING}" = hangzhou ]; then
-    TZSTATS_SUBDOMAIN="${NETWORK_SUBSTRING}."
-    TZKT_SUBDOMAIN="hangzhou2net."
-else
-    TZSTATS_SUBDOMAIN="${NETWORK_SUBSTRING}."
-    TZKT_SUBDOMAIN="${NETWORK}."
-fi
+# Store network name for liquid templating
+jq -n \
+--arg NETWORK "$NETWORK" \
+'{
+  "network": $NETWORK
+}' > _data/tezos_metadata.json
 
-# 3 Random alphanumeric characters tricks browser into not caching
-CHARS=$(LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 3 ; echo '')
+# Grab liquid-templated chain website page
+curl -o index.md https://raw.githubusercontent.com/oxheadalpha/xtz-shots-website/master/snapshot.md
 
-# Create index.html
-cat << EOF > index.md
----
-# Page settings
-layout: snapshot
-keywords:
-comments: false
-# Hero section
-title: Tezos snapshots for ${NETWORK}
-description: 
-# Author box
-author:
-    title: Brought to you by Oxhead Alpha
-    title_url: 'https://medium.com/the-aleph'
-    external_url: true
-    description: A Tezos core development company, providing common goods for the Tezos ecosystem. <a href="https://medium.com/the-aleph" target="_blank">Learn more</a>.
-# Micro navigation 
-micro_nav: true
-# Page navigation
-page_nav:
-home:
-    content: Previous page
-    url: 'https://xtz-shots.io/index.html'
----
-# Tezos snapshots for ${NETWORK}
+# Update chain name for page title using variable
+sed -i'' -e 's/${NETWORK}/'"${NETWORK}"'/g' index.md
 
-Octez version used for snapshotting: \`${TEZOS_VERSION}\`
-## Rolling snapshot
-[Download Rolling Snapshot](${CLOUDFRONT_URL}${ROLLING_SNAPSHOT_FILENAME})
-
-Block height: $ROLLING_SNAPSHOT_BLOCK_HEIGHT
-
-Block hash: \`${ROLLING_SNAPSHOT_BLOCK_HASH}\`
-
-[Verify on TzStats](https://${TZSTATS_SUBDOMAIN}tzstats.com/${ROLLING_SNAPSHOT_BLOCK_HASH}){:target="_blank"} - [Verify on TzKT](https://${TZKT_SUBDOMAIN}tzkt.io/${ROLLING_SNAPSHOT_BLOCK_HASH}){:target="_blank"}
-
-Block timestamp: $ROLLING_SNAPSHOT_BLOCK_TIMESTAMP
-
-Size: ${ROLLING_SNAPSHOT_FILESIZE}
-
-Checksum (SHA256): 
-\`\`\`
-${ROLLING_SNAPSHOT_SHA256SUM}
-\`\`\`
-
-[Artifact Metadata](${CLOUDFRONT_URL}rolling-snapshot-metadata?${CHARS})
-## Archive tarball
-[Download Archive Tarball](${CLOUDFRONT_URL}${ARCHIVE_TARBALL_FILENAME})
-
-Block height: $ARCHIVE_TARBALL_BLOCK_HEIGHT
-
-Block hash: \`${ARCHIVE_TARBALL_BLOCK_HASH}\`
-
-[Verify on TzStats](https://${TZSTATS_SUBDOMAIN}tzstats.com/${ARCHIVE_TARBALL_BLOCK_HASH}){:target="_blank"} - [Verify on TzKT](https://${TZKT_SUBDOMAIN}tzkt.io/${ARCHIVE_TARBALL_BLOCK_HASH}){:target="_blank"}
-
-Block timestamp: $ARCHIVE_TARBALL_BLOCK_TIMESTAMP
-
-Size: ${ARCHIVE_TARBALL_FILESIZE}
-
-Checksum (SHA256): 
-\`\`\`
-${ARCHIVE_TARBALL_SHA256SUM}
-\`\`\`
-
-[Artifact Metadata](${CLOUDFRONT_URL}archive-tarball-metadata?${CHARS})
-## Rolling tarball
-[Download Rolling Tarball](${CLOUDFRONT_URL}${ROLLING_TARBALL_FILENAME})
-
-Block height: $ROLLING_TARBALL_BLOCK_HEIGHT
-
-Block hash: \`${ROLLING_TARBALL_BLOCK_HASH}\`
-
-[Verify on TzStats](https://${TZSTATS_SUBDOMAIN}tzstats.com/${ROLLING_TARBALL_BLOCK_HASH}){:target="_blank"} - [Verify on TzKT](https://${TZKT_SUBDOMAIN}tzkt.io/${ROLLING_TARBALL_BLOCK_HASH}){:target="_blank"}
-
-Block timestamp: $ROLLING_TARBALL_BLOCK_TIMESTAMP
-
-Size: ${ROLLING_TARBALL_FILESIZE}
-
-Checksum (SHA256): 
-\`\`\`
-${ROLLING_TARBALL_SHA256SUM}
-\`\`\`
-
-[Artifact Metadata](${CLOUDFRONT_URL}rolling-tarball-metadata?${CHARS})
-## How to use
-### Archive Tarball
-Issue the following commands:
-\`\`\`bash
-curl -LfsS "${CLOUDFRONT_URL}${ARCHIVE_TARBALL_FILENAME}" \
-| lz4 -d | tar -x -C "/var/tezos"
-\`\`\`
-Or simply use the permalink:
-\`\`\`bash
-curl -LfsS "${CLOUDFRONT_URL}archive-tarball" \
-| lz4 -d | tar -x -C "/var/tezos"
-\`\`\`
-### Rolling Tarball
-Issue the following commands:
-\`\`\`bash
-curl -LfsS "${CLOUDFRONT_URL}${ROLLING_TARBALL_FILENAME}" \
-| lz4 -d | tar -x -C "/var/tezos"
-\`\`\`
-Or simply use the permalink:
-\`\`\`bash
-curl -LfsS "${CLOUDFRONT_URL}rolling-tarball" \
-| lz4 -d | tar -x -C "/var/tezos"
-\`\`\`
-### Rolling Snapshot
-Issue the following commands:
-\`\`\`bash
-wget ${CLOUDFRONT_URL}${ROLLING_SNAPSHOT_FILENAME}
-tezos-node snapshot import ${ROLLING_SNAPSHOT_FILENAME} --block ${BLOCK_HASH}
-\`\`\`
-Or simply use the permalink:
-\`\`\`bash
-wget ${CLOUDFRONT_URL}rolling -O tezos-${NETWORK}.rolling
-tezos-node snapshot import tezos-${NETWORK}.rolling
-\`\`\`
-### More details
-[About xtz-shots.io](https://xtz-shots.io/getting-started/).
-
-[Tezos documentation](https://tezos.gitlab.io/user/snapshots.html){:target="_blank"}.
-EOF
-
-chmod -R 777 index.md
-chmod -R 777 _data
-chown jekyll:jekyll -R /usr/gem
-
-# convert to index.html with jekyll
-bundle install
+chown -R jekyll:jekyll ./*
 bundle exec jekyll build
 
-# upload index.html to website
+# Upload chain page (index.html and assets for NETWORK.xtz-shots.io) to root of website bucket
 if ! aws s3 cp _site/ s3://"${S3_BUCKET}" --recursive --include "*"; then
     printf "%s Website Build & Deploy : Error uploading site to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 else
