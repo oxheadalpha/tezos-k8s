@@ -548,7 +548,7 @@ jq -n \
 }' > _data/tezos_metadata.json
 
 # Grab liquid-templated chain website page
-curl -o index.md https://raw.githubusercontent.com/oxheadalpha/xtz-shots-website/snapshots-md-updates/snapshot.md
+curl -o index.md https://raw.githubusercontent.com/oxheadalpha/xtz-shots-website/master/snapshot.md
 
 # Update chain name for page title using variable
 sed -i'' -e 's/${NETWORK}/'"${NETWORK}"'/g' index.md
