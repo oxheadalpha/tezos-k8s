@@ -20,7 +20,8 @@ DATA_DIR = "/var/tezos/node/data"
 NODE_GLOBALS = json.loads(os.environ["NODE_GLOBALS"]) or {}
 NODES = json.loads(os.environ["NODES"])
 NODE_IDENTITIES = json.loads(os.getenv("NODE_IDENTITIES", "{}"))
-TEZOS_K8S_SIGNERS = json.loads(os.environ["TEZOS_K8S_SIGNERS"])
+TEZOS_K8S_SIGNERS = json.loads(os.getenv("TEZOS_K8S_SIGNERS", "{}"))
+TACOINFRA_SIGNERS = json.loads(os.getenv("TACOINFRA_SIGNERS", "{}"))
 
 MY_POD_NAME = os.environ["MY_POD_NAME"]
 MY_POD_TYPE = os.environ["MY_POD_TYPE"]
@@ -232,8 +233,11 @@ def fill_in_missing_accounts():
     return {**new_accounts, **ACCOUNTS}
 
 
-# Verify that the current baker has a baker account with secret key
 def verify_this_bakers_account(accounts):
+    """
+    Verify the current baker pod has an account with a secret key, unless the
+    account is signed for via an external remote signer (e.g. Tacoinfra).
+    """
     accts = get_baking_accounts(MY_POD_CONFIG)
 
     if not accts or len(accts) < 1:
@@ -246,7 +250,11 @@ def verify_this_bakers_account(accounts):
         # We can count on accounts[acct]["type"] because import_keys will
         # fill it in when it is missing.
         if accounts[acct]["type"] != "secret":
-            raise Exception(f"ERROR: Either a secret key was not provided for {acct}")
+            if not get_accounts_signer(TACOINFRA_SIGNERS, acct):
+                raise Exception(
+                    f"ERROR: A secret key was not provided for baking account {acct}"
+                )
+    return True
 
 
 #
@@ -300,12 +308,11 @@ def fill_in_missing_keys(all_accounts):
             account_values["type"] = "secret"
 
 
-#
-# expose_secret_key() decides if an account needs to have its secret
-# key exposed on the current pod.  It returns the obvious Boolean.
-
-
 def expose_secret_key(account_name):
+    """
+    Decides if an account needs to have its secret key exposed on the current
+    pod.  It returns the obvious Boolean.
+    """
     if MY_POD_TYPE == "activating":
         return NETWORK_CONFIG["activation_account_name"] == account_name
 
@@ -320,26 +327,63 @@ def expose_secret_key(account_name):
     return False
 
 
-#
-# pod_requires_secret_key() decides if a pod requires the secret key,
-# regardless of a remote_signer being present.  E.g. the remote signer
-# needs to have the keys not a URL to itself.
-
-
-def pod_requires_secret_key(account_name):
-    return MY_POD_TYPE in ["activating", "signing"]
-
-
-#
-# remote_signer() picks the first signer, if any, that claims to sign
-# for account_name and returns a URL to locate it.
-
-
-def remote_signer(account_name, key):
-    for signer_name, signer_config in TEZOS_K8S_SIGNERS.items():
+def get_accounts_signer(signers, account_name):
+    """
+    Determine if there is a signer for the account. Error if the account is
+    specified in more than one signer of the particular signer type.
+    """
+    found_account = found_signer = None
+    for signer_name, signer_config in signers.items():
         if account_name in signer_config["signForAccounts"]:
-            return f"http://{signer_name}.tezos-k8s-signer:6732/{key.public_key_hash()}"
-    return None
+            if account_name == found_account:
+                raise Exception(
+                    f"ERORR: Account '{account_name}' can't be specified in more than one signer."
+                )
+            found_account = account_name
+            found_signer = signer_name
+    return found_signer
+
+
+def get_remote_signer_url(account_name, key):
+    """
+    Return the url of a remote signer, if any, that claims to sign for the
+    account. Error if more than one signer type specifies the account.
+    """
+    signer_url = None
+    tezK8s_signer_name = get_accounts_signer(TEZOS_K8S_SIGNERS, account_name)
+    if tezK8s_signer_name:
+        signer_url = (
+            f"http://{tezK8s_signer_name}.tezos-k8s-signer:6732/{key.public_key_hash()}"
+        )
+
+    tacoinfra_signer_name = get_accounts_signer(TACOINFRA_SIGNERS, account_name)
+    if tacoinfra_signer_name:
+        if signer_url:
+            raise Exception(
+                f"ERROR: Account '{account_name}' can't be specified in both tezos-k8s and Tacoinfra signers."
+            )
+        signer_url = f"http://{tacoinfra_signer_name}:5000/{key.public_key_hash()}"
+
+    return signer_url
+
+
+def get_secret_key(account_name, key):
+    """
+    For tezos node pods, check if there is a remote signer for the account. If
+    found, use its url as the sk. If there is no signer and for all other pod
+    types (e.g. chain activation and remote signer pods), use an actual sk.
+    """
+    sk = None
+    if MY_POD_TYPE == "node":
+        sk = get_remote_signer_url(account_name, key)
+        if sk:
+            print(f"    Using remote signer url: {sk}")
+    if not sk:
+        try:
+            sk = "unencrypted:" + key.secret_key()
+        except ValueError:
+            raise Exception("Secret key required but not provided.")
+    return sk
 
 
 def import_keys(all_accounts):
@@ -375,16 +419,8 @@ def import_keys(all_accounts):
 
         # restrict which private key is exposed to which pod
         if expose_secret_key(account_name):
-            sk = remote_signer(account_name, key)
-            if sk == None or pod_requires_secret_key(account_name):
-                try:
-                    sk = "unencrypted:" + key.secret_key()
-                except ValueError:
-                    raise ("Secret key required but not provided.")
-
-                print("    Appending secret key")
-            else:
-                print("    Using remote signer: " + sk)
+            sk = get_secret_key(account_name, key)
+            print("    Appending secret key")
             secret_keys.append({"name": account_name, "value": sk})
 
         pk_b58 = key.public_key()
@@ -398,28 +434,31 @@ def import_keys(all_accounts):
         account_values["pk"] = pk_b58
 
         pkh_b58 = key.public_key_hash()
-        print(f"  Appending public key hash: {pkh_b58}")
+        print(f"    Appending public key hash: {pkh_b58}")
         public_key_hashs.append({"name": account_name, "value": pkh_b58})
         account_values["pkh"] = pkh_b58
 
-        # XXXrcd: fix this print!
-
-        print(f"  Account key type: {account_values.get('type')}")
+        print(f"    Account key type: {account_values.get('type')}")
         print(
-            f"  Account bootstrap balance: "
+            f"    Account bootstrap balance: "
             + f"{account_values.get('bootstrap_balance')}"
         )
         print(
-            f"  Is account a bootstrap baker: "
+            f"    Is account a bootstrap baker: "
             + f"{account_values.get('is_bootstrap_baker_account', False)}"
         )
 
-    print("\n  Writing " + tezdir + "/secret_keys")
-    json.dump(secret_keys, open(tezdir + "/secret_keys", "w"), indent=4)
-    print("  Writing " + tezdir + "/public_keys")
-    json.dump(public_keys, open(tezdir + "/public_keys", "w"), indent=4)
-    print("  Writing " + tezdir + "/public_key_hashs")
-    json.dump(public_key_hashs, open(tezdir + "/public_key_hashs", "w"), indent=4)
+    sk_path, pk_path, pkh_path = (
+        f"{tezdir}/secret_keys",
+        f"{tezdir}/public_keys",
+        f"{tezdir}/public_key_hashs",
+    )
+    print(f"\n  Writing {sk_path}")
+    json.dump(secret_keys, open(sk_path, "w"), indent=4)
+    print(f"  Writing {pk_path}")
+    json.dump(public_keys, open(pk_path, "w"), indent=4)
+    print(f"  Writing {pkh_path}")
+    json.dump(public_key_hashs, open(pkh_path, "w"), indent=4)
 
 
 def create_node_identity_json():
@@ -494,7 +533,9 @@ def create_protocol_parameters_json(accounts):
     if protocol_activation.get("faucet"):
         with open("/faucet-commitments/commitments.json", "r") as f:
             commitments = json.load(f)
-        print(f"Faucet commitment file found, adding faucet commitments to protocol parameters")
+        print(
+            f"Faucet commitment file found, adding faucet commitments to protocol parameters"
+        )
         protocol_params["commitments"] = commitments
 
     return protocol_params
@@ -529,9 +570,11 @@ def get_genesis_pubkey():
                 genesis_pubkey = pubkey["value"]["key"]
                 break
         if not genesis_pubkey:
-            raise Exception("ERROR: Couldn't find the genesis_pubkey. " +
-                            "This generally happens if you forgot to " +
-                            "define an account for the activation account")
+            raise Exception(
+                "ERROR: Couldn't find the genesis_pubkey. "
+                + "This generally happens if you forgot to "
+                + "define an account for the activation account"
+            )
         return genesis_pubkey
 
 
