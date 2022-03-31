@@ -16,13 +16,14 @@
 {{- end }}
 
 {{- /*
-     * Now, we define a generic container template.  We pass in a set
-     * of arguments via a dictionary specified as a global variable .call_args.
-     * We use this approach as if we pass the dict directly to "include",
-     * we lose access to global variables, it overrides $.
+     * Now, we define a generic container template.  We pass in a dictionary
+     * of named arguments.  Because helm templates overrides both . and $
+     * with this, we have to pass in $ via the "root" argument so that
+     * we can access externally defined variables.
      *
      * The arguments are as follows:
      *
+     *    root           this is required to be $
      *    type           the container type, e.g.: baker, wait-for-dns
      *    name           the name of the container, defaults to type, this
      *                   is used for containers like baker which can have
@@ -158,7 +159,6 @@
     {{- include "tezos.generic_container" (dict "root"        $
                                                 "type"        "config-init"
                                                 "image"       "octez"
-                                                "with_config" 1
                                                 "localvars"   1
     ) | nindent 0 }}
   {{- end }}
@@ -176,7 +176,6 @@
   {{- include "tezos.generic_container" (dict "root"        $
                                               "type"        "chain-initiator"
                                               "image"       "octez"
-                                              "with_config" 1
   ) | nindent 0 }}
 {{- end }}
 
@@ -265,8 +264,6 @@
                                                           (lower .command))
                                                   "type"        "baker"
                                                   "image"       "octez"
-                                                  "with_config" 1
-                                                  "localvars"   1
       ) | nindent 0 }}
     {{- end }}
   {{- end }}
@@ -294,8 +291,6 @@
     {{- include "tezos.generic_container" (dict "root"        $
                                                 "type"        "logger"
                                                 "image"       "utils"
-                                                "with_secret" 1
-                                                "with_config" 1
     ) | nindent 0 }}
   {{- end }}
 {{- end }}

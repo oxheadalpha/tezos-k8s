@@ -208,8 +208,6 @@ spec:
               printf "\n\n\n\n\n\n\n"
               
           envFrom:
-            - configMapRef:
-                name: tezos-config
           env:    
             - name: MY_POD_IP
               valueFrom:

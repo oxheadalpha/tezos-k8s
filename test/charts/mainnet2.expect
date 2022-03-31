@@ -193,9 +193,7 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume
-            - mountPath: /etc/secret-volume
-              name: tezos-accounts        
+              name: var-volume        
         - image: "registry.gitlab.com/nomadic-labs/tezos-metrics"
           args:
             - "--listen-prometheus=6666"
@@ -283,8 +281,6 @@ spec:
               printf "\n\n\n\n\n\n\n"
               
           envFrom:
-            - configMapRef:
-                name: tezos-config
           env:    
             - name: MY_POD_IP
               valueFrom:
@@ -536,9 +532,7 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume
-            - mountPath: /etc/secret-volume
-              name: tezos-accounts        
+              name: var-volume        
         - image: "registry.gitlab.com/nomadic-labs/tezos-metrics"
           args:
             - "--listen-prometheus=6666"
@@ -626,8 +620,6 @@ spec:
               printf "\n\n\n\n\n\n\n"
               
           envFrom:
-            - configMapRef:
-                name: tezos-config
           env:    
             - name: MY_POD_IP
               valueFrom:

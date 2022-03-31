@@ -329,21 +329,7 @@ spec:
               exec $CMD run with local node $NODE_DATA_DIR ${extra_args} ${my_baker_account}
               
           envFrom:
-            - configMapRef:
-                name: tezos-config
-          env:    
-            - name: MY_POD_IP
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.podIP
-            - name: MY_POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-            - name: MY_POD_TYPE
-              value: node
-            - name: MY_NODE_CLASS
-              value: af
+          env:
             - name: DAEMON
               value: baker
           volumeMounts:
@@ -378,9 +364,7 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume
-            - mountPath: /etc/secret-volume
-              name: tezos-accounts        
+              name: var-volume        
         - image: "registry.gitlab.com/nomadic-labs/tezos-metrics"
           args:
             - "--listen-prometheus=6666"
@@ -790,21 +774,7 @@ spec:
               exec $CMD run with local node $NODE_DATA_DIR ${extra_args} ${my_baker_account}
               
           envFrom:
-            - configMapRef:
-                name: tezos-config
-          env:    
-            - name: MY_POD_IP
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.podIP
-            - name: MY_POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-            - name: MY_POD_TYPE
-              value: node
-            - name: MY_NODE_CLASS
-              value: eu
+          env:
             - name: DAEMON
               value: baker
           volumeMounts:
@@ -839,9 +809,7 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume
-            - mountPath: /etc/secret-volume
-              name: tezos-accounts        
+              name: var-volume        
         - image: "registry.gitlab.com/nomadic-labs/tezos-metrics"
           args:
             - "--listen-prometheus=6666"
@@ -1084,21 +1052,7 @@ spec:
               exec $CMD run with local node $NODE_DATA_DIR ${extra_args} ${my_baker_account}
               
           envFrom:
-            - configMapRef:
-                name: tezos-config
-          env:    
-            - name: MY_POD_IP
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.podIP
-            - name: MY_POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-            - name: MY_POD_TYPE
-              value: node
-            - name: MY_NODE_CLASS
-              value: us
+          env:
             - name: DAEMON
               value: baker
           volumeMounts:
@@ -1320,8 +1274,6 @@ spec:
               	and parameters /etc/tezos/parameters.json 2>&1 | head -200
               
           envFrom:
-            - configMapRef:
-                name: tezos-config
           env:
             - name: DAEMON
               value: chain-initiator
