@@ -37,7 +37,7 @@ run_test() {
 		echo
 		echo "Here are the differences from what we expect"
 		echo "What we expect will be -, what got +"
-		$DIFF "$EXPECT" "$OUT"
+		$DIFF $DIFF_ARGS "$EXPECT" "$OUT"
 		exit 1
 	fi
 }
@@ -97,13 +97,16 @@ cd "$GIT_BASE"
 # And now for main:
 
 DIFF="diff -u"
+DIFF_ARGS=
 JOB=run_tests
 
-while getopts Ylr f; do
+while getopts U:Ylrw f; do
 	case $f in
+	U)	DIFF_ARGS="$DIFF_ARGS -U$OPTARG";;
 	Y)	DIFF="dyff between";;
 	l)	JOB=list;;
 	r)	JOB=regen;;
+	w)	DIFF_ARGS="$DIFF_ARGS -w";;
 	\?)	usage "Invalid option $f";;
 	esac
 done
