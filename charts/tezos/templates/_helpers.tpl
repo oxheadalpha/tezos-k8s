@@ -116,7 +116,7 @@ data:
   NODE_IDENTITIES: {{ $.node_identities | toJson | b64enc }}
 kind: Secret
 metadata:
-  name: {{ $.node_class }}-indentities-secret
+  name: {{ $.node_class }}-identities-secret
   namespace: {{ $.Release.Namespace }}
 ---
   {{- end }}
