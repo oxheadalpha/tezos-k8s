@@ -109,7 +109,7 @@
     {{- if .with_secret }}
     {{- if len $.node_identities }}
     - secretRef:
-        name: {{ $.node_class }}-indentities-secret
+        name: {{ $.node_class }}-identities-secret
     {{- end }}
     {{- end }}
     {{- if .with_config }}
