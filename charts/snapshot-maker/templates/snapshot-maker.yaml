@@ -1,0 +1,149 @@
+{{- range $node, $config := .Values.nodes }}
+{{ if $config }}
+{{- $history_mode := (index $config.instances 0).config.shell.history_mode }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ printf "%s-%s-%s" "snapshot-scheduler-for" $history_mode "node" }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ printf "%s-%s-%s" "snapshot-scheduler-for" $history_mode "node" }}
+  template:
+    metadata:
+      labels:
+        app: {{ printf "%s-%s-%s" "snapshot-scheduler-for" $history_mode "node" }}
+    spec:
+      serviceAccountName: {{ $.Values.service_account }}
+      containers:
+        - name: {{ printf "%s-%s-%s" "snapshot-scheduler-for" $history_mode "node" }}
+          image: {{ $.Values.tezos_k8s_images.snapshot_maker }}
+          imagePullPolicy: Always
+          args:
+              - "snapshot-scheduler"
+          env:
+            - name: HISTORY_MODE
+              value: {{ $history_mode }}
+            - name: NAMESPACE
+              value: {{ $.Release.Namespace }}
+            - name: IMAGE_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: snapshot-configmap
+                  key: IMAGE_NAME
+---
+{{- end }}
+{{- end }}
+apiVersion: v1
+data:
+  NAMESPACE: {{ $.Release.Namespace }}
+  VOLUME_SNAPSHOT_CLASS_NAME: test-snapclass
+  IMAGE_NAME: {{ $.Values.tezos_k8s_images.snapshot_maker }}
+  TEZOS_IMAGE: {{ $.Values.images.octez }}
+kind: ConfigMap
+metadata:
+  name: snapshot-configmap
+  namespace: {{ $.Release.Namespace }}
+---
+{{ define "snapshot-warmer.name" }}
+{{- $history_mode := $.history_mode }}
+  {{- printf "%s-%s-%s" "snapshot-warmer-for" $history_mode "node" }}
+{{- end }}
+
+{{- range $node, $config := .Values.nodes }}
+{{- if $config }}
+  {{- $_ := set $ "history_mode" $config.history_mode }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "snapshot-warmer.name" $ }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: {{ include "snapshot-warmer.name" $ }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "snapshot-warmer.name" $ }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "snapshot-warmer.name" $ }}
+    spec:
+      serviceAccountName: {{ $.Values.service_account }}
+      containers:
+        - name: {{ include "snapshot-warmer.name" $ }}
+          image: {{ $.Values.tezos_k8s_images.snapshot_maker }}
+          imagePullPolicy: Always
+          command: ["/bin/bash"]
+          args:
+            - "-c"
+            - |
+{{ $.Files.Get "scripts/snapshot-warmer.sh" | indent 14 }}
+          env:
+            - name: NAMESPACE
+              value: {{ $.Release.Namespace }}
+            - name: NODE_CLASS
+              value: {{ $node }}
+            - name: NODE_CONFIG
+              value: {{ $config | toJson | quote }}
+---
+{{- end }}
+{{- end }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.service_account }}
+  namespace: {{ $.Release.Namespace }}
+  annotations:
+    eks.amazonaws.com/role-arn: {{ .Values.iam_role_arn }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: modify-volumesnapshots
+  namespace: {{ $.Release.Namespace }}
+rules:
+  - apiGroups: ["snapshot.storage.k8s.io", "batch", ""]
+    resources:
+      - volumesnapshots
+      - volumesnapshotcontents
+      - jobs
+      - persistentvolumeclaims
+      - configmaps
+      - pods
+    verbs:
+      - get
+      - list
+      - delete
+      - create
+      - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: snapshots-for-sa
+  namespace: {{ $.Release.Namespace }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.service_account }}
+roleRef:
+  kind: Role
+  name: modify-volumesnapshots
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ printf "%s-%s-service-accounts" "list-volumesnapshotcontents-for" $.Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: list-volumesnapshotcontents
+subjects:
+- apiGroup: ""
+  kind: ServiceAccount
+  name: {{ .Values.service_account }}
+  namespace: {{ $.Release.Namespace }}
