@@ -101,6 +101,7 @@ if [ "${HISTORY_MODE}" = archive ]; then
     --arg NETWORK "$NETWORK" \
     --arg HISTORY_MODE "archive" \
     --arg ARTIFACT_TYPE "tarball" \
+    --arg URL "https://$S3_BUCKET/$ARCHIVE_TARBALL_FILENAME" \
     '. |= 
     [
         {
@@ -115,7 +116,8 @@ if [ "${HISTORY_MODE}" = archive ]; then
                     "tezos_version": $TEZOS_VERSION,
                     "chain_name": $NETWORK,
                     "history_mode": $HISTORY_MODE,
-                    "artifact_type": $ARTIFACT_TYPE
+                    "artifact_type": $ARTIFACT_TYPE,
+                    "url": $URL
                 }
             }
         }
@@ -152,6 +154,7 @@ if [ "${HISTORY_MODE}" = archive ]; then
         --arg NETWORK "${NETWORK}" \
         --arg HISTORY_MODE "archive" \
         --arg ARTIFACT_TYPE "tarball" \
+        --arg URL "https://$S3_BUCKET/$ARCHIVE_TARBALL_FILENAME" \
         '{
             "block_hash": $BLOCK_HASH, 
             "block_height": $BLOCK_HEIGHT, 
@@ -163,7 +166,8 @@ if [ "${HISTORY_MODE}" = archive ]; then
             "tezos_version": $TEZOS_VERSION,
             "chain_name": $NETWORK,
             "history_mode": $HISTORY_MODE,
-            "artifact_type": $ARTIFACT_TYPE
+            "artifact_type": $ARTIFACT_TYPE,
+            "url": $URL
         }' \
         > "${ARCHIVE_TARBALL_FILENAME}".json
 
@@ -288,6 +292,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
     --arg NETWORK "$NETWORK" \
     --arg HISTORY_MODE "rolling" \
     --arg ARTIFACT_TYPE "tarball" \
+    --arg URL "https://$S3_BUCKET/$ROLLING_TARBALL_FILENAME" \
     '. |= 
     [
         {
@@ -302,7 +307,8 @@ if [ "${HISTORY_MODE}" = rolling ]; then
                     "tezos_version": $TEZOS_VERSION,
                     "chain_name": $NETWORK,
                     "history_mode": $HISTORY_MODE,
-                    "artifact_type": $ARTIFACT_TYPE
+                    "artifact_type": $ARTIFACT_TYPE,
+                    "url": $URL
                 }
             }
         }
@@ -338,6 +344,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
         --arg NETWORK "$NETWORK" \
         --arg HISTORY_MODE "rolling" \
         --arg ARTIFACT_TYPE "tarball" \
+        --arg URL "https://$S3_BUCKET/$ROLLING_TARBALL_FILENAME" \
         '{
             "block_hash": $BLOCK_HASH, 
             "block_height": $BLOCK_HEIGHT, 
@@ -349,7 +356,8 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             "tezos_version": $TEZOS_VERSION,
             "chain_name": $NETWORK,
             "history_mode": $HISTORY_MODE,
-            "artifact_type": $ARTIFACT_TYPE
+            "artifact_type": $ARTIFACT_TYPE,
+            "url": $URL
         }' \
         > "${ROLLING_TARBALL_FILENAME}".json
         
@@ -432,6 +440,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             --arg NETWORK "$NETWORK" \
             --arg HISTORY_MODE "rolling" \
             --arg ARTIFACT_TYPE "tezos-snapshot" \
+            --arg URL "https://$S3_BUCKET/$ROLLING_SNAPSHOT_FILENAME" \
             '. |= 
             [
                 {
@@ -446,7 +455,8 @@ if [ "${HISTORY_MODE}" = rolling ]; then
                             "tezos_version": $TEZOS_VERSION,
                             "chain_name": $NETWORK,
                             "history_mode": $HISTORY_MODE,
-                            "artifact_type": $ARTIFACT_TYPE
+                            "artifact_type": $ARTIFACT_TYPE,
+                            "url": $URL
                         }
                     }
                 }
@@ -476,6 +486,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             --arg NETWORK "$NETWORK" \
             --arg HISTORY_MODE "rolling" \
             --arg ARTIFACT_TYPE "tezos-snapshot" \
+            --arg URL "https://$S3_BUCKET/$ROLLING_SNAPSHOT_FILENAME" \
             '{
                 "block_hash": $BLOCK_HASH, 
                 "block_height": $BLOCK_HEIGHT, 
@@ -487,7 +498,8 @@ if [ "${HISTORY_MODE}" = rolling ]; then
                 "tezos_version": $TEZOS_VERSION,
                 "chain_name": $NETWORK,
                 "history_mode": $HISTORY_MODE,
-                "artifact_type": $ARTIFACT_TYPE
+                "artifact_type": $ARTIFACT_TYPE,
+                "url": $URL
             }' \
             > "${ROLLING_SNAPSHOT_FILENAME}".json
             
