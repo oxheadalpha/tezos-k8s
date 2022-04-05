@@ -1,0 +1,4 @@
+tezos_k8s_images:
+  snapshot_maker: tezos-k8s-snapshot-maker:latest
+images:
+  octez: tezos/tezos:v11-release

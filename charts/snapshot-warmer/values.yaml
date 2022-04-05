@@ -2,7 +2,7 @@ tezos_k8s_images:
   snapshot_maker: tezos-k8s-snapshot-maker:dev
 
 iam_role_arn: ""
-service_account: sa-for-snapshot-engine
+service_account: ""
 
 nodes:
   snapshot-archive-node:
@@ -11,6 +11,3 @@ nodes:
   snapshot-rolling-node:
     history_mode: rolling
     target_volume: var-volume
-
-images:
-  octez: v12.2
