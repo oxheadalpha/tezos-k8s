@@ -508,17 +508,17 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             fi
 
             # Rolling snapshot json redirect file
-            if ! touch rolling-snapshot-metadata; then
-                printf "%s Rolling Snapshot : Error creating ${NETWORK}-rolling-snapshot-metadata file locally.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+            if ! touch rolling-metadata; then
+                printf "%s Rolling Snapshot : Error creating ${NETWORK}-rolling-metadata file locally.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
             else
-                printf "%s Rolling snapshot : Created ${NETWORK}-rolling-snapshot-metadata file locally.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+                printf "%s Rolling snapshot : Created ${NETWORK}-rolling-metadata file locally.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
             fi
 
             # Upload rolling snapshot json redirect file and set header for previously uploaded rolling snapshot json File
-            if ! aws s3 cp rolling-snapshot-metadata s3://"${S3_BUCKET}" --website-redirect /"${ROLLING_SNAPSHOT_FILENAME}".json --cache-control 'no-cache'; then
-                printf "%s Rolling snapshot : Error uploading ${NETWORK}-rolling-snapshot-metadata file to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+            if ! aws s3 cp rolling-metadata s3://"${S3_BUCKET}" --website-redirect /"${ROLLING_SNAPSHOT_FILENAME}".json --cache-control 'no-cache'; then
+                printf "%s Rolling snapshot : Error uploading ${NETWORK}-rolling-metadata file to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
             else
-                printf "%s Rolling snapshot : Uploaded ${NETWORK}-rolling-snapshot-metadata file to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+                printf "%s Rolling snapshot : Uploaded ${NETWORK}-rolling-metadata file to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
             fi
         fi
     else
@@ -538,7 +538,7 @@ cp /snapshot-website-base/* .
 # Grab latest metadata and put in _data
 curl -L "${S3_BUCKET}"/archive-tarball-metadata -o _data/archive_tarball.json --create-dirs --silent
 curl -L "${S3_BUCKET}"/rolling-tarball-metadata -o _data/rolling_tarball.json --create-dirs --silent
-curl -L "${S3_BUCKET}"/rolling-snapshot-metadata -o _data/rolling_snapshot.json --create-dirs --silent
+curl -L "${S3_BUCKET}"/rolling-metadata -o _data/rolling_snapshot.json --create-dirs --silent
 
 # Store network name for liquid templating
 jq -n \
