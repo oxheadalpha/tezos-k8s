@@ -12,7 +12,7 @@ spec:
       serviceAccountName: snapshot-maker-sa
       containers:
         - name: snapshot-maker
-          image: 082993323195.dkr.ecr.us-east-2.amazonaws.com/snapshot-maker:latest
+          image: ""
           imagePullPolicy: Always
           args:
               - "snapshot-maker"

@@ -75,26 +75,18 @@ All of these resources can be deployed to a real AWS EKS cluster with https://gi
 
 ## Setup
 
-If your `values.yaml` needs at least 2 Tezos nodes, 1 with **archive** history mode, and another **rolling** history mode.
-
 ```yaml
 nodes:
-  rolling-node: null
-  snapshot-archive-node:
   ... 
-    instances:
-      - ...
-        config:
-          shell:
-            history_mode: archive
+  snapshot-rolling-node:
+    labels:
+      node_class_history_mode: rolling
       - ...
   snapshot-rolling-node:
   ...
-    instances:
-      - ...
-        config:
-          shell:
-            history_mode: rolling
+  snapshot-archive-node:
+    labels:
+      node_class_history_mode: archive
       - ...
 ```
 
