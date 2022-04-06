@@ -26,7 +26,7 @@ spec:
       serviceAccountName: {{ $.Values.service_account }}
       containers:
         - name: {{ include "snapshot-warmer.name" $ }}
-          image: {{ $.Values.tezos_k8s_images.snapshot-engine }}
+          image: {{ index $.Values.tezos_k8s_images "snapshot-engine" }}
           imagePullPolicy: Always
           command: ["/bin/bash"]
           args:

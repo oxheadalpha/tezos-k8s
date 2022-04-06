@@ -2,7 +2,7 @@ apiVersion: v1
 data:
   NAMESPACE: {{ $.Release.Namespace }}
   VOLUME_SNAPSHOT_CLASS_NAME: snapclass
-  IMAGE_NAME: {{ $.Values.tezos_k8s_images.snapshot-engine }}
+  IMAGE_NAME: {{ index $.Values.tezos_k8s_images "snapshot-engine" }}
   TEZOS_IMAGE: {{ $.Values.images.octez }}
 kind: ConfigMap
 metadata:
