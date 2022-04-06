@@ -305,7 +305,7 @@ Said names are traditionally kebab case.
 At the statefulset level, the following parameters are allowed:
 
    - storage_size: the size of the PV
-   - runs: a list of containers to run, e.g. "baker", "endorser", "tezedge"
+   - runs: a list of containers to run, e.g. "baker", "tezedge"
    - instances: a list of nodes to fire up, each is a dictionary
      defining:
      - `bake_using_account`: The name of the account that should be used
@@ -330,7 +330,6 @@ nodes:
     storage_size: 15Gi
     runs:
       - baker
-      - endorser
       - logger
     instances:
       - bake_using_account: baker0
@@ -345,7 +344,6 @@ nodes:
   tezedge-full-node:
     runs:
       - baker
-      - endorser
       - logger
       - tezedge
     instances:
@@ -362,10 +360,10 @@ This will run the following nodes:
    - `tezedge-full-node-1`
    - `tezedge-full-node-2`
 
-`baking-node-0` will run baker, endorser, and logger containers
+`baking-node-0` will run baker and logger containers
 and will be the only bootstrap node.  `full-node-*` are just nodes
-with no extras.  `tezedge-full-node-*` will be tezedge nodes running baker,
-endorser, and logger containers.
+with no extras.  `tezedge-full-node-*` will be tezedge nodes running baker
+and logger containers.
 
 To upgrade your Helm release run:
 

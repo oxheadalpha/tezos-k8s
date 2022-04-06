@@ -207,7 +207,7 @@ Below set is a trick to get the range and global context. See:
 https://github.com/helm/helm/issues/5979#issuecomment-518231758
 */}}
 {{- $_ := set $ "command_in_tpl" .command }}
-{{ tpl ($.Files.Get "scripts/baker-endorser.sh") $ | indent 6 }}
+{{ tpl ($.Files.Get "scripts/baker.sh") $ | indent 6 }}
   imagePullPolicy: IfNotPresent
   name: baker-{{ lower .command }}
   volumeMounts:
@@ -222,35 +222,6 @@ https://github.com/helm/helm/issues/5979#issuecomment-518231758
 {{- include "tezos.localvars.pod_envvars" $ | indent 4 }}
     - name: DAEMON
       value: baker
-{{- if or (regexFind "GRANAD" .command) (regexFind "Hangz" .command) }}
-{{- /*
-Also start endorser for protocols that need it.
-*/}}
-- image: "{{ or $node_vals_images.octez $.Values.images.octez }}"
-  command:
-    - /bin/sh
-  args:
-    - "-c"
-    - |
-{{- $_ := set $ "command_in_tpl" .command }}
-{{ tpl ($.Files.Get "scripts/baker-endorser.sh") $ | indent 6 }}
-  imagePullPolicy: IfNotPresent
-  name: endorser-{{ lower .command }}
-  volumeMounts:
-    - mountPath: /etc/tezos
-      name: config-volume
-    - mountPath: /var/tezos
-      name: var-volume
-  envFrom:
-    - configMapRef:
-        name: tezos-config
-    - secretRef:
-        name: tezos-secret
-  env:
-{{- include "tezos.localvars.pod_envvars" $ | indent 4 }}
-    - name: DAEMON
-      value: endorser
-{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}

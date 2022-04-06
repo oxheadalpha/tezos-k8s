@@ -34,7 +34,6 @@ data:
     null
 
   NODES: |
-
     {
       "city-block": {
         "instances": [
