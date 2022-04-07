@@ -41,7 +41,7 @@ nodes:
 
 ### Snapshot Warmer Deployment
 
-This Kubernetes Deployment runs the `snapshot-engine` container located in the root of the `tezos-k8s` repository.
+This Kubernetes Deployment runs the `snapshotEngine` container located in the root of the `tezos-k8s` repository.
 
 The entrypoint is overridden and the `snapshot-warmer/scripts/snapshotwarmer.sh` script is provided as the container entrypoint.
 
@@ -145,7 +145,7 @@ Overview of containers built by Docker and stored in ECR as well as a descriptio
 
 #### Docker & ECR
 
-One container is used for all Kubernetes Jobs and Pods.  The Dockerfile is located in `tezos-k8s/snapshot-engine`.
+One container is used for all Kubernetes Jobs and Pods.  The Dockerfile is located in `tezos-k8s/snapshotEngine`.
 
 Container is based on `jekyll` container.
 
@@ -161,7 +161,7 @@ Tools installed include -
 
 The different functionality is accomplished by `sh` scripts located in this directory, and supplied by `args` in the deployments and jobs via `entrypoint.sh` in the same directory.
 
-`tezos-k8s/snapshot-engine/entrypoint.sh`
+`tezos-k8s/snapshotEngine/entrypoint.sh`
 
 ```sh
 case "$CMD" in
@@ -171,7 +171,7 @@ case "$CMD" in
 esac
 ```
 
-`tezos-k8s/snapshot-engine/snapshotMakerJob.yaml`
+`tezos-k8s/snapshotEngine/snapshotMakerJob.yaml`
 
 ```yaml
       containers:
@@ -181,7 +181,7 @@ esac
               - "snapshot-maker"
 ```
 
-`tezos-k8s/snapshot-engine/mainJob.yaml`
+`tezos-k8s/snapshotEngine/mainJob.yaml`
 
 ```yaml
       containers:

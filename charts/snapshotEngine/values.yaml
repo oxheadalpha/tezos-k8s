@@ -1,5 +1,5 @@
 tezos_k8s_images:
-  snapshot-engine: tezos-k8s-snapshot-maker:dev
+  snapshotEngine: tezos-k8s-snapshot-maker:dev
 
 iam_role_arn: ""
 service_account: sa-for-snapshot-engine

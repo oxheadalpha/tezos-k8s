@@ -24,7 +24,7 @@ spec:
       serviceAccountName: {{ $.Values.service_account }}
       containers:
         - name: {{ include "snapshot-scheduler.name" $ }}
-          image: {{ index $.Values.tezos_k8s_images "snapshot-engine"}}
+          image: {{ $.Values.tezos_k8s_images.snapshotEngine }}
           imagePullPolicy: Always
           args:
               - "snapshot-scheduler"
