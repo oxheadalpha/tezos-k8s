@@ -51,7 +51,8 @@ if [ -n "$snapshot_url" ] && [ -n "$tarball_url" ]; then
   echo "ERROR: Either only a snapshot or tarball url may be specified per Tezos node history mode."
 fi
 
-rm -rfv "$node_data_dir"
+# We are inporting a tarball or snapshot, first we remove everything execpt identity.json
+find $node_data_dir ! -name 'identity.json' -type f -exec rm -vf {} +
 mkdir -p "$node_data_dir"
 
 if [ -n "$snapshot_url" ]; then
