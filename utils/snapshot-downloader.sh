@@ -62,7 +62,6 @@ if [ -n "$snapshot_url" ]; then
 elif [ -n "$tarball_url" ]; then
   echo "Downloading and extracting tarball from $tarball_url"
   curl -LfsS "$tarball_url" | lz4 -d | tar -x -C "$data_dir"
-  rm -fv "$node_data_dir/identity.json"
 fi
 
 chown -R 100 "$data_dir"
