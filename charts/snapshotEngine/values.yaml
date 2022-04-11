@@ -13,4 +13,4 @@ nodes:
     target_volume: var-volume
 
 images:
-  octez: v12.2
+  octez: tezos/tezos:v12.2
