@@ -424,7 +424,6 @@ def import_keys(all_accounts):
 
 def create_node_identity_json():
     identity_file_path = f"{DATA_DIR}/identity.json"
-    path = Path(identity_file_path)
 
     # Manually create the data directory and identity.json, and give the
     # same dir/file permissions that tezos gives when it creates them.
