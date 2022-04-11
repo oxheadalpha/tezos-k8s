@@ -1,4 +1,4 @@
-# Snapshot Warmer
+# Snapshot Engine
 
 For 1 Kubernetes Namespace this Helm Chart creates -
 
@@ -71,7 +71,7 @@ This Helm Chart is dependent on the AWS EKS CSI driver to create Kubernetes cust
 
 Subsequent jobs and pods are dependent on AWS S3 buckets, AWS ACM Certificates, Route 53 DNS Records, and AWS Route 53 domains.
 
-All of these resources can be deployed to a real AWS EKS cluster with https://github.com/oxheadalpha/oxheadinfra. However testing in minikube without AWS mocking tools would not be possible.
+Testing in minikube without AWS mocking tools is not possible. You should create your own EKS cluster to test.
 
 ## Setup
 

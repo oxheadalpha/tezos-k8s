@@ -9,7 +9,7 @@ spec:
       labels:
         app: snapshot-maker
     spec:
-      serviceAccountName: snapshot-maker-sa
+      serviceAccountName: snapshot-engine-sa
       initContainers:
         - name: init-tezos-filesystem
           image: ""
