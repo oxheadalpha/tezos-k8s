@@ -42,7 +42,7 @@ nodes:
       - ...
 ```
 
-The Helm template loops over **the first** in each type array `snapshot-archive-node` and `snapshot-rolling-node`. If you have multiple rolling/archive nodes only the first one of each type is targeted by the snapshot scheduler.
+The Helm template loops over each node type - `snapshot-archive-node` and `snapshot-rolling-node` - and selects **the first** instance in the `instances` list. If you have multiple rolling/archive nodes only the first one of each type is targeted by the snapshot scheduler.
 
 No additonal values are required other than those required by Tezos-K8s itself.
 
