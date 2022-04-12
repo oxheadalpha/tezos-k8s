@@ -1,8 +1,259 @@
 # Snapshot Engine
 
+A Helm chart for creating Tezos filesystem artifacts for faster node sync. Check out [xtz-shots.io](xtz-shots.io) for an example.
+
+- [Snapshot Engine](#snapshot-engine)
+  - [What is it?](#what-is-it)
+  - [Requirements](#requirements)
+  - [How To](#how-to)
+  - [Values](#values)
+  - [Produced files](#produced-files)
+    - [LZ4](#lz4)
+    - [JSON](#json)
+    - [Redirects](#redirects)
+  - [Components](#components)
+    - [Dependencies & Testing](#dependencies--testing)
+    - [Snapshot Warmer Deployment](#snapshot-warmer-deployment)
+      - [Snapshot Scheduler Deployment](#snapshot-scheduler-deployment)
+    - [Jobs](#jobs)
+      - [Snapshot Maker Job](#snapshot-maker-job)
+      - [Zip and Upload Job](#zip-and-upload-job)
+    - [Containers](#containers)
+      - [Docker & ECR](#docker--ecr)
+      - [Kubernetes Containers](#kubernetes-containers)
+        - [init-tezos-filesystem Container](#init-tezos-filesystem-container)
+        - [create-tezos-rolling-snapshot Container](#create-tezos-rolling-snapshot-container)
+        - [zip-and-upload Container](#zip-and-upload-container)
+
+## What is it?
+
+The Snapshot Engine is a Helm Chart to be deployed on a Kubernetes Cluster running Tezos Nodes deployed with [tezos-k8s](https://github.com/oxheadalpha/tezos-k8s).
+
+## Requirements
+
+1. AWS EKS Cluster*
+2. Docker
+3. Optionally a remote container repository such as ECR*
+4. S3 Bucket*
+5. ECR Repo*
+6. IAM Role* with a Trust Policy scoped to the Kubernetes Service Account created by this Helm chart.
+7. Tezos nodes deployed with [tezos-k8s](https://github.com/oxheadalpha/tezos-k8s)
+8. [OIDC Provider](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html)*
+9. [Amazon EBS CSI Driver](https://github.com/kubernetes-sigs/aws-ebs-csi-driver)*
+
+*&ast;We run our Tezos nodes on EKS.  It may be possible to deploy the Snapshot Engine on other Kubernetes Clusters at this time, but we have not tested these options.*
+
+*&ast;We are hoping to make the Snapshot Engine cloud-agnostic, but for now AWS is required.*
+
+## How To
+
+1. Create an S3 Bucket.  
+
+  :warning: If you want to make it available over the internet, you will need to make it a [Public Bucket](https://aws.amazon.com/premiumsupport/knowledge-center/read-access-objects-s3-bucket/) and with the following Bucket Policy.
+
+  Replace  `BUCKET_NAME` with the name of your new S3 Bucket.
+
+  :warning: Please evaluate in accordance with your own security policy. This will open up this bucket to the internet and allow anyone to download items from it and **you will incur AWS charges**.
+
+  ```json
+  {
+      "Version": "2012-10-17",
+      "Statement": [
+          {
+              "Sid": "PublicReadGetObject",
+              "Effect": "Allow",
+              "Principal": "*",
+              "Action": "s3:GetObject",
+              "Resource": "arn:aws:s3:::<BUCKET_NAME>/*"
+          }
+      ]
+  }
+  ```
+
+2. Create an IAM Role with the following statements.
+
+  Replace `<ARN_OF_S3_BUCKET>` with the ARN of your new S3 Bucket.
+
+  :warning: Pay close attention to the seemlingly redundant final `Resource` area. 
+
+  `/` and `/*` provide permission to the root and contents of the S3 Bucket respectively. 
+
+  ```json
+  {
+    "Version": "2012-10-17",
+    Statement: [{
+        Action: ["ec2:CreateSnapshot"],
+        Effect: "Allow",
+        Resource: "*",
+      },
+      {
+        Action: ["ec2:DescribeSnapshots"],
+        Effect: "Allow",
+        Resource: "*",
+      },
+      {
+        Action: ["s3:*"],
+        Effect: "Allow",
+        Resource: [
+          "ARN_OF_S3_BUCKET",
+          "ARN_OF_S3_BUCKET/*",
+        ],
+      },
+    }
+  ```
+
+3. Scope this new IAM role with a Trust Policy wit the following content:
+
+:warning: You will need to update `SERVICE_ACCOUNT_NAMESPACE` with the name of Kubernetes namespace you have deployed your Tezos node and Snapshot Engine chart to.
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::ACCOUNT_ID:oidc-provider/OIDC_PROVIDER"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "OIDC_PROVIDER:sub": "system:serviceaccount:SERVICE_ACCOUNT_NAMESPACE:snapshot-engine-sa"
+        }
+      }
+    }
+  ]
+}
+```
+
+4. Build the containers
+
+You can build and push your images to a repo of your choosing, but this is how it can be done without automation to ECR with Docker. We recommend utilizing a configuration management tool to help with container orchestration such as Terraform or Pulumi.
+
+```bash
+# Get ECR login for Docker
+aws ecr get-login-password --region YOUR_AWS_REGION | docker login --username AWS --password-stdin YOUR_ECR_URL
+
+# Build the image with Docker
+docker build -t snapshotEngine snapshotEngine/
+
+# Tag the image. Will be used in values.yaml
+docker tag snapshotEngine:latest YOUR_ECR_URL/snapshotEngine:latest
+
+# Push the image to ECR
+docker push YOUR_ECR_URL/snapshot-maker:latest
+```
+
+5. Add our Helm repository.
+
+```bash
+helm repo add oxheadalpha https://oxheadalpha.github.io/tezos-helm-charts/
+```
+
+6. Deploy the chart feeding in the ARN of the IAM role you created above inline, or as as value in a values.yaml file.
+
+```bash
+helm install tezos-snapshot-maker \
+--set iam_role_arn="IAM_ROLE_ARN" \
+--set tezos_k8s_images.snapshotEngine="YOUR_ECR_URL/snapshotEngine:latest"
+```
+
+OR
+
+```bash
+cat << EOF > values.yaml
+iam_role_arn: "IAM_ROLE_ARN"
+tezos_k8s_images:
+  snapshotEngine: YOUR_ECR_URL/snapshotEngine:latest
+EOF
+helm install tezos-snapshot-maker -f values.yaml
+```
+
+7. Depending on the chain size (mainnet more time, testnet less time) you should have `LZ4` tarballs, and if you are deploying to a rolling node Tezos `.rolling` snapshots as well in your S3 bucket.
+
+:warning: Testnet artifacts may appear in as soon as 20-30 minutes or less depending on the size of the chain.   Rolling mainnet artifacts will take a few hours, and mainnet archive tarballs could take up to 24 hours.
+
+```bash
+aws s3 ls s3://mainnet.xtz-shots.io
+                           PRE assets/
+2022-04-10 19:40:33          0 archive-tarball
+2022-04-10 19:40:35          0 archive-tarball-metadata
+2022-04-12 15:23:37     405077 base.json
+2022-04-12 15:23:57        518 feed.xml
+2022-04-12 15:23:57      11814 index.html
+2022-04-04 21:13:08 3939264512 mainnet-2253544.rolling
+2022-04-04 21:15:18        482 mainnet-2253544.rolling.json
+2022-04-12 11:22:32 3744214343 tezos-mainnet-rolling-tarball-2274806.lz4
+2022-04-12 11:23:51        493 tezos-mainnet-rolling-tarball-2274806.lz4.json
+2022-04-12 15:23:39          0 rolling
+2022-04-11 12:51:53          0 rolling-metadata
+2022-04-12 15:21:52          0 rolling-tarball
+2022-04-12 15:21:53          0 rolling-tarball-metadata
+2022-04-05 11:45:06        497 tezos-mainnet-archive-tarball-2252528.lz4.json
+2022-04-05 12:16:13 353204307636 tezos-mainnet-archive-tarball-2255459.lz4
+```
+
+## Values
+
+```yaml
+tezos_k8s_images:
+  snapshotEngine: tezos-k8s-snapshot-maker:dev
+
+iam_role_arn: ""
+service_account: snapshot-engine-sa
+
+nodes:
+  snapshot-archive-node:
+    history_mode: archive
+    target_volume: var-volume
+  snapshot-rolling-node:
+    history_mode: rolling
+    target_volume: var-volume
+
+images:
+  octez: tezos/tezos:v12.2
+```
+
+By default the Tezos Snapshot Engine Helm chart assumes you have a rolling and an archive node running.  To only deploy for a single node of a history type, null out the other values in your `values.yaml`.
+
+Example - only deploying for an **archive** history mode Tezos node.
+
+```yaml
+nodes:
+  snapshot-archive-node:
+    history_mode: archive
+    target_volume: var-volume
+  snapshot-rolling-node:
+    history_mode: null
+    target_volume: null
+```
+
+## Produced files
+
+### LZ4
+
+These are tarballs of the `/var/tezos/node` directory. They are validated for block finalization, zipped, and uploaded to your S3 bucket.
+
+### JSON
+
+These are metadata files containing information about the uploaded artifact. Every artifact has its own metadata file, as well as a `base.json` containing a list of all artifacts created.
+
+### Redirects
+
+There are 6 - 0 byte files that are uploaded as redirects. These files are updated in S3 to redirect to the latest artifact for each.
+
+* rolling >> latest `.rolling` Tezos **rolling** snapshot file.
+* rolling-tarball >> latest **rolling** `.lz4` tarball
+* archive-tarball >> latest **archive** `.lz4` tarball
+* rolling-metadata >> latest `.rolling.json` metadata file
+* rolling-tarball-metadata >> latest **rolling** `.lz4.json` metadata file
+* archive-tarball metadata >> latest **archive** `.lz4.json` metadata file
+
+## Components
+
 For 1 Kubernetes Namespace this Helm Chart creates -
 
-- 2 Kubernetes **Deployments**
+- 1 Kubernetes **Deployment** per history mode.
 - Kubernetes **Role**
 - Kubernetes **Rolebinding**
 - Kubernetes **Service** Account
@@ -14,30 +265,17 @@ The reason for this is the longer you wait to take an EBS snapshot, the longer i
 
 If we continuously take snapshots, this assures that the artifact creation process does not have to wait for a snapshot to complete and also always has the newest data to work with.
 
-## Dependencies & Testing
+### Dependencies & Testing
 
 This Helm Chart is configured to work only with an AWS EKS cluster. It requires AWS IAM Roles and Policies, an AWS OIDC provider, and the EKS CSI driver to perform necessary actions on AWS resources from Kubernetes Pods.
 
 Testing in minikube without AWS mocking tools is not possible. You should create your own EKS cluster to test.
 
-## Setup
+The Jobs and Pods triggered by this Helm chart are dependent on Kubernetes Service Accounts that depend on AWS IAM Roles, AWS OIDC Trust Policy, the AWS EKS CSI driver, and AWS IAM policy to perform actions on AWS resources from Kubernetes Pods.
 
-You should have 2 Tezos nodes deployed in your cluster. One with **archive** history mode, and the other with **rolling** history mode.
-The `values.yaml` should reference these 2 nodes:
+This Helm Chart is dependent on the AWS EKS CSI driver to create Kubernetes custom resources (VolumeSnapshots and VolumeSnapshotContents) and facilitate the creation of AWS EC2 EBS Volume Snapshots.
 
-```yaml
-# `nodes` contains the names of the nodes deployed. Each node specifies
-# their `target_volume` to snapshot and their `history_mode`.
-nodes:
-  snapshot-archive-node:
-    history_mode: archive
-    target_volume: var-volume
-  snapshot-rolling-node:
-    history_mode: rolling
-    target_volume: var-volume
-```
-
-## How it works
+Subsequent jobs and pods are dependent on AWS S3 buckets, AWS ACM Certificates, Route 53 DNS Records, and AWS Route 53 domains.
 
 ### Snapshot Warmer Deployment
 
@@ -53,56 +291,6 @@ This script runs indefinitely and performs the following steps -
 4. It waits until the snapshot is ready to use.
 
 We create only one snapshot at a time as having more than one in-progress slows down the snapshot process altogether.
-
-# Snapshot Scheduler
-
-This Helm chart creates:
-
-* 2 Kubernetes **Deployments**
-* 1 Kubernetes **Configmap**
-
-This is the main workflow that handles the creation of Tezos tarballs, snapshots, and the website build for xtz-shots.io
-
-## Dependencies & Testing
-
-The Jobs and Pods triggered by this Helm chart are dependent on Kubernetes Service Accounts that depend on AWS IAM Roles, AWS OIDC Trust Policy, the AWS EKS CSI driver, and AWS IAM policy to perform actions on AWS resources from Kubernetes Pods.
-
-This Helm Chart is dependent on the AWS EKS CSI driver to create Kubernetes custom resources (VolumeSnapshots and VolumeSnapshotContents) and facilitate the creation of AWS EC2 EBS Volume Snapshots.
-
-Subsequent jobs and pods are dependent on AWS S3 buckets, AWS ACM Certificates, Route 53 DNS Records, and AWS Route 53 domains.
-
-Testing in minikube without AWS mocking tools is not possible. You should create your own EKS cluster to test.
-
-## Setup
-
-```yaml
-nodes:
-  ... 
-  snapshot-rolling-node:
-    labels:
-      node_class_history_mode: rolling
-      - ...
-  snapshot-rolling-node:
-  ...
-  snapshot-archive-node:
-    labels:
-      node_class_history_mode: archive
-      - ...
-```
-
-The Helm template loops over **the first** in each type array `snapshot-archive-node` and `snapshot-rolling-node`. If you have multiple rolling/archive nodes only the first one of each type is targeted by the snapshot scheduler.
-
-No additonal values are required other than those required by Tezos-K8s itself.
-
-Deploy with https://github.com/oxheadalpha/oxheadinfra
-
-## How it works
-
-Overview of the Snapshot Scheduler workflow.
-
-### Deployments
-
-Overview of Kubernetes Deployments created by this workflow.
 
 #### Snapshot Scheduler Deployment
 

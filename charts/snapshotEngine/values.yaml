@@ -2,7 +2,7 @@ tezos_k8s_images:
   snapshotEngine: tezos-k8s-snapshot-maker:dev
 
 iam_role_arn: ""
-service_account: ""
+service_account: snapshot-engine-sa
 
 nodes:
   snapshot-archive-node:
