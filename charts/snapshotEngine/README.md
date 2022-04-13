@@ -26,7 +26,7 @@ A Helm chart for creating Tezos filesystem artifacts for faster node sync. Check
 
 ## What is it?
 
-The Snapshot Engine is a Helm Chart to be deployed on a Kubernetes Cluster running Tezos Nodes deployed with [tezos-k8s](https://github.com/oxheadalpha/tezos-k8s).
+The Snapshot Engine is a Helm Chart to be deployed on a Kubernetes Cluster.  It will deploy snapshottable Tezos nodes [tezos-k8s](https://github.com/oxheadalpha/tezos-k8s) and produce Tezos `.rolling` snapshot files as well as a new archive and rolling finalized filesystem tarballs in LZ4 format for fast Tezos node syncing.
 
 ## Requirements
 
@@ -36,10 +36,9 @@ The Snapshot Engine is a Helm Chart to be deployed on a Kubernetes Cluster runni
 4. S3 Bucket*
 5. ECR Repo*
 6. IAM Role* with a Trust Policy scoped to the Kubernetes Service Account created by this Helm chart.
-7. Tezos nodes deployed with [tezos-k8s](https://github.com/oxheadalpha/tezos-k8s)
-8. [OIDC Provider](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html)*
-9. [Amazon EBS CSI Driver](https://github.com/kubernetes-sigs/aws-ebs-csi-driver)*
-10. [Kubernetes VolumeSnapshot CRDs, and a new Storage Class](https://aws.amazon.com/blogs/containers/using-ebs-snapshots-for-persistent-storage-with-your-eks-cluster/)
+7. [OIDC Provider](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html)*
+8. [Amazon EBS CSI Driver](https://github.com/kubernetes-sigs/aws-ebs-csi-driver)*
+9. [Kubernetes VolumeSnapshot CRDs, and a new Storage Class](https://aws.amazon.com/blogs/containers/using-ebs-snapshots-for-persistent-storage-with-your-eks-cluster/)
 
 *&ast;We run our Tezos nodes on EKS.  It may be possible to deploy the Snapshot Engine on other Kubernetes Clusters at this time, but we have not tested these options.*
 
@@ -106,7 +105,7 @@ The Snapshot Engine is a Helm Chart to be deployed on a Kubernetes Cluster runni
 
 3. Scope this new IAM role with a Trust Policy with the following content:
 
-:warning: You will need to update `SERVICE_ACCOUNT_NAMESPACE` with the name of Kubernetes namespace you have deployed your Tezos node and Snapshot Engine chart to.
+:warning: You will need to update `SERVICE_ACCOUNT_NAMESPACE` with the name of Kubernetes namespace you will like your snapshottable Tezos nodes and Snapshot Engine chart to.
 
 ```json
 {
