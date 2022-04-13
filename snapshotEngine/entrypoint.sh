@@ -4,9 +4,9 @@ CMD="$1"
 shift
 
 case "$CMD" in
-  snapshot-scheduler)	exec /snapshot-scheduler.sh	"$@"	;;
-  snapshot-maker)			exec /snapshot-maker.sh		"$@"	;;
-  zip-and-upload)	exec /zip-and-upload.sh	"$@"	;;
+  snapshot-scheduler) exec /snapshot-scheduler.sh	"$@"	;;
+  snapshot-maker)     exec /snapshot-maker.sh		"$@"	;;
+  zip-and-upload)     exec /zip-and-upload.sh	"$@"	;;
 esac
 
 #
