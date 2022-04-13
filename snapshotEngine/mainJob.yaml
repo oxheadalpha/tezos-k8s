@@ -220,6 +220,11 @@ spec:
                 configMapKeyRef:
                   name: snapshot-configmap
                   key: NAMESPACE
+            - name: CHAIN_WEBSITE_MARKDOWN
+              valueFrom:
+                configMapKeyRef:
+                  name: snapshot-configmap
+                  key: CHAIN_WEBSITE_MARKDOWN
       restartPolicy: Never
       volumes:
         - name: persistent-storage
