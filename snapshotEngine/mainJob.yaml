@@ -224,7 +224,7 @@ spec:
       volumes:
         - name: persistent-storage
           persistentVolumeClaim:
-            claimName: hangzhounet-shots-snap-volume
+            claimName: ""
         - name: snapshot-cache-volume
           persistentVolumeClaim:
             claimName: snapshot-cache-volume
