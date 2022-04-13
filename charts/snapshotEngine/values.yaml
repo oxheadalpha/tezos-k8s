@@ -6,7 +6,8 @@ images:
   octez: tezos/tezos:v12-release
 
 # snapshotEngine containers interact with the kubernetes control
-# plane to create volume snapshots. This requires a special role.
+# plane to create volume snapshots. This requires a special IAM role
+# so k8s can create the snapshots and volumes in the cloud.
 # Specify this role below.
 iam_role_arn: ""
 service_account: snapshot-engine-sa
