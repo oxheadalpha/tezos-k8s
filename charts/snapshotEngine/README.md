@@ -12,9 +12,8 @@ A Helm chart for creating Tezos filesystem artifacts for faster node sync. Check
     - [JSON](#json)
     - [Redirects](#redirects)
   - [Components](#components)
-    - [Dependencies & Testing](#dependencies--testing)
     - [Snapshot Warmer Deployment](#snapshot-warmer-deployment)
-      - [Snapshot Scheduler Deployment](#snapshot-scheduler-deployment)
+    - [Snapshot Scheduler Deployment](#snapshot-scheduler-deployment)
     - [Jobs](#jobs)
       - [Snapshot Maker Job](#snapshot-maker-job)
       - [Zip and Upload Job](#zip-and-upload-job)
@@ -40,6 +39,7 @@ The Snapshot Engine is a Helm Chart to be deployed on a Kubernetes Cluster runni
 7. Tezos nodes deployed with [tezos-k8s](https://github.com/oxheadalpha/tezos-k8s)
 8. [OIDC Provider](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html)*
 9. [Amazon EBS CSI Driver](https://github.com/kubernetes-sigs/aws-ebs-csi-driver)*
+10. [Kubernetes VolumeSnapshot CRDs, and a new Storage Class](https://aws.amazon.com/blogs/containers/using-ebs-snapshots-for-persistent-storage-with-your-eks-cluster/)
 
 *&ast;We run our Tezos nodes on EKS.  It may be possible to deploy the Snapshot Engine on other Kubernetes Clusters at this time, but we have not tested these options.*
 
@@ -141,7 +141,7 @@ docker build -t snapshotEngine snapshotEngine/
 docker tag snapshotEngine:latest YOUR_ECR_URL/snapshotEngine:latest
 
 # Push the image to ECR
-docker push YOUR_ECR_URL/snapshot-maker:latest
+docker push YOUR_ECR_URL/snapshotEngine:latest
 ```
 
 5. Add our Helm repository.
@@ -241,29 +241,12 @@ There are 6 - 0 byte files that are uploaded as redirects. These files are updat
 
 For 1 Kubernetes Namespace this Helm Chart creates -
 
-- 1 Kubernetes **Deployment** per history mode.
+- 2 Kubernetes **Deployment** per history mode. (4 Total)
 - Kubernetes **Role**
 - Kubernetes **Rolebinding**
 - Kubernetes **Service** Account
 - Kubernetes **ClusterRoleBinding**
-
-This continuously takes AWS EBS Volume Snapshots of a Tezos-node and makes them available as Kubernetes VolumeSnapshots.
-
-The reason for this is the longer you wait to take an EBS snapshot, the longer it takes to actually create the snapshot of an AWS EBS Volume.
-
-If we continuously take snapshots, this assures that the artifact creation process does not have to wait for a snapshot to complete and also always has the newest data to work with.
-
-### Dependencies & Testing
-
-This Helm Chart is configured to work only with an AWS EKS cluster. It requires AWS IAM Roles and Policies, an AWS OIDC provider, and the EKS CSI driver to perform necessary actions on AWS resources from Kubernetes Pods.
-
-Testing in minikube without AWS mocking tools is not possible. You should create your own EKS cluster to test.
-
-The Jobs and Pods triggered by this Helm chart are dependent on Kubernetes Service Accounts that depend on AWS IAM Roles, AWS OIDC Trust Policy, the AWS EKS CSI driver, and AWS IAM policy to perform actions on AWS resources from Kubernetes Pods.
-
-This Helm Chart is dependent on the AWS EKS CSI driver to create Kubernetes custom resources (VolumeSnapshots and VolumeSnapshotContents) and facilitate the creation of AWS EC2 EBS Volume Snapshots.
-
-Subsequent jobs and pods are dependent on AWS S3 buckets, AWS ACM Certificates, Route 53 DNS Records, and AWS Route 53 domains.
+- Kubernetes **Configmap**
 
 ### Snapshot Warmer Deployment
 
@@ -280,7 +263,7 @@ This script runs indefinitely and performs the following steps -
 
 We create only one snapshot at a time as having more than one in-progress slows down the snapshot process altogether.
 
-#### Snapshot Scheduler Deployment
+### Snapshot Scheduler Deployment
 
 A Kubernetes Deployment called the **Snapshot Scheduler** runs indefinitely triggering a new Kubernetes Job called **Snapshot Maker**.  
 
