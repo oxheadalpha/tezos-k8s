@@ -197,10 +197,10 @@ aws s3 ls s3://mainnet.xtz-shots.io
 
 ```yaml
 tezos_k8s_images:
-  snapshotEngine: tezos-k8s-snapshot-maker:dev
+  snapshotEngine: tezos-k8s-snapshot-maker:dev # Change to name of your snapshotEngine image with tag
 
-iam_role_arn: ""
-service_account: snapshot-engine-sa
+iam_role_arn: "" # Change this to the ARN of your IAM role with permissions to S3 and VolumeSnapshots
+service_account: snapshot-engine-sa # Keep or change if you like
 
 nodes:
   snapshot-archive-node:
@@ -211,21 +211,9 @@ nodes:
     target_volume: var-volume
 
 images:
-  octez: tezos/tezos:v12.2
-```
+  octez: tezos/tezos:v12.2 # Version of Tezos that you will run
 
-By default the Tezos Snapshot Engine Helm chart assumes you have a rolling and an archive node running.  To only deploy for a single node of a history type, null out the other values in your `values.yaml`.
-
-Example - only deploying for an **archive** history mode Tezos node.
-
-```yaml
-nodes:
-  snapshot-archive-node:
-    history_mode: archive
-    target_volume: var-volume
-  snapshot-rolling-node:
-    history_mode: null
-    target_volume: null
+chainWebsiteMarkdown: url_to_md_file # Url of markdown file that will host links to your
 ```
 
 ## Produced files
@@ -437,5 +425,6 @@ This container performs the following steps -
 17. Add metadata to `base.json` and upload.
 18. Add metadata to artifact-specific json and upload.
 19. Get metadata from artifact json files (curl) for web page.
-20. Build web page with Jekyll
-21. Upload website files to S3
+20. Curls chain website page from chainWebsiteMarkdown
+21. Build web page with Jekyll with curled Markdown and metadata files
+22. Upload website files to S3
