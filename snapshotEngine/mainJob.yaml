@@ -45,7 +45,7 @@ spec:
               # Tezos does not exit on error so we have to time the job.
               sleep 2m && kill -s SIGINT 1 &
 
-              # Replace this with kubectl wait.  These loops wait on the RPC to come online and prevent log from printing same line
+              # These loops wait on the RPC to come online and prevent log from printing same line
               # over and over and over again.  This prints one line and waits for the RPC to come online for a clean log.
               until wget -qO-  http://localhost:8732/chains/main/blocks/head/header >/dev/null 2>&1; do
                 printf "%s Waiting for node RPC to come online.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
