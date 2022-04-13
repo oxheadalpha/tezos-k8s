@@ -81,7 +81,8 @@ The Snapshot Engine is a Helm Chart to be deployed on a Kubernetes Cluster runni
   ```json
   {
     "Version": "2012-10-17",
-    Statement: [{
+    Statement: [
+      {
         Action: ["ec2:CreateSnapshot"],
         Effect: "Allow",
         Resource: "*",
@@ -99,6 +100,7 @@ The Snapshot Engine is a Helm Chart to be deployed on a Kubernetes Cluster runni
           "ARN_OF_S3_BUCKET/*",
         ],
       },
+     ]
     }
   ```
 
