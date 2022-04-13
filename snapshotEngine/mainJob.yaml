@@ -200,7 +200,7 @@ spec:
                   name: snapshot-configmap
                   key: NAMESPACE
         - name: zip-and-upload
-          image: 082993323195.dkr.ecr.us-east-2.amazonaws.com/zip-and-upload:latest
+          image: ""
           imagePullPolicy: Always
           args:
               - "zip-and-upload"
