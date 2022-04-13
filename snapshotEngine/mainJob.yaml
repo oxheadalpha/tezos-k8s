@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: "zip-and-upload"
-  namespace: mainnet-shots
+  namespace: ""
 spec:
   template:
     metadata:

@@ -2,7 +2,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: snapshot-cache-volume
-  namespace: hangzhounet-shots
+  namespace: ""
 spec:
   storageClassName: ebs-sc
   accessModes:
