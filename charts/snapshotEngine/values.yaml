@@ -1,0 +1,18 @@
+tezos_k8s_images:
+  snapshotEngine: tezos-k8s-snapshot-maker:dev
+
+images:
+  octez: tezos/tezos:v12.2
+
+iam_role_arn: ""
+service_account: snapshot-engine-sa
+
+nodes:
+  snapshot-archive-node:
+    history_mode: archive
+    target_volume: var-volume
+  snapshot-rolling-node:
+    history_mode: rolling
+    target_volume: var-volume
+
+chainWebsiteMarkdown: ""

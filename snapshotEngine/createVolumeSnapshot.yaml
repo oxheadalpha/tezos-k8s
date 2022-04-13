@@ -1,0 +1,11 @@
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: ""
+  namespace: ""
+  labels:
+    history_mode: rolling
+spec:
+  volumeSnapshotClassName: test-snapclass
+  source:
+    persistentVolumeClaimName: ""

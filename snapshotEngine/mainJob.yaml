@@ -1,0 +1,234 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "zip-and-upload"
+  namespace: ""
+spec:
+  template:
+    metadata:
+      labels:
+        app: snapshot-maker
+    spec:
+      serviceAccountName: snapshot-engine-sa
+      initContainers:
+        - name: init-tezos-filesystem
+          image: ""
+          command: ["/bin/sh"]
+          args:
+            - "-c"
+            - |
+              #!/bin/sh
+
+              # Exit on any error
+              set -e
+
+              # Give tezos user full ownership of mounted cache volume for writing metadata later
+              sudo chown -R 100:100 /"${HISTORY_MODE}"-snapshot-cache-volume
+
+              # Set error trap in order to kill this job with the timer later
+              trap "exit" SIGINT SIGTERM
+
+              # Strip network from namespace
+              NETWORK="${NAMESPACE%%-*}"
+
+              # Set up config for headless RPC using new restored storage
+              tezos-node config init \
+              --config-file /home/tezos/.tezos-node/config.json \
+              --network "${NETWORK}" \
+              --data-dir /var/tezos/node/data
+
+              # Run headless tezos node to validate storage on restored volume
+              tezos-node run --connections 0 --config-file /home/tezos/.tezos-node/config.json --rpc-addr=127.0.0.1:8732 &
+
+              # Time validation to 2 minutes. If this takes longer then there is a tezos error
+              # and this job is tossed.
+              # Tezos does not exit on error so we have to time the job.
+              sleep 2m && kill -s SIGINT 1 &
+
+              # These loops wait on the RPC to come online and prevent log from printing same line
+              # over and over and over again.  This prints one line and waits for the RPC to come online for a clean log.
+              until wget -qO-  http://localhost:8732/chains/main/blocks/head/header >/dev/null 2>&1; do
+                printf "%s Waiting for node RPC to come online.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+                until wget -qO-  http://localhost:8732/chains/main/blocks/head/header >/dev/null 2>&1; do
+                  if  wget -qO-  http://localhost:8732/chains/main/blocks/head/header >/dev/null 2>&1; then
+                    break
+                  fi
+                done
+              done
+
+              # If somehow we skip the above waiting loop, this kills the job if the RPC is not online.
+              if ! wget -qO-  http://localhost:8732/chains/main/blocks/head/header >/dev/null 2>&1; then
+                printf "%s RPC is not online! Exiting...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+                exit 1
+
+              # Otherwise if RPC is online, then our storage is valid and we can check if the block 
+              # is finalized and get our metadata from the RPC endpoint.
+              else
+                printf "%s Node online! Storage is initialized.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+              if [ "${HISTORY_MODE}" = archive ]; then
+                TARGET="head"
+
+              # Tezos devs have advised us that it is safer to target HEAD~2 for rolling artifacts.
+              else
+                HEAD_BLOCK=$(wget -qO-  http://localhost:8732/chains/main/blocks/head/header | sed -E 's/.*"hash":"?([^,"]*)"?.*/\1/')
+                TARGET="${HEAD_BLOCK}~2"
+              fi
+
+              # Get BLOCK_HASH from RPC
+              wget -qO-  http://localhost:8732/chains/main/blocks/"${TARGET}"/header | sed -E 's/.*"hash":"?([^,"]*)"?.*/\1/' > /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH
+
+              # Get BLOCK_HEIGHT from RPC
+              wget -qO-  http://localhost:8732/chains/main/blocks/head/header | sed -E 's/.*"level":"?([^,"]*)"?.*/\1/' > /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HEIGHT
+
+              # We need to check if the block is finalized for archive nodes since we aren't getting
+              # validation by a Tezos snapshot like our rolling tarball. We are just zipping up the data dir from an archive node.
+              if [ "${HISTORY_MODE}" = archive ]; then
+                printf "%s Checking if archive snapshot block is finalized...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+                
+                # Query running node and get block level
+                RUNNING_NODE_BLOCK_LEVEL="$(wget -qO-  http://snapshot-archive-node."${NAMESPACE}".svc:8732/chains/main/blocks/head/header | sed -E 's/.*"level":"?([^,"]*)"?.*/\1/')"
+                printf "%s Running node snapshot-archive-node head block level is %s. \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${RUNNING_NODE_BLOCK_LEVEL}"
+
+                # See if this is at least 2 blocks newer than our snapshot block.  If its not, toss this job.
+                SNAPSHOT_BLOCK_LEVEL=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HEIGHT)
+                printf "%s Snapshot head block level is %s. \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${SNAPSHOT_BLOCK_LEVEL}"
+                if ! [ $((RUNNING_NODE_BLOCK_LEVEL - SNAPSHOT_BLOCK_LEVEL)) -ge 2 ]; then
+                  printf "%s Running node snapshot-archive-node head block level is NOT 2 or more than our snapshot block level! Exiting...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+                  exit 1
+                fi
+
+                # Query running node with snapshot block level to get hash
+                RUNNING_NODE_BLOCK_HASH=$(wget -qO-  http://snapshot-archive-node."${NAMESPACE}".svc:8732/chains/main/blocks/"${SNAPSHOT_BLOCK_LEVEL}"/header | sed -E 's/.*"hash":"?([^,"]*)"?.*/\1/')
+                SNAPSHOT_BLOCK_HASH=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH)
+
+                # Check if this matches our snapshot hash, if not toss this job. If so, then block is finalized.
+                printf "%s Running node snapshot-archive-node block hash for level %s is %s . \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${SNAPSHOT_BLOCK_LEVEL}" "${RUNNING_NODE_BLOCK_HASH}"
+                printf "%s Snapshot block hash for level %s is %s.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${SNAPSHOT_BLOCK_LEVEL}" "${SNAPSHOT_BLOCK_HASH}"
+                if [ "${RUNNING_NODE_BLOCK_HASH}" != "${SNAPSHOT_BLOCK_HASH}" ]; then
+                  printf "%s Running node block hash at level %s is not equal to our hash.  Exiting...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${SNAPSHOT_BLOCK_LEVEL}"
+                  exit 1
+                fi
+              fi
+
+              # Get BLOCK_TIMESTAMP from RPC
+              wget -qO-  http://localhost:8732/chains/main/blocks/head/header | sed -E 's/.*"timestamp":"?([^,"]*)"?.*/\1/' > /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_TIMESTAMP
+
+              # Get Tezos Version from tezos-node command
+              /usr/local/bin/tezos-node --version > /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_VERSION
+
+              # Print variables for debug
+              printf "%s BLOCK_HASH is...$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH))\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+              printf "%s BLOCK_HEIGHT is...$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HEIGHT)\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+              printf "%s BLOCK_TIMESTAMP is...$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_TIMESTAMP)\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+              printf "%s TEZOS_VERSION is...$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_VERSION)\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+
+              # Blow open permissions for next job to write to volume
+              sudo chmod -R 755 /"${HISTORY_MODE}"-snapshot-cache-volume
+              fi
+          volumeMounts:
+            - mountPath: /var/tezos
+              name: persistent-storage
+            - mountPath: /snapshot-cache-volume
+              name: snapshot-cache-volume
+          env:
+            - name: HISTORY_MODE
+              value: ""
+            - name: NAMESPACE
+              valueFrom:
+                configMapKeyRef:
+                  name: snapshot-configmap
+                  key: NAMESPACE
+      containers:
+        - name: create-tezos-rolling-snapshot
+          image: ""
+          command: ["/bin/sh"]
+          args:
+            - "-c"
+            - |
+              #!/bin/sh
+              set -e
+
+              sudo chown -R 100:100 /"${HISTORY_MODE}"-snapshot-cache-volume
+              sudo chown -R 100:100 /rolling-tarball-restore
+
+              # Strip network from namespace
+              NETWORK="${NAMESPACE%%-*}"
+
+              BLOCK_HEIGHT=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HEIGHT)
+              BLOCK_HASH=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH)
+              ROLLING_SNAPSHOT_NAME="${NETWORK}"-"${BLOCK_HEIGHT}"
+
+              tezos-node config init \
+              --config-file /home/tezos/.tezos-node/config.json \
+              --network "${NETWORK}" \
+              --data-dir /var/tezos/node/data
+
+              if [ "${HISTORY_MODE}" = rolling ]; then
+                tezos-node snapshot export \
+                --block "${BLOCK_HASH}" \
+                --config-file /home/tezos/.tezos-node/config.json \
+                --rolling \
+                /"${HISTORY_MODE}"-snapshot-cache-volume/"${ROLLING_SNAPSHOT_NAME}".rolling
+
+                printf "%s Restoring rolling snapshot to empty filesystem for rolling tarball...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+
+                touch /rolling-tarball-restore/snapshot-import-in-progress
+
+                tezos-node snapshot import \
+                /"${HISTORY_MODE}"-snapshot-cache-volume/"${ROLLING_SNAPSHOT_NAME}".rolling \
+                --block "${BLOCK_HASH}" \
+                --config-file /home/tezos/.tezos-node/config.json \
+                --data-dir /rolling-tarball-restore/var/tezos/node/data
+
+                rm /rolling-tarball-restore/snapshot-import-in-progress
+              else
+                printf "%s Skipping rolling snapshot import since this job is for an archive node.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+              fi
+          volumeMounts:
+            - mountPath: /var/tezos
+              name: persistent-storage
+            - mountPath: /snapshot-cache-volume
+              name: snapshot-cache-volume
+            - mountPath: /rolling-tarball-restore
+              name: rolling-tarball-restore
+          env:
+            - name: HISTORY_MODE
+              value: ""
+            - name: NAMESPACE
+              valueFrom:
+                configMapKeyRef:
+                  name: snapshot-configmap
+                  key: NAMESPACE
+        - name: zip-and-upload
+          image: ""
+          imagePullPolicy: Always
+          args:
+              - "zip-and-upload"
+          volumeMounts:
+            - mountPath: /var/tezos
+              name: persistent-storage
+              readOnly: true
+            - mountPath: /snapshot-cache-volume
+              name: snapshot-cache-volume
+            - mountPath: /rolling-tarball-restore
+              name: rolling-tarball-restore
+          env:
+            - name: HISTORY_MODE
+              value: ""
+            - name: NAMESPACE
+              valueFrom:
+                configMapKeyRef:
+                  name: snapshot-configmap
+                  key: NAMESPACE
+      restartPolicy: Never
+      volumes:
+        - name: persistent-storage
+          persistentVolumeClaim:
+            claimName: ""
+        - name: snapshot-cache-volume
+          persistentVolumeClaim:
+            claimName: snapshot-cache-volume
+        - name: rolling-tarball-restore
+          persistentVolumeClaim:
+            claimName: rolling-tarball-restore
+  backoffLimit: 0

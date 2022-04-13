@@ -1,0 +1,37 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: snapshot-maker
+  namespace: ""
+spec:
+  template:
+    metadata:
+      labels:
+        app: snapshot-maker
+    spec:
+      serviceAccountName: snapshot-engine-sa
+      containers:
+        - name: snapshot-maker
+          image: ""
+          imagePullPolicy: Always
+          args:
+              - "snapshot-maker"
+          env:
+            - name: HISTORY_MODE
+              value: ""
+            - name: NAMESPACE
+              valueFrom:
+                configMapKeyRef:
+                  name: snapshot-configmap
+                  key: NAMESPACE
+            - name: IMAGE_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: snapshot-configmap
+                  key: IMAGE_NAME
+            - name: TEZOS_IMAGE
+              valueFrom:
+                configMapKeyRef:
+                  name: snapshot-configmap
+                  key: TEZOS_IMAGE
+      restartPolicy: Never
