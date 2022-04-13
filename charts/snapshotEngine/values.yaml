@@ -1,6 +1,9 @@
 tezos_k8s_images:
   snapshotEngine: tezos-k8s-snapshot-maker:dev
 
+images:
+  octez: tezos/tezos:v12.2
+
 iam_role_arn: ""
 service_account: snapshot-engine-sa
 
@@ -11,6 +14,3 @@ nodes:
   snapshot-rolling-node:
     history_mode: rolling
     target_volume: var-volume
-
-images:
-  octez: tezos/tezos:v12.2
