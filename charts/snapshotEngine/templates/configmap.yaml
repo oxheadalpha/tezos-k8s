@@ -3,6 +3,7 @@ data:
   NAMESPACE: {{ $.Release.Namespace }}
   IMAGE_NAME: {{ $.Values.tezos_k8s_images.snapshotEngine }}
   TEZOS_IMAGE: {{ $.Values.images.octez }}
+  CHAIN_WEBSITE_MARKDOWN: {{ $.Values.chainWebsiteMarkdown }}
 kind: ConfigMap
 metadata:
   name: snapshot-configmap
