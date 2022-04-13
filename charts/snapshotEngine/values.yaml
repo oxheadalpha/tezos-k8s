@@ -1,5 +1,5 @@
 tezos_k8s_images:
-  snapshotEngine: tezos-k8s-snapshot-engine:dev
+  snapshotEngine: tezos-k8s-snapshotengine:dev
 
 images:
   octez: tezos/tezos:v12.2
