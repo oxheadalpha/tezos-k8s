@@ -1,5 +1,5 @@
 apiVersion: v2
-name: tezos-snapshot-maker
+name: snapshotEngine
 description: Keeps EBS snapshots fast by continuously creating and deleting new snapshots.
 
 # A chart can be either an 'application' or a 'library' chart.

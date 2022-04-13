@@ -154,7 +154,7 @@ helm repo add oxheadalpha https://oxheadalpha.github.io/tezos-helm-charts/
 6. Deploy the chart feeding in the ARN of the IAM role you created above inline, or as as value in a values.yaml file.
 
 ```bash
-helm install tezos-snapshot-maker \
+helm install snapshotEngine \
 --set iam_role_arn="IAM_ROLE_ARN" \
 --set tezos_k8s_images.snapshotEngine="YOUR_ECR_URL/snapshotEngine:latest"
 ```
@@ -167,7 +167,7 @@ iam_role_arn: "IAM_ROLE_ARN"
 tezos_k8s_images:
   snapshotEngine: YOUR_ECR_URL/snapshotEngine:latest
 EOF
-helm install tezos-snapshot-maker -f values.yaml
+helm install snapshotEngine -f values.yaml
 ```
 
 7. Depending on the chain size (mainnet more time, testnet less time) you should have `LZ4` tarballs, and if you are deploying to a rolling node Tezos `.rolling` snapshots as well in your S3 bucket.
