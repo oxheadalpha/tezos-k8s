@@ -6,6 +6,5 @@ metadata:
   labels:
     history_mode: rolling
 spec:
-  volumeSnapshotClassName: test-snapclass
   source:
     persistentVolumeClaimName: ""
