@@ -1,6 +1,6 @@
 apiVersion: v2
 name: snapshotEngine
-description: Deploys a Tezos Node with a snapshottable filesystem.  Produces filesystem artifacts (tarballs and rolling snapshots) for fast sync of new Tezos Nodes.
+description: Produces filesystem artifacts (tarballs and snapshots) that Tezos Nodes can use to sync quickly.
 
 # A chart can be either an 'application' or a 'library' chart.
 #
