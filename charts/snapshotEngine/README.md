@@ -102,7 +102,7 @@ The Snapshot Engine is a Helm Chart to be deployed on a Kubernetes Cluster runni
     }
   ```
 
-3. Scope this new IAM role with a Trust Policy wit the following content:
+3. Scope this new IAM role with a Trust Policy with the following content:
 
 :warning: You will need to update `SERVICE_ACCOUNT_NAMESPACE` with the name of Kubernetes namespace you have deployed your Tezos node and Snapshot Engine chart to.
 
