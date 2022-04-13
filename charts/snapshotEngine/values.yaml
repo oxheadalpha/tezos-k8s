@@ -30,8 +30,11 @@ service_account: snapshot-engine-sa
 # HISTORY_MODE is archive or rolling
 # TARGET_VOLUME is the name of the pod's volume containing tezos data dir.
 #
-# The default configuration below will be looking for tezos-nodes with
-# class `snapshot-archive-node` and `snapshot-rolling-node`.
+# The default configuration below will be looking for tezos nodes defined in the 
+# tezos chart with class names `snapshot-archive-node` and `snapshot-rolling-node`. 
+# If you'd like to name them differently, make sure to match the names in both the 
+# tezos chart and here in the snapshot engine chart. 
+# Also, the tezos-k8s chart names the node data volume 'var-volume' by default.
 nodes:
   snapshot-archive-node:
     history_mode: archive
