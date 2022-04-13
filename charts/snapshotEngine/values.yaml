@@ -17,8 +17,9 @@ service_account: snapshot-engine-sa
 # by taking CSI volumeSnapshots of their volume, then restoring them
 # into new pvcs and running jobs against them.
 # Note that these tezos nodes should be in the same namespace.
-# snapshotEngine expects one archive node and one rolling node in order
-# to generate all artifacts.
+# Specify an archive node to generate archive tarballs, a rolling node
+# to generate rolling snapshots and tarballs, or both to generate all
+# artifacts.
 # Below, specify what volumes the snapshot engine should look for, in
 # the following format:
 # nodes:
