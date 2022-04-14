@@ -53,6 +53,7 @@ export PERSISTENT_VOLUME_CLAIM
 yq e -i '.metadata.namespace=strenv(NAMESPACE)' createVolumeSnapshot.yaml
 yq e -i '.metadata.labels.history_mode=strenv(HISTORY_MODE)' createVolumeSnapshot.yaml
 yq e -i '.spec.source.persistentVolumeClaimName=strenv(PERSISTENT_VOLUME_CLAIM)' createVolumeSnapshot.yaml
+yq e -i '.spec.volumeSnapshotClassName=strenv(VOLUME_SNAPSHOT_CLASS)' createVolumeSnapshot.yaml
 
 while true; do
 
