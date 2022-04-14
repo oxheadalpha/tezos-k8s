@@ -1,6 +1,6 @@
 # Snapshot Engine
 
-A Helm chart for creating Tezos snapshots and tarballs for faster node sync, all in kubernetes, and deploy them to a bucket with an optional static website.
+A Helm chart for creating Tezos snapshots and tarballs for faster node sync, all in kubernetes, and deploy them to a bucket with a static website.
 
 Check out [xtz-shots.io](xtz-shots.io) for an example.
 
