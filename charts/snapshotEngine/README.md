@@ -214,7 +214,9 @@ nodes:
 images:
   octez: tezos/tezos:v12.2 # Version of Tezos that you will run
 
-snapshotMarkdownTemplateUrl: url_to_md_file # Url of markdown file that will host links to your
+snapshotMarkdownTemplateUrl: url_to_md_file # Url of markdown file that will be processed by jekyll and host links to your artifacts
+
+volumeSnapClass: volumeSnapshotClassName_from_cluster # Name of a volumeSnapshotClass CRD that you will have created during the CSI/Snapshot Storage Class installation process in your cluster.
 ```
 
 ## Produced files
