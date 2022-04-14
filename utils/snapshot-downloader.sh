@@ -31,7 +31,8 @@ echo "My nodes history mode: '$my_nodes_history_mode'"
 snapshot_url=""
 tarball_url=""
 case "$my_nodes_history_mode" in
-  full)     snapshot_url="$FULL_SNAPSHOT_URL";;
+  full)     snapshot_url="$FULL_SNAPSHOT_URL"
+            tarball_url="$FULL_TARBALL_URL";;
 
   rolling)  snapshot_url="$ROLLING_SNAPSHOT_URL"
             tarball_url="$ROLLING_TARBALL_URL";;
