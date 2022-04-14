@@ -33,16 +33,13 @@ spec:
               value: {{ $config.history_mode }}
             - name: NAMESPACE
               value: {{ $.Release.Namespace }}
+            - name: SERVICE_ACCOUNT
+              value: {{ $.Values.service_account }}
             - name: IMAGE_NAME
               valueFrom:
                 configMapKeyRef:
                   name: snapshot-configmap
                   key: IMAGE_NAME
-            - name: SERVICE_ACCOUNT
-              valueFrom:
-                configMapKeyRef:
-                  name: snapshot-configmap
-                  key: SERVICE_ACCOUNT
 ---
 {{- end }}
 {{- end }}
