@@ -1,6 +1,8 @@
 # Snapshot Engine
 
-A Helm chart for creating Tezos filesystem artifacts for faster node sync. Check out [xtz-shots.io](xtz-shots.io) for an example.
+A Helm chart for creating Tezos snapshots and tarballs for faster node sync, all in kubernetes, and deploy them to a bucket with a static website.
+
+Check out [xtz-shots.io](xtz-shots.io) for an example.
 
 - [Snapshot Engine](#snapshot-engine)
   - [What is it?](#what-is-it)
@@ -31,10 +33,7 @@ The Snapshot Engine is a Helm Chart to be deployed on a Kubernetes Cluster.  It 
 ## Requirements
 
 1. AWS EKS Cluster*
-2. Docker
-3. Optionally a remote container repository such as ECR*
 4. S3 Bucket*
-5. ECR Repo*
 6. IAM Role* with a Trust Policy scoped to the Kubernetes Service Account created by this Helm chart.
 7. [OIDC Provider](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html)*
 8. [Amazon EBS CSI Driver](https://github.com/kubernetes-sigs/aws-ebs-csi-driver)*
@@ -127,24 +126,6 @@ The Snapshot Engine is a Helm Chart to be deployed on a Kubernetes Cluster.  It 
 }
 ```
 
-4. Build the containers
-
-You can build and push your images to a repo of your choosing, but this is how it can be done without automation to ECR with Docker. We recommend utilizing a configuration management tool to help with container orchestration such as Terraform or Pulumi.
-
-```bash
-# Get ECR login for Docker
-aws ecr get-login-password --region YOUR_AWS_REGION | docker login --username AWS --password-stdin YOUR_ECR_URL
-
-# Build the image with Docker
-docker build -t snapshotEngine snapshotEngine/
-
-# Tag the image. Will be used in values.yaml
-docker tag snapshotEngine:latest YOUR_ECR_URL/snapshotEngine:latest
-
-# Push the image to ECR
-docker push YOUR_ECR_URL/snapshotEngine:latest
-```
-
 5. Add our Helm repository.
 
 ```bash
@@ -155,8 +136,7 @@ helm repo add oxheadalpha https://oxheadalpha.github.io/tezos-helm-charts/
 
 ```bash
 helm install snapshotEngine \
---set iam_role_arn="IAM_ROLE_ARN" \
---set tezos_k8s_images.snapshotEngine="YOUR_ECR_URL/snapshotEngine:latest"
+--set iam_role_arn="IAM_ROLE_ARN"
 ```
 
 OR
@@ -164,8 +144,6 @@ OR
 ```bash
 cat << EOF > values.yaml
 iam_role_arn: "IAM_ROLE_ARN"
-tezos_k8s_images:
-  snapshotEngine: YOUR_ECR_URL/snapshotEngine:latest
 EOF
 helm install snapshotEngine -f values.yaml
 ```
@@ -196,28 +174,7 @@ aws s3 ls s3://mainnet.xtz-shots.io
 
 ## Values
 
-```yaml
-tezos_k8s_images:
-  snapshotEngine: tezos-k8s-snapshot-maker:dev # Change to name of your snapshotEngine image with tag
-
-iam_role_arn: "" # Change this to the ARN of your IAM role with permissions to S3 and VolumeSnapshots
-service_account: snapshot-engine-sa # Keep or change if you like
-
-nodes:
-  snapshot-archive-node:
-    history_mode: archive
-    target_volume: var-volume
-  snapshot-rolling-node:
-    history_mode: rolling
-    target_volume: var-volume
-
-images:
-  octez: tezos/tezos:v12.2 # Version of Tezos that you will run
-
-snapshotMarkdownTemplateUrl: url_to_md_file # Url of markdown file that will be processed by jekyll and host links to your artifacts
-
-volumeSnapClass: volumeSnapshotClassName_from_cluster # Name of a volumeSnapshotClass CRD that you will have created during the CSI/Snapshot Storage Class installation process in your cluster.
-```
+All parameters accepted by the chart are listed in [`values.yaml`](charts/snapshotEngine/values.yaml), with explanatory comments.
 
 ## Produced files
 
@@ -414,3 +371,31 @@ This container performs the following steps -
 20. Curls chain website page from chainWebsiteMarkdown
 21. Build web page with Jekyll with curled Markdown and metadata files
 22. Upload website files to S3
+
+#### Rebuilding containers
+
+You may want to rebuild these containers instead of using the ones released as part of tezos-k8s.
+
+You can build and push your images to a repo of your choosing, but this is how it can be done without automation to ECR with Docker. We recommend utilizing a configuration management tool to help with container orchestration such as Terraform or Pulumi.
+
+```bash
+# Get ECR login for Docker
+aws ecr get-login-password --region YOUR_AWS_REGION | docker login --username AWS --password-stdin YOUR_ECR_URL
+
+# Build the image with Docker
+docker build -t snapshotEngine snapshotEngine/
+
+# Tag the image. Will be used in values.yaml
+docker tag snapshotEngine:latest YOUR_ECR_URL/snapshotEngine:latest
+
+# Push the image to ECR
+docker push YOUR_ECR_URL/snapshotEngine:latest
+```
+
+Then pass the URI of the image as helm values:
+
+```bash
+helm install snapshotEngine \
+--set tezos_k8s_images.snapshotEngine="YOUR_ECR_URL/snapshotEngine:latest"
+# <add more helm parameters here>
+```
