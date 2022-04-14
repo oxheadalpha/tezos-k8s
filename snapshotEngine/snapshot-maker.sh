@@ -173,7 +173,7 @@ if [ "${HISTORY_MODE}" = archive ]; then
 fi
 
 # Service account to be used by entire zip-and-upload job.
-SERVICE_ACCOUNT="${SERVICE_ACCOUNT}" yq e -i '.spec.template.spec.serviceAccountName=strenv(SERVICE_ACCOUNT)' mainJob.yaml.yaml
+SERVICE_ACCOUNT="${SERVICE_ACCOUNT}" yq e -i '.spec.template.spec.serviceAccountName=strenv(SERVICE_ACCOUNT)' mainJob.yaml
 
 sleep 10
 
