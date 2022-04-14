@@ -1,6 +1,8 @@
 # Snapshot Engine
 
-A Helm chart for creating Tezos filesystem artifacts for faster node sync. Check out [xtz-shots.io](xtz-shots.io) for an example.
+A Helm chart for creating Tezos snapshots and tarballs for faster node sync, all in kubernetes, and deploy them to a bucket with an optional static website.
+
+Check out [xtz-shots.io](xtz-shots.io) for an example.
 
 - [Snapshot Engine](#snapshot-engine)
   - [What is it?](#what-is-it)
@@ -196,26 +198,7 @@ aws s3 ls s3://mainnet.xtz-shots.io
 
 ## Values
 
-```yaml
-tezos_k8s_images:
-  snapshotEngine: tezos-k8s-snapshot-maker:dev # Change to name of your snapshotEngine image with tag
-
-iam_role_arn: "" # Change this to the ARN of your IAM role with permissions to S3 and VolumeSnapshots
-service_account: snapshot-engine-sa # Keep or change if you like
-
-nodes:
-  snapshot-archive-node:
-    history_mode: archive
-    target_volume: var-volume
-  snapshot-rolling-node:
-    history_mode: rolling
-    target_volume: var-volume
-
-images:
-  octez: tezos/tezos:v12.2 # Version of Tezos that you will run
-
-chainWebsiteMarkdown: url_to_md_file # Url of markdown file that will host links to your
-```
+All parameters accepted by the chart are listed in [`values.yaml`](charts/snapshotEngine/values.yaml), with explanatory comments.
 
 ## Produced files
 
