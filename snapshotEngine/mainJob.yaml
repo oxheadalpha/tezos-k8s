@@ -220,7 +220,7 @@ spec:
                 configMapKeyRef:
                   name: snapshot-configmap
                   key: NAMESPACE
-            - name: SNAPSHOT_MARKDOWN_URL
+            - name: SNAPSHOT_MARKDOWN_TEMPLATE_URL
               valueFrom:
                 configMapKeyRef:
                   name: snapshot-configmap
