@@ -224,7 +224,7 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   name: snapshot-configmap
-                  key: SNAPSHOT_MARKDOWN_URL
+                  key: SNAPSHOT_MARKDOWN_TEMPLATE_URL
       restartPolicy: Never
       volumes:
         - name: persistent-storage
