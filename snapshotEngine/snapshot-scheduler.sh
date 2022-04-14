@@ -5,6 +5,8 @@ cd /
 ## Snapshot Namespace
 NAMESPACE="${NAMESPACE}" yq e -i '.metadata.namespace=strenv(NAMESPACE)' snapshotMakerJob.yaml
 
+SERVICE_ACCOUNT="${SERVICE_ACCOUNT}" yq e -i '.spec.template.spec.serviceAccountName=strenv(SERVICE_ACCOUNT)' snapshotMakerJob.yaml
+
 #Snapshot-maker image set
 IMAGE_NAME="${IMAGE_NAME}" yq e -i '.spec.template.spec.containers[0].image=strenv(IMAGE_NAME)' snapshotMakerJob.yaml
 

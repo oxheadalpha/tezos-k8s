@@ -38,6 +38,11 @@ spec:
                 configMapKeyRef:
                   name: snapshot-configmap
                   key: IMAGE_NAME
+            - name: SERVICE_ACCOUNT
+              valueFrom:
+                configMapKeyRef:
+                  name: snapshot-configmap
+                  key: SERVICE_ACCOUNT
 ---
 {{- end }}
 {{- end }}

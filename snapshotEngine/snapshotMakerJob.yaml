@@ -9,7 +9,7 @@ spec:
       labels:
         app: snapshot-maker
     spec:
-      serviceAccountName: snapshot-engine-sa
+      serviceAccountName: ""
       containers:
         - name: snapshot-maker
           image: ""
@@ -34,4 +34,9 @@ spec:
                 configMapKeyRef:
                   name: snapshot-configmap
                   key: TEZOS_IMAGE
+            - name: SERVICE_ACCOUNT
+              valueFrom:
+                configMapKeyRef:
+                  name: snapshot-configmap
+                  key: SERVICE_ACCOUNT
       restartPolicy: Never
