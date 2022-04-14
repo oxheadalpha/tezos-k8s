@@ -214,7 +214,7 @@ nodes:
 images:
   octez: tezos/tezos:v12.2 # Version of Tezos that you will run
 
-chainWebsiteMarkdown: url_to_md_file # Url of markdown file that will host links to your
+snapshotMarkdownTemplateUrl: url_to_md_file # Url of markdown file that will host links to your
 ```
 
 ## Produced files

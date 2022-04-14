@@ -15,4 +15,4 @@ nodes:
     history_mode: rolling
     target_volume: var-volume
 
-chainWebsiteMarkdown: ""
+snapshotMarkdownTemplateUrl: ""
