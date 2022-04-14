@@ -548,7 +548,7 @@ jq -n \
 }' > _data/tezos_metadata.json
 
 # Grab liquid-templated chain website page
-curl -o index.md "${SNAPSHOT_MARKDOWN_URL}"
+curl -o index.md "${SNAPSHOT_MARKDOWN_TEMPLATE_URL}"
 
 # Update chain name for page title using variable
 sed -i'' -e 's/${NETWORK}/'"${NETWORK}"'/g' index.md
