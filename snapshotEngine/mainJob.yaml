@@ -9,7 +9,7 @@ spec:
       labels:
         app: snapshot-maker
     spec:
-      serviceAccountName: snapshot-engine-sa
+      serviceAccountName: ""
       initContainers:
         - name: init-tezos-filesystem
           image: ""
@@ -220,6 +220,11 @@ spec:
                 configMapKeyRef:
                   name: snapshot-configmap
                   key: NAMESPACE
+            - name: SNAPSHOT_MARKDOWN_TEMPLATE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: snapshot-configmap
+                  key: SNAPSHOT_MARKDOWN_TEMPLATE_URL
       restartPolicy: Never
       volumes:
         - name: persistent-storage

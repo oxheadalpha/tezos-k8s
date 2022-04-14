@@ -33,6 +33,8 @@ spec:
               value: {{ $config.history_mode }}
             - name: NAMESPACE
               value: {{ $.Release.Namespace }}
+            - name: SERVICE_ACCOUNT
+              value: {{ $.Values.service_account }}
             - name: IMAGE_NAME
               valueFrom:
                 configMapKeyRef:

@@ -34,6 +34,8 @@ spec:
             - |
 {{ $.Files.Get "scripts/snapshot-warmer.sh" | indent 14 }}
           env:
+            - name: VOLUME_SNAPSHOT_CLASS
+              value: {{ $.Values.volumeSnapClass }}
             - name: NAMESPACE
               value: {{ $.Release.Namespace }}
             - name: NODE_CLASS
