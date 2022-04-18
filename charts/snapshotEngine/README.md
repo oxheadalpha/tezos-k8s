@@ -174,7 +174,7 @@ aws s3 ls s3://mainnet.xtz-shots.io
 
 ## Values
 
-All parameters accepted by the chart are listed in [`values.yaml`](charts/snapshotEngine/values.yaml), with explanatory comments.
+All parameters accepted by the chart are listed in [`values.yaml`](values.yaml), with explanatory comments.
 
 ## Produced files
 
