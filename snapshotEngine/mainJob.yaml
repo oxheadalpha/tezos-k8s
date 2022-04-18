@@ -78,7 +78,7 @@ spec:
               wget -qO-  http://localhost:8732/chains/main/blocks/"${TARGET}"/header | sed -E 's/.*"hash":"?([^,"]*)"?.*/\1/' > /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH
 
               # Get BLOCK_HEIGHT from RPC
-              wget -qO-  http://localhost:8732/chains/main/blocks/head/header | sed -E 's/.*"level":"?([^,"]*)"?.*/\1/' > /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HEIGHT
+              wget -qO-  http://localhost:8732/chains/main/blocks/"${TARGET}"/header | sed -E 's/.*"level":"?([^,"]*)"?.*/\1/' > /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HEIGHT
 
               # We need to check if the block is finalized for archive nodes since we aren't getting
               # validation by a Tezos snapshot like our rolling tarball. We are just zipping up the data dir from an archive node.
