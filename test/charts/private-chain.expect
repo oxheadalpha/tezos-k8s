@@ -33,43 +33,45 @@ data:
       "protocol_activation": {
           "deterministic_faucet_number_of_accounts": 1000,
           "deterministic_faucet_seed": "oM0TxIV5gYNVd0T9kasdfnv352",
-          "protocol_hash": "PtGRANADsDU8R9daYKAgWnQYAJ64omN1o3KMGVCykShA97vQbvV",
+          "protocol_hash": "Psithaca2MLRFYargivpo7YvUr7wUDqyxrdhC5CQq78mRvimz6A",
           "protocol_parameters": {
-            "baking_reward_per_endorsement": [
-              "200000"
-            ],
-            "block_security_deposit": "512000000",
+            "baking_reward_bonus_per_slot": "4286",
+            "baking_reward_fixed_portion": "10000000",
             "blocks_per_commitment": 4,
             "blocks_per_cycle": 8,
-            "blocks_per_roll_snapshot": 4,
+            "blocks_per_stake_snapshot": 4,
             "blocks_per_voting_period": 64,
+            "consensus_committee_size": 7000,
+            "consensus_threshold": 4667,
             "cost_per_byte": "1000",
-            "delay_per_missing_endorsement": "1",
-            "endorsement_reward": [
-              "2000000"
-            ],
-            "endorsement_security_deposit": "64000000",
-            "endorsers_per_block": 32,
-            "hard_gas_limit_per_block": "8000000",
-            "hard_gas_limit_per_operation": "800000",
+            "delay_increment_per_round": "5",
+            "double_baking_punishment": "640000000",
+            "endorsing_reward_per_slot": "2857",
+            "frozen_deposits_percentage": 10,
+            "hard_gas_limit_per_block": "5200000",
+            "hard_gas_limit_per_operation": "1040000",
             "hard_storage_limit_per_operation": "60000",
-            "initial_endorsers": 1,
             "liquidity_baking_escape_ema_threshold": 100000,
             "liquidity_baking_subsidy": "2500000",
             "liquidity_baking_sunset_level": 525600,
-            "michelson_maximum_type_size": 1000,
+            "max_operations_time_to_live": 120,
+            "max_slashing_period": 2,
             "min_proposal_quorum": 500,
-            "minimal_block_delay": "2",
+            "minimal_block_delay": "5",
+            "minimal_participation_ratio": {
+              "denominator": 3,
+              "numerator": 2
+            },
             "origination_size": 257,
-            "preserved_cycles": 2,
+            "preserved_cycles": 3,
             "proof_of_work_threshold": "-1",
             "quorum_max": 7000,
             "quorum_min": 2000,
+            "ratio_of_frozen_deposits_slashed_per_double_endorsement": {
+              "denominator": 2,
+              "numerator": 1
+            },
             "seed_nonce_revelation_tip": "125000",
-            "time_between_blocks": [
-              "10",
-              "20"
-            ],
             "tokens_per_roll": "8000000000"
           }
         }
@@ -82,7 +84,6 @@ data:
     null
 
   NODES: |
-
     {
       "af": {
         "instances": [
@@ -293,16 +294,12 @@ spec:
               NODE_DIR="$TEZ_VAR/node"
               NODE_DATA_DIR="$TEZ_VAR/node/data"
               
-              proto_command="011-PtHangz2"
-              
-              if [ "${DAEMON}" == "baker" ]; then
-                  extra_args="with local node $NODE_DATA_DIR"
-              fi
+              proto_command="012-Psithaca"
               
               my_baker_account="$(cat /etc/tezos/baker-account )"
               
               CLIENT="$TEZ_BIN/tezos-client -d $CLIENT_DIR"
-              CMD="$TEZ_BIN/tezos-$DAEMON-$proto_command -d $CLIENT_DIR"
+              CMD="$TEZ_BIN/tezos-baker-$proto_command -d $CLIENT_DIR"
               
               # ensure we can run tezos-client commands without specifying client dir
               ln -s /var/tezos/client /home/tezos/.tezos-client
@@ -311,10 +308,10 @@ spec:
                   sleep 5
               done
               
-              exec $CMD run ${extra_args} ${my_baker_account}
+              exec $CMD run with local node $NODE_DATA_DIR ${my_baker_account}
               
           imagePullPolicy: IfNotPresent
-          name: baker-011-pthangz2
+          name: baker-012-psithaca
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -337,68 +334,7 @@ spec:
             - name: MY_NODE_CLASS
               value: af
             - name: DAEMON
-              value: baker
-        - image: "tezos/tezos:v12-release"
-          command:
-            - /bin/sh
-          args:
-            - "-c"
-            - |
-              set -ex
-              
-              TEZ_VAR=/var/tezos
-              TEZ_BIN=/usr/local/bin
-              CLIENT_DIR="$TEZ_VAR/client"
-              NODE_DIR="$TEZ_VAR/node"
-              NODE_DATA_DIR="$TEZ_VAR/node/data"
-              
-              proto_command="011-PtHangz2"
-              
-              if [ "${DAEMON}" == "baker" ]; then
-                  extra_args="with local node $NODE_DATA_DIR"
-              fi
-              
-              my_baker_account="$(cat /etc/tezos/baker-account )"
-              
-              CLIENT="$TEZ_BIN/tezos-client -d $CLIENT_DIR"
-              CMD="$TEZ_BIN/tezos-$DAEMON-$proto_command -d $CLIENT_DIR"
-              
-              # ensure we can run tezos-client commands without specifying client dir
-              ln -s /var/tezos/client /home/tezos/.tezos-client
-              
-              while ! $CLIENT rpc get chains/main/blocks/head; do
-                  sleep 5
-              done
-              
-              exec $CMD run ${extra_args} ${my_baker_account}
-              
-          imagePullPolicy: IfNotPresent
-          name: endorser-011-pthangz2
-          volumeMounts:
-            - mountPath: /etc/tezos
-              name: config-volume
-            - mountPath: /var/tezos
-              name: var-volume
-          envFrom:
-            - configMapRef:
-                name: tezos-config
-            - secretRef:
-                name: tezos-secret
-          env:    
-            - name: MY_POD_IP
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.podIP
-            - name: MY_POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-            - name: MY_POD_TYPE
-              value: node
-            - name: MY_NODE_CLASS
-              value: af
-            - name: DAEMON
-              value: endorser        
+              value: baker        
         - image: "tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
           name: logger
@@ -840,16 +776,12 @@ spec:
               NODE_DIR="$TEZ_VAR/node"
               NODE_DATA_DIR="$TEZ_VAR/node/data"
               
-              proto_command="011-PtHangz2"
-              
-              if [ "${DAEMON}" == "baker" ]; then
-                  extra_args="with local node $NODE_DATA_DIR"
-              fi
+              proto_command="012-Psithaca"
               
               my_baker_account="$(cat /etc/tezos/baker-account )"
               
               CLIENT="$TEZ_BIN/tezos-client -d $CLIENT_DIR"
-              CMD="$TEZ_BIN/tezos-$DAEMON-$proto_command -d $CLIENT_DIR"
+              CMD="$TEZ_BIN/tezos-baker-$proto_command -d $CLIENT_DIR"
               
               # ensure we can run tezos-client commands without specifying client dir
               ln -s /var/tezos/client /home/tezos/.tezos-client
@@ -858,10 +790,10 @@ spec:
                   sleep 5
               done
               
-              exec $CMD run ${extra_args} ${my_baker_account}
+              exec $CMD run with local node $NODE_DATA_DIR ${my_baker_account}
               
           imagePullPolicy: IfNotPresent
-          name: baker-011-pthangz2
+          name: baker-012-psithaca
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -884,68 +816,7 @@ spec:
             - name: MY_NODE_CLASS
               value: eu
             - name: DAEMON
-              value: baker
-        - image: "tezos/tezos:v10-release"
-          command:
-            - /bin/sh
-          args:
-            - "-c"
-            - |
-              set -ex
-              
-              TEZ_VAR=/var/tezos
-              TEZ_BIN=/usr/local/bin
-              CLIENT_DIR="$TEZ_VAR/client"
-              NODE_DIR="$TEZ_VAR/node"
-              NODE_DATA_DIR="$TEZ_VAR/node/data"
-              
-              proto_command="011-PtHangz2"
-              
-              if [ "${DAEMON}" == "baker" ]; then
-                  extra_args="with local node $NODE_DATA_DIR"
-              fi
-              
-              my_baker_account="$(cat /etc/tezos/baker-account )"
-              
-              CLIENT="$TEZ_BIN/tezos-client -d $CLIENT_DIR"
-              CMD="$TEZ_BIN/tezos-$DAEMON-$proto_command -d $CLIENT_DIR"
-              
-              # ensure we can run tezos-client commands without specifying client dir
-              ln -s /var/tezos/client /home/tezos/.tezos-client
-              
-              while ! $CLIENT rpc get chains/main/blocks/head; do
-                  sleep 5
-              done
-              
-              exec $CMD run ${extra_args} ${my_baker_account}
-              
-          imagePullPolicy: IfNotPresent
-          name: endorser-011-pthangz2
-          volumeMounts:
-            - mountPath: /etc/tezos
-              name: config-volume
-            - mountPath: /var/tezos
-              name: var-volume
-          envFrom:
-            - configMapRef:
-                name: tezos-config
-            - secretRef:
-                name: tezos-secret
-          env:    
-            - name: MY_POD_IP
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.podIP
-            - name: MY_POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-            - name: MY_POD_TYPE
-              value: node
-            - name: MY_NODE_CLASS
-              value: eu
-            - name: DAEMON
-              value: endorser        
+              value: baker        
         - image: "tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
           name: logger
@@ -1205,16 +1076,12 @@ spec:
               NODE_DIR="$TEZ_VAR/node"
               NODE_DATA_DIR="$TEZ_VAR/node/data"
               
-              proto_command="011-PtHangz2"
-              
-              if [ "${DAEMON}" == "baker" ]; then
-                  extra_args="with local node $NODE_DATA_DIR"
-              fi
+              proto_command="012-Psithaca"
               
               my_baker_account="$(cat /etc/tezos/baker-account )"
               
               CLIENT="$TEZ_BIN/tezos-client -d $CLIENT_DIR"
-              CMD="$TEZ_BIN/tezos-$DAEMON-$proto_command -d $CLIENT_DIR"
+              CMD="$TEZ_BIN/tezos-baker-$proto_command -d $CLIENT_DIR"
               
               # ensure we can run tezos-client commands without specifying client dir
               ln -s /var/tezos/client /home/tezos/.tezos-client
@@ -1223,10 +1090,10 @@ spec:
                   sleep 5
               done
               
-              exec $CMD run ${extra_args} ${my_baker_account}
+              exec $CMD run with local node $NODE_DATA_DIR ${my_baker_account}
               
           imagePullPolicy: IfNotPresent
-          name: baker-011-pthangz2
+          name: baker-012-psithaca
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -1249,68 +1116,7 @@ spec:
             - name: MY_NODE_CLASS
               value: us
             - name: DAEMON
-              value: baker
-        - image: "tezos/tezos:v12-release"
-          command:
-            - /bin/sh
-          args:
-            - "-c"
-            - |
-              set -ex
-              
-              TEZ_VAR=/var/tezos
-              TEZ_BIN=/usr/local/bin
-              CLIENT_DIR="$TEZ_VAR/client"
-              NODE_DIR="$TEZ_VAR/node"
-              NODE_DATA_DIR="$TEZ_VAR/node/data"
-              
-              proto_command="011-PtHangz2"
-              
-              if [ "${DAEMON}" == "baker" ]; then
-                  extra_args="with local node $NODE_DATA_DIR"
-              fi
-              
-              my_baker_account="$(cat /etc/tezos/baker-account )"
-              
-              CLIENT="$TEZ_BIN/tezos-client -d $CLIENT_DIR"
-              CMD="$TEZ_BIN/tezos-$DAEMON-$proto_command -d $CLIENT_DIR"
-              
-              # ensure we can run tezos-client commands without specifying client dir
-              ln -s /var/tezos/client /home/tezos/.tezos-client
-              
-              while ! $CLIENT rpc get chains/main/blocks/head; do
-                  sleep 5
-              done
-              
-              exec $CMD run ${extra_args} ${my_baker_account}
-              
-          imagePullPolicy: IfNotPresent
-          name: endorser-011-pthangz2
-          volumeMounts:
-            - mountPath: /etc/tezos
-              name: config-volume
-            - mountPath: /var/tezos
-              name: var-volume
-          envFrom:
-            - configMapRef:
-                name: tezos-config
-            - secretRef:
-                name: tezos-secret
-          env:    
-            - name: MY_POD_IP
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.podIP
-            - name: MY_POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-            - name: MY_POD_TYPE
-              value: node
-            - name: MY_NODE_CLASS
-              value: us
-            - name: DAEMON
-              value: endorser                                
+              value: baker                                
         - command:
             - python
           args:
@@ -1531,7 +1337,7 @@ spec:
               echo Activating chain:
               $CLIENT -d /var/tezos/client --block					\
               	genesis activate protocol					\
-              	PtGRANADsDU8R9daYKAgWnQYAJ64omN1o3KMGVCykShA97vQbvV				\
+              	Psithaca2MLRFYargivpo7YvUr7wUDqyxrdhC5CQq78mRvimz6A				\
               	with fitness -1 and key						\
               	$( cat /etc/tezos/activation_account_name )			\
               	and parameters /etc/tezos/parameters.json 2>&1 | head -200

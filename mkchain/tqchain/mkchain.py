@@ -268,7 +268,7 @@ def main():
         parametersYaml = yaml.safe_load(yaml_file)
         activation = {
             "activation": {
-                "protocol_hash": "PtHangz2aRngywmSRGGvrcTyMbbdpWdpFKuS4uMWxg2RaH9i1qx",
+                "protocol_hash": "Psithaca2MLRFYargivpo7YvUr7wUDqyxrdhC5CQq78mRvimz6A",
                 "protocol_parameters": parametersYaml,
             },
         }

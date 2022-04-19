@@ -12,24 +12,30 @@ data:
       "protocol_activation": {{ .Values.activation | mustToPrettyJson | indent 8 | trim }}
     }
   FULL_SNAPSHOT_URL: "{{ .Values.full_snapshot_url }}"
+  FULL_TARBALL_URL: "{{ .Values.full_tarball_url }}"
   ROLLING_SNAPSHOT_URL: "{{ .Values.rolling_snapshot_url }}"
-  ARCHIVE_TARBALL_URL: "{{ .Values.archive_tarball_url }}"
   ROLLING_TARBALL_URL: "{{ .Values.rolling_tarball_url }}"
+  ARCHIVE_TARBALL_URL: "{{ .Values.archive_tarball_url }}"
   NODE_GLOBALS: |
 {{ .Values.node_globals | mustToPrettyJson | indent 4 }}
 
   NODES: |
 {{/*
-  Remove "identity" field from nodes. Creates a deep copy because
-  "unset" modifies the object.
+  Don't add node classes without configuration to the configmap.
+  Also remove the secret "identity" field on node instances. Creates
+  a deep copy because "unset" modifies the object.
 */}}
 {{- $nodes_copy := deepCopy .Values.nodes }}
 {{- range $node_class, $node_config := $nodes_copy }}
-  {{- range $_, $instance_config := $node_config.instances }}
-    {{- $_ := unset $instance_config "identity" }}
+  {{- if $node_config }}
+    {{- range $_, $instance_config := $node_config.instances }}
+      {{- $_ := unset $instance_config "identity" }}
+    {{- end }}
+  {{- else }}
+    {{- $_ := unset $nodes_copy $node_class }}
   {{- end }}
 {{- end }}
-{{ $nodes_copy | mustToPrettyJson | indent 4 }}
+{{- $nodes_copy | mustToPrettyJson | indent 4 }}
 
   SIGNERS: |
 {{ .Values.signers | mustToPrettyJson | indent 4 }}

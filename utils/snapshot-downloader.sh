@@ -31,7 +31,8 @@ echo "My nodes history mode: '$my_nodes_history_mode'"
 snapshot_url=""
 tarball_url=""
 case "$my_nodes_history_mode" in
-  full)     snapshot_url="$FULL_SNAPSHOT_URL";;
+  full)     snapshot_url="$FULL_SNAPSHOT_URL"
+            tarball_url="$FULL_TARBALL_URL";;
 
   rolling)  snapshot_url="$ROLLING_SNAPSHOT_URL"
             tarball_url="$ROLLING_TARBALL_URL";;
@@ -51,7 +52,6 @@ if [ -n "$snapshot_url" ] && [ -n "$tarball_url" ]; then
   echo "ERROR: Either only a snapshot or tarball url may be specified per Tezos node history mode."
 fi
 
-rm -rfv "$node_data_dir"
 mkdir -p "$node_data_dir"
 
 if [ -n "$snapshot_url" ]; then
@@ -61,7 +61,6 @@ if [ -n "$snapshot_url" ]; then
 elif [ -n "$tarball_url" ]; then
   echo "Downloading and extracting tarball from $tarball_url"
   curl -LfsS "$tarball_url" | lz4 -d | tar -x -C "$data_dir"
-  rm -fv "$node_data_dir/identity.json"
 fi
 
 chown -R 100 "$data_dir"
