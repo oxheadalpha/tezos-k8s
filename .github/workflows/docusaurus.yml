@@ -4,7 +4,7 @@ on:
   push:
     # Trigger CI on all branch pushes but...
     branches:
-      - "**"
+      - main
     # don't double trigger on new tag push when creating release. Should only
     # trigger once for the release.
     tags-ignore:
