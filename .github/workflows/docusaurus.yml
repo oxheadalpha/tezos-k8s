@@ -20,6 +20,8 @@ on:
 jobs:
   publish-site:
     runs-on: ubuntu-latest
+    env:
+      REPO_NAME: ${{ github.event.repository.name }}
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Check out repo
@@ -29,6 +31,8 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "14"
+      - name: read docusaurus config
+        run: cat docusaurus/docusaurus.config.js
       # Install and build Docusaurus website
       - name: Build Docusaurus website
         run: |
