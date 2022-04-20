@@ -34,7 +34,7 @@ jobs:
       # Install and build Docusaurus website
       - name: Build Docusaurus website
         run: |
-          cd docusaurus
+          cd docs
           npm install 
           npm run build
       - name: Deploy to GitHub Pages
@@ -42,6 +42,6 @@ jobs:
         uses: crazy-max/ghaction-github-pages@v2
         with:
           target_branch: gh-pages
-          build_dir: docusaurus/build
+          build_dir: docs/build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
