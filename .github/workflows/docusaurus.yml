@@ -31,8 +31,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "14"
-      - name: read docusaurus config
-        run: cat docusaurus/docusaurus.config.js
       # Install and build Docusaurus website
       - name: Build Docusaurus website
         run: |
