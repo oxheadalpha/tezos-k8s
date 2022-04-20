@@ -23,6 +23,8 @@ const config = {
       ({
         docs: {
           routeBasePath: '/', // Serve the docs at the site's root
+          path: '.',
+          include: ['*.md']
         },
         blog: false,
         theme: {
