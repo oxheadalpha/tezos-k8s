@@ -6,7 +6,7 @@ data:
   SNAPSHOT_MARKDOWN_TEMPLATE_URL: {{ $.Values.snapshotMarkdownTemplateUrl }}
   SERVICE_ACCOUNT: {{ $.Values.service_account }}
   RESTORED_STORAGE_INIT_TIME: {{ $.Values.restoredStorageInitTime }}
-  DISABLE_STORAGE_INIT_TIME: {{ $.Values.disableStorageInitTime }}
+  DISABLE_STORAGE_INIT_TIME: {{ $.Values.disableStorageInitTime | quote }}
 kind: ConfigMap
 metadata:
   name: snapshot-configmap
