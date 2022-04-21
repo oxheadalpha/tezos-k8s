@@ -43,7 +43,7 @@ spec:
               # Limit validation to restoredStorageInitTime. If this takes longer then there is a tezos error
               # and this job is tossed.
               # Tezos does not exit on error so we have to time the job.
-              if ! "${DISABLE_STORAGE_INIT_TIME}"; then
+              if [ "${DISABLE_STORAGE_INIT_TIME}" != "false" ]; then
                 sleep "${RESTORED_STORAGE_INIT_TIME}" && kill -s SIGINT 1 &
               fi 
 

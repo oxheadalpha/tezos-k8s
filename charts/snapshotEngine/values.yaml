@@ -70,4 +70,4 @@ volumeSnapClass: ""
 restoredStorageInitTime: 2m
 
 # We also provide the ability to disable the time limit for debugging purposes.
-disableStorageInitTime: false
+disableStorageInitTime: "false"
