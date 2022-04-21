@@ -68,3 +68,6 @@ volumeSnapClass: ""
 # grows in size over time.
 # This time format is in unix sleep time format ex. 1s, 2m, 3h, 4d.
 restoredStorageInitTime: 2m
+
+# We also provide the ability to disable the time limit for debugging purposes.
+disableStorageInitTime: false
