@@ -45,7 +45,10 @@ spec:
               # Tezos does not exit on error so we have to time the job.
               # Configmaps can only have strings as keys, so we cant test for truthy values.
               if [ "${DISABLE_STORAGE_INIT_TIME}" != "true" ]; then
+                printf "%s Storage init time limit has NOT been disabled.  This job will be killed after %s\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${RESTORED_STORAGE_INIT_TIME}"
                 sleep "${RESTORED_STORAGE_INIT_TIME}" && kill -s SIGINT 1 &
+              else
+                printf "%s Storage init time limit has been disabled. WARNING - This job will run indefinitely if there is an error.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
               fi 
 
               # These loops wait on the RPC to come online and prevent log from printing same line
