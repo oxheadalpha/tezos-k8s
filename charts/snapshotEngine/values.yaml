@@ -57,3 +57,14 @@ snapshotMarkdownTemplateUrl: ""
 # you will have also created and named a volumeSnapshotClass that will be used in this value.
 # This value is used during the snapshot creation process.
 volumeSnapClass: ""
+
+# The EBS snapshot of a node is restored to a new volume as a part of the artifact generation process.  
+# This storage must have a tezos node "turned on" to initialize the storage for proper restoration later. 
+# However, there are errors that occur during this initialization due to Tezos not being tolerant 
+# of the KILL -9 that occurs during the EBS snapshot process.  
+# Tezos also does not exit on error, but rather just hangs stdout on a random error. 
+# Therefore we limit this initialization process and pitch the job in a reasonable amount of time to account for these
+# random errors. It may be necessary to increase this time for different changes, or as a particular chain
+# grows in size over time.
+# This time format is in unix sleep time format ex. 1s, 2m, 3h, 4d.
+restoredStorageInitTime: 2m

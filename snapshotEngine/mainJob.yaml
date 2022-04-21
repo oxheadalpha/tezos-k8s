@@ -40,10 +40,10 @@ spec:
               # Run headless tezos node to validate storage on restored volume
               tezos-node run --connections 0 --config-file /home/tezos/.tezos-node/config.json --rpc-addr=127.0.0.1:8732 &
 
-              # Time validation to 2 minutes. If this takes longer then there is a tezos error
+              # Limit validation to restoredStorageInitTime. If this takes longer then there is a tezos error
               # and this job is tossed.
               # Tezos does not exit on error so we have to time the job.
-              sleep 2m && kill -s SIGINT 1 &
+              sleep "${RESTORED_STORAGE_INIT_TIME}" && kill -s SIGINT 1 &
 
               # These loops wait on the RPC to come online and prevent log from printing same line
               # over and over and over again.  This prints one line and waits for the RPC to come online for a clean log.
@@ -133,6 +133,11 @@ spec:
           env:
             - name: HISTORY_MODE
               value: ""
+            - name: RESTORED_STORAGE_INIT_TIME
+              valueFrom:
+                configMapKeyRef:
+                  name: snapshot-configmap
+                  key: RESTORED_STORAGE_INIT_TIME
             - name: NAMESPACE
               valueFrom:
                 configMapKeyRef:
