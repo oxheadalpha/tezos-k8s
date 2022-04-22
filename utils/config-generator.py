@@ -458,7 +458,12 @@ def get_genesis_accounts_pubkey_and_balance(accounts):
                 key = v.get("pkh")
             else:
                 key = v.get("pk")
-            pubkey_and_balance_pairs.append([key, v["bootstrap_balance"]])
+            delegate = v.get("delegate_to")
+            if delegate:
+                baker_key = accounts[delegate].get("pkh")
+                pubkey_and_balance_pairs.append([v.get("pk"), v["bootstrap_balance"], baker_key])
+            else:
+                pubkey_and_balance_pairs.append([key, v["bootstrap_balance"]])
 
     return pubkey_and_balance_pairs
 

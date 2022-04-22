@@ -46,7 +46,8 @@ should_generate_unsafe_deterministic_data: false
 #   can be given a bootstrap balance and can also be configured to be bootstrap
 #   baker accounts. Accounts with balances set to "0" will be imported by the
 #   node but they will not be bootstrap accounts. If you don't set a bootstrap
-#   balance, it will default to the `bootstrap_mutez` field above.
+#   balance, it will default to the `bootstrap_mutez` field above. The `delegate_to`
+#   field names another account that this account will delegate to.
 #
 accounts: {}
 #   baker0:
@@ -60,6 +61,7 @@ accounts: {}
 #     type: public
 #     is_bootstrap_baker_account: false
 #     bootstrap_balance: "4000000000000"
+#     delegate_to: baker0
 
 ## NODES
 ##
