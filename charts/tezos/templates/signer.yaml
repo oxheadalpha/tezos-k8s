@@ -52,13 +52,13 @@ spec:
           - mountPath: /var/tezos
             name: var-volume
           - mountPath: /etc/secret-volume
-            name: secret-volume
+            name: tezos-accounts
       securityContext:
         fsGroup: 100
       volumes:
         - emptyDir: {}
           name: var-volume
-        - name: secret-volume
+        - name: tezos-accounts
           secret:
             secretName: tezos-secret #available at /etc/secret-volume/tezos-secret
 ---
