@@ -39,8 +39,6 @@ spec:
         args:
           - "config-generator"
         envFrom:
-          - secretRef:
-              name: tezos-secret
           - configMapRef:
               name: tezos-config
         env:
@@ -53,11 +51,16 @@ spec:
         volumeMounts:
           - mountPath: /var/tezos
             name: var-volume
+          - mountPath: /etc/secret-volume
+            name: secret-volume
       securityContext:
         fsGroup: 100
       volumes:
         - emptyDir: {}
           name: var-volume
+        - name: secret-volume
+          secret:
+            secretName: tezos-secret #available at /etc/secret-volume/tezos-secret
 ---
 apiVersion: v1
 kind: Service
