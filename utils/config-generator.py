@@ -51,11 +51,15 @@ SHOULD_GENERATE_UNSAFE_DETERMINISTIC_DATA = CHAIN_PARAMS.get(
     "should_generate_unsafe_deterministic_data"
 )
 
-# If there are no genesis params, this is a public chain.
+# If there are no genesis params, we are dealing with a public network.
 THIS_IS_A_PUBLIC_NET = True if not NETWORK_CONFIG.get("genesis") else False
-JOIN_PUBLIC_NETWORK =  CHAIN_PARAMS.get("join_public_network", THIS_IS_A_PUBLIC_NET)
+# Even if we are dealing with a public network, we may not want to join it in a
+# case such as creating a network replica.
+JOIN_PUBLIC_NETWORK = CHAIN_PARAMS.get("join_public_network", THIS_IS_A_PUBLIC_NET)
 if not THIS_IS_A_PUBLIC_NET and JOIN_PUBLIC_NETWORK:
-        raise exception("Instruction was given to join a public network while defining a private chain")
+    raise ValueError(
+        "Instruction was given to join a public network while defining a private chain"
+    )
 
 def main():
     all_accounts = ACCOUNTS
