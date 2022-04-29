@@ -601,6 +601,7 @@ def create_node_config_json(
         # Make a shallow copy of NETWORK_CONFIG so we can delete top level props
         # without mutating the original dict.
         node_config["network"] = dict(NETWORK_CONFIG)
+        # Delete props that are not part of the node config.json spec
         node_config["network"].pop("activation_account_name")
         node_config["network"].pop("join_public_network", None)
 
