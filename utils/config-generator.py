@@ -431,13 +431,11 @@ def import_keys(all_accounts):
 
 def create_node_identity_json():
     identity_file_path = f"{DATA_DIR}/identity.json"
-    path = Path(identity_file_path)
-    if path.exists() and path.stat().st_size > 0:
-        return
 
     # Manually create the data directory and identity.json, and give the
     # same dir/file permissions that tezos gives when it creates them.
     print("\nWriting identity.json file from the instance config")
+    print(f"Node id: {NODE_IDENTITIES.get(MY_POD_NAME)['peer_id']}")
 
     os.makedirs(DATA_DIR, 0o700, exist_ok=True)
     with open(
@@ -450,6 +448,7 @@ def create_node_identity_json():
     nogroup = getgrnam("nogroup").gr_gid
     chown(DATA_DIR, user=100, group=nogroup)
     chown(identity_file_path, user=100, group=nogroup)
+    print(f"Identity file written at {identity_file_path}")
 
 
 #

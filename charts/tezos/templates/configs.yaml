@@ -12,9 +12,10 @@ data:
       "protocol_activation": {{ .Values.activation | mustToPrettyJson | indent 8 | trim }}
     }
   FULL_SNAPSHOT_URL: "{{ .Values.full_snapshot_url }}"
+  FULL_TARBALL_URL: "{{ .Values.full_tarball_url }}"
   ROLLING_SNAPSHOT_URL: "{{ .Values.rolling_snapshot_url }}"
-  ARCHIVE_TARBALL_URL: "{{ .Values.archive_tarball_url }}"
   ROLLING_TARBALL_URL: "{{ .Values.rolling_tarball_url }}"
+  ARCHIVE_TARBALL_URL: "{{ .Values.archive_tarball_url }}"
   NODE_GLOBALS: |
 {{ .Values.node_globals | mustToPrettyJson | indent 4 }}
 
