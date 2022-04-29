@@ -54,7 +54,7 @@ SHOULD_GENERATE_UNSAFE_DETERMINISTIC_DATA = CHAIN_PARAMS.get(
 # If there are no genesis params, we are dealing with a public network.
 THIS_IS_A_PUBLIC_NET = True if not NETWORK_CONFIG.get("genesis") else False
 # Even if we are dealing with a public network, we may not want to join it in a
-# case such as creating a network replica.
+# case such as when creating a network replica.
 JOIN_PUBLIC_NETWORK = NETWORK_CONFIG.get("join_public_network", THIS_IS_A_PUBLIC_NET)
 if not THIS_IS_A_PUBLIC_NET and JOIN_PUBLIC_NETWORK:
     raise ValueError(
