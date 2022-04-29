@@ -592,20 +592,24 @@ def create_node_config_json(
                 node_config["network"] = node_config_orig["network"]
             else:
                 node_config["network"] = "mainnet"
-            
+
     else:
         if CHAIN_PARAMS.get("expected-proof-of-work") != None:
             node_config["p2p"]["expected-proof-of-work"] = CHAIN_PARAMS[
                 "expected-proof-of-work"
             ]
 
-        node_config["network"] = NETWORK_CONFIG
+        # Make a shallow copy of NETWORK_CONFIG so we can delete top level props
+        # without mutating the original dict.
+        node_config["network"] = dict(NETWORK_CONFIG)
+        node_config["network"].pop("activation_account_name")
+        node_config["network"].pop("join_public_network", None)
+
         node_config["network"]["sandboxed_chain_name"] = "SANDBOXED_TEZOS"
         node_config["network"]["default_bootstrap_peers"] = []
         node_config["network"]["genesis_parameters"] = {
             "values": {"genesis_pubkey": get_genesis_pubkey()}
         }
-        node_config["network"].pop("activation_account_name")
 
     return node_config
 
