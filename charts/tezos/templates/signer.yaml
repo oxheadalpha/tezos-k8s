@@ -60,7 +60,7 @@ spec:
           name: var-volume
         - name: tezos-accounts
           secret:
-            secretName: tezos-secret #available at /etc/secret-volume/tezos-secret
+            secretName: tezos-secret
 ---
 apiVersion: v1
 kind: Service

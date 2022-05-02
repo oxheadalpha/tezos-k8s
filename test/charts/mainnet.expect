@@ -256,8 +256,6 @@ spec:
             - "config-generator"
             - "--generate-config-json"
           envFrom:
-            - secretRef:
-                name: tezos-secret
             - configMapRef:
                 name: tezos-config
           env:    
@@ -277,7 +275,9 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume     
+            - mountPath: /etc/secret-volume
+              name: tezos-accounts
         - image: "tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
           name: snapshot-downloader
@@ -365,6 +365,9 @@ spec:
           name: dev-net-tun
         - emptyDir: {}
           name: config-volume
+        - name: tezos-accounts
+          secret:
+            secretName: tezos-secret
   volumeClaimTemplates:
     - metadata:
         name: var-volume

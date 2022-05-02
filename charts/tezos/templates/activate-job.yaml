@@ -50,8 +50,6 @@ spec:
             - config-generator
             - "--generate-parameters-json"
           envFrom:
-            - secretRef:
-                name: tezos-secret
             - configMapRef:
                 name: tezos-config
           env:
@@ -68,6 +66,8 @@ spec:
               name: var-volume
             - name: faucet-commitments
               mountPath: "/faucet-commitments"
+            - mountPath: /etc/secret-volume
+              name: tezos-accounts
       restartPolicy: Never
       volumes:
         - emptyDir: {}
@@ -76,4 +76,7 @@ spec:
           name: var-volume
         - name: faucet-commitments
           emptyDir: {}
+        - name: tezos-accounts
+          secret:
+            secretName: tezos-secret
 {{ end }}
