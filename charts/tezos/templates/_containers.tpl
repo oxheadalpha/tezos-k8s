@@ -49,8 +49,6 @@
     - secretRef:
         name: {{ .node_class }}-indentities-secret
     {{- end }}
-    - secretRef:
-        name: tezos-secret
     - configMapRef:
         name: tezos-config
   env:
@@ -60,6 +58,8 @@
       name: config-volume
     - mountPath: /var/tezos
       name: var-volume
+    - mountPath: /etc/secret-volume
+      name: tezos-accounts
 {{- end }}
 
 {{- define "tezos.init_container.wait_for_dns" }}
@@ -251,8 +251,6 @@ https://github.com/helm/helm/issues/5979#issuecomment-518231758
   args:
     - "logger"
   envFrom:
-    - secretRef:
-        name: tezos-secret
     - configMapRef:
         name: tezos-config
   env:
@@ -262,6 +260,8 @@ https://github.com/helm/helm/issues/5979#issuecomment-518231758
       name: config-volume
     - mountPath: /var/tezos
       name: var-volume
+    - mountPath: /etc/secret-volume
+      name: tezos-accounts
 {{- end }}
 {{- end }}
 
@@ -281,11 +281,11 @@ https://github.com/helm/helm/issues/5979#issuecomment-518231758
       name: config-volume
     - mountPath: /var/tezos
       name: var-volume
+    - mountPath: /etc/secret-volume
+      name: tezos-accounts
   envFrom:
     - configMapRef:
         name: tezos-config
-    - secretRef:
-        name: tezos-secret
   env:
 {{- include "tezos.localvars.pod_envvars" . | indent 4 }}
     - name: DAEMON
