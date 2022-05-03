@@ -27,9 +27,10 @@ data:
       "protocol_activation": null
     }
   FULL_SNAPSHOT_URL: "https://mainnet.xtz-shots.io/full"
+  FULL_TARBALL_URL: ""
   ROLLING_SNAPSHOT_URL: "https://mainnet.xtz-shots.io/rolling"
-  ARCHIVE_TARBALL_URL: "https://mainnet.xtz-shots.io/archive-tarball"
   ROLLING_TARBALL_URL: ""
+  ARCHIVE_TARBALL_URL: "https://mainnet.xtz-shots.io/archive-tarball"
   NODE_GLOBALS: |
     null
 
@@ -182,9 +183,9 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume
             - mountPath: /etc/secret-volume
-              name: tezos-accounts
+              name: tezos-accounts        
         - image: "registry.gitlab.com/nomadic-labs/tezos-metrics"
           args:
             - "--listen-prometheus=6666"
@@ -343,9 +344,9 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume
             - mountPath: /etc/secret-volume
-              name: tezos-accounts
+              name: tezos-accounts        
         - image: "tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
           name: snapshot-downloader
@@ -538,9 +539,9 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume
             - mountPath: /etc/secret-volume
-              name: tezos-accounts
+              name: tezos-accounts        
         - image: "registry.gitlab.com/nomadic-labs/tezos-metrics"
           args:
             - "--listen-prometheus=6666"
@@ -699,9 +700,9 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume
             - mountPath: /etc/secret-volume
-              name: tezos-accounts
+              name: tezos-accounts        
         - image: "tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
           name: snapshot-downloader

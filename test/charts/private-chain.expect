@@ -77,9 +77,10 @@ data:
         }
     }
   FULL_SNAPSHOT_URL: ""
+  FULL_TARBALL_URL: ""
   ROLLING_SNAPSHOT_URL: ""
-  ARCHIVE_TARBALL_URL: ""
   ROLLING_TARBALL_URL: ""
+  ARCHIVE_TARBALL_URL: ""
   NODE_GLOBALS: |
     null
 
@@ -296,6 +297,14 @@ spec:
               
               proto_command="012-Psithaca"
               
+              if [ "${proto_command}" == "012-Psithaca" ]; then
+                  extra_args=""
+              else
+                  echo '{"liquidity_baking_toggle_vote": "pass"}' > /etc/tezos/per_block_votes.json
+                  # we pass both a vote argument and a votefile argument; vote argument is mandatory as a fallback
+                  extra_args="--liquidity-baking-toggle-vote on --votefile /etc/tezos/per_block_votes.json"
+              fi
+              
               my_baker_account="$(cat /etc/tezos/baker-account )"
               
               CLIENT="$TEZ_BIN/tezos-client -d $CLIENT_DIR"
@@ -308,7 +317,7 @@ spec:
                   sleep 5
               done
               
-              exec $CMD run with local node $NODE_DATA_DIR ${my_baker_account}
+              exec $CMD run with local node $NODE_DATA_DIR ${extra_args} ${my_baker_account}
               
           imagePullPolicy: IfNotPresent
           name: baker-012-psithaca
@@ -360,9 +369,9 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume
             - mountPath: /etc/secret-volume
-              name: tezos-accounts
+              name: tezos-accounts        
         - image: "registry.gitlab.com/nomadic-labs/tezos-metrics"
           args:
             - "--listen-prometheus=6666"
@@ -377,11 +386,11 @@ spec:
               name: config-volume
             - mountPath: /var/tezos
               name: var-volume
+            - mountPath: /etc/secret-volume
+              name: tezos-accounts
           envFrom:
             - configMapRef:
                 name: tezos-config
-            - secretRef:
-                name: tezos-secret
           env:    
             - name: MY_POD_IP
               valueFrom:
@@ -477,9 +486,9 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume                        
+              name: var-volume
             - mountPath: /etc/secret-volume
-              name: tezos-accounts
+              name: tezos-accounts                        
         - image: tezos-k8s-utils:dev
           args:
             - wait-for-dns
@@ -501,6 +510,9 @@ spec:
           name: dev-net-tun
         - emptyDir: {}
           name: config-volume
+        - name: tezos-accounts
+          secret:
+            secretName: tezos-secret
   volumeClaimTemplates:
     - metadata:
         name: var-volume
@@ -639,8 +651,6 @@ spec:
             - "config-generator"
             - "--generate-config-json"
           envFrom:
-            - secretRef:
-                name: tezos-secret
             - configMapRef:
                 name: tezos-config
           env:    
@@ -660,7 +670,9 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume                        
+              name: var-volume
+            - mountPath: /etc/secret-volume
+              name: tezos-accounts                        
         - image: tezos-k8s-utils:dev
           args:
             - wait-for-dns
@@ -682,6 +694,9 @@ spec:
           name: dev-net-tun
         - emptyDir: {}
           name: config-volume
+        - name: tezos-accounts
+          secret:
+            secretName: tezos-secret
   volumeClaimTemplates:
     - metadata:
         name: var-volume
@@ -778,6 +793,14 @@ spec:
               
               proto_command="012-Psithaca"
               
+              if [ "${proto_command}" == "012-Psithaca" ]; then
+                  extra_args=""
+              else
+                  echo '{"liquidity_baking_toggle_vote": "pass"}' > /etc/tezos/per_block_votes.json
+                  # we pass both a vote argument and a votefile argument; vote argument is mandatory as a fallback
+                  extra_args="--liquidity-baking-toggle-vote on --votefile /etc/tezos/per_block_votes.json"
+              fi
+              
               my_baker_account="$(cat /etc/tezos/baker-account )"
               
               CLIENT="$TEZ_BIN/tezos-client -d $CLIENT_DIR"
@@ -790,7 +813,7 @@ spec:
                   sleep 5
               done
               
-              exec $CMD run with local node $NODE_DATA_DIR ${my_baker_account}
+              exec $CMD run with local node $NODE_DATA_DIR ${extra_args} ${my_baker_account}
               
           imagePullPolicy: IfNotPresent
           name: baker-012-psithaca
@@ -842,9 +865,9 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume
             - mountPath: /etc/secret-volume
-              name: tezos-accounts
+              name: tezos-accounts        
         - image: "registry.gitlab.com/nomadic-labs/tezos-metrics"
           args:
             - "--listen-prometheus=6666"
@@ -859,11 +882,11 @@ spec:
               name: config-volume
             - mountPath: /var/tezos
               name: var-volume
+            - mountPath: /etc/secret-volume
+              name: tezos-accounts
           envFrom:
             - configMapRef:
                 name: tezos-config
-            - secretRef:
-                name: tezos-secret
           env:    
             - name: MY_POD_IP
               valueFrom:
@@ -959,9 +982,9 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume                        
+              name: var-volume
             - mountPath: /etc/secret-volume
-              name: tezos-accounts
+              name: tezos-accounts                        
         - image: tezos-k8s-utils:dev
           args:
             - wait-for-dns
@@ -983,6 +1006,9 @@ spec:
           name: dev-net-tun
         - emptyDir: {}
           name: config-volume
+        - name: tezos-accounts
+          secret:
+            secretName: tezos-secret
   volumeClaimTemplates:
     - metadata:
         name: var-volume
@@ -1078,6 +1104,14 @@ spec:
               
               proto_command="012-Psithaca"
               
+              if [ "${proto_command}" == "012-Psithaca" ]; then
+                  extra_args=""
+              else
+                  echo '{"liquidity_baking_toggle_vote": "pass"}' > /etc/tezos/per_block_votes.json
+                  # we pass both a vote argument and a votefile argument; vote argument is mandatory as a fallback
+                  extra_args="--liquidity-baking-toggle-vote on --votefile /etc/tezos/per_block_votes.json"
+              fi
+              
               my_baker_account="$(cat /etc/tezos/baker-account )"
               
               CLIENT="$TEZ_BIN/tezos-client -d $CLIENT_DIR"
@@ -1090,7 +1124,7 @@ spec:
                   sleep 5
               done
               
-              exec $CMD run with local node $NODE_DATA_DIR ${my_baker_account}
+              exec $CMD run with local node $NODE_DATA_DIR ${extra_args} ${my_baker_account}
               
           imagePullPolicy: IfNotPresent
           name: baker-012-psithaca
@@ -1178,8 +1212,6 @@ spec:
             - "config-generator"
             - "--generate-config-json"
           envFrom:
-            - secretRef:
-                name: tezos-secret
             - configMapRef:
                 name: tezos-config
           env:    
@@ -1199,7 +1231,9 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume                        
+              name: var-volume
+            - mountPath: /etc/secret-volume
+              name: tezos-accounts                        
         - image: tezos-k8s-utils:dev
           args:
             - wait-for-dns
@@ -1221,6 +1255,9 @@ spec:
           name: dev-net-tun
         - emptyDir: {}
           name: config-volume
+        - name: tezos-accounts
+          secret:
+            secretName: tezos-secret
   volumeClaimTemplates:
     - metadata:
         name: var-volume
@@ -1253,6 +1290,7 @@ spec:
       containers:
       - name: tezos-signer
         image: "tezos/tezos:v12-release"
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 6732
           name: signer
@@ -1272,7 +1310,7 @@ spec:
             NODE_DIR="$TEZ_VAR/node"
             NODE_DATA_DIR="$TEZ_VAR/node/data"
             
-            CMD="$TEZ_BIN/tezos-signer -d $CLIENT_DIR launch http signer -a 0.0.0.0 -p 6732"
+            CMD="$TEZ_BIN/tezos-signer -d $CLIENT_DIR launch http signer --magic-bytes 0x11,0x12,0x13 --check-high-watermark -a 0.0.0.0 -p 6732"
             
             exec $CMD
             
@@ -1302,6 +1340,9 @@ spec:
       volumes:
         - emptyDir: {}
           name: var-volume
+        - name: tezos-accounts
+          secret:
+            secretName: tezos-secret
 ---
 # Source: tezos-chain/templates/activate-job.yaml
 apiVersion: batch/v1
@@ -1360,8 +1401,6 @@ spec:
             - config-generator
             - "--generate-parameters-json"
           envFrom:
-            - secretRef:
-                name: tezos-secret
             - configMapRef:
                 name: tezos-config
           env:
@@ -1378,6 +1417,8 @@ spec:
               name: var-volume
             - name: faucet-commitments
               mountPath: "/faucet-commitments"
+            - mountPath: /etc/secret-volume
+              name: tezos-accounts
       restartPolicy: Never
       volumes:
         - emptyDir: {}
@@ -1386,3 +1427,6 @@ spec:
           name: var-volume
         - name: faucet-commitments
           emptyDir: {}
+        - name: tezos-accounts
+          secret:
+            secretName: tezos-secret
