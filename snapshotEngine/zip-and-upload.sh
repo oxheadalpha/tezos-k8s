@@ -548,10 +548,16 @@ jq -n \
 }' > _data/tezos_metadata.json
 
 # Grab liquid-templated chain website page
-curl -o index.md "${SNAPSHOT_MARKDOWN_TEMPLATE_URL}"
+curl -o index.md "${SNAPSHOT_MARKDOWN_TEMPLATE}"
 
 # Update chain name for page title using variable
 sed -i'' -e 's/${NETWORK}/'"${NETWORK}"'/g' index.md
+
+# Grab Jekyll config
+curl -o _config.yml "${JEKYLL_CONFIG}"
+
+# Add remote theme to config
+echo "remote_theme: ${JEKYLL_REMOTE_THEME_REPOSITORY}" >> _config.yml
 
 chown -R jekyll:jekyll ./*
 bundle exec jekyll build

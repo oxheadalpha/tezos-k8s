@@ -236,11 +236,21 @@ spec:
                 configMapKeyRef:
                   name: snapshot-configmap
                   key: NAMESPACE
-            - name: SNAPSHOT_MARKDOWN_TEMPLATE_URL
+            - name: SNAPSHOT_MARKDOWN_TEMPLATE
               valueFrom:
                 configMapKeyRef:
                   name: snapshot-configmap
-                  key: SNAPSHOT_MARKDOWN_TEMPLATE_URL
+                  key: SNAPSHOT_MARKDOWN_TEMPLATE
+            - name: JEKYLL_CONFIG
+              valueFrom:
+                configMapKeyRef:
+                  name: snapshot-configmap
+                  key: JEKYLL_CONFIG
+            - name: JEKYLL_REMOTE_THEME_REPOSITORY
+              valueFrom:
+                configMapKeyRef:
+                  name: snapshot-configmap
+                  key: JEKYLL_REMOTE_THEME_REPOSITORY
       restartPolicy: Never
       volumes:
         - name: persistent-storage
