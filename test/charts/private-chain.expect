@@ -341,8 +341,6 @@ spec:
           args:
             - "logger"
           envFrom:
-            - secretRef:
-                name: tezos-secret
             - configMapRef:
                 name: tezos-config
           env:    
@@ -363,6 +361,8 @@ spec:
               name: config-volume
             - mountPath: /var/tezos
               name: var-volume        
+            - mountPath: /etc/secret-volume
+              name: tezos-accounts
         - image: "registry.gitlab.com/nomadic-labs/tezos-metrics"
           args:
             - "--listen-prometheus=6666"
@@ -458,8 +458,6 @@ spec:
             - "config-generator"
             - "--generate-config-json"
           envFrom:
-            - secretRef:
-                name: tezos-secret
             - configMapRef:
                 name: tezos-config
           env:    
@@ -480,6 +478,8 @@ spec:
               name: config-volume
             - mountPath: /var/tezos
               name: var-volume                        
+            - mountPath: /etc/secret-volume
+              name: tezos-accounts
         - image: tezos-k8s-utils:dev
           args:
             - wait-for-dns
@@ -823,8 +823,6 @@ spec:
           args:
             - "logger"
           envFrom:
-            - secretRef:
-                name: tezos-secret
             - configMapRef:
                 name: tezos-config
           env:    
@@ -845,6 +843,8 @@ spec:
               name: config-volume
             - mountPath: /var/tezos
               name: var-volume        
+            - mountPath: /etc/secret-volume
+              name: tezos-accounts
         - image: "registry.gitlab.com/nomadic-labs/tezos-metrics"
           args:
             - "--listen-prometheus=6666"
@@ -940,8 +940,6 @@ spec:
             - "config-generator"
             - "--generate-config-json"
           envFrom:
-            - secretRef:
-                name: tezos-secret
             - configMapRef:
                 name: tezos-config
           env:    
@@ -962,6 +960,8 @@ spec:
               name: config-volume
             - mountPath: /var/tezos
               name: var-volume                        
+            - mountPath: /etc/secret-volume
+              name: tezos-accounts
         - image: tezos-k8s-utils:dev
           args:
             - wait-for-dns
@@ -1283,8 +1283,6 @@ spec:
         args:
           - "config-generator"
         envFrom:
-          - secretRef:
-              name: tezos-secret
           - configMapRef:
               name: tezos-config
         env:
@@ -1297,6 +1295,8 @@ spec:
         volumeMounts:
           - mountPath: /var/tezos
             name: var-volume
+          - mountPath: /etc/secret-volume
+            name: tezos-accounts
       securityContext:
         fsGroup: 100
       volumes:
