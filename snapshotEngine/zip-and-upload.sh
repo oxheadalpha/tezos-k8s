@@ -557,7 +557,11 @@ sed -i'' -e 's/${NETWORK}/'"${NETWORK}"'/g' index.md
 curl -o _config.yml "${JEKYLL_CONFIG}"
 
 # Add remote theme to config
-echo "remote_theme: ${JEKYLL_REMOTE_THEME_REPOSITORY}" >> _config.yml
+cat <<EOF >> _config.yml
+remote_theme: ${JEKYLL_REMOTE_THEME_REPOSITORY}
+plugins:
+- jekyll-remote-theme
+EOF
 
 chown -R jekyll:jekyll ./*
 bundle exec jekyll build
