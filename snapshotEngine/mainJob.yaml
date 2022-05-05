@@ -235,7 +235,7 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   name: snapshot-configmap
-                  key: SNAPSHOT_WESITE_DOMAIN_NAME
+                  key: SNAPSHOT_WEBSITE_DOMAIN_NAME
             - name: NAMESPACE
               valueFrom:
                 configMapKeyRef:
