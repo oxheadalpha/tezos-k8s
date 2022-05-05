@@ -538,7 +538,7 @@ fi
 # Container-specific requirement
 cd /srv/jekyll || exit
 
-# Copy config and gemfile to current dir
+# Copy Gemfile and Gemfile.lock to current dir
 cp /snapshot-website-base/* .
 
 # Grab latest metadata and put in _data
