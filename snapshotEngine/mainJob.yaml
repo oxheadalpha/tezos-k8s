@@ -231,6 +231,11 @@ spec:
           env:
             - name: HISTORY_MODE
               value: ""
+            - name: SNAPSHOT_WEBSITE_DOMAIN_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: snapshot-configmap
+                  key: SNAPSHOT_WESITE_DOMAIN_NAME
             - name: NAMESPACE
               valueFrom:
                 configMapKeyRef:

@@ -44,6 +44,11 @@ nodes:
     history_mode: rolling
     target_volume: var-volume
 
+# snapshot website domain name
+# Example:
+# snapshotWebsiteDomainName: xtz-shots.io
+snapshotWebsiteDomainName: ""
+
 # snapshotEngine generates static webpages to accompany the generated
 # artifacts. They are rendered by jekyll.
 # See an example jekyll template at:
