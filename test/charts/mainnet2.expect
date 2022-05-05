@@ -27,9 +27,10 @@ data:
       "protocol_activation": null
     }
   FULL_SNAPSHOT_URL: "https://mainnet.xtz-shots.io/full"
+  FULL_TARBALL_URL: ""
   ROLLING_SNAPSHOT_URL: "https://mainnet.xtz-shots.io/rolling"
-  ARCHIVE_TARBALL_URL: "https://mainnet.xtz-shots.io/archive-tarball"
   ROLLING_TARBALL_URL: ""
+  ARCHIVE_TARBALL_URL: "https://mainnet.xtz-shots.io/archive-tarball"
   NODE_GLOBALS: |
     null
 
@@ -163,8 +164,6 @@ spec:
           args:
             - "logger"
           envFrom:
-            - secretRef:
-                name: tezos-secret
             - configMapRef:
                 name: tezos-config
           env:    
@@ -184,7 +183,9 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume
+            - mountPath: /etc/secret-volume
+              name: tezos-accounts        
         - image: "registry.gitlab.com/nomadic-labs/tezos-metrics"
           args:
             - "--listen-prometheus=6666"
@@ -199,11 +200,11 @@ spec:
               name: config-volume
             - mountPath: /var/tezos
               name: var-volume
+            - mountPath: /etc/secret-volume
+              name: tezos-accounts
           envFrom:
             - configMapRef:
                 name: tezos-config
-            - secretRef:
-                name: tezos-secret
           env:    
             - name: MY_POD_IP
               valueFrom:
@@ -324,8 +325,6 @@ spec:
             - "config-generator"
             - "--generate-config-json"
           envFrom:
-            - secretRef:
-                name: tezos-secret
             - configMapRef:
                 name: tezos-config
           env:    
@@ -345,7 +344,9 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume
+            - mountPath: /etc/secret-volume
+              name: tezos-accounts        
         - image: "tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
           name: snapshot-downloader
@@ -433,6 +434,9 @@ spec:
           name: dev-net-tun
         - emptyDir: {}
           name: config-volume
+        - name: tezos-accounts
+          secret:
+            secretName: tezos-secret
   volumeClaimTemplates:
     - metadata:
         name: var-volume
@@ -516,8 +520,6 @@ spec:
           args:
             - "logger"
           envFrom:
-            - secretRef:
-                name: tezos-secret
             - configMapRef:
                 name: tezos-config
           env:    
@@ -537,7 +539,9 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume
+            - mountPath: /etc/secret-volume
+              name: tezos-accounts        
         - image: "registry.gitlab.com/nomadic-labs/tezos-metrics"
           args:
             - "--listen-prometheus=6666"
@@ -552,11 +556,11 @@ spec:
               name: config-volume
             - mountPath: /var/tezos
               name: var-volume
+            - mountPath: /etc/secret-volume
+              name: tezos-accounts
           envFrom:
             - configMapRef:
                 name: tezos-config
-            - secretRef:
-                name: tezos-secret
           env:    
             - name: MY_POD_IP
               valueFrom:
@@ -677,8 +681,6 @@ spec:
             - "config-generator"
             - "--generate-config-json"
           envFrom:
-            - secretRef:
-                name: tezos-secret
             - configMapRef:
                 name: tezos-config
           env:    
@@ -698,7 +700,9 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume
+            - mountPath: /etc/secret-volume
+              name: tezos-accounts        
         - image: "tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
           name: snapshot-downloader
@@ -786,6 +790,9 @@ spec:
           name: dev-net-tun
         - emptyDir: {}
           name: config-volume
+        - name: tezos-accounts
+          secret:
+            secretName: tezos-secret
   volumeClaimTemplates:
     - metadata:
         name: var-volume

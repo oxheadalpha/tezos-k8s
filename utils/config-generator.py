@@ -14,7 +14,8 @@ from shutil import chown
 from pytezos import pytezos
 from base58 import b58encode_check
 
-ACCOUNTS = json.loads(os.environ["ACCOUNTS"])
+with open('/etc/secret-volume/ACCOUNTS', 'r') as secret_file:
+    ACCOUNTS = json.loads(secret_file.read())
 CHAIN_PARAMS = json.loads(os.environ["CHAIN_PARAMS"])
 DATA_DIR = "/var/tezos/node/data"
 NODE_GLOBALS = json.loads(os.environ["NODE_GLOBALS"]) or {}
