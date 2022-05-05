@@ -145,7 +145,7 @@ if [ "${HISTORY_MODE}" = archive ]; then
         --arg BLOCK_HEIGHT "${BLOCK_HEIGHT}" \
         --arg BLOCK_TIMESTAMP "${BLOCK_TIMESTAMP}" \
         --arg ARCHIVE_TARBALL_FILENAME "${ARCHIVE_TARBALL_FILENAME}" \
-        --arg SNAPSHOT_WEBSITE_DOMAIN_NAME "$SNAPSHOT_WEBSITE_DOMAIN_NAME" \
+        --arg URL "https://${NETWORK}.${SNAPSHOT_WEBSITE_DOMAIN_NAME}/${ARCHIVE_TARBALL_FILENAME}" \
         --arg SHA256 "${SHA256}" \
         --arg FILESIZE_BYTES "${FILESIZE_BYTES}" \
         --arg FILESIZE "${FILESIZE}" \
@@ -159,7 +159,7 @@ if [ "${HISTORY_MODE}" = archive ]; then
             "block_timestamp": $BLOCK_TIMESTAMP,
             "filename": $ARCHIVE_TARBALL_FILENAME,
             "sha256": $SHA256,
-            "url": "https://${NETWORK}.${SNAPSHOT_WEBSITE_DOMAIN_NAME}/${ARCHIVE_TARBALL_FILENAME}",
+            "url": $URL,
             "filesize_bytes": $FILESIZE_BYTES,
             "filesize": $FILESIZE, 
             "tezos_version": $TEZOS_VERSION,
@@ -333,7 +333,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
         --arg BLOCK_HEIGHT "$BLOCK_HEIGHT" \
         --arg BLOCK_TIMESTAMP "$BLOCK_TIMESTAMP" \
         --arg ROLLING_TARBALL_FILENAME "$ROLLING_TARBALL_FILENAME" \
-        --arg SNAPSHOT_WEBSITE_DOMAIN_NAME "$SNAPSHOT_WEBSITE_DOMAIN_NAME" \
+        --arg URL "https://${NETWORK}.${SNAPSHOT_WEBSITE_DOMAIN_NAME}/${ROLLING_TARBALL_FILENAME}" \
         --arg SHA256 "$SHA256" \
         --arg FILESIZE_BYTES "$FILESIZE_BYTES" \
         --arg FILESIZE "$FILESIZE" \
@@ -346,7 +346,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             "block_height": $BLOCK_HEIGHT, 
             "block_timestamp": $BLOCK_TIMESTAMP,
             "filename": $ROLLING_TARBALL_FILENAME,
-            "url": "https://${NETWORK}.${SNAPSHOT_WEBSITE_DOMAIN_NAME}/${ROLLING_TARBALL_FILENAME}",
+            "url": $URL,
             "sha256": $SHA256,
             "filesize_bytes": $FILESIZE_BYTES,
             "filesize": $FILESIZE, 
@@ -473,7 +473,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             --arg BLOCK_HEIGHT "$BLOCK_HEIGHT" \
             --arg BLOCK_TIMESTAMP "$BLOCK_TIMESTAMP" \
             --arg ROLLING_SNAPSHOT_FILENAME "$ROLLING_SNAPSHOT_FILENAME" \
-            --arg SNAPSHOT_WEBSITE_DOMAIN_NAME "$SNAPSHOT_WEBSITE_DOMAIN_NAME" \
+            --arg URL "https://${NETWORK}.${SNAPSHOT_WEBSITE_DOMAIN_NAME}/${ROLLING_SNAPSHOT_FILENAME}" \
             --arg SHA256 "$SHA256" \
             --arg FILESIZE_BYTES "$FILESIZE_BYTES" \
             --arg FILESIZE "$FILESIZE" \
@@ -486,7 +486,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
                 "block_height": $BLOCK_HEIGHT, 
                 "block_timestamp": $BLOCK_TIMESTAMP,
                 "filename": $ROLLING_SNAPSHOT_FILENAME,
-                "url": "https://${NETWORK}.${SNAPSHOT_WEBSITE_DOMAIN_NAME}/${ROLLING_SNAPSHOT_FILENAME}",
+                "url": $URL,
                 "filesize_bytes": $FILESIZE_BYTES,
                 "filesize": $FILESIZE,
                 "sha256": $SHA256,
