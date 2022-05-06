@@ -231,16 +231,9 @@ spec:
           env:
             - name: HISTORY_MODE
               value: ""
-            - name: NAMESPACE
-              valueFrom:
-                configMapKeyRef:
-                  name: snapshot-configmap
-                  key: NAMESPACE
-            - name: SNAPSHOT_MARKDOWN_TEMPLATE_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: snapshot-configmap
-                  key: SNAPSHOT_MARKDOWN_TEMPLATE_URL
+          envFrom:
+            - configMapRef:
+              name: snapshot-configmap
       restartPolicy: Never
       volumes:
         - name: persistent-storage

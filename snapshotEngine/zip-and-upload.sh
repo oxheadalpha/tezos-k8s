@@ -6,7 +6,7 @@ BLOCK_TIMESTAMP=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_TIMESTAMP)
 TEZOS_VERSION=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_VERSION)
 NETWORK="${NAMESPACE%%-*}"
 
-S3_BUCKET="${NETWORK}.xtz-shots.io"
+S3_BUCKET="${NETWORK}.${SNAPSHOT_WEBSITE_DOMAIN_NAME}"
 
 cd /
 
@@ -145,6 +145,7 @@ if [ "${HISTORY_MODE}" = archive ]; then
         --arg BLOCK_HEIGHT "${BLOCK_HEIGHT}" \
         --arg BLOCK_TIMESTAMP "${BLOCK_TIMESTAMP}" \
         --arg ARCHIVE_TARBALL_FILENAME "${ARCHIVE_TARBALL_FILENAME}" \
+        --arg URL "https://${S3_BUCKET}/${ARCHIVE_TARBALL_FILENAME}" \
         --arg SHA256 "${SHA256}" \
         --arg FILESIZE_BYTES "${FILESIZE_BYTES}" \
         --arg FILESIZE "${FILESIZE}" \
@@ -158,6 +159,7 @@ if [ "${HISTORY_MODE}" = archive ]; then
             "block_timestamp": $BLOCK_TIMESTAMP,
             "filename": $ARCHIVE_TARBALL_FILENAME,
             "sha256": $SHA256,
+            "url": $URL,
             "filesize_bytes": $FILESIZE_BYTES,
             "filesize": $FILESIZE, 
             "tezos_version": $TEZOS_VERSION,
@@ -331,6 +333,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
         --arg BLOCK_HEIGHT "$BLOCK_HEIGHT" \
         --arg BLOCK_TIMESTAMP "$BLOCK_TIMESTAMP" \
         --arg ROLLING_TARBALL_FILENAME "$ROLLING_TARBALL_FILENAME" \
+        --arg URL "https://${S3_BUCKET}/${ROLLING_TARBALL_FILENAME}" \
         --arg SHA256 "$SHA256" \
         --arg FILESIZE_BYTES "$FILESIZE_BYTES" \
         --arg FILESIZE "$FILESIZE" \
@@ -343,6 +346,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             "block_height": $BLOCK_HEIGHT, 
             "block_timestamp": $BLOCK_TIMESTAMP,
             "filename": $ROLLING_TARBALL_FILENAME,
+            "url": $URL,
             "sha256": $SHA256,
             "filesize_bytes": $FILESIZE_BYTES,
             "filesize": $FILESIZE, 
@@ -469,6 +473,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             --arg BLOCK_HEIGHT "$BLOCK_HEIGHT" \
             --arg BLOCK_TIMESTAMP "$BLOCK_TIMESTAMP" \
             --arg ROLLING_SNAPSHOT_FILENAME "$ROLLING_SNAPSHOT_FILENAME" \
+            --arg URL "https://${S3_BUCKET}/${ROLLING_SNAPSHOT_FILENAME}" \
             --arg SHA256 "$SHA256" \
             --arg FILESIZE_BYTES "$FILESIZE_BYTES" \
             --arg FILESIZE "$FILESIZE" \
@@ -481,6 +486,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
                 "block_height": $BLOCK_HEIGHT, 
                 "block_timestamp": $BLOCK_TIMESTAMP,
                 "filename": $ROLLING_SNAPSHOT_FILENAME,
+                "url": $URL,
                 "filesize_bytes": $FILESIZE_BYTES,
                 "filesize": $FILESIZE,
                 "sha256": $SHA256,
@@ -532,7 +538,7 @@ fi
 # Container-specific requirement
 cd /srv/jekyll || exit
 
-# Copy config and gemfile to current dir
+# Copy Gemfile and Gemfile.lock to current dir
 cp /snapshot-website-base/* .
 
 # Grab latest metadata and put in _data
@@ -548,15 +554,25 @@ jq -n \
 }' > _data/tezos_metadata.json
 
 # Grab liquid-templated chain website page
-curl -o index.md "${SNAPSHOT_MARKDOWN_TEMPLATE_URL}"
+curl -o index.md "${SNAPSHOT_MARKDOWN_TEMPLATE}"
 
 # Update chain name for page title using variable
 sed -i'' -e 's/${NETWORK}/'"${NETWORK}"'/g' index.md
 
+# Grab Jekyll config
+curl -o _config.yml "${JEKYLL_CONFIG}"
+
+# Add remote theme to config
+cat <<EOF >> _config.yml
+remote_theme: ${JEKYLL_REMOTE_THEME_REPOSITORY}
+plugins:
+- jekyll-remote-theme
+EOF
+
 chown -R jekyll:jekyll ./*
 bundle exec jekyll build
 
-# Upload chain page (index.html and assets for NETWORK.xtz-shots.io) to root of website bucket
+# Upload chain page (index.html and assets) to root of website bucket
 if ! aws s3 cp _site/ s3://"${S3_BUCKET}" --recursive --include "*"; then
     printf "%s Website Build & Deploy : Error uploading site to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 else
