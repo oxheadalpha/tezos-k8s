@@ -231,31 +231,9 @@ spec:
           env:
             - name: HISTORY_MODE
               value: ""
-            - name: SNAPSHOT_WEBSITE_DOMAIN_NAME
-              valueFrom:
-                configMapKeyRef:
-                  name: snapshot-configmap
-                  key: SNAPSHOT_WEBSITE_DOMAIN_NAME
-            - name: NAMESPACE
-              valueFrom:
-                configMapKeyRef:
-                  name: snapshot-configmap
-                  key: NAMESPACE
-            - name: SNAPSHOT_MARKDOWN_TEMPLATE
-              valueFrom:
-                configMapKeyRef:
-                  name: snapshot-configmap
-                  key: SNAPSHOT_MARKDOWN_TEMPLATE
-            - name: JEKYLL_CONFIG
-              valueFrom:
-                configMapKeyRef:
-                  name: snapshot-configmap
-                  key: JEKYLL_CONFIG
-            - name: JEKYLL_REMOTE_THEME_REPOSITORY
-              valueFrom:
-                configMapKeyRef:
-                  name: snapshot-configmap
-                  key: JEKYLL_REMOTE_THEME_REPOSITORY
+          envFrom:
+            - configMapRef:
+              name: snapshot-configmap
       restartPolicy: Never
       volumes:
         - name: persistent-storage
