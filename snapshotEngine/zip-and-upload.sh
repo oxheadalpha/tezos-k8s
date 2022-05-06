@@ -572,7 +572,7 @@ EOF
 chown -R jekyll:jekyll ./*
 bundle exec jekyll build
 
-# Upload chain page (index.html and assets for NETWORK.xtz-shots.io) to root of website bucket
+# Upload chain page (index.html and assets) to root of website bucket
 if ! aws s3 cp _site/ s3://"${S3_BUCKET}" --recursive --include "*"; then
     printf "%s Website Build & Deploy : Error uploading site to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 else
