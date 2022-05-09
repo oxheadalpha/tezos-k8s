@@ -52,6 +52,19 @@ SHOULD_GENERATE_UNSAFE_DETERMINISTIC_DATA = CHAIN_PARAMS.get(
     "should_generate_unsafe_deterministic_data"
 )
 
+SHOULD_GENERATE_UNSAFE_DETERMINISTIC_GENESIS_DATA = CHAIN_PARAMS.get(
+    "should_generate_unsafe_deterministic_genesis_data"
+)
+SHOULD_GENERATE_UNSAFE_DETERMINISTIC_ACCOUNT_DATA = CHAIN_PARAMS.get(
+    "should_generate_unsafe_deterministic_account_data"
+)
+
+if SHOULD_GENERATE_UNSAFE_DETERMINISTIC_GENESIS_DATA == None :
+    SHOULD_GENERATE_UNSAFE_DETERMINISTIC_GENESIS_DATA = SHOULD_GENERATE_UNSAFE_DETERMINISTIC_DATA
+if SHOULD_GENERATE_UNSAFE_DETERMINISTIC_ACCOUNT_DATA == None :
+    SHOULD_GENERATE_UNSAFE_DETERMINISTIC_ACCOUNT_DATA = SHOULD_GENERATE_UNSAFE_DETERMINISTIC_DATA
+
+
 # If there are no genesis params, this is a public chain.
 THIS_IS_A_PUBLIC_NET = True if not NETWORK_CONFIG.get("genesis") else False
 
@@ -59,8 +72,10 @@ THIS_IS_A_PUBLIC_NET = True if not NETWORK_CONFIG.get("genesis") else False
 def main():
     all_accounts = ACCOUNTS
 
-    if SHOULD_GENERATE_UNSAFE_DETERMINISTIC_DATA:
+    if SHOULD_GENERATE_UNSAFE_DETERMINISTIC_GENESIS_DATA:
         fill_in_missing_genesis_block()
+
+    if SHOULD_GENERATE_UNSAFE_DETERMINISTIC_ACCOUNT_DATA:
         all_accounts = fill_in_missing_accounts()
         fill_in_missing_keys(all_accounts)
 
@@ -294,7 +309,12 @@ def fill_in_missing_keys(all_accounts):
                 f"  Deriving secret key for account "
                 + f"{account_name} from genesis_block"
             )
-            seed = account_name + ":" + NETWORK_CONFIG["genesis"]["block"]
+            try:
+                network_seed=NETWORK_CONFIG["genesis"]["block"]
+            except:
+                network_seed="no genesis block"
+
+            seed = account_name + ":" + network_seed
             sk = blake2b(seed.encode(), digest_size=32).digest()
             sk_b58 = b58encode_check(edsk + sk).decode("utf-8")
             account_values["key"] = sk_b58
