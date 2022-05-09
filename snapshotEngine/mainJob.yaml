@@ -233,7 +233,7 @@ spec:
               value: ""
           envFrom:
             - configMapRef:
-              name: snapshot-configmap
+                name: snapshot-configmap
       restartPolicy: Never
       volumes:
         - name: persistent-storage
