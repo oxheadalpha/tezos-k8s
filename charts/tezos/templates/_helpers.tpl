@@ -84,14 +84,18 @@
 {{- end }}
 
 {{/*
-  Checks if we need to run tezos-node config init to help
-  config-generator obtain the appropriate parameters to run
-  a network.
+  Checks if we need to run tezos-node config init to help config-generator
+  obtain the appropriate parameters to run a network. If there are no genesis
+  params, we are dealing with a public network and want its default config.json
+  to be created. If we are dealing with a custom chain, we validate that the
+  `join_public_network` field is not set to true.
   Returns a string "true" or empty string which is falsey.
 */}}
 {{- define "tezos.shouldConfigInit" }}
-  {{- if not (.Values.node_config_network.genesis) }}
+  {{- if not .Values.node_config_network.genesis }}
     {{- "true" }}
+  {{- else if .Values.node_config_network.join_public_network }}
+    {{- fail "'node_config_network' is defining a custom chain while being instructed to join a public network" }}
   {{- else }}
     {{- "" }}
   {{- end }}

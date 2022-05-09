@@ -52,8 +52,15 @@ SHOULD_GENERATE_UNSAFE_DETERMINISTIC_DATA = CHAIN_PARAMS.get(
     "should_generate_unsafe_deterministic_data"
 )
 
-# If there are no genesis params, this is a public chain.
+# If there are no genesis params, we are dealing with a public network.
 THIS_IS_A_PUBLIC_NET = True if not NETWORK_CONFIG.get("genesis") else False
+# Even if we are dealing with a public network, we may not want to join it in a
+# case such as when creating a network replica.
+JOIN_PUBLIC_NETWORK = NETWORK_CONFIG.get("join_public_network", THIS_IS_A_PUBLIC_NET)
+if not THIS_IS_A_PUBLIC_NET and JOIN_PUBLIC_NETWORK:
+    raise ValueError(
+        "Instruction was given to join a public network while defining a private chain"
+    )
 
 
 def main():
@@ -110,7 +117,7 @@ def main():
             if bootstrap_peers == []:
                 bootstrap_peers.extend(get_zerotier_bootstrap_peer_ips())
 
-        if THIS_IS_A_PUBLIC_NET:
+        if JOIN_PUBLIC_NETWORK:
             with open("/etc/tezos/data/config.json", "r") as f:
                 bootstrap_peers.extend(json.load(f)["p2p"]["bootstrap-peers"])
         else:
@@ -585,20 +592,25 @@ def create_node_config_json(
                 node_config["network"] = node_config_orig["network"]
             else:
                 node_config["network"] = "mainnet"
-            
+
     else:
         if CHAIN_PARAMS.get("expected-proof-of-work") != None:
             node_config["p2p"]["expected-proof-of-work"] = CHAIN_PARAMS[
                 "expected-proof-of-work"
             ]
 
-        node_config["network"] = NETWORK_CONFIG
+        # Make a shallow copy of NETWORK_CONFIG so we can delete top level props
+        # without mutating the original dict.
+        node_config["network"] = dict(NETWORK_CONFIG)
+        # Delete props that are not part of the node config.json spec
+        node_config["network"].pop("activation_account_name")
+        node_config["network"].pop("join_public_network", None)
+
         node_config["network"]["sandboxed_chain_name"] = "SANDBOXED_TEZOS"
         node_config["network"]["default_bootstrap_peers"] = []
         node_config["network"]["genesis_parameters"] = {
             "values": {"genesis_pubkey": get_genesis_pubkey()}
         }
-        node_config["network"].pop("activation_account_name")
 
     return node_config
 

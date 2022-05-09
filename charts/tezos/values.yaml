@@ -234,24 +234,31 @@ expected_proof_of_work: 26
 #   # config.json at `network.genesis_parameters.values.genesis_pubkey`.
 #   activation_account_name: baker0
 #
-## For joining a public network:
-## - If specifying the name of the network, the network's name must be
-##   recognized by the docker image passed as .Values.images.octez above.
-## - Additionally, you can pass a url that returns the config.json of the
-##   network. Example: "https://teztnets.xyz/mondaynet". In general you
-##   shouldn't need this and should just specifiy the network's name.
+## To join a public network you may set `chain_name` in one of two ways:
+## - Specify the name of the network which must be recognized by the
+##   tezos-node binary of the Octez image being used.
+## - Pass a url that returns the config.json of the network. Example:
+##   "https://teztnets.xyz/mondaynet". It is helpful for running
+##   testnets and shouldn't be needed in general.
 node_config_network:
   chain_name: mainnet
+  ## When joining a public network, a tezos node will by default
+  ## connect to the boot-nodes of the selected chain. This may not
+  ## always be desired. For example, you may want to run a mainnet
+  ## replica in isolation with yes-nodes. Uncomment the line below to
+  ## stop the node from connecting to the chain's default boot-nodes.
+  ## You can still specify boot-nodes with the `bootstrap_peers` field.
+  # join_public_network: false
 
 protocols:
-  # Tezos builds baker binaries for every supported protocol.
-  # List here the protocols that you wish to run bakers for.
-  # These binaries must be present in the docker image specified.
-  # You may want to run two or more if you are expecting an on-chain upgrade.
-  # Be mindful that running more protocols will start more containers in your
-  # pods which may consume more memory.
+  ## Tezos builds baker binaries for every supported protocol.
+  ## List here the protocols that you wish to run bakers for.
+  ## These binaries must be present in the docker image specified.
+  ## You may want to run two or more if you are expecting an on-chain upgrade.
+  ## Be mindful that running more protocols will start more containers in your
+  ## pods which may consume more memory.
   - command: 012-Psithaca
-  #- command: alpha
+  # - command: alpha
 
 ## Activate a new chain from genesis. Uncommenting this will create an
 ## activation job. The activation job will activate the chain if the
