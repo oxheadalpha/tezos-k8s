@@ -162,6 +162,9 @@ def main():
         "rolling_snapshot_url": None,
         "archive_tarball_url": None,
         "rolling_tarball_url": None,
+        "node_globals": {
+            "env": {"all": {"TEZOS_CLIENT_UNSAFE_DISABLE_DISCLAIMER": "Y"}}
+        },
     }
 
     # preserve pre-existing values, if any (in case of scale-up)
