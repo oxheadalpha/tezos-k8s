@@ -174,6 +174,7 @@
     {{- include "tezos.generic_container" (dict "root"        $
                                                 "type"        "config-init"
                                                 "image"       "octez"
+                                                "with_config" 1
                                                 "localvars"   1
     ) | nindent 0 }}
   {{- end }}
