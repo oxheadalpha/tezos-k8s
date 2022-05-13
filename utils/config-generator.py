@@ -361,7 +361,8 @@ def import_keys(all_accounts):
 
     for account_name, account_values in all_accounts.items():
         print("\n  Importing keys for account: " + account_name)
-        print("\n  SIGNER URL: " + account_values["signer"])
+        if "signer" in account_values:
+            print("\n  Using signer outside of chart: " + account_values.get("signer", None))
         account_key_type = account_values.get("type")
         account_key = account_values.get("key")
 
