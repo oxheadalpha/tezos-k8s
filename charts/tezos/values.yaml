@@ -61,6 +61,17 @@ accounts: {}
 #     is_bootstrap_baker_account: false
 #     bootstrap_balance: "4000000000000"
 
+# External remote signer (separate from Tezos Helm chart)
+# You may also add accounts with external remote signers by passing their URL as:
+#   baker3:
+#     key: edpk...
+#     type: secret
+#     is_bootstrap_baker_account: false
+#     bootstrap_balance: "4000000000000"
+#     signer: http://<POD-NAME>.<SERVICE-NAME>.<NAMESPACE>:6732/<HASH>
+
+# NOTE - type must be secret and signer must be URL to external remote signer.
+
 ## NODES
 ##
 ## "nodes" is a dictionary where each key/value pair defines a statefulset and a
@@ -196,12 +207,14 @@ services:
     selector:
 #      rpc_node: "true"
 
-# Define and use external remote signers.
+# Define and use separate remote signers.
 # Bakers automatically use signers when configured.
 signers: {}
 #  tezos-signer-0:
 #    sign_for_accounts:
 #    - baker0
+
+
 
 ## Where full and rolling history mode nodes will get their Tezos snapshots from.
 full_snapshot_url: https://mainnet.xtz-shots.io/full
