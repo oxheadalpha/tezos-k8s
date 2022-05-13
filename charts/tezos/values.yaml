@@ -224,8 +224,9 @@ signers: {}
 #    env:
 #      all:
 #        SIGNER_EXTRA_ARGS: --magic-byte 0x11,0x12,0x13
-#    sign_for_accounts:
-#    - baker0
+#    instances:
+#    - sign_for_accounts:
+#      - baker0
 
 ## Where full and rolling history mode nodes will get their Tezos snapshots from.
 full_snapshot_url: https://mainnet.xtz-shots.io/full
