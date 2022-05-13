@@ -8,7 +8,7 @@
     fieldRef:
       fieldPath: metadata.name
 - name: MY_POD_TYPE
-  value: node
+  value: {{ .pod_type }}
   {{- if hasKey . "node_class" }}
 - name: MY_NODE_CLASS
   value: {{ .node_class }}
@@ -337,6 +337,17 @@
     - name: DAEMON
       value: tezos-metrics
 {{- end }}
+{{- end }}
+
+{{- define "tezos.container.signer" }}
+  {{- if include "tezos.shouldDeploySignerStatefulset" . }}
+    {{- include "tezos.generic_container" (dict "root"   $
+                                           "type"        "signer"
+                                           "image"       "octez"
+                                           "with_config" 1
+                                           "localvars"   1
+    )  | nindent 0 }}
+  {{- end }}
 {{- end }}
 
 {{/*

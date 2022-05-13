@@ -162,8 +162,12 @@ data:
   SIGNERS: |
     {
       "tezos-signer-0": {
-        "sign_for_accounts": [
-          "tezos-baking-node-0"
+        "instances": [
+          {
+            "sign_for_accounts": [
+              "tezos-baking-node-0"
+            ]
+          }
         ]
       }
     }
@@ -171,20 +175,6 @@ kind: ConfigMap
 metadata:
   name: tezos-config
   namespace: testing
----
-# Source: tezos-chain/templates/signer.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: tezos-signer
-  namespace: testing
-spec:
-  clusterIP: None
-  ports:
-    - port: 6732
-      name: signer
-  selector:
-    app: tezos-signer
 ---
 # Source: tezos-chain/templates/static.yaml
 apiVersion: v1
@@ -243,6 +233,17 @@ spec:
   clusterIP: None
   selector:
     node_class: us
+---
+# Source: tezos-chain/templates/static.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: tezos-signer-0
+spec:
+  publishNotReadyAddresses: true
+  clusterIP: None
+  selector:
+    node_class: tezos-signer-0
 ---
 # Source: tezos-chain/templates/nodes.yaml
 apiVersion: apps/v1
@@ -1163,73 +1164,111 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: tezos-signer
+  name: tezos-signer-0
   namespace: testing
 spec:
   podManagementPolicy: Parallel
   replicas: 1
-  serviceName: tezos-signer
+  serviceName: tezos-signer-0
   selector:
     matchLabels:
-      app: tezos-signer
+      node_class: tezos-signer-0
   template:
     metadata:
       labels:
-        app: tezos-signer
+        appType: tezos-signer
+        node_class: tezos-signer-0
     spec:
-      containers:
-      - name: tezos-signer
-        image: "tezos/tezos:v12-release"
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 6732
-          name: signer
-        command:
-          - /bin/sh
-        volumeMounts:
-        - mountPath: /var/tezos
-          name: var-volume
-        args:
-          - "-c"
-          - |
-            set -ex
-            
-            TEZ_VAR=/var/tezos
-            TEZ_BIN=/usr/local/bin
-            CLIENT_DIR="$TEZ_VAR/client"
-            NODE_DIR="$TEZ_VAR/node"
-            NODE_DATA_DIR="$TEZ_VAR/node/data"
-            
-            CMD="$TEZ_BIN/tezos-signer -d $CLIENT_DIR launch http signer --magic-bytes 0x11,0x12,0x13 --check-high-watermark -a 0.0.0.0 -p 6732"
-            
-            exec $CMD
-            
-      initContainers:
-      - image: tezos-k8s-utils:dev
-        imagePullPolicy: IfNotPresent
-        name: config-generator
-        args:
-          - "config-generator"
-        envFrom:
-          - configMapRef:
-              name: tezos-config
-        env:
-          - name: MY_POD_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.name
-          - name: MY_POD_TYPE
-            value: signing
-        volumeMounts:
-          - mountPath: /var/tezos
-            name: var-volume
-          - mountPath: /etc/secret-volume
-            name: tezos-accounts
+      containers:        
+        - name: signer
+          image: "tezos/tezos:v12-release"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              set -ex
+              
+              TEZ_VAR=/var/tezos
+              TEZ_BIN=/usr/local/bin
+              CLIENT_DIR="$TEZ_VAR/client"
+              NODE_DIR="$TEZ_VAR/node"
+              NODE_DATA_DIR="$TEZ_VAR/node/data"
+              
+              CMD="$TEZ_BIN/tezos-signer -d $CLIENT_DIR launch http signer ${SIGNER_EXTRA_ARGS} --check-high-watermark -a 0.0.0.0 -p 6732"
+              
+              exec $CMD
+              
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: signing
+            - name: MY_NODE_CLASS
+              value: tezos-signer-0
+            - name: DAEMON
+              value: signer
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+      initContainers:        
+        - name: config-generator
+          image: "tezos-k8s-utils:dev"
+          imagePullPolicy: IfNotPresent
+          args:
+            - config-generator
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: signing
+            - name: MY_NODE_CLASS
+              value: tezos-signer-0
+            - name: DAEMON
+              value: config-generator
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+            - mountPath: /etc/secret-volume
+              name: tezos-accounts
       securityContext:
         fsGroup: 100
       volumes:
         - emptyDir: {}
           name: var-volume
+        - name: tezos-accounts
+          secret:
+            secretName: tezos-secret
+      securityContext:
+        fsGroup: 100
+      volumes:
+        - emptyDir: {}
+          name: var-volume
+        - emptyDir: {}
+          name: config-volume
         - name: tezos-accounts
           secret:
             secretName: tezos-secret

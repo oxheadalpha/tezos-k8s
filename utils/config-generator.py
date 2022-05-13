@@ -29,6 +29,7 @@ MY_POD_TYPE = os.environ["MY_POD_TYPE"]
 MY_POD_CLASS = {}
 MY_POD_CONFIG = {}
 ALL_NODES = {}
+ALL_SIGNERS = {}
 BAKING_NODES = {}
 
 for cl, val in NODES.items():
@@ -43,8 +44,14 @@ for cl, val in NODES.items():
                 if "baker" in val["runs"]:
                     BAKING_NODES[name] = inst
 
-if MY_POD_TYPE == "signing":
-    MY_POD_CONFIG = SIGNERS[MY_POD_NAME]
+for cl, val in SIGNERS.items():
+    if val != None:
+        for i, inst in enumerate(val["instances"]):
+            name = f"{cl}-{i}"
+            ALL_SIGNERS[name] = inst
+            if name == MY_POD_NAME:
+                MY_POD_CLASS = val
+                MY_POD_CONFIG = inst
 
 NETWORK_CONFIG = CHAIN_PARAMS["network"]
 
@@ -333,7 +340,7 @@ def pod_requires_secret_key(account_name):
 
 
 def remote_signer(account_name, key):
-    for k, v in SIGNERS.items():
+    for k, v in ALL_SIGNERS.items():
         if account_name in v["sign_for_accounts"]:
             return f"http://{k}.tezos-signer:6732/{key.public_key_hash()}"
     return None

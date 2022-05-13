@@ -253,10 +253,16 @@ def main():
         }
 
     signers = {
-        "tezos-signer-0": {
-            "sign_for_accounts": [
-                f"{ARCHIVE_BAKER_NODE_NAME}-{n}" for n in range(args.number_of_bakers)
-            ]
+        "tezos-signer": {
+            "env": {"SIGNER_EXTRA_ARGS": "--magic-bytes 0x11,0x12,0x13"},
+            "instances": [
+                {
+                    "sign_for_accounts": [
+                        f"{ARCHIVE_BAKER_NODE_NAME}-{n}"
+                        for n in range(args.number_of_bakers)
+                    ]
+                }
+            ],
         }
     }
 

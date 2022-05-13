@@ -1,58 +1,31 @@
-{{- if (include "tezos.shouldDeploySignerStatefulset" .) }}
+{{- range $key, $val := .Values.signers }}
+{{- if $val }}
+  {{- $_ := set $ "node_class" $key }}
+  {{- $_ := set $ "node_vals" $val }}
+  {{- $_ := set $ "node_identities" dict }}
+  {{- $_ := set $ "pod_type" "signing" }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ .Values.signer_statefulset.name }}
-  namespace: {{ .Release.Namespace }}
+  name: {{ $.node_class }}
+  namespace: {{ $.Release.Namespace }}
 spec:
   podManagementPolicy: Parallel
-  replicas: {{ .Values.signers | len }}
-  serviceName: {{ .Values.signer_statefulset.name }}
+  replicas: {{ $.node_vals.instances | len }}
+  serviceName: {{ $.node_class }}
   selector:
     matchLabels:
-      app: {{ .Values.signer_statefulset.name }}
+      node_class: {{ $.node_class }}
   template:
     metadata:
       labels:
-        app: {{ .Values.signer_statefulset.name }}
+        appType: tezos-signer
+        node_class: {{ $.node_class }}
     spec:
       containers:
-      - name: tezos-signer
-        image: "{{ .Values.images.octez }}"
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 6732
-          name: signer
-        command:
-          - /bin/sh
-        volumeMounts:
-        - mountPath: /var/tezos
-          name: var-volume
-        args:
-          - "-c"
-          - |
-{{ tpl (.Files.Get "scripts/remote-signer.sh") $ | indent 12 }}
+        {{- include "tezos.container.signer"      $ | indent 8 }}
       initContainers:
-      - image: {{ .Values.tezos_k8s_images.utils }}
-        imagePullPolicy: IfNotPresent
-        name: config-generator
-        args:
-          - "config-generator"
-        envFrom:
-          - configMapRef:
-              name: tezos-config
-        env:
-          - name: MY_POD_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.name
-          - name: MY_POD_TYPE
-            value: {{ .Values.signer_statefulset.pod_type }}
-        volumeMounts:
-          - mountPath: /var/tezos
-            name: var-volume
-          - mountPath: /etc/secret-volume
-            name: tezos-accounts
+        {{- include "tezos.init_container.config_generator"    $ | indent 8 }}
       securityContext:
         fsGroup: 100
       volumes:
@@ -61,18 +34,16 @@ spec:
         - name: tezos-accounts
           secret:
             secretName: tezos-secret
+      securityContext:
+        fsGroup: 100
+      volumes:
+        - emptyDir: {}
+          name: var-volume
+        - emptyDir: {}
+          name: config-volume
+        - name: tezos-accounts
+          secret:
+            secretName: tezos-secret
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ .Values.signer_statefulset.name }}
-  namespace: {{ .Release.Namespace }}
-spec:
-  clusterIP: None
-  ports:
-    - port: 6732
-      name: signer
-  selector:
-    app: {{ .Values.signer_statefulset.name }}
----
+{{- end }}
 {{- end }}

@@ -25,6 +25,18 @@ spec:
     node_class: {{ $key }}
 ---
 {{- end }}
+{{- range $key, $val := .Values.signers }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $key }}
+spec:
+  publishNotReadyAddresses: true
+  clusterIP: None
+  selector:
+    node_class: {{ $key }}
+---
+{{- end }}
 {{- if (include "tezos.shouldDeployTzktIndexer" .) }}
 apiVersion: v1
 kind: Service

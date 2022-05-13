@@ -98,6 +98,7 @@ rolling_snapshot_url: null
 should_generate_unsafe_deterministic_data: true
 signers:
   tezos-signer-0:
-    sign_for_accounts: [tezos-baking-node-0]
+    instances:
+    - sign_for_accounts: [tezos-baking-node-0]
 zerotier_config: {zerotier_network: null, zerotier_token: null}
 open_acls: true

@@ -3,6 +3,7 @@
   {{- $_ := set $ "node_class" $key }}
   {{- $_ := set $ "node_vals" $val }}
   {{- $_ := set $ "node_identities" dict }}
+  {{- $_ := set $ "pod_type" "node" }}
 
   {{- include "tezos.includeNodeIdentitySecret" $ }}
 
