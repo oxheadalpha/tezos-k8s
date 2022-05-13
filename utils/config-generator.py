@@ -253,7 +253,7 @@ def verify_this_bakers_account(accounts):
 
         # We can count on accounts[acct]["type"] because import_keys will
         # fill it in when it is missing.
-        if accounts[acct]["type"] != "secret":
+        if accounts[acct]["type"] != "secret" and "signer" not in accounts[acct]:
             raise Exception(f"ERROR: Either a secret key was not provided for {acct}")
 
 
@@ -334,8 +334,8 @@ def expose_secret_key(account_name):
 # needs to have the keys not a URL to itself.
 
 
-def pod_requires_secret_key(account_name):
-    return MY_POD_TYPE in ["activating", "signing"]
+def pod_requires_secret_key(account_name, account_values):
+    return MY_POD_TYPE in ["activating", "signing"] and "signer" not in account_values
 
 
 #
@@ -343,7 +343,9 @@ def pod_requires_secret_key(account_name):
 # for account_name and returns a URL to locate it.
 
 
-def remote_signer(account_name, key):
+def remote_signer(account_name, signer_url, key):
+    if signer_url:
+        return signer_url
     for k, v in SIGNERS.items():
         if account_name in v["sign_for_accounts"]:
             return f"http://{k}.tezos-signer:6732/{key.public_key_hash()}"
@@ -359,6 +361,7 @@ def import_keys(all_accounts):
 
     for account_name, account_values in all_accounts.items():
         print("\n  Importing keys for account: " + account_name)
+        print("\n  SIGNER URL: " + account_values["signer"])
         account_key_type = account_values.get("type")
         account_key = account_values.get("key")
 
@@ -370,7 +373,7 @@ def import_keys(all_accounts):
             key.secret_key()
         except ValueError:
             account_values["type"] = "public"
-            if account_key_type == "secret":
+            if account_key_type == "secret" and "signer" not in account_values:
                 raise ValueError(
                     account_name + "'s key marked as " + "secret, but it is public"
                 )
@@ -383,8 +386,8 @@ def import_keys(all_accounts):
 
         # restrict which private key is exposed to which pod
         if expose_secret_key(account_name):
-            sk = remote_signer(account_name, key)
-            if sk == None or pod_requires_secret_key(account_name):
+            sk = remote_signer(account_name, account_values.get("signer", None), key)
+            if sk == None or pod_requires_secret_key(account_name, account_values):
                 try:
                     sk = "unencrypted:" + key.secret_key()
                 except ValueError:
