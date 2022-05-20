@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tezos-reward-distributor-config
+data:
+  config.yaml: |2+
+    {{ toYaml $.Values.trd_config |nindent 4}}

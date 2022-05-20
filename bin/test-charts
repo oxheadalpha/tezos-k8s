@@ -2,19 +2,19 @@
 
 #
 # test-charts runs "helm template" with a list of values files which
-# are found in test/charts/*.in.  Corresponding to each file, there is
-# a file called test/charts/*.expect.  This is the expected output of
+# are found in test/charts/*.in.yaml.  Corresponding to each file, there is
+# a file called test/charts/*.expect.yaml.  This is the expected output of
 # the template expansion.
 #
 # Running test-charts with no arguments will run all of the tests stopping
 # on the first failure at which point it will emit a unified diff of the
 # changes and exit nonzero.
 #
-# The -l flag will list all of the tests (without the .in suffix)
+# The -l flag will list all of the tests (without the .in.yaml suffix)
 #
 # The -r flag will regenerate the expect file corresponding to one or
 # more of the tests.  These must be provided as arguments on the command
-# line and said arguments do not include the  .in suffix.
+# line and said arguments do not include the  .in.yaml suffix.
 
 OUT=
 
@@ -26,7 +26,7 @@ trap cleanup EXIT INT PIPE
 run_test() {
 	IN="$1"
 	OUT="$(mktemp /tmp/chartXXXXXX)"
-	EXPECT="${1%.in}.expect"
+	EXPECT="${1%.in.yaml}.expect.yaml"
 
 	echo "Testing $IN"
 
@@ -37,30 +37,37 @@ run_test() {
 		echo
 		echo "Here are the differences from what we expect"
 		echo "What we expect will be -, what got +"
-		$DIFF "$EXPECT" "$OUT"
+		$DIFF $DIFF_ARGS "$EXPECT" "$OUT"
 		exit 1
 	fi
 }
 
 run_tests() {
-	for i in test/charts/*.in; do
+	if [ $# -gt 0 ]; then
+		for i; do
+			run_test "test/charts/$i.in.yaml"
+		done
+		return
+	fi
+
+	for i in test/charts/*.in.yaml; do
 		run_test $i
 	done
 }
 
 list_tests() {
-	ls test/charts/*.in | sed 's,^test/charts/\(.*\).in,\1,'
+	ls test/charts/*.in.yaml | sed 's,^test/charts/\(.*\).in.yaml,\1,'
 }
 
 regen() {
 	for i; do
-		IN="test/charts/$i.in"
+		IN="test/charts/$i.in.yaml"
 		if ! [ -f "$IN" ]; then
 			echo Test $i doesn\'t exist.
 			exit 1
 		fi
 		echo "Regenerating $IN"
-		EXPECT="${IN%.in}.expect"
+		EXPECT="${IN%.in.yaml}.expect.yaml"
 		helm template --values "$IN" -n testing charts/tezos > $EXPECT
 	done
 }
@@ -90,13 +97,16 @@ cd "$GIT_BASE"
 # And now for main:
 
 DIFF="diff -u"
+DIFF_ARGS=
 JOB=run_tests
 
-while getopts Ylr f; do
+while getopts U:Ylrw f; do
 	case $f in
+	U)	DIFF_ARGS="$DIFF_ARGS -U$OPTARG";;
 	Y)	DIFF="dyff between";;
 	l)	JOB=list;;
 	r)	JOB=regen;;
+	w)	DIFF_ARGS="$DIFF_ARGS -w";;
 	\?)	usage "Invalid option $f";;
 	esac
 done
@@ -104,6 +114,6 @@ shift $(expr $OPTIND - 1)
 
 case "$JOB" in
 	list)		list_tests;;
-	run_tests)	run_tests;;
+	run_tests)	run_tests "$@";;
 	regen)		regen "$@";;
 esac

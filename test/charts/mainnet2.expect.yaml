@@ -32,7 +32,19 @@ data:
   ROLLING_TARBALL_URL: ""
   ARCHIVE_TARBALL_URL: "https://mainnet.xtz-shots.io/archive-tarball"
   NODE_GLOBALS: |
-    null
+    {
+      "env": {
+        "all": {
+          "key": "outer-value"
+        },
+        "octez-node": {
+          "TEZOS_LOG": "* -\u003e DEBUG"
+        },
+        "snapshot-downloader": {
+          "key": "outer-container"
+        }
+      }
+    }
 
   NODES: |
     {
@@ -47,6 +59,14 @@ data:
         ]
       },
       "country-town": {
+        "env": {
+          "all": {
+            "key": "specific-pod"
+          },
+          "snapshot-downloader": {
+            "key": "specific-container"
+          }
+        },
         "images": {
           "octez": "tezos/tezos:v12-release"
         },
@@ -142,27 +162,37 @@ spec:
     spec:
       containers:                
         - name: tezedge-node
-          image: tezedge/tezedge:v1.6.8
+          image: "tezedge/tezedge:v1.6.8"
+          imagePullPolicy: IfNotPresent
           command:
             - /light-node
           args:
-            - "--config-file=/etc/tezos/tezedge.conf"
-          imagePullPolicy: IfNotPresent
+            - --config-file=/etc/tezos/tezedge.conf
+          envFrom:
+          env:
+            - name: DAEMON
+              value: tezedge-node
+            - name:  key
+              value: "outer-value"
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
           ports:
             - containerPort: 8732
               name: tezos-rpc
             - containerPort: 9732
               name: tezos-net
-          volumeMounts:
-            - mountPath: /etc/tezos
-              name: config-volume
-            - mountPath: /var/tezos
-              name: var-volume                        
-        - image: "tezos-k8s-utils:dev"
+          readinessProbe:
+            httpGet:
+              path: /is_synced
+              port: 31732                        
+        - name: logger
+          image: "tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
-          name: logger
           args:
-            - "logger"
+            - logger
           envFrom:
             - configMapRef:
                 name: tezos-config
@@ -179,13 +209,15 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: city-block
+            - name: DAEMON
+              value: logger
+            - name:  key
+              value: "outer-value"
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume
-            - mountPath: /etc/secret-volume
-              name: tezos-accounts        
+              name: var-volume        
         - image: "registry.gitlab.com/nomadic-labs/tezos-metrics"
           args:
             - "--listen-prometheus=6666"
@@ -220,61 +252,40 @@ spec:
               value: city-block
             - name: DAEMON
               value: tezos-metrics                
-        - command:
-            - python
-          args:
-            - "-c"
-            - |
-              from flask import Flask, escape, request
-              import requests
-              import datetime
-              
-              import logging
-              log = logging.getLogger('werkzeug')
-              log.setLevel(logging.ERROR)
-              
-              application = Flask(__name__)
-              
-              AGE_LIMIT_IN_SECS = 600
-              
-              @application.route('/is_synced')
-              def sync_checker():
-                  '''
-                  Here we don't trust the /is_bootstrapped endpoint of
-                  tezos-node. We have seen it return true when the node is
-                  in a bad state (for example, some crashed threads)
-                  Instead, we query the head block and verify timestamp is
-                  not too old.
-                  '''
-                  try:
-                      r = requests.get('http://127.0.0.1:8732/chains/main/blocks/head/header')
-                  except requests.exceptions.RequestException as e:
-                      err = "Could not connect to node, %s" % repr(e), 500
-                      print(err)
-                      return err
-                  header = r.json()
-                  if header["level"] == 0:
-                      # when chain has not been activated, bypass age check
-                      # and return succesfully to mark as ready
-                      # otherwise it will never activate (activation uses rpc service)
-                      return "Chain has not been activated yet"
-                  timestamp = r.json()["timestamp"]
-                  block_age = datetime.datetime.utcnow() -  datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
-                  age_in_secs = block_age.total_seconds()
-                  if age_in_secs > AGE_LIMIT_IN_SECS:
-                      err = "Error: Chain head is %s secs old, older than %s" % ( age_in_secs, AGE_LIMIT_IN_SECS), 500
-                      print(err)
-                      return err
-                  return "Chain is bootstrapped"
-              
-              if __name__ == "__main__":
-                 application.run(host = "0.0.0.0", port = 31732, debug = False)
-              
-          image: tezos-k8s-utils:dev
+        - name: sidecar
+          image: "tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
-          name: sidecar
+          args:
+            - sidecar
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: city-block
+            - name: DAEMON
+              value: sidecar
+            - name:  key
+              value: "outer-value"
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
       initContainers:        
-        - image: "tezos/tezos:v12-release"
+        - name: config-init
+          image: "tezos/tezos:v12-release"
+          imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
           args:
@@ -295,35 +306,6 @@ spec:
               
               printf "\n\n\n\n\n\n\n"
               
-          imagePullPolicy: IfNotPresent
-          name: config-init
-          volumeMounts:
-            - mountPath: /etc/tezos
-              name: config-volume
-            - mountPath: /var/tezos
-              name: var-volume
-          envFrom:
-            - configMapRef:
-                name: tezos-config
-          env:    
-            - name: MY_POD_IP
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.podIP
-            - name: MY_POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-            - name: MY_POD_TYPE
-              value: node
-            - name: MY_NODE_CLASS
-              value: city-block                
-        - image: tezos-k8s-utils:dev
-          imagePullPolicy: IfNotPresent
-          name: config-generator
-          args:
-            - "config-generator"
-            - "--generate-config-json"
           envFrom:
             - configMapRef:
                 name: tezos-config
@@ -340,23 +322,20 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: city-block
+            - name: DAEMON
+              value: config-init
+            - name:  key
+              value: "outer-value"
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume
-            - mountPath: /etc/secret-volume
-              name: tezos-accounts        
-        - image: "tezos-k8s-utils:dev"
+              name: var-volume                
+        - name: config-generator
+          image: "tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
-          name: snapshot-downloader
           args:
-            - snapshot-downloader
-          volumeMounts:
-            - mountPath: /var/tezos
-              name: var-volume
-            - mountPath: /etc/tezos
-              name: config-volume
+            - config-generator
           envFrom:
             - configMapRef:
                 name: tezos-config
@@ -372,10 +351,51 @@ spec:
             - name: MY_POD_TYPE
               value: node
             - name: MY_NODE_CLASS
-              value: city-block        
-        - image: "tezos/tezos:v12-release"
+              value: city-block
+            - name: DAEMON
+              value: config-generator
+            - name:  key
+              value: "outer-value"
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+            - mountPath: /etc/secret-volume
+              name: tezos-accounts        
+        - name: snapshot-downloader
+          image: "tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
-          name: snapshot-importer
+          args:
+            - snapshot-downloader
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: city-block
+            - name: DAEMON
+              value: snapshot-downloader
+            - name:  key
+              value: "outer-container"
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume        
+        - name: snapshot-importer
+          image: "tezos/tezos:v12-release"
+          imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
           args:
@@ -405,11 +425,6 @@ spec:
               
               rm -rvf ${snapshot_file}
               
-          volumeMounts:
-            - mountPath: /var/tezos
-              name: var-volume
-            - mountPath: /etc/tezos
-              name: config-volume
           envFrom:
             - configMapRef:
                 name: tezos-config
@@ -425,7 +440,16 @@ spec:
             - name: MY_POD_TYPE
               value: node
             - name: MY_NODE_CLASS
-              value: city-block        
+              value: city-block
+            - name: DAEMON
+              value: snapshot-importer
+            - name:  key
+              value: "outer-value"
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume        
       securityContext:
         fsGroup: 100      
       volumes:
@@ -468,9 +492,9 @@ spec:
         node_class: country-town
     spec:
       containers:        
-        
         - name: octez-node
           image: "tezos/tezos:v12-release"
+          imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
           args:
@@ -499,26 +523,33 @@ spec:
               
               sleep 3600
               
-          imagePullPolicy: IfNotPresent
-          ports:
-            - containerPort: 8732
-              name: tezos-rpc
-            - containerPort: 9732
-              name: tezos-net
+          envFrom:
+          env:
+            - name: DAEMON
+              value: octez-node
+            - name:  TEZOS_LOG
+              value: "* -> DEBUG"
+            - name:  key
+              value: "specific-pod"
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
               name: var-volume
+          ports:
+            - containerPort: 8732
+              name: tezos-rpc
+            - containerPort: 9732
+              name: tezos-net
           readinessProbe:
             httpGet:
               path: /is_synced
               port: 31732                                
-        - image: "tezos-k8s-utils:dev"
+        - name: logger
+          image: "tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
-          name: logger
           args:
-            - "logger"
+            - logger
           envFrom:
             - configMapRef:
                 name: tezos-config
@@ -535,13 +566,15 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: country-town
+            - name: DAEMON
+              value: logger
+            - name:  key
+              value: "specific-pod"
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume
-            - mountPath: /etc/secret-volume
-              name: tezos-accounts        
+              name: var-volume        
         - image: "registry.gitlab.com/nomadic-labs/tezos-metrics"
           args:
             - "--listen-prometheus=6666"
@@ -576,61 +609,40 @@ spec:
               value: country-town
             - name: DAEMON
               value: tezos-metrics                
-        - command:
-            - python
-          args:
-            - "-c"
-            - |
-              from flask import Flask, escape, request
-              import requests
-              import datetime
-              
-              import logging
-              log = logging.getLogger('werkzeug')
-              log.setLevel(logging.ERROR)
-              
-              application = Flask(__name__)
-              
-              AGE_LIMIT_IN_SECS = 600
-              
-              @application.route('/is_synced')
-              def sync_checker():
-                  '''
-                  Here we don't trust the /is_bootstrapped endpoint of
-                  tezos-node. We have seen it return true when the node is
-                  in a bad state (for example, some crashed threads)
-                  Instead, we query the head block and verify timestamp is
-                  not too old.
-                  '''
-                  try:
-                      r = requests.get('http://127.0.0.1:8732/chains/main/blocks/head/header')
-                  except requests.exceptions.RequestException as e:
-                      err = "Could not connect to node, %s" % repr(e), 500
-                      print(err)
-                      return err
-                  header = r.json()
-                  if header["level"] == 0:
-                      # when chain has not been activated, bypass age check
-                      # and return succesfully to mark as ready
-                      # otherwise it will never activate (activation uses rpc service)
-                      return "Chain has not been activated yet"
-                  timestamp = r.json()["timestamp"]
-                  block_age = datetime.datetime.utcnow() -  datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%SZ')
-                  age_in_secs = block_age.total_seconds()
-                  if age_in_secs > AGE_LIMIT_IN_SECS:
-                      err = "Error: Chain head is %s secs old, older than %s" % ( age_in_secs, AGE_LIMIT_IN_SECS), 500
-                      print(err)
-                      return err
-                  return "Chain is bootstrapped"
-              
-              if __name__ == "__main__":
-                 application.run(host = "0.0.0.0", port = 31732, debug = False)
-              
-          image: tezos-k8s-utils:dev
+        - name: sidecar
+          image: "tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
-          name: sidecar
+          args:
+            - sidecar
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: country-town
+            - name: DAEMON
+              value: sidecar
+            - name:  key
+              value: "specific-pod"
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
       initContainers:        
-        - image: "tezos/tezos:v12-release"
+        - name: config-init
+          image: "tezos/tezos:v12-release"
+          imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
           args:
@@ -651,35 +663,6 @@ spec:
               
               printf "\n\n\n\n\n\n\n"
               
-          imagePullPolicy: IfNotPresent
-          name: config-init
-          volumeMounts:
-            - mountPath: /etc/tezos
-              name: config-volume
-            - mountPath: /var/tezos
-              name: var-volume
-          envFrom:
-            - configMapRef:
-                name: tezos-config
-          env:    
-            - name: MY_POD_IP
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.podIP
-            - name: MY_POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-            - name: MY_POD_TYPE
-              value: node
-            - name: MY_NODE_CLASS
-              value: country-town                
-        - image: tezos-k8s-utils:dev
-          imagePullPolicy: IfNotPresent
-          name: config-generator
-          args:
-            - "config-generator"
-            - "--generate-config-json"
           envFrom:
             - configMapRef:
                 name: tezos-config
@@ -696,23 +679,20 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: country-town
+            - name: DAEMON
+              value: config-init
+            - name:  key
+              value: "specific-pod"
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume
-            - mountPath: /etc/secret-volume
-              name: tezos-accounts        
-        - image: "tezos-k8s-utils:dev"
+              name: var-volume                
+        - name: config-generator
+          image: "tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
-          name: snapshot-downloader
           args:
-            - snapshot-downloader
-          volumeMounts:
-            - mountPath: /var/tezos
-              name: var-volume
-            - mountPath: /etc/tezos
-              name: config-volume
+            - config-generator
           envFrom:
             - configMapRef:
                 name: tezos-config
@@ -728,10 +708,51 @@ spec:
             - name: MY_POD_TYPE
               value: node
             - name: MY_NODE_CLASS
-              value: country-town        
-        - image: "tezos/tezos:v12-release"
+              value: country-town
+            - name: DAEMON
+              value: config-generator
+            - name:  key
+              value: "specific-pod"
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+            - mountPath: /etc/secret-volume
+              name: tezos-accounts        
+        - name: snapshot-downloader
+          image: "tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
-          name: snapshot-importer
+          args:
+            - snapshot-downloader
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: country-town
+            - name: DAEMON
+              value: snapshot-downloader
+            - name:  key
+              value: "specific-container"
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume        
+        - name: snapshot-importer
+          image: "tezos/tezos:v12-release"
+          imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
           args:
@@ -761,11 +782,6 @@ spec:
               
               rm -rvf ${snapshot_file}
               
-          volumeMounts:
-            - mountPath: /var/tezos
-              name: var-volume
-            - mountPath: /etc/tezos
-              name: config-volume
           envFrom:
             - configMapRef:
                 name: tezos-config
@@ -781,7 +797,16 @@ spec:
             - name: MY_POD_TYPE
               value: node
             - name: MY_NODE_CLASS
-              value: country-town        
+              value: country-town
+            - name: DAEMON
+              value: snapshot-importer
+            - name:  key
+              value: "specific-pod"
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume        
       securityContext:
         fsGroup: 100      
       volumes:
