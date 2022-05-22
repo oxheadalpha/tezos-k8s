@@ -225,7 +225,6 @@ def main():
             for key_type in keys:
                 accounts[key_type][account] = {
                     "key": keys[key_type],
-                    "type": key_type,
                     "is_bootstrap_baker_account": True,
                     "bootstrap_balance": "4000000000000",
                 }
