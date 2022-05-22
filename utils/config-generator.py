@@ -327,12 +327,15 @@ def pod_requires_secret_key(account_name, account_values):
 # for account_name and returns a URL to locate it.
 
 
-def remote_signer(account_name, signer_url, key):
-    if signer_url:
-        return signer_url
+def remote_signer(account_name, external_signer_url, key):
+    signer_url_no_path = None
+    if external_signer_url:
+        signer_url_no_path = external_signer_url
     for k, v in SIGNERS.items():
         if account_name in v["sign_for_accounts"]:
-            return f"http://{k}.tezos-signer:6732/{key.public_key_hash()}"
+            signer_url_no_path = f"http://{k}.tezos-signer:6732"
+    if signer_url_no_path:
+        return f"{signer_url_no_path}/{key.public_key_hash()}"
     return None
 
 

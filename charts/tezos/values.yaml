@@ -63,16 +63,15 @@ accounts: {}
 #     is_bootstrap_baker_account: false
 #     bootstrap_balance: "4000000000000"
 
-# External remote signer (separate from Tezos Helm chart)
+# External remote signer (separate from this Tezos Helm chart)
 # You may also add accounts with external remote signers by passing their URL as:
 #   baker3:
 #     key: edpk...
-#     type: secret
 #     is_bootstrap_baker_account: false
 #     bootstrap_balance: "4000000000000"
-#     signer: http://<POD-NAME>.<SERVICE-NAME>.<NAMESPACE>:6732/<HASH>
+#     signer: http://<POD-NAME>.<SERVICE-NAME>.<NAMESPACE>:6732
 
-# NOTE - type must be secret and signer must be URL to external remote signer.
+# NOTE - signer must be URL to external remote signer without any path.
 
 ## NODES
 ##
