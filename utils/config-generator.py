@@ -239,11 +239,12 @@ def verify_this_bakers_account(accounts):
     for acct in accts:
         if not accounts.get(acct):
             raise Exception(f"ERROR: No account named {acct} found.")
+        signer = accounts[acct].get("signer", None)
 
         # We can count on accounts[acct]["type"] because import_keys will
         # fill it in when it is missing.
-        if accounts[acct]["type"] != "secret" and "signer" not in accounts[acct]:
-            raise Exception(f"ERROR: Either a secret key was not provided for {acct}")
+        if not (accounts[acct]["type"] == "secret" or signer):
+            raise Exception(f"ERROR: Either a secret key or a signer url should be provided for {acct}")
 
 
 #
@@ -344,9 +345,9 @@ def import_keys(all_accounts):
 
     for account_name, account_values in all_accounts.items():
         print("\n  Importing keys for account: " + account_name)
-        if "signer" in account_values:
-            print("\n  Using signer outside of chart: " + account_values.get("signer", None))
-        account_key_type = account_values.get("type")
+        signer = account_values.get("signer", None)
+        if signer:
+            print("\n  Using signer outside of chart: " + signer)
         account_key = account_values.get("key")
 
         if account_key == None:
@@ -362,7 +363,7 @@ def import_keys(all_accounts):
 
         # restrict which private key is exposed to which pod
         if expose_secret_key(account_name):
-            sk = remote_signer(account_name, account_values.get("signer", None), key)
+            sk = remote_signer(account_name, signer, key)
             if sk == None or pod_requires_secret_key(account_name, account_values):
                 try:
                     sk = "unencrypted:" + key.secret_key()
