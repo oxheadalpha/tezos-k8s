@@ -239,12 +239,12 @@ def verify_this_bakers_account(accounts):
     for acct in accts:
         if not accounts.get(acct):
             raise Exception(f"ERROR: No account named {acct} found.")
-        signer = accounts[acct].get("signer", None)
+        signer = accounts[acct].get("signer_url")
 
         # We can count on accounts[acct]["type"] because import_keys will
         # fill it in when it is missing.
         if not (accounts[acct]["type"] == "secret" or signer):
-            raise Exception(f"ERROR: Either a secret key or a signer url should be provided for {acct}")
+            raise Exception(f"ERROR: Either a secret key or a signer_url should be provided for {acct}")
 
 
 #
@@ -319,7 +319,7 @@ def expose_secret_key(account_name):
 
 
 def pod_requires_secret_key(account_name, account_values):
-    return MY_POD_TYPE in ["activating", "signing"] and "signer" not in account_values
+    return MY_POD_TYPE in ["activating", "signing"] and "signer_url" not in account_values
 
 
 #
@@ -348,7 +348,7 @@ def import_keys(all_accounts):
 
     for account_name, account_values in all_accounts.items():
         print("\n  Importing keys for account: " + account_name)
-        signer = account_values.get("signer", None)
+        signer = account_values.get("signer_url")
         if signer:
             print("\n  Using signer outside of chart: " + signer)
         account_key = account_values.get("key")
