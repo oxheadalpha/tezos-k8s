@@ -234,8 +234,6 @@ signers: {}
 #    sign_for_accounts:
 #    - baker0
 
-
-
 ## Where full and rolling history mode nodes will get their Tezos snapshots from.
 full_snapshot_url: https://mainnet.xtz-shots.io/full
 rolling_snapshot_url: https://mainnet.xtz-shots.io/rolling
