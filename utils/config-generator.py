@@ -318,7 +318,7 @@ def expose_secret_key(account_name):
 # needs to have the keys not a URL to itself.
 
 
-def pod_requires_secret_key(account_name, account_values):
+def pod_requires_secret_key(account_values):
     return MY_POD_TYPE in ["activating", "signing"] and "signer_url" not in account_values
 
 
@@ -348,9 +348,6 @@ def import_keys(all_accounts):
 
     for account_name, account_values in all_accounts.items():
         print("\n  Importing keys for account: " + account_name)
-        signer = account_values.get("signer_url")
-        if signer:
-            print("\n  Using signer outside of chart: " + signer)
         account_key = account_values.get("key")
 
         if account_key == None:
@@ -366,8 +363,11 @@ def import_keys(all_accounts):
 
         # restrict which private key is exposed to which pod
         if expose_secret_key(account_name):
+            signer = account_values.get("signer_url")
+            if signer:
+                print("\n  Using signer outside of chart: " + signer)
             sk = remote_signer(account_name, signer, key)
-            if sk == None or pod_requires_secret_key(account_name, account_values):
+            if sk == None or pod_requires_secret_key(account_values):
                 try:
                     sk = "unencrypted:" + key.secret_key()
                 except ValueError:
