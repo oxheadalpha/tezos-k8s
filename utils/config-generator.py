@@ -323,8 +323,11 @@ def pod_requires_secret_key(account_values):
 
 
 #
-# remote_signer() picks the first signer, if any, that claims to sign
-# for account_name and returns a URL to locate it.
+# remote_signer() returns a reference to a signer that
+# tezos-client understands, either:
+# * picks the first signer, if any, that claims to sign
+#   for account_name and returns a URL to locate it,
+# * returns the external signer url if passed.
 
 
 def remote_signer(account_name, external_signer_url, key):
