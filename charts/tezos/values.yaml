@@ -73,7 +73,8 @@ accounts: {}
 #     bootstrap_balance: "4000000000000"
 #     signer_url: http://<POD-NAME>.<SERVICE-NAME>.<NAMESPACE>:6732
 
-# NOTE - signer_url must be URL to external remote signer without any path.
+# NOTE - signer_url must be URL to external remote signer without anything extra
+# in the path, such as the public key hash.
 
 ## NODES
 ##
