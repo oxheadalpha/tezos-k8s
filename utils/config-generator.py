@@ -275,15 +275,9 @@ def fill_in_missing_keys(all_accounts):
     print("\nFill in missing keys")
 
     for account_name, account_values in all_accounts.items():
-        account_key_type = account_values.get("type")
+        if "type" in account_values:
+            raise Exception("Deprecated field 'type' passed by helm, but helm should have pruned it.")
         account_key = account_values.get("key")
-
-        if account_key == None and account_key_type != None:
-            raise Exception(
-                f"ERROR: {account_name} specifies "
-                + f"type {account_key_type} without "
-                + f"a key"
-            )
 
         if account_key == None:
             print(
@@ -348,7 +342,6 @@ def import_keys(all_accounts):
 
     for account_name, account_values in all_accounts.items():
         print("\n  Importing keys for account: " + account_name)
-        account_key_type = account_values.get("type")
         account_key = account_values.get("key")
 
         if account_key == None:
@@ -359,16 +352,8 @@ def import_keys(all_accounts):
             key.secret_key()
         except ValueError:
             account_values["type"] = "public"
-            if account_key_type == "secret":
-                raise ValueError(
-                    account_name + "'s key marked as " + "secret, but it is public"
-                )
         else:
             account_values["type"] = "secret"
-            if account_key_type == "public":
-                raise ValueError(
-                    account_name + "'s key marked as " + "public, but it is secret"
-                )
 
         # restrict which private key is exposed to which pod
         if expose_secret_key(account_name):
