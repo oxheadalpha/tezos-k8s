@@ -63,6 +63,19 @@ accounts: {}
 #     is_bootstrap_baker_account: false
 #     bootstrap_balance: "4000000000000"
 
+## A public key account can contain a url to a remote signer that signs with the
+## corresponding secret key. You shouldn't need to set this if you're deploying
+## a tezos-k8s chart's signer into the same namespace. See the `signers` values
+## field below in the file to define remote signers.
+#   baker3:
+#     key: edpk...
+#     is_bootstrap_baker_account: false
+#     bootstrap_balance: "4000000000000"
+#     signer_url: http://<POD-NAME>.<SERVICE-NAME>.<NAMESPACE>:6732
+
+# NOTE - signer_url must be URL to external remote signer without anything extra
+# in the path, such as the public key hash.
+
 ## NODES
 ##
 ## "nodes" is a dictionary where each key/value pair defines a statefulset and a
@@ -217,8 +230,8 @@ services:
     selector:
 #      rpc_node: "true"
 
-# Define and use external remote signers.
-# Bakers automatically use signers when configured.
+# Define remote signers. Bakers automatically use signers in their namespace
+# that are configured to sign for the accounts they are baking for.
 signers: {}
 #  tezos-signer-0:
 #    sign_for_accounts:
