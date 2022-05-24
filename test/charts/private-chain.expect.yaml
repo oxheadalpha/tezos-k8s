@@ -172,6 +172,15 @@ metadata:
   name: tezos-config
   namespace: testing
 ---
+# Source: tezos-chain/templates/configs.yaml
+apiVersion: v1
+data:
+  012-Psithaca-per-block-votes.json: "{}"
+kind: ConfigMap
+metadata:
+  name: per-block-votes
+  namespace: testing
+---
 # Source: tezos-chain/templates/signer.yaml
 apiVersion: v1
 kind: Service
@@ -311,9 +320,18 @@ spec:
               if [ "${proto_command}" == "012-Psithaca" ]; then
                   extra_args=""
               else
-                  echo '{"liquidity_baking_toggle_vote": "pass"}' > /etc/tezos/per_block_votes.json
-                  # we pass both a vote argument and a votefile argument; vote argument is mandatory as a fallback
-                  extra_args="--liquidity-baking-toggle-vote on --votefile /etc/tezos/per_block_votes.json"
+                  per_block_vote_file=/etc/tezos/per-block-votes/${proto_command}-per-block-votes.json
+                  if [ $(cat $per_block_vote_file) == "null" ]; then
+                    cat << EOF
+              You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
+              protocols:
+              - command: ${proto_command}
+                vote:
+                  liquidity_baking_toggle_vote: "on"
+              EOF
+                    exit 1
+                  fi
+                  extra_args="--votefile ${per_block_vote_file}"
               fi
               
               my_baker_account="$(cat /etc/tezos/baker-account )"
@@ -338,7 +356,9 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume
+            - mountPath: /etc/tezos/per-block-votes
+              name: per-block-votes        
         - name: logger
           image: "tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
@@ -487,6 +507,9 @@ spec:
         - name: tezos-accounts
           secret:
             secretName: tezos-secret
+        - name: per-block-votes
+          configMap:
+            name: per-block-votes
   volumeClaimTemplates:
     - metadata:
         name: var-volume
@@ -653,6 +676,9 @@ spec:
         - name: tezos-accounts
           secret:
             secretName: tezos-secret
+        - name: per-block-votes
+          configMap:
+            name: per-block-votes
   volumeClaimTemplates:
     - metadata:
         name: var-volume
@@ -756,9 +782,18 @@ spec:
               if [ "${proto_command}" == "012-Psithaca" ]; then
                   extra_args=""
               else
-                  echo '{"liquidity_baking_toggle_vote": "pass"}' > /etc/tezos/per_block_votes.json
-                  # we pass both a vote argument and a votefile argument; vote argument is mandatory as a fallback
-                  extra_args="--liquidity-baking-toggle-vote on --votefile /etc/tezos/per_block_votes.json"
+                  per_block_vote_file=/etc/tezos/per-block-votes/${proto_command}-per-block-votes.json
+                  if [ $(cat $per_block_vote_file) == "null" ]; then
+                    cat << EOF
+              You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
+              protocols:
+              - command: ${proto_command}
+                vote:
+                  liquidity_baking_toggle_vote: "on"
+              EOF
+                    exit 1
+                  fi
+                  extra_args="--votefile ${per_block_vote_file}"
               fi
               
               my_baker_account="$(cat /etc/tezos/baker-account )"
@@ -783,7 +818,9 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume
+            - mountPath: /etc/tezos/per-block-votes
+              name: per-block-votes        
         - name: logger
           image: "tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
@@ -932,6 +969,9 @@ spec:
         - name: tezos-accounts
           secret:
             secretName: tezos-secret
+        - name: per-block-votes
+          configMap:
+            name: per-block-votes
   volumeClaimTemplates:
     - metadata:
         name: var-volume
@@ -1034,9 +1074,18 @@ spec:
               if [ "${proto_command}" == "012-Psithaca" ]; then
                   extra_args=""
               else
-                  echo '{"liquidity_baking_toggle_vote": "pass"}' > /etc/tezos/per_block_votes.json
-                  # we pass both a vote argument and a votefile argument; vote argument is mandatory as a fallback
-                  extra_args="--liquidity-baking-toggle-vote on --votefile /etc/tezos/per_block_votes.json"
+                  per_block_vote_file=/etc/tezos/per-block-votes/${proto_command}-per-block-votes.json
+                  if [ $(cat $per_block_vote_file) == "null" ]; then
+                    cat << EOF
+              You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
+              protocols:
+              - command: ${proto_command}
+                vote:
+                  liquidity_baking_toggle_vote: "on"
+              EOF
+                    exit 1
+                  fi
+                  extra_args="--votefile ${per_block_vote_file}"
               fi
               
               my_baker_account="$(cat /etc/tezos/baker-account )"
@@ -1061,7 +1110,9 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume                                
+              name: var-volume
+            - mountPath: /etc/tezos/per-block-votes
+              name: per-block-votes                                
         - name: sidecar
           image: "tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
@@ -1148,6 +1199,9 @@ spec:
         - name: tezos-accounts
           secret:
             secretName: tezos-secret
+        - name: per-block-votes
+          configMap:
+            name: per-block-votes
   volumeClaimTemplates:
     - metadata:
         name: var-volume

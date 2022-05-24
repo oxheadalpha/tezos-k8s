@@ -63,6 +63,15 @@ metadata:
   name: tezos-config
   namespace: testing
 ---
+# Source: tezos-chain/templates/configs.yaml
+apiVersion: v1
+data:
+  012-Psithaca-per-block-votes.json: "{}"
+kind: ConfigMap
+metadata:
+  name: per-block-votes
+  namespace: testing
+---
 # Source: tezos-chain/templates/static.yaml
 apiVersion: v1
 kind: Service
@@ -356,6 +365,9 @@ spec:
         - name: tezos-accounts
           secret:
             secretName: tezos-secret
+        - name: per-block-votes
+          configMap:
+            name: per-block-votes
   volumeClaimTemplates:
     - metadata:
         name: var-volume
