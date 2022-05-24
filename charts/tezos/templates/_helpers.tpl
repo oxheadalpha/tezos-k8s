@@ -134,16 +134,16 @@ metadata:
 */ -}}
 {{- define "tezos.getRemoteSigners" }}
   {{- $signers := dict "tacoinfraSigners" dict "tezosK8sSigners" dict }}
-  {{- $accountsToSignFor := dict }}
+  {{- $accountNames := dict }}
 
   {{- range $signerName, $signerConfig := .Values.remoteSigners }}
     {{- if $signerConfig }}
 
-      {{- range $account := $signerConfig.signForAccounts }}
-        {{- if hasKey $accountsToSignFor $account }}
+      {{- range $account := $signerConfig.accountsToSignFor }}
+        {{- if hasKey $accountNames $account }}
           {{- fail (printf "Account '%s' is specified by more than one remote signer" $account) }}
         {{- else }}
-          {{- $_ := set $accountsToSignFor $account "" }}
+          {{- $_ := set $accountNames $account "" }}
         {{- end }}
       {{- end }}
 
@@ -163,4 +163,29 @@ metadata:
   {{- end }}
 
   {{- $signers | toJson }}
+{{- end }}
+
+
+{{- define "tezos.isKeyPrefix" }}
+  {{- $keyPrefixes := list "edsk" "edpk" "spsk" "sppk" "p2sk" "p2pk" }}
+  {{- has (substr 0 4 .) $keyPrefixes | ternary "true" "" }}
+{{- end }}
+
+{{- define "tezos.isKeyHashPrefix" }}
+  {{- $keyHashPrefixes := list "tz1" "tz2" "tz3" }}
+  {{- has (substr 0 3 .) $keyHashPrefixes | ternary "true" "" }}
+{{- end }}
+
+{{- define "tezos.validateAccountKeyPrefix" }}
+  {{- if (not (or (include "tezos.isKeyPrefix" .key) (include "tezos.isKeyHashPrefix" .key))) }}
+    {{- fail (printf "'%s' account's key is not a valid key or key hash." .account_name) }}
+  {{- end }}
+  {{- "true" }}
+{{- end }}
+
+{{- define "tezos.isSecretKeyPrefix" }}
+  {{- if not (include "tezos.isKeyPrefix" .key) }}
+    {{- fail (printf "'%s' account's key is not a valid key." .account_name) }}
+  {{- end }}
+  {{- substr 2 4 .key | eq "sk" | ternary "true" "" }}
 {{- end }}

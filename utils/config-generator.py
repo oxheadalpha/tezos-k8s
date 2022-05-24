@@ -2,7 +2,6 @@ import argparse
 import collections
 import json
 import os
-import requests
 import socket
 from grp import getgrnam
 from hashlib import blake2b
@@ -10,9 +9,9 @@ from pathlib import Path
 from re import sub
 from shutil import chown
 
-
-from pytezos import pytezos
+import requests
 from base58 import b58encode_check
+from pytezos import pytezos
 
 ACCOUNTS = json.loads(os.environ["ACCOUNTS"])
 CHAIN_PARAMS = json.loads(os.environ["CHAIN_PARAMS"])
@@ -317,7 +316,7 @@ def expose_secret_key(account_name):
         return NETWORK_CONFIG["activation_account_name"] == account_name
 
     if MY_POD_TYPE == "signing":
-        return account_name in MY_POD_CONFIG.get("signForAccounts")
+        return account_name in MY_POD_CONFIG.get("accountsToSignFor")
 
     if MY_POD_TYPE == "node":
         if MY_POD_CONFIG.get("bake_using_account", "") == account_name:
@@ -334,7 +333,7 @@ def get_accounts_signer(signers, account_name):
     """
     found_account = found_signer = None
     for signer_name, signer_config in signers.items():
-        if account_name in signer_config["signForAccounts"]:
+        if account_name in signer_config["accountsToSignFor"]:
             if account_name == found_account:
                 raise Exception(
                     f"ERORR: Account '{account_name}' can't be specified in more than one signer."
@@ -360,7 +359,7 @@ def get_remote_signer_url(account_name, key):
     if tacoinfra_signer_name:
         if signer_url:
             raise Exception(
-                f"ERROR: Account '{account_name}' can't be specified in both tezos-k8s and Tacoinfra signers."
+                f"ERROR: Account '{account_name}' can't be specified in both tezos-k8s and tacoinfra signers."
             )
         signer_url = f"http://{tacoinfra_signer_name}:5000/{key.public_key_hash()}"
 
@@ -628,7 +627,7 @@ def create_node_config_json(
                 node_config["network"] = node_config_orig["network"]
             else:
                 node_config["network"] = "mainnet"
-            
+
     else:
         if CHAIN_PARAMS.get("expected-proof-of-work") != None:
             node_config["p2p"]["expected-proof-of-work"] = CHAIN_PARAMS[

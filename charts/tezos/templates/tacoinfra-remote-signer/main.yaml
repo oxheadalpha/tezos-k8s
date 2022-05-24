@@ -9,6 +9,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ $signerName }}
+  namespace: {{ $.Release.Namespace }}
   labels:
     {{- include "tacoinfra-remote-signer.labels" $ | nindent 4 }}
 spec:
@@ -16,21 +17,46 @@ spec:
   ports:
     - name: http
       port: 5000
-      targetPort: http
-      protocol: TCP
   selector:
     appType: tacoinfra-remote-signer
     signerName: {{ $signerName }}
 ---
 
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $signerName }}
+  namespace: {{ $.Release.Namespace }}
+  # labels:
 data:
-  CONFIG: |
-{{ $signerConfig.config | toJson | b64enc | indent 4 }}
+  accounts.json: |
+{{- $accountKeys := list }}
+{{- range $accountName := $signerConfig.accountsToSignFor }}
+  {{- $accounts := $.Values.accounts | default dict }}
+  {{- $account := get $accounts $accountName | default dict }}
+  {{- $_ := set $account "account_name" $accountName }}
+
+  {{- if not (and ($account.key) ($account.key_id)) }}
+    {{- fail (printf "Account '%s' requires 'key' and 'key_id' values." $accountName) }}
+  {{- end }}
+  {{- if (include "tezos.isSecretKeyPrefix" $account) }}
+    {{- fail (printf "'%s' account's key is not a public key." $accountName) }}
+  {{- end }}
+
+  {{- $accountKeys = append $accountKeys (pick $account "account_name" "key" "key_id") }}
+{{- end }}
+{{- $accountKeys | toJson | nindent 4 }}
+---
+
+apiVersion: v1
 kind: Secret
 metadata:
   name: {{ $signerName }}
   namespace: {{ $.Release.Namespace }}
+  # labels:
+data:
+  CONFIG: |
+{{ $signerConfig.config | toJson | b64enc | indent 4 }}
 ---
 
 apiVersion: apps/v1
@@ -62,12 +88,35 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ default "" $signerConfig.serviceAccountName }}
-      {{- with $signerConfig.securityContext }}
       securityContext:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- toYaml $signerConfig.podSecurityContext | nindent 8 }}
+      initContainers:
+        {{- /* ConfiMap mount is always mounted as ro fs.
+            Copy it to empty dir to make it writeable.
+        */}}
+        - name: copy-cm-to-emptydir
+          image: {{ $.Values.images.tacoinfraRemoteSigner }}
+          command: ["/bin/sh"]
+          args: ["-c", "cp /etc/signer-config/* /app/signer-config; touch keys.json"]
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/signer-config
+            - name: signer-config
+              mountPath: /app/signer-config
+        - name: write-keys-json
+          image: {{ $.Values.images.tacoinfraRemoteSigner }}
+          command: ["python"]
+          args:
+            - "-c"
+            - |
+{{ tpl ($.Files.Get "scripts/tacoinfra/create-keys-json.py") $ | indent 13 }}
+          volumeMounts:
+            - name: signer-config
+              mountPath: /app/signer-config
       containers:
         - name: remote-signer
+          args: ["kms"]
+          {{- /* figure out security context for other containers */}}
           securityContext:
             {{- toYaml $signerConfig.securityContext | nindent 12 }}
           {{- $signerImage := $signerConfig.image | default dict }}
@@ -76,14 +125,21 @@ spec:
           ports:
             - name: http
               containerPort: 5000
-              protocol: TCP
-          env:
-            - name: ACCOUNTS
-              value: {{ $signerConfig.signForAccounts | toJson }}
           volumeMounts:
-            - name: {{ $signerName }}
-              mountPath: "???"
+            - name: signer-config
+              mountPath: /app/signer-config
               readOnly: true
+          env:
+            {{- /* Just using some of these for devel */}}
+            - name: REGION
+              value: us-east-1
+            - name: FLASK_ENV
+              value: development
+            - name: AWS_ACCESS_KEY_ID
+              value: {{ $.Values.access }}
+            - name: AWS_SECRET_ACCESS_KEY
+              value: {{ $.Values.secret }}
+          # */ -}}
           # livenessProbe:
           #   httpGet:
           #     path: /
@@ -97,9 +153,14 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
       volumes:
-        - name: {{ $signerName }}
+        - name: secret-volume
           secret:
             secretName: {{ $signerName }}
+        - name: config-volume
+          configMap:
+            name: {{ $signerName }}
+        - name: signer-config
+          emptyDir: {}
       {{- with $signerConfig.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
