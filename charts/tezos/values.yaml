@@ -291,8 +291,17 @@ protocols:
   ## You may want to run two or more if you are expecting an on-chain upgrade.
   ## Be mindful that running more protocols will start more containers in your
   ## pods which may consume more memory.
+  ## Syntax:
+  ## * command: the suffix of the tezos-baker binary
+  ## * vote: a map of per-block votes. These are protocol specific.
+  ##   "on" and "off" must be between quotes.
+  ## Note that we are not providing default votes since every baker needs
+  ## to make an explicit educated choice on every toggle.
   - command: 012-Psithaca
+    vote: {}
   # - command: alpha
+  #   vote:
+  #     liquidity_baking_toggle_vote: "off"
 
 ## Activate a new chain from genesis. Uncommenting this will create an
 ## activation job. The activation job will activate the chain if the

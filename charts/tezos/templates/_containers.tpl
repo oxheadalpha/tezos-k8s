@@ -147,6 +147,10 @@
     - mountPath: /etc/secret-volume
       name: tezos-accounts
     {{- end }}
+  {{- if eq .type "baker" }}
+    - mountPath: /etc/tezos/per-block-votes
+      name: per-block-votes
+  {{- end }}
   {{- if (or (eq .type "octez-node")
              (eq .type "tezedge-node")) }}
   ports:

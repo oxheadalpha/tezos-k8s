@@ -69,3 +69,14 @@ kind: Secret
 metadata:
   name: tezos-secret
   namespace: {{ .Release.Namespace }}
+---
+apiVersion: v1
+data:
+{{- range .Values.protocols }}
+  {{ .command }}-per-block-votes.json: {{ .vote | toJson | quote }}
+{{- end }}
+kind: ConfigMap
+metadata:
+  name: per-block-votes
+  namespace: {{ .Release.Namespace }}
+---
