@@ -86,10 +86,15 @@
 {{- end }}
 
 {{- define "tezos.shouldDownloadSnapshot" -}}
+  {{- $snapshotType :=
+               or (get $.node_vals "snapshot")
+                  (get (get .Values "node_globals" | default dict) "snapshot")
+                  "none" }}
+  {{- if get (dict "snapshot" 1 "tarball" 1 "none" 1) $snapshotType | not }}
+    {{- print "Snapshot type " $snapshotType " is invalid." | fail }}
+  {{- end }}
   {{- if or (include "tezos.deprecatedShouldDownloadSnapshot" .)
-            (hasKey $.node_vals "snapshot")
-            (and (hasKey .Values "node_globals")
-                 (hasKey (.Values.node_globals | default dict) "snapshot")) }}
+            (ne $snapshotType "none") }}
     {{- "true" }}
   {{- else }}
     {{- "" }}
