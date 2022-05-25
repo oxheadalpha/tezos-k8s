@@ -5,10 +5,10 @@ bail() {
     exit 1
 }
 
-snapshot() {
+standard() {
     URL="$1"
 
-    echo "Downloading snapshot $URL"
+    echo "Downloading standard snapshot $URL"
     echo '{ "version": "0.0.4" }' > "$node_dir/version.json"
     curl -LfsS -o "$snapshot_file" "$URL"
 }
@@ -74,7 +74,7 @@ if [ -n "$snapshot_url" ] && [ -n "$tarball_url" ]; then
 fi
 
 if [ -z "$SNAPSHOT_TYPE" -a -n "$snapshot_url" ]; then
-  SNAPSHOT_TYPE=snapshot
+  SNAPSHOT_TYPE=standard
   SNAPSHOT_URL="$snapshot_url"
 fi
 
@@ -89,14 +89,14 @@ fi
 mkdir -p "$node_data_dir"
 
 case "$SNAPSHOT_TYPE" in
-snapshot)	if [ "$HISTORY_MODE" = archive ]; then
-		    bail "Regular snapshots can't do archive mode, " \
+standard)	if [ "$HISTORY_MODE" = archive ]; then
+		    bail "Standard snapshots can't do archive mode, " \
 		         "use tarball instead."
 		fi
-		snapshot "$SNAPSHOT_URL";;
+		standard "$SNAPSHOT_URL";;
 tarball)	tarball "$SNAPSHOT_URL";;
 none)		;;
-*)		usage "$SNAPSHOT_TYPE must be 'snapshot', 'tarball',"
+*)		usage "$SNAPSHOT_TYPE must be 'standard', 'tarball',"
 		      "or 'none'.";;
 esac
 

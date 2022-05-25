@@ -125,7 +125,7 @@ accounts: {}
 ##                    chain with external bakers, such as a new test chain.
 ##                    Otherwise, the chain may become unreachable externally
 ##                    while waiting for other nodes to come online.
-## - "snapshot": enum of "snapshot", "tarball", or "none" defaulting to none.
+## - "snapshot": enum of "standard", "tarball", or "none" defaulting to none.
 ##               This determines what kind of snapshot to download, if any.
 ## - "instances": a list of nodes to fire up, each is a dictionary defining:
 ##    - "bake_using_account": Account name that should be used for baking.
@@ -210,7 +210,7 @@ node_globals:
 
 nodes:
   rolling-node:
-    snapshot: snapshot
+    snapshot: standard
 #    labels:
 #      rpc_node: "true"
 #      peer_node: "true"
@@ -241,19 +241,21 @@ signers: {}
 #    - baker0
 
 ##
-## Where to find snapshots and tarballs of various forms.  We call
-## it a snapshot if it's a standard Tezos snapshot.  A tarball is
-## an LZ4-compressed tarball which is unpacked without being checked.
-## It is therefore faster and less safe.  This data structure merely
-## defines the URLs, not whether to actually use a snapshot or tarball.
+## Where to find snapshots of various forms.  We call it "standard" if
+## it's a standard Tezos snapshot.  A tarball is an LZ4-compressed tarball
+## which is unpacked without being checked.  It is therefore faster and
+## less safe.  This data structure merely defines the URLs, not whether
+## to actually use a standard or tarball.
+##
+## NOTE: there is no "standard" for archive because it doesn't make sense.
 
 snapshots:
   mainnet:
     rolling:
-      snapshot: https://mainnet.xtz-shots.io/rolling
+      standard: https://mainnet.xtz-shots.io/rolling
       tarball:  https://mainnet.xtz-shots.io/rolling-tarball
     full:
-      snapshot: https://mainnet.xtz-shots.io/full
+      standard: https://mainnet.xtz-shots.io/full
       tarball:  https://mainnet.xtz-shots.io/full-tarball
     archive:
       tarball:  https://mainnet.xtz-shots.io/archive-tarball

@@ -6,7 +6,7 @@ node_globals:
       key: outer-container
     octez-node:
       TEZOS_LOG: "* -> DEBUG"
-  snapshot: snapshot
+  snapshot: standard
 nodes:
   country-town:
     snapshot: tarball

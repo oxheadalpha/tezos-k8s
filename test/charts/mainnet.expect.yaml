@@ -37,11 +37,11 @@ data:
         "tarball": "https://mainnet.xtz-shots.io/archive-tarball"
       },
       "full": {
-        "snapshot": "https://mainnet.xtz-shots.io/full",
+        "standard": "https://mainnet.xtz-shots.io/full",
         "tarball": "https://mainnet.xtz-shots.io/full-tarball"
       },
       "rolling": {
-        "snapshot": "https://mainnet.xtz-shots.io/rolling",
+        "standard": "https://mainnet.xtz-shots.io/rolling",
         "tarball": "https://mainnet.xtz-shots.io/rolling-tarball"
       }
     }
@@ -66,7 +66,7 @@ data:
         "runs": [
           "octez_node"
         ],
-        "snapshot": "snapshot",
+        "snapshot": "standard",
         "storage_size": "100Gi"
       }
     }
