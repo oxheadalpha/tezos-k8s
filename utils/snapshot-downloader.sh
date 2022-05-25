@@ -95,7 +95,9 @@ snapshot)	if [ "$HISTORY_MODE" = archive ]; then
 		fi
 		snapshot "$SNAPSHOT_URL";;
 tarball)	tarball "$SNAPSHOT_URL";;
-*)		usage "$SNAPSHOT_TYPE must be 'snapshot' or 'tarball'";;
+none)		;;
+*)		usage "$SNAPSHOT_TYPE must be 'snapshot', 'tarball',"
+		      "or 'none'.";;
 esac
 
 chown -R 100 "$data_dir"
