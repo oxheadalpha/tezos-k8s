@@ -55,6 +55,9 @@ spec:
           name: dev-net-tun
         - emptyDir: {}
           name: config-volume
+        - name: tezos-accounts
+          secret:
+            secretName: tezos-secret
 {{- if $.node_vals.local_storage | default false }}
         - emptyDir: {}
           name: var-volume

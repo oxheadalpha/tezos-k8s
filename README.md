@@ -19,6 +19,7 @@
   - [Adding external nodes to the cluster](#adding-external-nodes-to-the-cluster)
     - [On the computer of the joining node](#on-the-computer-of-the-joining-node)
   - [RPC Authentication](#rpc-authentication)
+- [Using a custom Tezos build](#using-a-custom-tezos-build)
 - [Indexers](#indexers)
 - [Notes](#notes)
 - [Development](#development)
@@ -305,7 +306,7 @@ Said names are traditionally kebab case.
 At the statefulset level, the following parameters are allowed:
 
    - storage_size: the size of the PV
-   - runs: a list of containers to run, e.g. "baker", "endorser", "tezedge"
+   - runs: a list of containers to run, e.g. "baker", "tezedge"
    - instances: a list of nodes to fire up, each is a dictionary
      defining:
      - `bake_using_account`: The name of the account that should be used
@@ -330,7 +331,6 @@ nodes:
     storage_size: 15Gi
     runs:
       - baker
-      - endorser
       - logger
     instances:
       - bake_using_account: baker0
@@ -345,7 +345,6 @@ nodes:
   tezedge-full-node:
     runs:
       - baker
-      - endorser
       - logger
       - tezedge
     instances:
@@ -362,10 +361,10 @@ This will run the following nodes:
    - `tezedge-full-node-1`
    - `tezedge-full-node-2`
 
-`baking-node-0` will run baker, endorser, and logger containers
+`baking-node-0` will run baker and logger containers
 and will be the only bootstrap node.  `full-node-*` are just nodes
-with no extras.  `tezedge-full-node-*` will be tezedge nodes running baker,
-endorser, and logger containers.
+with no extras.  `tezedge-full-node-*` will be tezedge nodes running baker
+and logger containers.
 
 To upgrade your Helm release run:
 
@@ -424,6 +423,41 @@ done
 You can optionally spin up an RPC authentication backend allowing trusted users to make RPC requests to your cluster.
 
 Follow the steps [here](./rpc-auth/README.md).
+
+# Using a custom Tezos build
+
+Create a clone of the `[tezos](https://gitlab.com/tezos/tezos)`
+repository.  [Set up your development environment as usual](https://tezos.gitlab.io/introduction/howtoget.html#setting-up-the-development-environment-from-scratch).  Then run:
+
+```shell
+eval $(minikube docker-env)
+make docker-image
+```
+
+This will create a docker image called `tezos:latest` and install it
+into the minikube environment.
+
+Or, if you prefer, you can build the image using:
+```shell
+./scripts/create_docker_image.sh
+```
+
+This will create an image with a name like `tezos/tezos:v13-rc1`.
+Then you install it thus:
+```shell
+docker image save <image> | ( eval $(minikube docker-env); docker image load )
+```
+
+Either way, inside `$CHAIN_NAME_values.yaml`, change the `images` section to:
+
+```yaml
+images:
+  octez: <image>
+```
+
+where image is `tezos:latest` or whatever.
+
+Then install the chart as above.
 
 # Indexers
 

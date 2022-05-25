@@ -6,6 +6,7 @@ shift
 case "$CMD" in
 	config-generator)	exec /config-generator.sh	"$@"	;;
 	logger)			exec /logger.sh			"$@"	;;
+	sidecar)		exec /sidecar.py		"$@"	;;
 	snapshot-downloader)	exec /snapshot-downloader.sh	"$@"	;;
 	wait-for-dns)		exec /wait-for-dns.sh		"$@"	;;
 	faucet-gen)	        exec /faucet-gen.py     	"$@"	;;
@@ -20,6 +21,7 @@ echo
 echo "Valid options are:"
 echo "	config-generator"
 echo "	logger"
+echo "	sidecar"
 echo "	snapshot-downloader"
 echo "	wait-for-dns"
 echo "	faucet-gen"

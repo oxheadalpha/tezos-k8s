@@ -13,7 +13,7 @@ supervisord -c /etc/supervisor/supervisord.conf
 # waiting for Zerotier IP
 # why 2? because you have an ipv6 and an a ipv4 address by default if everything is ok
 IP_OK=0
-while [ $IP_OK -lt 1 ]
+while [ $IP_OK -lt 2 ]
 do
   ZTDEV=$( ip addr | grep -i zt | grep -i mtu | awk '{ print $2 }' | cut -f1 -d':' | tail -1 )
   IP_OK=$( ip addr show dev $ZTDEV | grep -i inet | wc -l )

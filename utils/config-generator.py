@@ -13,7 +13,8 @@ import requests
 from base58 import b58encode_check
 from pytezos import pytezos
 
-ACCOUNTS = json.loads(os.environ["ACCOUNTS"])
+with open("/etc/secret-volume/ACCOUNTS", "r") as secret_file:
+    ACCOUNTS = json.loads(secret_file.read())
 CHAIN_PARAMS = json.loads(os.environ["CHAIN_PARAMS"])
 DATA_DIR = "/var/tezos/node/data"
 NODE_GLOBALS = json.loads(os.environ["NODE_GLOBALS"]) or {}
@@ -51,8 +52,15 @@ SHOULD_GENERATE_UNSAFE_DETERMINISTIC_DATA = CHAIN_PARAMS.get(
     "should_generate_unsafe_deterministic_data"
 )
 
-# If there are no genesis params, this is a public chain.
+# If there are no genesis params, we are dealing with a public network.
 THIS_IS_A_PUBLIC_NET = True if not NETWORK_CONFIG.get("genesis") else False
+# Even if we are dealing with a public network, we may not want to join it in a
+# case such as when creating a network replica.
+JOIN_PUBLIC_NETWORK = NETWORK_CONFIG.get("join_public_network", THIS_IS_A_PUBLIC_NET)
+if not THIS_IS_A_PUBLIC_NET and JOIN_PUBLIC_NETWORK:
+    raise ValueError(
+        "Instruction was given to join a public network while defining a private chain"
+    )
 
 
 def main():
@@ -74,19 +82,8 @@ def main():
     if NODE_IDENTITIES.get(MY_POD_NAME, False):
         create_node_identity_json()
 
-    main_parser = argparse.ArgumentParser()
-    main_parser.add_argument(
-        "--generate-parameters-json",
-        action="store_true",
-        help="generate parameters.json",
-    )
-    main_parser.add_argument(
-        "--generate-config-json", action="store_true", help="generate config.json"
-    )
-    main_args = main_parser.parse_args()
-
     # Create parameters.json
-    if main_args.generate_parameters_json:
+    if MY_POD_TYPE == "activating":
         print("Starting parameters.json file generation")
         protocol_parameters = create_protocol_parameters_json(all_accounts)
 
@@ -98,7 +95,7 @@ def main():
             print(NETWORK_CONFIG["activation_account_name"], file=file)
 
     # Create config.json
-    if main_args.generate_config_json:
+    if MY_POD_TYPE == "node":
         print("\nStarting config.json file generation")
         bootstrap_peers = CHAIN_PARAMS.get("bootstrap_peers", [])
 
@@ -109,7 +106,7 @@ def main():
             if bootstrap_peers == []:
                 bootstrap_peers.extend(get_zerotier_bootstrap_peer_ips())
 
-        if THIS_IS_A_PUBLIC_NET:
+        if JOIN_PUBLIC_NETWORK:
             with open("/etc/tezos/data/config.json", "r") as f:
                 bootstrap_peers.extend(json.load(f)["p2p"]["bootstrap-peers"])
         else:
@@ -245,14 +242,16 @@ def verify_this_bakers_account(accounts):
     for acct in accts:
         if not accounts.get(acct):
             raise Exception(f"ERROR: No account named {acct} found.")
+        signer_url = accounts[acct].get("signer_url")
+        tacoinfra_signer = get_accounts_signer(TACOINFRA_SIGNERS, acct)
 
         # We can count on accounts[acct]["type"] because import_keys will
         # fill it in when it is missing.
-        if accounts[acct]["type"] != "secret":
-            if not get_accounts_signer(TACOINFRA_SIGNERS, acct):
-                raise Exception(
-                    f"ERROR: A secret key was not provided for baking account {acct}"
-                )
+        if not (accounts[acct]["type"] == "secret" or signer_url or tacoinfra_signer):
+            raise Exception(
+                f"ERROR: Neither a secret key, signer url, or cloud remote signer is provided for baking account{acct}."
+            )
+
     return True
 
 
@@ -285,15 +284,11 @@ def fill_in_missing_keys(all_accounts):
     print("\nFill in missing keys")
 
     for account_name, account_values in all_accounts.items():
-        account_key_type = account_values.get("type")
-        account_key = account_values.get("key")
-
-        if account_key == None and account_key_type != None:
+        if "type" in account_values:
             raise Exception(
-                f"ERROR: {account_name} specifies "
-                + f"type {account_key_type} without "
-                + f"a key"
+                "Deprecated field 'type' passed by helm, but helm should have pruned it."
             )
+        account_key = account_values.get("key")
 
         if account_key == None:
             print(
@@ -329,7 +324,7 @@ def expose_secret_key(account_name):
 def get_accounts_signer(signers, account_name):
     """
     Determine if there is a signer for the account. Error if the account is
-    specified in more than one signer of the particular signer type.
+    specified in more than one signer.
     """
     found_account = found_signer = None
     for signer_name, signer_config in signers.items():
@@ -343,45 +338,46 @@ def get_accounts_signer(signers, account_name):
     return found_signer
 
 
-def get_remote_signer_url(account_name, key):
+def get_remote_signer_url(account, key):
     """
     Return the url of a remote signer, if any, that claims to sign for the
-    account. Error if more than one signer type specifies the account.
+    account. Error if more than one signs for the account.
     """
-    signer_url = None
+    account_name, account_values = account
+
+    signer_url = account_values.get("signer_url")
     tezK8s_signer_name = get_accounts_signer(TEZOS_K8S_SIGNERS, account_name)
-    if tezK8s_signer_name:
-        signer_url = (
-            f"http://{tezK8s_signer_name}.tezos-k8s-signer:6732/{key.public_key_hash()}"
+    tacoinfra_signer_name = get_accounts_signer(TACOINFRA_SIGNERS, account_name)
+
+    signers = (signer_url, tezK8s_signer_name, tacoinfra_signer_name)
+    if tuple(map(bool, (signers))).count(True) > 1:
+        raise Exception(
+            f"ERROR: Account '{account_name}' may only have either a signer_url field or be signed for by a single signer."
         )
 
-    tacoinfra_signer_name = get_accounts_signer(TACOINFRA_SIGNERS, account_name)
+    if tezK8s_signer_name:
+        signer_url = f"http://{tezK8s_signer_name}.tezos-k8s-signer:6732"
+
     if tacoinfra_signer_name:
-        if signer_url:
-            raise Exception(
-                f"ERROR: Account '{account_name}' can't be specified in both tezos-k8s and tacoinfra signers."
-            )
-        signer_url = f"http://{tacoinfra_signer_name}:5000/{key.public_key_hash()}"
+        signer_url = f"http://{tacoinfra_signer_name}:5000"
 
-    return signer_url
+    return f"{signer_url}/{key.public_key_hash()}"
 
 
-def get_secret_key(account_name, key):
+def get_secret_key(account, key):
     """
-    For tezos node pods, check if there is a remote signer for the account. If
-    found, use its url as the sk. If there is no signer and for all other pod
-    types (e.g. chain activation and remote signer pods), use an actual sk.
+    For nodes and activation job, check if there is a remote signer for the
+    account. If found, use its url as the sk. If there is no signer and for all
+    other pod types (e.g. octez signer), use an actual sk.
     """
     sk = None
-    if MY_POD_TYPE == "node":
-        sk = get_remote_signer_url(account_name, key)
+    if MY_POD_TYPE in ("node", "activating"):
+        sk = get_remote_signer_url(account, key)
         if sk:
             print(f"    Using remote signer url: {sk}")
-    if not sk:
-        try:
-            sk = "unencrypted:" + key.secret_key()
-        except ValueError:
-            raise Exception("Secret key required but not provided.")
+    if not sk and key.is_secret:
+        sk = "unencrypted:" + key.secret_key()
+
     return sk
 
 
@@ -394,7 +390,6 @@ def import_keys(all_accounts):
 
     for account_name, account_values in all_accounts.items():
         print("\n  Importing keys for account: " + account_name)
-        account_key_type = account_values.get("type")
         account_key = account_values.get("key")
 
         if account_key == None:
@@ -405,20 +400,14 @@ def import_keys(all_accounts):
             key.secret_key()
         except ValueError:
             account_values["type"] = "public"
-            if account_key_type == "secret":
-                raise ValueError(
-                    account_name + "'s key marked as " + "secret, but it is public"
-                )
         else:
             account_values["type"] = "secret"
-            if account_key_type == "public":
-                raise ValueError(
-                    account_name + "'s key marked as " + "public, but it is secret"
-                )
 
         # restrict which private key is exposed to which pod
         if expose_secret_key(account_name):
-            sk = get_secret_key(account_name, key)
+            sk = get_secret_key((account_name, account_values), key)
+            if not sk:
+                raise Exception("Secret key required but not provided.")
             print("    Appending secret key")
             secret_keys.append({"name": account_name, "value": sk})
 
@@ -462,13 +451,11 @@ def import_keys(all_accounts):
 
 def create_node_identity_json():
     identity_file_path = f"{DATA_DIR}/identity.json"
-    path = Path(identity_file_path)
-    if path.exists() and path.stat().st_size > 0:
-        return
 
     # Manually create the data directory and identity.json, and give the
     # same dir/file permissions that tezos gives when it creates them.
     print("\nWriting identity.json file from the instance config")
+    print(f"Node id: {NODE_IDENTITIES.get(MY_POD_NAME)['peer_id']}")
 
     os.makedirs(DATA_DIR, 0o700, exist_ok=True)
     with open(
@@ -481,6 +468,7 @@ def create_node_identity_json():
     nogroup = getgrnam("nogroup").gr_gid
     chown(DATA_DIR, user=100, group=nogroup)
     chown(identity_file_path, user=100, group=nogroup)
+    print(f"Identity file written at {identity_file_path}")
 
 
 #
@@ -602,7 +590,7 @@ def create_node_config_json(
         "data-dir": DATA_DIR,
         "rpc": {
             "listen-addrs": [f"{os.getenv('MY_POD_IP')}:8732", "127.0.0.1:8732"],
-            "acl": [ { "address": os.getenv('MY_POD_IP'), "blacklist": [] } ]
+            "acl": [{"address": os.getenv("MY_POD_IP"), "blacklist": []}],
         },
         "p2p": {
             "bootstrap-peers": bootstrap_peers,
@@ -634,13 +622,18 @@ def create_node_config_json(
                 "expected-proof-of-work"
             ]
 
-        node_config["network"] = NETWORK_CONFIG
+        # Make a shallow copy of NETWORK_CONFIG so we can delete top level props
+        # without mutating the original dict.
+        node_config["network"] = dict(NETWORK_CONFIG)
+        # Delete props that are not part of the node config.json spec
+        node_config["network"].pop("activation_account_name")
+        node_config["network"].pop("join_public_network", None)
+
         node_config["network"]["sandboxed_chain_name"] = "SANDBOXED_TEZOS"
         node_config["network"]["default_bootstrap_peers"] = []
         node_config["network"]["genesis_parameters"] = {
             "values": {"genesis_pubkey": get_genesis_pubkey()}
         }
-        node_config["network"].pop("activation_account_name")
 
     return node_config
 

@@ -33,6 +33,7 @@ spec:
       containers:
       - name: tezos-signer
         image: "{{ .Values.images.octez }}"
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 6732
           name: signer
@@ -52,8 +53,6 @@ spec:
         args:
           - "config-generator"
         envFrom:
-          - secretRef:
-              name: tezos-secret
           - configMapRef:
               name: tezos-config
         env:
@@ -66,10 +65,15 @@ spec:
         volumeMounts:
           - mountPath: /var/tezos
             name: var-volume
+          - mountPath: /etc/secret-volume
+            name: tezos-accounts
       securityContext:
         fsGroup: 100
       volumes:
         - emptyDir: {}
           name: var-volume
+        - name: tezos-accounts
+          secret:
+            secretName: tezos-secret
 ---
 {{- end }}
