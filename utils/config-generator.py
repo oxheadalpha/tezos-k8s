@@ -361,7 +361,7 @@ def get_remote_signer_url(account, key):
     if tacoinfra_signer_name:
         signer_url = f"http://{tacoinfra_signer_name}:5000"
 
-    return f"{signer_url}/{key.public_key_hash()}"
+    return signer_url and f"{signer_url}/{key.public_key_hash()}"
 
 
 def get_secret_key(account, key):
