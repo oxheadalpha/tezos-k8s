@@ -60,7 +60,11 @@ metadata:
 apiVersion: v1
 data:
   ACCOUNTS: |
-{{ .Values.accounts | toJson | b64enc | indent 4 }}
+{{- $accounts := dict }}
+{{- range $k, $v := .Values.accounts }}
+  {{- $_ := set $accounts $k (omit $v "type" ) }}
+{{- end }}
+{{ $accounts | toJson | b64enc | indent 4 }}
 kind: Secret
 metadata:
   name: tezos-secret

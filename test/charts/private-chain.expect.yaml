@@ -305,6 +305,7 @@ spec:
               CLIENT_DIR="$TEZ_VAR/client"
               NODE_DIR="$TEZ_VAR/node"
               NODE_DATA_DIR="$TEZ_VAR/node/data"
+              BAKER_EXTRA_ARGS_FROM_ENV=${BAKER_EXTRA_ARGS}
               
               proto_command="012-Psithaca"
               
@@ -328,7 +329,7 @@ spec:
                   sleep 5
               done
               
-              exec $CMD run with local node $NODE_DATA_DIR ${extra_args} ${my_baker_account}
+              exec $CMD run with local node $NODE_DATA_DIR ${extra_args} ${BAKER_EXTRA_ARGS_FROM_ENV} ${my_baker_account}
               
           envFrom:
           env:
@@ -750,6 +751,7 @@ spec:
               CLIENT_DIR="$TEZ_VAR/client"
               NODE_DIR="$TEZ_VAR/node"
               NODE_DATA_DIR="$TEZ_VAR/node/data"
+              BAKER_EXTRA_ARGS_FROM_ENV=${BAKER_EXTRA_ARGS}
               
               proto_command="012-Psithaca"
               
@@ -773,7 +775,7 @@ spec:
                   sleep 5
               done
               
-              exec $CMD run with local node $NODE_DATA_DIR ${extra_args} ${my_baker_account}
+              exec $CMD run with local node $NODE_DATA_DIR ${extra_args} ${BAKER_EXTRA_ARGS_FROM_ENV} ${my_baker_account}
               
           envFrom:
           env:
@@ -1028,6 +1030,7 @@ spec:
               CLIENT_DIR="$TEZ_VAR/client"
               NODE_DIR="$TEZ_VAR/node"
               NODE_DATA_DIR="$TEZ_VAR/node/data"
+              BAKER_EXTRA_ARGS_FROM_ENV=${BAKER_EXTRA_ARGS}
               
               proto_command="012-Psithaca"
               
@@ -1051,7 +1054,7 @@ spec:
                   sleep 5
               done
               
-              exec $CMD run with local node $NODE_DATA_DIR ${extra_args} ${my_baker_account}
+              exec $CMD run with local node $NODE_DATA_DIR ${extra_args} ${BAKER_EXTRA_ARGS_FROM_ENV} ${my_baker_account}
               
           envFrom:
           env:
@@ -1202,6 +1205,9 @@ spec:
             
             CMD="$TEZ_BIN/tezos-signer -d $CLIENT_DIR launch http signer --magic-bytes 0x11,0x12,0x13 --check-high-watermark -a 0.0.0.0 -p 6732"
             
+            # ensure we can run tezos-signer commands without specifying client dir
+            ln -s /var/tezos/client /home/tezos/.tezos-signer
+            
             exec $CMD
             
       initContainers:
@@ -1273,7 +1279,7 @@ spec:
               	Psithaca2MLRFYargivpo7YvUr7wUDqyxrdhC5CQq78mRvimz6A				\
               	with fitness -1 and key						\
               	$( cat /etc/tezos/activation_account_name )			\
-              	and parameters /etc/tezos/parameters.json
+              	and parameters /etc/tezos/parameters.json 2>&1 | head -200
               
           envFrom:
           env:

@@ -239,11 +239,12 @@ def verify_this_bakers_account(accounts):
     for acct in accts:
         if not accounts.get(acct):
             raise Exception(f"ERROR: No account named {acct} found.")
+        signer = accounts[acct].get("signer_url")
 
         # We can count on accounts[acct]["type"] because import_keys will
         # fill it in when it is missing.
-        if accounts[acct]["type"] != "secret":
-            raise Exception(f"ERROR: Either a secret key was not provided for {acct}")
+        if not (accounts[acct]["type"] == "secret" or signer):
+            raise Exception(f"ERROR: Either a secret key or a signer_url should be provided for {acct}")
 
 
 #
@@ -275,15 +276,9 @@ def fill_in_missing_keys(all_accounts):
     print("\nFill in missing keys")
 
     for account_name, account_values in all_accounts.items():
-        account_key_type = account_values.get("type")
+        if "type" in account_values:
+            raise Exception("Deprecated field 'type' passed by helm, but helm should have pruned it.")
         account_key = account_values.get("key")
-
-        if account_key == None and account_key_type != None:
-            raise Exception(
-                f"ERROR: {account_name} specifies "
-                + f"type {account_key_type} without "
-                + f"a key"
-            )
 
         if account_key == None:
             print(
@@ -323,19 +318,27 @@ def expose_secret_key(account_name):
 # needs to have the keys not a URL to itself.
 
 
-def pod_requires_secret_key(account_name):
-    return MY_POD_TYPE in ["activating", "signing"]
+def pod_requires_secret_key(account_values):
+    return MY_POD_TYPE in ["activating", "signing"] and "signer_url" not in account_values
 
 
 #
-# remote_signer() picks the first signer, if any, that claims to sign
-# for account_name and returns a URL to locate it.
+# remote_signer() returns a reference to a signer that
+# tezos-client understands, either:
+# * picks the first signer, if any, that claims to sign
+#   for account_name and returns a URL to locate it,
+# * returns the external signer url if passed.
 
 
-def remote_signer(account_name, key):
+def remote_signer(account_name, external_signer_url, key):
+    signer_url_no_path = None
+    if external_signer_url:
+        signer_url_no_path = external_signer_url
     for k, v in SIGNERS.items():
         if account_name in v["sign_for_accounts"]:
-            return f"http://{k}.tezos-signer:6732/{key.public_key_hash()}"
+            signer_url_no_path = f"http://{k}.tezos-signer:6732"
+    if signer_url_no_path:
+        return f"{signer_url_no_path}/{key.public_key_hash()}"
     return None
 
 
@@ -348,7 +351,6 @@ def import_keys(all_accounts):
 
     for account_name, account_values in all_accounts.items():
         print("\n  Importing keys for account: " + account_name)
-        account_key_type = account_values.get("type")
         account_key = account_values.get("key")
 
         if account_key == None:
@@ -359,21 +361,16 @@ def import_keys(all_accounts):
             key.secret_key()
         except ValueError:
             account_values["type"] = "public"
-            if account_key_type == "secret":
-                raise ValueError(
-                    account_name + "'s key marked as " + "secret, but it is public"
-                )
         else:
             account_values["type"] = "secret"
-            if account_key_type == "public":
-                raise ValueError(
-                    account_name + "'s key marked as " + "public, but it is secret"
-                )
 
         # restrict which private key is exposed to which pod
         if expose_secret_key(account_name):
-            sk = remote_signer(account_name, key)
-            if sk == None or pod_requires_secret_key(account_name):
+            signer = account_values.get("signer_url")
+            if signer:
+                print("\n  Using signer outside of chart: " + signer)
+            sk = remote_signer(account_name, signer, key)
+            if sk == None or pod_requires_secret_key(account_values):
                 try:
                     sk = "unencrypted:" + key.secret_key()
                 except ValueError:

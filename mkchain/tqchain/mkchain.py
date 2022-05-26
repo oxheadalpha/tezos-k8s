@@ -5,6 +5,25 @@ from datetime import datetime, timezone
 
 import yaml
 
+
+# https://stackoverflow.com/a/52424865/207209
+class MyDumper(yaml.Dumper):  # your force-indent dumper
+    def increase_indent(self, flow=False, indentless=False):
+        return super(MyDumper, self).increase_indent(flow, False)
+
+
+class QuotedString(str):  # just subclass the built-in str
+    pass
+
+
+def quoted_scalar(dumper, data):  # a representer to force quotations on scalars
+    return dumper.represent_scalar("tag:yaml.org,2002:str", data, style='"')
+
+
+# add the QuotedString custom type with a forced quotation representer to your dumper
+MyDumper.add_representer(QuotedString, quoted_scalar)
+# end https://stackoverflow.com/a/52424865/207209
+
 from tqchain.keys import gen_key, get_genesis_vanity_chain_id, set_use_docker
 
 from ._version import get_versions
@@ -51,7 +70,7 @@ cli_args = {
     },
     "octez_docker_image": {
         "help": "Version of the Octez docker image",
-        "default": "tezos/tezos:v12-release",
+        "default": "tezos/tezos:v13-release",
     },
     "use_docker": {
         "action": "store_true",
@@ -162,6 +181,12 @@ def main():
         "rolling_snapshot_url": None,
         "archive_tarball_url": None,
         "rolling_tarball_url": None,
+        "node_globals": {
+            # Needs a quotedstring otherwise helm interprets "Y" as true and it does not work
+            "env": {
+                "all": {"TEZOS_CLIENT_UNSAFE_DISABLE_DISCLAIMER": QuotedString("Y")}
+            }
+        },
     }
 
     # preserve pre-existing values, if any (in case of scale-up)
@@ -222,7 +247,6 @@ def main():
             for key_type in keys:
                 accounts[key_type][account] = {
                     "key": keys[key_type],
-                    "type": key_type,
                     "is_bootstrap_baker_account": True,
                     "bootstrap_balance": "4000000000000",
                 }
@@ -288,7 +312,9 @@ def main():
     }
 
     with open(f"{files_path}_values.yaml", "w") as yaml_file:
-        yaml.dump(creation_constants, yaml_file)
+        yaml.dump(
+            creation_constants, yaml_file, Dumper=MyDumper, default_flow_style=False
+        )
         print(f"Wrote chain creation constants to {files_path}_values.yaml")
 
     # If there is a Zerotier configuration, create an invite file.
@@ -317,7 +343,12 @@ def main():
             print(
                 f"Wrote chain invitation constants to {files_path}_invite_values.yaml"
             )
-            yaml.dump(invitation_constants, yaml_file)
+            yaml.dump(
+                invitation_constants,
+                yaml_file,
+                Dumper=MyDumper,
+                default_flow_style=False,
+            )
 
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@ is_invitation: false
 
 # Images not part of the tezos-k8s repo go here
 images:
-  octez: tezos/tezos:v12-release
+  octez: tezos/tezos:v13-release
   tezedge: tezedge/tezedge:v1.6.8
 # Images that are part of the tezos-k8s repo go here with 'dev' tag
 tezos_k8s_images:
@@ -48,18 +48,33 @@ should_generate_unsafe_deterministic_data: false
 #   node but they will not be bootstrap accounts. If you don't set a bootstrap
 #   balance, it will default to the `bootstrap_mutez` field above.
 #
+#  The key field can be set to a public or private key. For a bootstrap baker,
+#  it must be set to a private key. The key type will be recognized automatically,
+#  and the pod will fail if the key type is unexpected.
+#
 accounts: {}
 #   baker0:
 #     key: edsk...
-#     type: secret
 #     is_bootstrap_baker_account: true
 #     bootstrap_balance: "50000000000000"
 
 #   baker1:
 #     key: edpk...
-#     type: public
 #     is_bootstrap_baker_account: false
 #     bootstrap_balance: "4000000000000"
+
+## A public key account can contain a url to a remote signer that signs with the
+## corresponding secret key. You shouldn't need to set this if you're deploying
+## a tezos-k8s chart's signer into the same namespace. See the `signers` values
+## field below in the file to define remote signers.
+#   baker3:
+#     key: edpk...
+#     is_bootstrap_baker_account: false
+#     bootstrap_balance: "4000000000000"
+#     signer_url: http://<POD-NAME>.<SERVICE-NAME>.<NAMESPACE>:6732
+
+# NOTE - signer_url must be URL to external remote signer without anything extra
+# in the path, such as the public key hash.
 
 ## NODES
 ##
@@ -215,8 +230,8 @@ services:
     selector:
 #      rpc_node: "true"
 
-# Define and use external remote signers.
-# Bakers automatically use signers when configured.
+# Define remote signers. Bakers automatically use signers in their namespace
+# that are configured to sign for the accounts they are baking for.
 signers: {}
 #  tezos-signer-0:
 #    sign_for_accounts:
