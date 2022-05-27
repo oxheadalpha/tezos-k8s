@@ -8,7 +8,16 @@ bail() {
 standard() {
     URL="$1"
 
-    echo "Downloading standard snapshot $URL"
+    if [ "$HISTORY_MODE" = archive ]; then
+	bail "Standard snapshots can't do archive mode, " \
+	     "use tarball instead."
+    fi
+
+    if [ -z "$URL" ]; then
+	bail "No standard snapshot URL provided for $HISTORY_MODE."
+    fi
+
+    echo "Downloading standard snapshot '$URL'"
     echo '{ "version": "0.0.4" }' > "$node_dir/version.json"
     curl -LfsS -o "$snapshot_file" "$URL"
 }
@@ -16,7 +25,11 @@ standard() {
 tarball() {
     URL="$1"
 
-    echo "Downloading and extracting tarball from $URL"
+    if [ -z "$URL" ]; then
+	bail "No tarball snapshot URL provided for $HISTORY_MODE."
+    fi
+
+    echo "Downloading and extracting tarball from '$URL'"
     curl -LfsS "$URL" | lz4 -d | tar -x -C "$data_dir"
     rm -fv "$node_data_dir/identity.json"
 }
@@ -89,11 +102,7 @@ fi
 mkdir -p "$node_data_dir"
 
 case "$SNAPSHOT_TYPE" in
-standard)	if [ "$HISTORY_MODE" = archive ]; then
-		    bail "Standard snapshots can't do archive mode, " \
-		         "use tarball instead."
-		fi
-		standard "$SNAPSHOT_URL";;
+standard)	standard "$SNAPSHOT_URL";;
 tarball)	tarball "$SNAPSHOT_URL";;
 none)		;;
 *)		usage "$SNAPSHOT_TYPE must be 'standard', 'tarball',"
