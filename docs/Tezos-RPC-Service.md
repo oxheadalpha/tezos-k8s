@@ -2,7 +2,7 @@
 
 You can optionally spin up an RPC authentication backend allowing trusted users to make RPC requests to your cluster.
 
-Follow the steps [here](./rpc-auth/README.md).
+Follow the steps at `rpc-auth/README.md`.
 
 # Using a custom Tezos build
 

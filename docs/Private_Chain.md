@@ -26,7 +26,7 @@ export ZT_NET=1c33c1ced02a5eee
 
 mkchain is a python script that generates Helm values, which Helm then uses to create your Tezos chain on k8s.
 
-Follow _just_ the [Install mkchain](./mkchain/README.md#install-mkchain) step in `./mkchain/README.md`. See there for more info on how you can customize your chain.
+Follow _just_ the Install mkchain step in `./mkchain/README.md`. See there for more info on how you can customize your chain.
 
 Set as an environment variable the name you would like to give to your chain:
 
