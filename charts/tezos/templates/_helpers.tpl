@@ -90,7 +90,7 @@
                or (get $.node_vals "snapshot")
                   (get (get .Values "node_globals" | default dict) "snapshot")
                   "none" }}
-  {{- if get (dict "standard" 1 "tarball" 1 "none" 1) $snapshotType | not }}
+  {{- if has $snapshotType (list "standard" "tarball" "none")  | not }}
     {{- print "Snapshot type " $snapshotType " is invalid." | fail }}
   {{- end }}
   {{- if or (include "tezos.deprecatedShouldDownloadSnapshot" .)
