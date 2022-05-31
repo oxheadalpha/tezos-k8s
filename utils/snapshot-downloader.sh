@@ -78,12 +78,15 @@ case "$HISTORY_MODE" in
   rolling)  snapshot_url="$ROLLING_SNAPSHOT_URL"
             tarball_url="$ROLLING_TARBALL_URL";;
   archive)  tarball_url="$ARCHIVE_TARBALL_URL";;
-  *)        echo "Invalid node history mode: '$HISTORY_MODE'"
-            exit 1;;
+  *)        bail "Invalid node history mode: '$HISTORY_MODE'";;
 esac
 
 if [ -n "$snapshot_url" ] && [ -n "$tarball_url" ]; then
-  bail "Only a snapshot or tarball url may be specified per history mode."
+  echo "Cannot specify both XXX_snapshot_url and XXX_tarball_url." | \
+    sed s/XXX/$HISTORY_MODE/g 1>&2
+  bail "Also, these specifiers are deprecated.  Please check the "   \
+       "documentation and use the new method of specifying "         \
+       "snapshots."
 fi
 
 if [ -z "$SNAPSHOT_TYPE" -a -n "$snapshot_url" ]; then
