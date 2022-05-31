@@ -247,7 +247,7 @@ signers: {}
 ## less safe.  This data structure merely defines the URLs, not whether
 ## to actually use a standard or tarball.
 ##
-## NOTE: there is no "standard" for archive because it aren't supported.
+## NOTE: there is no "standard" for archive because it isn't supported.
 
 snapshots:
   mainnet:
