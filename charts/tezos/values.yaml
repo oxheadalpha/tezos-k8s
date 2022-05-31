@@ -255,8 +255,6 @@ snapshots:
       standard: https://mainnet.xtz-shots.io/rolling
       tarball:  https://mainnet.xtz-shots.io/rolling-tarball
     full:
-      standard: https://mainnet.xtz-shots.io/full
-      tarball:  https://mainnet.xtz-shots.io/full-tarball
     archive:
       tarball:  https://mainnet.xtz-shots.io/archive-tarball
 
