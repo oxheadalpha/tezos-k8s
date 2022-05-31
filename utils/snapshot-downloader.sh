@@ -108,7 +108,7 @@ case "$SNAPSHOT_TYPE" in
 standard)	standard "$SNAPSHOT_URL";;
 tarball)	tarball "$SNAPSHOT_URL";;
 none)		;;
-*)		usage "$SNAPSHOT_TYPE must be 'standard', 'tarball'," \
+*)		bail "$SNAPSHOT_TYPE must be 'standard', 'tarball'," \
 		      "or 'none'.";;
 esac
 
