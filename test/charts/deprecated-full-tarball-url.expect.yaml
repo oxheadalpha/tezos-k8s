@@ -36,10 +36,7 @@ data:
       "archive": {
         "tarball": "https://mainnet.xtz-shots.io/archive-tarball"
       },
-      "full": {
-        "standard": "https://mainnet.xtz-shots.io/full",
-        "tarball": "https://mainnet.xtz-shots.io/full-tarball"
-      },
+      "full": null,
       "rolling": {
         "standard": "https://mainnet.xtz-shots.io/rolling",
         "tarball": "https://mainnet.xtz-shots.io/rolling-tarball"
