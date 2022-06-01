@@ -75,6 +75,7 @@ accounts: {}
 
 # NOTE - signer_url must be URL to external remote signer without anything extra
 # in the path, such as the public key hash.
+# # END ACCOUNTS
 
 ## NODES
 ##

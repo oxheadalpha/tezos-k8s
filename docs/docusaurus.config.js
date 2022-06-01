@@ -39,7 +39,7 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       navbar: {
-        title: 'Home',
+        title: 'Tezos-k8s',
         logo: {
           alt: 'Oxhead Alpha Logo',
           src: 'img/logo.svg',
