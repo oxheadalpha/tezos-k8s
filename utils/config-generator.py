@@ -21,7 +21,7 @@ DATA_DIR = "/var/tezos/node/data"
 NODE_GLOBALS = json.loads(os.environ["NODE_GLOBALS"]) or {}
 NODES = json.loads(os.environ["NODES"])
 NODE_IDENTITIES = json.loads(os.getenv("NODE_IDENTITIES", "{}"))
-TEZOS_K8S_SIGNERS = json.loads(os.getenv("TEZOS_K8S_SIGNERS", "{}"))
+OCTEZ_SIGNERS = json.loads(os.getenv("OCTEZ_SIGNERS", "{}"))
 TACOINFRA_SIGNERS = json.loads(os.getenv("TACOINFRA_SIGNERS", "{}"))
 
 MY_POD_NAME = os.environ["MY_POD_NAME"]
@@ -45,7 +45,7 @@ for cl, val in NODES.items():
                     BAKING_NODES[name] = inst
 
 if MY_POD_TYPE == "signing":
-    MY_POD_CONFIG = TEZOS_K8S_SIGNERS[MY_POD_NAME]
+    MY_POD_CONFIG = OCTEZ_SIGNERS[MY_POD_NAME]
 
 NETWORK_CONFIG = CHAIN_PARAMS["network"]
 
@@ -348,17 +348,17 @@ def get_remote_signer_url(account: tuple[str, dict], key: Key) -> Union[str, Non
     account_name, account_values = account
 
     signer_url = account_values.get("signer_url")
-    tezos_k8s_signer = get_accounts_signer(TEZOS_K8S_SIGNERS, account_name)
+    octez_signer = get_accounts_signer(OCTEZ_SIGNERS, account_name)
     tacoinfra_signer = get_accounts_signer(TACOINFRA_SIGNERS, account_name)
 
-    signers = (signer_url, tezos_k8s_signer, tacoinfra_signer)
+    signers = (signer_url, octez_signer, tacoinfra_signer)
     if tuple(map(bool, (signers))).count(True) > 1:
         raise Exception(
             f"ERROR: Account '{account_name}' may only have a signer_url field or be signed for by a single signer."
         )
 
-    if tezos_k8s_signer:
-        signer_url = f"http://{tezos_k8s_signer['name']}.tezos-k8s-signer:6732"
+    if octez_signer:
+        signer_url = f"http://{octez_signer['name']}.tezos-k8s-signer:6732"
 
     if tacoinfra_signer:
         signer_url = f"http://{tacoinfra_signer['name']}:5000"
@@ -377,8 +377,8 @@ def get_secret_key(account, key: Key):
     sk = (key.is_secret or None) and f"unencrypted:{key.secret_key()}"
     if MY_POD_TYPE in ("node", "activating"):
         signer_url = get_remote_signer_url(account, key)
-        tezos_k8s_signer = get_accounts_signer(TEZOS_K8S_SIGNERS, account_name)
-        if (sk and signer_url) and not tezos_k8s_signer:
+        octez_signer = get_accounts_signer(OCTEZ_SIGNERS, account_name)
+        if (sk and signer_url) and not octez_signer:
             raise Exception(
                 f"ERROR: Account {account_name} can't have both a secret key and cloud signer."
             )

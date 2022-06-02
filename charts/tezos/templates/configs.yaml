@@ -43,8 +43,8 @@ data:
 
 
 {{- $signers := include "tezos.getRemoteSigners" . | fromJson }}
-  TEZOS_K8S_SIGNERS: |
-{{ get $signers "tezosK8sSigners" | mustToPrettyJson | indent 4 }}
+  OCTEZ_SIGNERS: |
+{{ get $signers "octezSigners" | mustToPrettyJson | indent 4 }}
   TACOINFRA_SIGNERS: |
 {{ get $signers "tacoinfraSigners" | mustToPrettyJson | indent 4 }}
 

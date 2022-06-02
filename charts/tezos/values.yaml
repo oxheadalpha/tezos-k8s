@@ -20,8 +20,8 @@ tezos_k8s_images:
 ## scripts that will look up some of these values. They should not be modified.
 tzkt_indexer_statefulset:
   name: tzkt-indexer
-tezos_k8s_signer_statefulset:
-  name: tezos-k8s-signer
+octez_signer_statefulset:
+  name: octez-signer
   pod_type: signing
 chain_initiator_job:
   name: chain-initiator
@@ -236,8 +236,8 @@ services:
 # Define remote signers. Bakers automatically use signers in their namespace
 # that are configured to sign for the accounts they are baking for.
 remoteSigners: {}
-  # tezos-k8s-signer:
-  #   signerType: tezos-k8s
+  # octez-signer:
+  #   signerType: octez
   #   signForAccounts:
   #     - baker0
   # tacoinfra-signer:

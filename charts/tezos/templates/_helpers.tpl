@@ -141,7 +141,7 @@ metadata:
   the signers that should not be stored in the configMap.
 */ -}}
 {{- define "tezos.getRemoteSigners" }}
-  {{- $signers := dict "tacoinfraSigners" dict "tezosK8sSigners" dict }}
+  {{- $signers := dict "tacoinfraSigners" dict "octezSigners" dict }}
   {{- $accountNames := dict }}
 
   {{- range $signerName, $signerConfig := .Values.remoteSigners }}
@@ -162,10 +162,10 @@ metadata:
         {{- /* Omit sensitive "tacoinfraConfig" field from signers */ -}}
         {{- $_ := set $signers.tacoinfraSigners $signerName (omit $signerConfig "tacoinfraConfig") }}
 
-      {{- else if eq $signerConfig.signerType "tezos-k8s" }}
+      {{- else if eq $signerConfig.signerType "octez" }}
         {{- $_ := set $signerConfig "name" $signerName }}
-        {{- $podName := print $.Values.tezos_k8s_signer_statefulset.name "-" (len $signers.tezosK8sSigners) }}
-        {{- $_ := set $signers.tezosK8sSigners $podName $signerConfig }}
+        {{- $podName := print $.Values.octez_signer_statefulset.name "-" (len $signers.octezSigners) }}
+        {{- $_ := set $signers.octezSigners $podName $signerConfig }}
       {{- end }}
     {{- end }}
   {{- end }}

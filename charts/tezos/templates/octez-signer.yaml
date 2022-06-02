@@ -1,9 +1,9 @@
-{{- $tezosK8sSigners := get (include "tezos.getRemoteSigners" . | fromJson) "tezosK8sSigners" }}
-{{- if and (not .Values.is_invitation) (len $tezosK8sSigners) }}
+{{- $octezSigners := get (include "tezos.getRemoteSigners" . | fromJson) "octezSigners" }}
+{{- if and (not .Values.is_invitation) (len $octezSigners) }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.tezos_k8s_signer_statefulset.name }}
+  name: {{ .Values.octez_signer_statefulset.name }}
   namespace: {{ .Release.Namespace }}
 spec:
   clusterIP: None
@@ -11,24 +11,24 @@ spec:
     - port: 6732
       name: signer
   selector:
-    app: {{ .Values.tezos_k8s_signer_statefulset.name }}
+    app: {{ .Values.octez_signer_statefulset.name }}
 ---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ .Values.tezos_k8s_signer_statefulset.name }}
+  name: {{ .Values.octez_signer_statefulset.name }}
   namespace: {{ .Release.Namespace }}
 spec:
   podManagementPolicy: Parallel
-  replicas: {{ len $tezosK8sSigners }}
-  serviceName: {{ .Values.tezos_k8s_signer_statefulset.name }}
+  replicas: {{ len $octezSigners }}
+  serviceName: {{ .Values.octez_signer_statefulset.name }}
   selector:
     matchLabels:
-      app: {{ .Values.tezos_k8s_signer_statefulset.name }}
+      app: {{ .Values.octez_signer_statefulset.name }}
   template:
     metadata:
       labels:
-        app: {{ .Values.tezos_k8s_signer_statefulset.name }}
+        app: {{ .Values.octez_signer_statefulset.name }}
     spec:
       containers:
       - name: tezos-signer
@@ -61,7 +61,7 @@ spec:
               fieldRef:
                 fieldPath: metadata.name
           - name: MY_POD_TYPE
-            value: {{ .Values.tezos_k8s_signer_statefulset.pod_type }}
+            value: {{ .Values.octez_signer_statefulset.pod_type }}
         volumeMounts:
           - mountPath: /var/tezos
             name: var-volume
