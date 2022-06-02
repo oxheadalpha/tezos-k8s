@@ -8,10 +8,11 @@ from hashlib import blake2b
 from pathlib import Path
 from re import sub
 from shutil import chown
+from typing import Union
 
 import requests
 from base58 import b58encode_check
-from pytezos import pytezos
+from pytezos import Key
 
 with open("/etc/secret-volume/ACCOUNTS", "r") as secret_file:
     ACCOUNTS = json.loads(secret_file.read())
@@ -326,19 +327,20 @@ def get_accounts_signer(signers, account_name):
     Determine if there is a signer for the account. Error if the account is
     specified in more than one signer.
     """
-    found_account = found_signer = None
-    for signer_name, signer_config in signers.items():
+    found_signer = found_account = None
+    for signer in signers.items():
+        signer_name, signer_config = signer
         if account_name in signer_config["accountsToSignFor"]:
             if account_name == found_account:
                 raise Exception(
                     f"ERORR: Account '{account_name}' can't be specified in more than one signer."
                 )
             found_account = account_name
-            found_signer = signer_name
+            found_signer = {"name": signer_name, "config": signer_config}
     return found_signer
 
 
-def get_remote_signer_url(account, key):
+def get_remote_signer_url(account: tuple[str, dict], key: Key) -> Union[str, None]:
     """
     Return the url of a remote signer, if any, that claims to sign for the
     account. Error if more than one signs for the account.
@@ -346,37 +348,44 @@ def get_remote_signer_url(account, key):
     account_name, account_values = account
 
     signer_url = account_values.get("signer_url")
-    tezK8s_signer_name = get_accounts_signer(TEZOS_K8S_SIGNERS, account_name)
-    tacoinfra_signer_name = get_accounts_signer(TACOINFRA_SIGNERS, account_name)
+    tezos_k8s_signer = get_accounts_signer(TEZOS_K8S_SIGNERS, account_name)
+    tacoinfra_signer = get_accounts_signer(TACOINFRA_SIGNERS, account_name)
 
-    signers = (signer_url, tezK8s_signer_name, tacoinfra_signer_name)
+    signers = (signer_url, tezos_k8s_signer, tacoinfra_signer)
     if tuple(map(bool, (signers))).count(True) > 1:
         raise Exception(
-            f"ERROR: Account '{account_name}' may only have either a signer_url field or be signed for by a single signer."
+            f"ERROR: Account '{account_name}' may only have a signer_url field or be signed for by a single signer."
         )
 
-    if tezK8s_signer_name:
-        signer_url = f"http://{tezK8s_signer_name}.tezos-k8s-signer:6732"
+    if tezos_k8s_signer:
+        signer_url = f"http://{tezos_k8s_signer['name']}.tezos-k8s-signer:6732"
 
-    if tacoinfra_signer_name:
-        signer_url = f"http://{tacoinfra_signer_name}:5000"
+    if tacoinfra_signer:
+        signer_url = f"http://{tacoinfra_signer['name']}:5000"
 
     return signer_url and f"{signer_url}/{key.public_key_hash()}"
 
 
-def get_secret_key(account, key):
+def get_secret_key(account, key: Key):
     """
     For nodes and activation job, check if there is a remote signer for the
     account. If found, use its url as the sk. If there is no signer and for all
     other pod types (e.g. octez signer), use an actual sk.
     """
-    sk = None
+    account_name, _ = account
+
+    sk = (key.is_secret or None) and f"unencrypted:{key.secret_key()}"
     if MY_POD_TYPE in ("node", "activating"):
-        sk = get_remote_signer_url(account, key)
-        if sk:
+        signer_url = get_remote_signer_url(account, key)
+        tezos_k8s_signer = get_accounts_signer(TEZOS_K8S_SIGNERS, account_name)
+        if (sk and signer_url) and not tezos_k8s_signer:
+            raise Exception(
+                f"ERROR: Account {account_name} can't have both a secret key and cloud signer."
+            )
+        elif signer_url:
+            # Use signer for this account even if there's a sk
+            sk = signer_url
             print(f"    Using remote signer url: {sk}")
-    if not sk and key.is_secret:
-        sk = "unencrypted:" + key.secret_key()
 
     return sk
 
@@ -395,7 +404,7 @@ def import_keys(all_accounts):
         if account_key == None:
             raise Exception(f"{account_name} defined w/o a key")
 
-        key = pytezos.key.from_encoded_key(account_key)
+        key = Key.from_encoded_key(account_key)
         try:
             key.secret_key()
         except ValueError:
