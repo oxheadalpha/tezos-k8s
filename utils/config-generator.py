@@ -405,12 +405,7 @@ def import_keys(all_accounts):
             raise Exception(f"{account_name} defined w/o a key")
 
         key = Key.from_encoded_key(account_key)
-        try:
-            key.secret_key()
-        except ValueError:
-            account_values["type"] = "public"
-        else:
-            account_values["type"] = "secret"
+        account_values["type"] = "secret" if key.is_secret else "public"
 
         # restrict which private key is exposed to which pod
         if expose_secret_key(account_name):
