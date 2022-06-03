@@ -67,7 +67,7 @@ metadata:
   labels:
     {{- include "tacoinfra-remote-signer.labels" $ | nindent 4 }}
 spec:
-  replicas: {{ $signerConfig.replicas }}
+  replicas: 1
   selector:
     matchLabels:
       appType: tacoinfra-remote-signer
