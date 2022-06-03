@@ -52,30 +52,38 @@ should_generate_unsafe_deterministic_data: false
 #  The key field can be set to a public or private key. For a bootstrap baker,
 #  it must be set to a private key. The key type will be recognized automatically,
 #  and the pod will fail if the key type is unexpected.
-#
 accounts: {}
 #   baker0:
 #     key: edsk...
 #     is_bootstrap_baker_account: true
 #     bootstrap_balance: "50000000000000"
-
 #   baker1:
 #     key: edpk...
 #     is_bootstrap_baker_account: false
 #     bootstrap_balance: "4000000000000"
-
-## A public key account can contain a url to a remote signer that signs with the
-## corresponding secret key. You shouldn't need to set this if you're deploying
-## a tezos-k8s chart's signer into the same namespace. See the `signers` values
-## field below in the file to define remote signers.
-#   baker3:
+#
+## A public key account can contain a `signer_url` to a remote signer
+## that signs with the corresponding secret key. You don't need to
+## set this if you're deploying a tezos-k8s signer into the same
+## namespace of its baker. See `octezSigners` and `tacoinfraSigners`
+## fields below in the file to define remote signers. You shouldn't add
+## things to the URL path like a public key hash.
+#   externalSignerAccount:
 #     key: edpk...
-#     is_bootstrap_baker_account: false
+#     is_bootstrap_baker_account: true
 #     bootstrap_balance: "4000000000000"
-#     signer_url: http://<POD-NAME>.<SERVICE-NAME>.<NAMESPACE>:6732
-
-# NOTE - signer_url must be URL to external remote signer without anything extra
-# in the path, such as the public key hash.
+#     # signer_url: http://<POD-NAME>.<SERVICE-NAME>.<OTHER_NAMESPACE>:6732
+#     ## Or for a cloud signer:
+#     # https://domain-of-cloud-signer
+#
+##  An account being signed for by a tacoinfra signer requires a
+## `key_id` field which gets an identifier of the AWS KMS secret key.
+##  The key's corresponding public key must be provided here as well.
+#   taconinfraSignerAccount:
+#     key: sppk...
+#     key_id: "cloud-identifier-of-key"
+#     is_bootstrap_baker_account: true
+#     bootstrap_balance: "4000000000000"
 
 ## NODES
 ##
@@ -231,6 +239,7 @@ services:
     selector:
 #      rpc_node: "true"
 
+## REMOTE SIGNERS
 ## Define remote signers. Bakers automatically use signers in their namespace
 ## that are configured to sign for the accounts they are baking for.
 ## octezSigner: See https://tezos.gitlab.io/user/key-management.html#signer
