@@ -49,17 +49,6 @@ data:
 {{- $accountKeys | toJson | nindent 4 }}
 ---
 
-apiVersion: v1
-kind: Secret
-metadata:
-  name: {{ $signerName }}
-  namespace: {{ $.Release.Namespace }}
-  # labels:
-data:
-  CONFIG: |
-{{ $signerConfig.config | toJson | b64enc | indent 4 }}
----
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
