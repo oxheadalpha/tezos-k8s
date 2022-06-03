@@ -312,7 +312,7 @@ def expose_secret_key(account_name):
         return NETWORK_CONFIG["activation_account_name"] == account_name
 
     if MY_POD_TYPE == "signing":
-        return account_name in MY_POD_CONFIG.get("accountsToSignFor")
+        return account_name in MY_POD_CONFIG.get("accounts")
 
     if MY_POD_TYPE == "node":
         if MY_POD_CONFIG.get("bake_using_account", "") == account_name:
@@ -330,7 +330,7 @@ def get_accounts_signer(signers, account_name):
     found_signer = found_account = None
     for signer in signers.items():
         signer_name, signer_config = signer
-        if account_name in signer_config["accountsToSignFor"]:
+        if account_name in signer_config["accounts"]:
             if account_name == found_account:
                 raise Exception(
                     f"ERORR: Account '{account_name}' can't be specified in more than one signer."
@@ -358,7 +358,7 @@ def get_remote_signer_url(account: tuple[str, dict], key: Key) -> Union[str, Non
         )
 
     if octez_signer:
-        signer_url = f"http://{octez_signer['name']}.tezos-k8s-signer:6732"
+        signer_url = f"http://{octez_signer['name']}.octez-signer:6732"
 
     if tacoinfra_signer:
         signer_url = f"http://{tacoinfra_signer['name']}:5000"

@@ -231,23 +231,20 @@ services:
     selector:
 #      rpc_node: "true"
 
-# Define and use external remote signers.
-# Bakers automatically use signers when configured.
-# Define remote signers. Bakers automatically use signers in their namespace
-# that are configured to sign for the accounts they are baking for.
-remoteSigners: {}
-  # octez-signer:
-  #   signerType: octez
-  #   signForAccounts:
+## Define remote signers. Bakers automatically use signers in their namespace
+## that are configured to sign for the accounts they are baking for.
+## octezSigner: See https://tezos.gitlab.io/user/key-management.html#signer
+octezSigners: {}
+  # tezos-k8s-signer:
+  #   accounts:
   #     - baker0
-  # tacoinfra-signer:
-  #   signerType: tacoinfra
-  #   signForAccounts:
-  #     - baker1
-  #   replicas: 2
-  #   tacoinfraConfig:
-  #     username: username
-  #     password: password
+
+## Deploys a signer using AWS KMS to sign operations
+tacoinfraSigners: {}
+#   tacoinfra-signer:
+#     accounts:
+#       - account-name
+#     replicas: 1
 
 ## Where full and rolling history mode nodes will get their Tezos snapshots from.
 full_snapshot_url: https://mainnet.xtz-shots.io/full

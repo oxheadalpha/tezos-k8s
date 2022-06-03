@@ -1,9 +1,9 @@
-{{- range $signerName, $signerConfig := .Values.remoteSigners }}
-{{- if eq $signerConfig.signerType "tacoinfra" }}
-    {{- $_ := set $ "signerName" $signerName }}
-    {{- $_ := set $ "signerConfig" $signerConfig }}
+{{- range $signerName, $signerConfig := .Values.tacoinfraSigners }}
+  {{- include "tezos.checkDupeSignerAccounts" $ }}
+  {{- $_ := set $ "signerName" $signerName }}
+  {{- $_ := set $ "signerConfig" $signerConfig }}
 
-    {{- include "tacoinfra-remote-signer.serviceAccount" $ }}
+  {{- include "tacoinfra-remote-signer.serviceAccount" $ }}
 
 apiVersion: v1
 kind: Service
@@ -27,11 +27,12 @@ kind: ConfigMap
 metadata:
   name: {{ $signerName }}
   namespace: {{ $.Release.Namespace }}
-  # labels:
+  labels:
+    {{- include "tacoinfra-remote-signer.labels" $ | nindent 4 }}
 data:
   accounts.json: |
 {{- $accountKeys := list }}
-{{- range $accountName := $signerConfig.accountsToSignFor }}
+{{- range $accountName := $signerConfig.accounts }}
   {{- $accounts := $.Values.accounts | default dict }}
   {{- $account := get $accounts $accountName | default dict }}
   {{- $_ := set $account "account_name" $accountName }}
@@ -179,5 +180,4 @@ spec:
       {{- end }}
 
 ---
-{{- end -}}
 {{- end -}}

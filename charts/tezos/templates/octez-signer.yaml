@@ -1,5 +1,7 @@
-{{- $octezSigners := get (include "tezos.getRemoteSigners" . | fromJson) "octezSigners" }}
+{{- $octezSigners := .Values.octezSigners | default dict }}
 {{- if and (not .Values.is_invitation) (len $octezSigners) }}
+  {{- include "tezos.checkDupeSignerAccounts" $ }}
+
 apiVersion: v1
 kind: Service
 metadata:

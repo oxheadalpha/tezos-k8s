@@ -41,12 +41,16 @@ data:
 {{- end }}
 {{- $nodes_copy | mustToPrettyJson | indent 4 }}
 
-
-{{- $signers := include "tezos.getRemoteSigners" . | fromJson }}
   OCTEZ_SIGNERS: |
-{{ get $signers "octezSigners" | mustToPrettyJson | indent 4 }}
+{{- $octezSigners := dict }}
+{{- range $signerName, $signerConfig := .Values.octezSigners }}
+    {{- $_ := set $signerConfig "name" $signerName }}
+    {{- $podName := print $.Values.octez_signer_statefulset.name "-" (len $octezSigners) }}
+    {{- $_ := set $octezSigners $podName $signerConfig }}
+{{- end }}
+{{ $octezSigners | default dict | mustToPrettyJson | indent 4 }}
   TACOINFRA_SIGNERS: |
-{{ get $signers "tacoinfraSigners" | mustToPrettyJson | indent 4 }}
+{{ .Values.tacoinfraSigners | default dict | mustToPrettyJson | indent 4 }}
 
 ---
 

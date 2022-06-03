@@ -133,46 +133,24 @@ metadata:
 
 {{- end }}
 
-{{- /*
-  Create dict of dicts of remote signers meant to be set in the
-  tezos-config configMap. Returns dict as json so it can be
-  parseable via templating with "include". We make some assertions
-  and fail if they don't pass. We also remove sensitive data from
-  the signers that should not be stored in the configMap.
-*/ -}}
-{{- define "tezos.getRemoteSigners" }}
-  {{- $signers := dict "tacoinfraSigners" dict "octezSigners" dict }}
+{{- /* Make sure only a single signer signs for an account */}}
+{{- define "tezos.checkDupeSignerAccounts" }}
   {{- $accountNames := dict }}
+  {{- range $signer := concat list
+    (values (.Values.octezSigners | default dict ))
+    (values (.Values.tacoinfraSigners | default dict ))
+  }}
 
-  {{- range $signerName, $signerConfig := .Values.remoteSigners }}
-    {{- if $signerConfig }}
-
-      {{- range $account := $signerConfig.accountsToSignFor }}
-        {{- if hasKey $accountNames $account }}
-          {{- fail (printf "Account '%s' is specified by more than one remote signer" $account) }}
-        {{- else }}
-          {{- $_ := set $accountNames $account "" }}
-        {{- end }}
-      {{- end }}
-
-      {{- if eq $signerConfig.signerType "tacoinfra" }}
-        {{- if not $signerConfig.tacoinfraConfig }}
-          {{- fail (printf "Tacoinfra signer '%s' is missing 'tacoinfraConfig' field" $signerName) }}
-        {{- end }}
-        {{- /* Omit sensitive "tacoinfraConfig" field from signers */ -}}
-        {{- $_ := set $signers.tacoinfraSigners $signerName (omit $signerConfig "tacoinfraConfig") }}
-
-      {{- else if eq $signerConfig.signerType "octez" }}
-        {{- $_ := set $signerConfig "name" $signerName }}
-        {{- $podName := print $.Values.octez_signer_statefulset.name "-" (len $signers.octezSigners) }}
-        {{- $_ := set $signers.octezSigners $podName $signerConfig }}
+    {{- range $account := $signer.accounts }}
+      {{- if hasKey $accountNames $account }}
+        {{- fail (printf "Account '%s' is specified by more than one remote signer" $account) }}
+      {{- else }}
+        {{- $_ := set $accountNames $account "" }}
       {{- end }}
     {{- end }}
+
   {{- end }}
-
-  {{- $signers | toJson }}
 {{- end }}
-
 
 {{- define "tezos.isKeyPrefix" }}
   {{- $keyPrefixes := list "edsk" "edpk" "spsk" "sppk" "p2sk" "p2pk" }}
