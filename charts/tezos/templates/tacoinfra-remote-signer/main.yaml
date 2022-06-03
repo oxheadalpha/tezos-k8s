@@ -35,6 +35,10 @@ data:
 {{- range $accountName := $signerConfig.accounts }}
   {{- $accounts := $.Values.accounts | default dict }}
   {{- $account := get $accounts $accountName | default dict }}
+  {{- if not $account }}
+    {{- fail (printf "Account '%s' is undefined." $accountName) }}
+  {{- end }}
+
   {{- $_ := set $account "account_name" $accountName }}
 
   {{- if not (and ($account.key) ($account.key_id)) }}
