@@ -79,7 +79,7 @@ accounts: {}
 ##  An account being signed for by a tacoinfra signer requires a
 ## `key_id` field which gets an identifier of the AWS KMS secret key.
 ##  The key's corresponding public key must be provided here as well.
-#   taconinfraSignerAccount:
+#   tacoinfraSigner:
 #     key: sppk...
 #     key_id: "cloud-identifier-of-key"
 #     is_bootstrap_baker_account: true
@@ -252,7 +252,7 @@ octezSigners: {}
 tacoinfraSigners: {}
 #   tacoinfra-signer:
 #     accounts:
-#       - account-name
+#       - tacoinfraSigner
 
 ## Where full and rolling history mode nodes will get their Tezos snapshots from.
 full_snapshot_url: https://mainnet.xtz-shots.io/full

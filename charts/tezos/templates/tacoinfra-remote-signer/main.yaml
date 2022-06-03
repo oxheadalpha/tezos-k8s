@@ -40,7 +40,7 @@ data:
   {{- if not (and ($account.key) ($account.key_id)) }}
     {{- fail (printf "Account '%s' requires 'key' and 'key_id' values." $accountName) }}
   {{- end }}
-  {{- if (include "tezos.isSecretKeyPrefix" $account) }}
+  {{- if (include "tezos.hasSecretKeyPrefix" $account) }}
     {{- fail (printf "'%s' account's key is not a public key." $accountName) }}
   {{- end }}
 
