@@ -33,7 +33,7 @@ spec:
         app: {{ .Values.octez_signer_statefulset.name }}
     spec:
       containers:
-      - name: tezos-signer
+      - name: octez-signer
         image: "{{ .Values.images.octez }}"
         imagePullPolicy: IfNotPresent
         ports:
