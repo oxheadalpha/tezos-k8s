@@ -76,7 +76,7 @@ accounts: {}
 #     key: edpk...
 #     is_bootstrap_baker_account: false
 #     bootstrap_balance: "4000000000000"
-#     signer_url: http://<POD-NAME>.<SERVICE-NAME>.<NAMESPACE>:6732
+#     signer_url: http://[POD-NAME].[SERVICE-NAME].[NAMESPACE]:6732
 # ```
 #
 # NOTE - signer_url must be URL to external remote signer without anything extra
@@ -245,12 +245,21 @@ services:
     selector:
 #      rpc_node: "true"
 
+# # Signers
+#
 # Define remote signers. Bakers automatically use signers in their namespace
 # that are configured to sign for the accounts they are baking for.
+#
+# By default no signer is configured:
 signers: {}
+# Here is an example of octez signer config. When set, the 
+# ```
+# signers:
 #  tezos-signer-0:
 #    sign_for_accounts:
 #    - baker0
+# ```
+# End Signers
 
 ## Where full and rolling history mode nodes will get their Tezos snapshots from.
 full_snapshot_url: https://mainnet.xtz-shots.io/full
