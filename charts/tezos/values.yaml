@@ -30,14 +30,18 @@ chain_initiator_job:
 # account is not explicitly set below.
 bootstrap_mutez: "4000000000000"
 
-# # ACCOUNTS
+# # Accounts
 #
-# When running bakers for a public net, you must provide your own secret keys.
-# For non public networks you can change this setting to true, and deterministic
-# keys will be generated for your nodes automatically. If a genesis block hash
-# is not provided, that will also be generated. This is helpful for spinning up
-# local testnets.
-should_generate_unsafe_deterministic_data: false
+# The `accounts` object of values.yaml defines Tezos accounts used in the chart.
+# By default no account is configured:
+accounts: {}
+#
+# `accounts` is a map where keys are account aliases and values are maps of
+# fields `key`, `is_bootstrap_baker_account`, `bootstrap_balance` and `signer_url`.
+#
+# The key field can be set to a public or private key. For a bootstrap baker,
+# it must be set to a private key. The key type will be recognized automatically,
+# and the pod will fail if the key type is unexpected.
 #
 # - Public chains: Accounts do not get `is_bootstrap_baker_account` and
 # `bootstrap_balance` fields.
@@ -48,105 +52,117 @@ should_generate_unsafe_deterministic_data: false
 #   node but they will not be bootstrap accounts. If you don't set a bootstrap
 #   balance, it will default to the `bootstrap_mutez` field above.
 #
-#  The key field can be set to a public or private key. For a bootstrap baker,
-#  it must be set to a private key. The key type will be recognized automatically,
-#  and the pod will fail if the key type is unexpected.
+# Example:
 #
-accounts: {}
+# ```
+# accounts:
 #   baker0:
 #     key: edsk...
 #     is_bootstrap_baker_account: true
 #     bootstrap_balance: "50000000000000"
-
+#
 #   baker1:
 #     key: edpk...
 #     is_bootstrap_baker_account: false
 #     bootstrap_balance: "4000000000000"
-
-## A public key account can contain a url to a remote signer that signs with the
-## corresponding secret key. You shouldn't need to set this if you're deploying
-## a tezos-k8s chart's signer into the same namespace. See the `signers` values
-## field below in the file to define remote signers.
-#   baker3:
+# ```
+#
+# A public key account can contain a url to a remote signer that signs with the
+# corresponding secret key. You shouldn't need to set this if you're deploying
+# a tezos-k8s chart's signer into the same namespace. See the `signers` values
+# field below in the file to define remote signers.
+# ```
+#   baker2:
 #     key: edpk...
 #     is_bootstrap_baker_account: false
 #     bootstrap_balance: "4000000000000"
 #     signer_url: http://<POD-NAME>.<SERVICE-NAME>.<NAMESPACE>:6732
-
+# ```
+#
 # NOTE - signer_url must be URL to external remote signer without anything extra
 # in the path, such as the public key hash.
-# # END ACCOUNTS
-
-## NODES
-##
-## "nodes" is a dictionary where each key/value pair defines a statefulset and a
-## number of instances thereof. The name (key) defines the name of the
-## statefulset and will be the base of the pod names. The instances are defined
-## as a list because their names are simply -N appended to the statefulsetname.
-## Said names are typically kebab case.
-##
-## https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/
-##
-## Params at the statefulset level:
-## - "config": The "config" property should mimic the structure of a node's
-##             config.json. Run `tezos-node config --help` for more info.
-##             If present at the statefulset level, it overrides it in
-##             node_globals.
-## - "env": a dictionary of containers mapped to a dictionary of env
-##          vars.  The container name "all" will apply the env vars to
-##          all containers.  The most specific wins.  Find the names of
-##          the containers by examining an installed environment, or by
-##          looking at charts/tezos/templates/nodes.yaml.  Please note
-##          that we truncate the protocol from the container name for
-##          bakers and accusers, so "baker-011-pthangz2" is configured
-##          using just "baker".
-## - "storage_size": the size of the PV
-## - "images": Optional specification of images to use for the tezos node and
-##           baker. Options are "octez" with a tezos/tezos image or
-##           "tezedge" with a tezedge/tezedge image. If no images are provided,
-##           the containers will default to the images defined in the "images"
-##           field up above.
-## - "runs": A list of containers to run. A tezos node implementation is required.
-##         Options being "octez_node" or "tezedge_node". Other optional
-##         containers are "accuser", "baker", "logger", and "metrics".
-## - "local_storage": use local storage instead of a volume. The storage will be
-##                  wiped when the node restarts for any reason. Useful when
-##                  faster IO is desired. Defaults to false.
-## - "labels": https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
-##      NOTE: the labels appType, node_class, and baking_node are set
-##      automatically for you.
-## - "node_selector": Specify a kubernetes node selector in 'key: value' format
-##     for your tezos nodes.
-## - "readiness_probe": Attach a probe to the node. The probe checks whether
-##                    the most recent block is recent enough. If not, the
-##                    services will be unreachable. Defaults to True.
-##                    True is good for RPC nodes, private nodes, and
-##                    self-contained private chains.
-##                    Recommended to set to False when bootstrapping a new
-##                    chain with external bakers, such as a new test chain.
-##                    Otherwise, the chain may become unreachable externally
-##                    while waiting for other nodes to come online.
-## - "instances": a list of nodes to fire up, each is a dictionary defining:
-##    - "bake_using_account": Account name that should be used for baking.
-##    - "bake_using_accounts": List of account names that should be used for baking.
-##    - "config": Same as the outer statefulset level "config". It overrides the
-##                statefulset level.
-##    - "is_bootstrap_node": Is this node a bootstrap peer.
-##    - "identity": An optional map containing a pre-generated Tezos node
-##                 identity. This is useful for local storage nodes which would
-##                 need to generate an identity at every boot. The identity file
-##                 will be created at /var/tezos/node/data/identity.json.
-##                 Required fields are "peer_id", "public_key", "secret_key",
-##                 and "proof_of_work_timestamp".
-##
-## Defaults are filled in for most of the above values.  You can also provide
-## global defaults for all nodes via a node_globals: section which is also
-## a dictionary.  Currently, two keys are defined: "config" and "env".  These
-## operate in the same way as the section in "nodes" going by the same name.
-##
-## Example config:
-##
 #
+# When running bakers for a public net, you must provide your own secret keys.
+# For non public networks you can change the
+# `should_generate_unsafe_deterministic_data` setting to true, and deterministic
+# keys will be generated for your nodes automatically. If a genesis block hash
+# is not provided, that will also be generated. This is helpful for spinning up
+# local testnets.
+should_generate_unsafe_deterministic_data: false
+# # End Accounts
+
+# # Nodes
+#
+# Use `nodes` to configure the Tezos nodes running in your chart.
+#
+# `nodes` is a dictionary where each key/value pair defines a statefulset and a
+# number of instances thereof. The name (key) defines the name of the
+# statefulset and will be the base of the pod names. The instances are defined
+# as a list because their names are simply -N appended to the statefulsetname.
+# Said names are typically kebab case.
+#
+# https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/
+#
+# Params at the statefulset level:
+# - "config": The "config" property should mimic the structure of a node's
+#             config.json. Run `tezos-node config --help` for more info.
+#             If present at the statefulset level, it overrides it in
+#             node_globals.
+# - "env": a dictionary of containers mapped to a dictionary of env
+#          vars.  The container name "all" will apply the env vars to
+#          all containers.  The most specific wins.  Find the names of
+#          the containers by examining an installed environment, or by
+#          looking at charts/tezos/templates/nodes.yaml.  Please note
+#          that we truncate the protocol from the container name for
+#          bakers and accusers, so "baker-011-pthangz2" is configured
+#          using just "baker".
+# - "storage_size": the size of the PV
+# - "images": Optional specification of images to use for the tezos node and
+#           baker. Options are "octez" with a tezos/tezos image or
+#           "tezedge" with a tezedge/tezedge image. If no images are provided,
+#           the containers will default to the images defined in the "images"
+#           field up above.
+# - "runs": A list of containers to run. A tezos node implementation is required.
+#         Options being "octez_node" or "tezedge_node". Other optional
+#         containers are "accuser", "baker", "logger", and "metrics".
+# - "local_storage": use local storage instead of a volume. The storage will be
+#                  wiped when the node restarts for any reason. Useful when
+#                  faster IO is desired. Defaults to false.
+# - "labels": https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+#      NOTE: the labels appType, node_class, and baking_node are set
+#      automatically for you.
+# - "node_selector": Specify a kubernetes node selector in 'key: value' format
+#     for your tezos nodes.
+# - "readiness_probe": Attach a probe to the node. The probe checks whether
+#                    the most recent block is recent enough. If not, the
+#                    services will be unreachable. Defaults to True.
+#                    True is good for RPC nodes, private nodes, and
+#                    self-contained private chains.
+#                    Recommended to set to False when bootstrapping a new
+#                    chain with external bakers, such as a new test chain.
+#                    Otherwise, the chain may become unreachable externally
+#                    while waiting for other nodes to come online.
+# - "instances": a list of nodes to fire up, each is a dictionary defining:
+#    - "bake_using_account": Account name that should be used for baking.
+#    - "bake_using_accounts": List of account names that should be used for baking.
+#    - "config": Same as the outer statefulset level "config". It overrides the
+#                statefulset level.
+#    - "is_bootstrap_node": Is this node a bootstrap peer.
+#    - "identity": An optional map containing a pre-generated Tezos node
+#                 identity. This is useful for local storage nodes which would
+#                 need to generate an identity at every boot. The identity file
+#                 will be created at /var/tezos/node/data/identity.json.
+#                 Required fields are "peer_id", "public_key", "secret_key",
+#                 and "proof_of_work_timestamp".
+#
+# Defaults are filled in for most of the above values.  You can also provide
+# global defaults for all nodes via a node_globals: section which is also
+# a dictionary.  Currently, two keys are defined: "config" and "env".  These
+# operate in the same way as the section in "nodes" going by the same name.
+#
+# Example config:
+#
+# ```
 # node_globals:
 #   config:
 #     shell:
@@ -203,15 +219,12 @@ accounts: {}
 #     instances:
 #       - {}
 #       - {}
-
+# ```
+# The default configuration is:
 node_globals:
   env: {}
-
 nodes:
   rolling-node:
-#    labels:
-#      rpc_node: "true"
-#      peer_node: "true"
     storage_size: 100Gi
     runs:
       - octez_node
@@ -220,6 +233,7 @@ nodes:
         config:
           shell:
             history_mode: rolling
+# End nodes
 
 ## Configuration for K8s Service resources. Configuring the labels selector of a
 ## service will result in the service forwarding traffic only to pods that have

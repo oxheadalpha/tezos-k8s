@@ -1,4 +1,4 @@
-
+# Public network node
 Connecting to a public net is easy!
 
 (See [here](https://tezos.gitlab.io/user/history_modes.html) for info on snapshots and node history modes)
