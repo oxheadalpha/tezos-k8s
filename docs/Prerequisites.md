@@ -91,3 +91,8 @@ If you want to unset your shell from using minikube's docker daemon:
 eval $(minikube docker-env -u)
 ```
 
+Add the Oxhead Alpha Helm chart repository to your local Helm installation:
+
+```
+helm repo add oxheadalpha https://oxheadalpha.github.io/tezos-helm-charts/
+```
