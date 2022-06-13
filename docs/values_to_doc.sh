@@ -2,7 +2,8 @@
 
 extract_markdown() {
   uncommented=false
-  echo "$1" | while IFS= read -r line; do
+  IFS=
+  echo "$1" | while read -r line; do
     if [[ $line =~ ^# ]]; then
       if [[ "$uncommented" == "true" ]]; then
          echo '```'
