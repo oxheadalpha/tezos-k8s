@@ -39,7 +39,7 @@ accounts: {}
 # `accounts` is a map where keys are account aliases and values are maps of
 # fields `key`, `is_bootstrap_baker_account`, `bootstrap_balance` and `signer_url`.
 #
-# The key field can be set to a public or private key. For a bootstrap baker,
+# The `key` field can be set to a public or private key. For a bootstrap baker,
 # it must be set to a private key. The key type will be recognized automatically,
 # and the pod will fail if the key type is unexpected.
 #
