@@ -101,8 +101,6 @@ should_generate_unsafe_deterministic_data: false
 # as a list because their names are simply -N appended to the statefulsetname.
 # Said names are typically kebab case.
 #
-# https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/
-#
 # Params at the statefulset level:
 # - "config": The "config" property should mimic the structure of a node's
 #             config.json. Run `tezos-node config --help` for more info.
