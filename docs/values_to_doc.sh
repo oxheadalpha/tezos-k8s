@@ -2,7 +2,7 @@
 
 extract_markdown() {
   uncommented=false
-  while IFS= read -r line; do
+  echo "$1" | while IFS= read -r line; do
     if [[ $line =~ ^# ]]; then
       if [[ "$uncommented" == "true" ]]; then
          echo '```'
@@ -16,7 +16,7 @@ extract_markdown() {
       uncommented=true
       echo "$line"
     fi
-  done <<< $1
+  done
   if [[ "$uncommented" == "true" ]]; then
      echo '```'
   fi
