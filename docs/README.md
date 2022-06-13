@@ -15,5 +15,6 @@ To render locally:
 
 ```
 npm install
-./node_modules/.bin/docusaurus serve --build
+npm run build
+npm start
 ```
