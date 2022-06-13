@@ -17,6 +17,8 @@ Tezos-k8s is actively maintained by the team at [Oxhead Alpha](https://oxheadalp
 
 ## Quick start
 
+We assume you have access to a Kubernetes cluster and helm installed (see [Prerequisites](Prerequisites)).
+
 To deploy a Tezos mainnet node:
 
 1. Add the Oxhead Alpha Helm chart repository to your local Helm installation:
