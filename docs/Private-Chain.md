@@ -85,7 +85,7 @@ kubectl -n oxheadalpha get pods -l appType=octez-node
 You can view (and follow using the `-f` flag) logs for your node using the following command:
 
 ```shell
-kubectl -n oxheadalpha logs -l appType=octez-node -c tezos-node -f --prefix
+kubectl -n oxheadalpha logs -l appType=octez-node -c octez-node -f --prefix
 ```
 
 Congratulations! You now have an operational Tezos based permissioned
@@ -217,7 +217,7 @@ On each computer, run this command to check that the nodes have matching heads b
 ```shell
 kubectl get pod -n oxheadalpha -l appType=octez-node -o name |
 while read line;
-  do kubectl -n oxheadalpha exec $line -c tezos-node -- /usr/local/bin/tezos-client rpc get /chains/main/blocks/head/hash;
+  do kubectl -n oxheadalpha exec $line -c octez-node -- /usr/local/bin/tezos-client rpc get /chains/main/blocks/head/hash;
 done
 ```
 

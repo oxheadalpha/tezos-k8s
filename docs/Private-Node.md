@@ -31,7 +31,7 @@ kubectl logs -n oxheadalpha statefulset/rolling-node -c snapshot-downloader -f
 You can view logs for your node using the following command:
 
 ```shell
-kubectl -n oxheadalpha logs -l appType=octez-node -c tezos-node -f --prefix
+kubectl -n oxheadalpha logs -l appType=octez-node -c octez-node -f --prefix
 ```
 
 IMPORTANT:
