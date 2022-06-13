@@ -15,7 +15,7 @@ const sidebars = {
       items: [
         'Private-Node',
         'Private_Chain',
-        'Tezos-RPC-Service']
+        'RPC-Auth']
     },
     {
       type: 'category',
