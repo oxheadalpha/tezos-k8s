@@ -14,7 +14,7 @@ const sidebars = {
       collapsed: false,
       items: [
         'Private-Node',
-        'Private_Chain',
+        'Private-Chain',
         'RPC-Auth']
     },
     {
