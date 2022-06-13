@@ -3,9 +3,16 @@
 - python3 (>=3.7)
 - [docker](https://docs.docker.com/get-docker/)
 - [kubectl](https://kubernetes.io/docs/reference/kubectl/kubectl/)
-- [minikube](https://minikube.sigs.k8s.io/docs/)
 - [helm](https://helm.sh/)
-- A [ZeroTier](https://www.zerotier.com/) network with api access token
+- (optional, for distributed private chains) A [ZeroTier](https://www.zerotier.com/) network with api access token
+
+### For local deployment
+
+- [minikube](https://minikube.sigs.k8s.io/docs/)
+
+### For deployment on a cloud platform (AWS)
+
+- we recommmend [pulumi](https://www.pulumi.com/docs/get-started/install/), an infrastructure-as-code platform, for cloud deployments
 
 ## Installing prerequisites
 
