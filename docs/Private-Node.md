@@ -19,7 +19,7 @@ Running this results in:
 You can find your node in the oxheadalpha namespace with some status information using `kubectl`.
 
 ```shell
-kubectl -n oxheadalpha get pods -l appType=tezos-node
+kubectl -n oxheadalpha get pods -l appType=octez-node
 ```
 
 You can monitor (and follow using the `-f` flag) the logs of the snapshot downloader/import container:
@@ -31,7 +31,7 @@ kubectl logs -n oxheadalpha statefulset/rolling-node -c snapshot-downloader -f
 You can view logs for your node using the following command:
 
 ```shell
-kubectl -n oxheadalpha logs -l appType=tezos-node -c tezos-node -f --prefix
+kubectl -n oxheadalpha logs -l appType=octez-node -c tezos-node -f --prefix
 ```
 
 IMPORTANT:
