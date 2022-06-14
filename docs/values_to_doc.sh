@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 extract_markdown() {
   uncommented=false
