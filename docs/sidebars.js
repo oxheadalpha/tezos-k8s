@@ -13,7 +13,7 @@ const sidebars = {
       label: 'Common use cases',
       collapsed: false,
       items: [
-        'Private-Node',
+        'Public-Node',
         'Private-Chain',
         'RPC-Auth']
     },
