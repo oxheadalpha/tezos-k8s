@@ -257,6 +257,20 @@ snapshots:
     full:
     archive:
       tarball:  https://mainnet.xtz-shots.io/archive-tarball
+  jakartanet:
+    rolling:
+      standard: https://jakartanet.xtz-shots.io/rolling
+      tarball:  https://jakartanet.xtz-shots.io/rolling-tarball
+    full:
+    archive:
+      tarball:  https://jakartanet.xtz-shots.io/archive-tarball
+  ithacanet:
+    rolling:
+      standard: https://ithacanet.xtz-shots.io/rolling
+      tarball:  https://ithacanet.xtz-shots.io/rolling-tarball
+    full:
+    archive:
+      tarball:  https://ithacanet.xtz-shots.io/archive-tarball
 
 
 # List of peers for nodes to connect to. Gets set under config.json `p2p` field
