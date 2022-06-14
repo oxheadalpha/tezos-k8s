@@ -151,9 +151,6 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
       volumes:
-        - name: secret-volume
-          secret:
-            secretName: {{ $signerName }}
         - name: config-volume
           configMap:
             name: {{ $signerName }}
