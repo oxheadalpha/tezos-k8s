@@ -79,13 +79,13 @@ perform the following tasks:
 You can find your node in the oxheadalpha namespace with some status information using kubectl.
 
 ```shell
-kubectl -n oxheadalpha get pods -l appType=tezos-node
+kubectl -n oxheadalpha get pods -l appType=octez-node
 ```
 
 You can view (and follow using the `-f` flag) logs for your node using the following command:
 
 ```shell
-kubectl -n oxheadalpha logs -l appType=tezos-node -c tezos-node -f --prefix
+kubectl -n oxheadalpha logs -l appType=octez-node -c octez-node -f --prefix
 ```
 
 Congratulations! You now have an operational Tezos based permissioned
@@ -179,7 +179,7 @@ helm upgrade $CHAIN_NAME oxheadalpha/tezos-chain \
 
 The nodes will start up and establish peer-to-peer connections in a full mesh topology.
 
-List all of your running nodes: `kubectl -n oxheadalpha get pods -l appType=tezos-node`
+List all of your running nodes: `kubectl -n oxheadalpha get pods -l appType=octez-node`
 
 ## Adding external nodes to the cluster
 
@@ -215,9 +215,9 @@ Congratulations! You now have a multi-node Tezos based permissioned chain.
 On each computer, run this command to check that the nodes have matching heads by comparing their hashes (it may take a minute for the nodes to sync up):
 
 ```shell
-kubectl get pod -n oxheadalpha -l appType=tezos-node -o name |
+kubectl get pod -n oxheadalpha -l appType=octez-node -o name |
 while read line;
-  do kubectl -n oxheadalpha exec $line -c tezos-node -- /usr/local/bin/tezos-client rpc get /chains/main/blocks/head/hash;
+  do kubectl -n oxheadalpha exec $line -c octez-node -- /usr/local/bin/tezos-client rpc get /chains/main/blocks/head/hash;
 done
 ```
 

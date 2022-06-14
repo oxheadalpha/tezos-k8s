@@ -39,7 +39,7 @@ accounts: {}
 # `accounts` is a map where keys are account aliases and values are maps of
 # fields `key`, `is_bootstrap_baker_account`, `bootstrap_balance` and `signer_url`.
 #
-# The key field can be set to a public or private key. For a bootstrap baker,
+# The `key` field can be set to a public or private key. For a bootstrap baker,
 # it must be set to a private key. The key type will be recognized automatically,
 # and the pod will fail if the key type is unexpected.
 #
@@ -100,8 +100,6 @@ should_generate_unsafe_deterministic_data: false
 # statefulset and will be the base of the pod names. The instances are defined
 # as a list because their names are simply -N appended to the statefulsetname.
 # Said names are typically kebab case.
-#
-# https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/
 #
 # Params at the statefulset level:
 # - "config": The "config" property should mimic the structure of a node's
