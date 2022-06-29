@@ -23,7 +23,7 @@ spec:
 ---
 
 apiVersion: v1
-kind: ConfigMap
+kind: Secret
 metadata:
   name: {{ $signerName }}
   namespace: {{ $.Release.Namespace }}
@@ -33,7 +33,7 @@ data:
   accounts.json: |
 {{- $accountKeys := list }}
 {{- range $accountName := $signerConfig.accounts }}
-  {{- $accounts := $.Values.accounts | default dict }}
+  {{- $accounts := default dict $.Values.accounts }}
   {{- $account := get $accounts $accountName | default dict }}
   {{- if not $account }}
     {{- fail (printf "Account '%s' is undefined." $accountName) }}
@@ -50,9 +50,26 @@ data:
 
   {{- $accountKeys = append $accountKeys (pick $account "account_name" "key" "key_id") }}
 {{- end }}
-{{- $accountKeys | toJson | nindent 4 }}
+{{- $accountKeys | toJson | b64enc| nindent 4 }}
 ---
 
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: file-ratchet
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "tacoinfra-remote-signer.labels" $ | nindent 4 }}
+spec:
+  resources:
+    requests:
+      storage: 8Ki
+  accessModes:
+    - ReadWriteOnce
+---
+
+  {{- $signerImage := default dict $signerConfig.image }}
+  {{- $signerImageName := default $.Values.images.tacoinfraRemoteSigner $signerImage.name }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -83,22 +100,52 @@ spec:
       {{- end }}
       serviceAccountName: {{ default "" $signerConfig.serviceAccountName }}
       securityContext:
-        {{- toYaml $signerConfig.podSecurityContext | nindent 8 }}
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+      # TODO FIGURE OUT MERGING VALUES
+      {{- with $signerConfig.podSecurityContext }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       initContainers:
         {{- /* ConfiMap mount is always mounted as ro fs.
             Copy it to empty dir to make it writeable.
         */}}
-        - name: copy-cm-to-emptydir
-          image: {{ $.Values.images.tacoinfraRemoteSigner }}
-          command: ["/bin/sh"]
-          args: ["-c", "cp /etc/signer-config/* /app/signer-config; touch keys.json"]
+        - name: copy-configmap
+          image: {{ $signerImageName }}
+          securityContext:
+            runAsNonRoot: false
+            runAsUser: 0
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - CAP_CHOWN # chown
+                - CAP_FOWNER # chmod
+                - CAP_DAC_OVERRIDE # cp
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              cp /etc/signer-config/* /app/signer-config
+              chown -R 999:999 /app/signer-config /etc/file_ratchets
+              chmod 770 /app/signer-config
+              chmod 770 /etc/file_ratchets
           volumeMounts:
-            - name: config-volume
+            - name: signer-secret
               mountPath: /etc/signer-config
             - name: signer-config
               mountPath: /app/signer-config
-        - name: write-keys-json
-          image: {{ $.Values.images.tacoinfraRemoteSigner }}
+            - name: file-ratchet
+              mountPath: /etc/file_ratchets
+        - name: create-keys-json
+          image: {{ $signerImageName }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           command: ["python"]
           args:
             - "-c"
@@ -109,17 +156,24 @@ spec:
               mountPath: /app/signer-config
       containers:
         - name: remote-signer
-          args: ["kms"]
-          {{- /* figure out security context for other containers */}}
-          securityContext:
-            {{- toYaml $signerConfig.securityContext | nindent 12 }}
-          {{- $signerImage := $signerConfig.image | default dict }}
-          image: "{{ $signerImage.name | default $.Values.images.tacoinfraRemoteSigner }}"
+          image: {{ $signerImageName }}
           imagePullPolicy: {{ default "IfNotPresent" $signerImage.pullPolicy }}
+          args: ["kms"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          # TODO FIGURE OUT MERGING VALUES
+          {{- with $signerConfig.securityContext }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           ports:
             - name: http
               containerPort: 5000
           volumeMounts:
+            - name: file-ratchet
+              mountPath: /etc/file_ratchets
             - name: signer-config
               mountPath: /app/signer-config
               readOnly: true
@@ -133,10 +187,13 @@ spec:
               value: us-east-1
             - name: FLASK_ENV
               value: development
-            - name: AWS_ACCESS_KEY_ID
-              value: {{ $.Values.access }}
-            - name: AWS_SECRET_ACCESS_KEY
-              value: {{ $.Values.secret }}
+            {{- /*
+              - name: AWS_ACCESS_KEY_ID
+                value: {{ $.Values.access }}
+              - name: AWS_SECRET_ACCESS_KEY
+                value: {{ $.Values.secret }}
+            */}}
+
           # */ -}}
           # livenessProbe:
           #   httpGet:
@@ -151,11 +208,14 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
       volumes:
-        - name: config-volume
-          configMap:
-            name: {{ $signerName }}
+        - name: signer-secret
+          secret:
+            secretName: {{ $signerName }}
         - name: signer-config
           emptyDir: {}
+        - name: file-ratchet
+          persistentVolumeClaim:
+            claimName: file-ratchet
       {{- with $signerConfig.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
