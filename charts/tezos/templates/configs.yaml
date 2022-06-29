@@ -50,7 +50,11 @@ data:
 {{- end }}
 {{ $octezSigners | default dict | mustToPrettyJson | indent 4 }}
   TACOINFRA_SIGNERS: |
-{{ .Values.tacoinfraSigners | default dict | mustToPrettyJson | indent 4 }}
+{{- $tacoinfraSigners := dict }}
+{{- range $signerName, $signerConfig := .Values.tacoinfraSigners }}
+    {{- $_ := set $tacoinfraSigners $signerName (pick $signerConfig "accounts") }}
+{{- end }}
+{{ $tacoinfraSigners | default dict | mustToPrettyJson | indent 4 }}
 
 ---
 
