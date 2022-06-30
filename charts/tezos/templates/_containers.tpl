@@ -301,6 +301,22 @@
   {{- end }}
 {{- end }}
 
+{{- define "tezos.container.vdf" }}
+  {{- if has "vdf" $.node_vals.runs }}
+  {{ $node_vals_images := $.node_vals.images | default dict }}
+    {{- range .Values.protocols }}
+- name: vdf-{{ lower .command }}
+  image: "{{ or $node_vals_images.octez $.Values.images.octez }}"
+  imagePullPolicy: IfNotPresent
+  command:
+    - /usr/local/bin/tezos-baker-{{ .command }}
+  args:
+    - run
+    - vdf
+    {{- end }}
+  {{- end }}
+{{- end }}
+
 
 {{- define "tezos.container.logger" }}
   {{- if has "logger" $.node_vals.runs }}
