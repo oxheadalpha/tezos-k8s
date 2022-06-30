@@ -16,7 +16,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/oxheadalpha/tezos-k8s",
     include_package_data=True,
-    install_requires=["pyyaml"],
+    install_requires=["oyaml"],
     setup_requires=["wheel"],
     extras_require={"dev": ["pytest", "autoflake", "isort", "black"]},
     entry_points={"console_scripts": ["mkchain=tqchain.mkchain:main"]},
