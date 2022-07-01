@@ -301,6 +301,10 @@
   {{- end }}
 {{- end }}
 
++{{- if (regexFind "Kathma" .command) }}
++{{- /*
++Also start vdf daemon if required for protocols that need it.
++*/}}
 {{- define "tezos.container.vdf" }}
   {{- if has "vdf" $.node_vals.runs }}
   {{ $node_vals_images := $.node_vals.images | default dict }}
@@ -315,6 +319,7 @@
     - vdf
     {{- end }}
   {{- end }}
+{{- end }}
 {{- end }}
 
 
