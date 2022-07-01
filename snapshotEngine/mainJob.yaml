@@ -28,8 +28,8 @@ spec:
               # Set error trap in order to kill this job with the timer later
               trap "exit" SIGINT SIGTERM
 
-              # Strip network from namespace
-              NETWORK="${NAMESPACE%%-*}"
+              # Strip network from namespace or use configmap value
+              NETWORK="${NETWORK:-${NAMESPACE%%-*}}"
 
               # Set up config for headless RPC using new restored storage
               tezos-node config init \
@@ -154,6 +154,11 @@ spec:
                 configMapKeyRef:
                   name: snapshot-configmap
                   key: NAMESPACE
+            - name: NETWORK
+              valueFrom:
+                configMapKeyRef:
+                  name: snapshot-configmap
+                  key: NETWORK
       containers:
         - name: create-tezos-rolling-snapshot
           image: ""
@@ -167,8 +172,8 @@ spec:
               sudo chown -R 100:100 /"${HISTORY_MODE}"-snapshot-cache-volume
               sudo chown -R 100:100 /rolling-tarball-restore
 
-              # Strip network from namespace
-              NETWORK="${NAMESPACE%%-*}"
+              # Strip network from namespace or use configmap value
+              NETWORK="${NETWORK:-${NAMESPACE%%-*}}"
 
               BLOCK_HEIGHT=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HEIGHT)
               BLOCK_HASH=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH)
@@ -215,6 +220,11 @@ spec:
                 configMapKeyRef:
                   name: snapshot-configmap
                   key: NAMESPACE
+            - name: NETWORK
+              valueFrom:
+                configMapKeyRef:
+                  name: snapshot-configmap
+                  key: NETWORK
         - name: zip-and-upload
           image: ""
           imagePullPolicy: Always
