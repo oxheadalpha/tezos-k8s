@@ -301,14 +301,14 @@
   {{- end }}
 {{- end }}
 
-+{{- if (regexFind "Kathma" .command) }}
-+{{- /*
-+Also start vdf daemon if required for protocols that need it.
-+*/}}
 {{- define "tezos.container.vdf" }}
   {{- if has "vdf" $.node_vals.runs }}
   {{ $node_vals_images := $.node_vals.images | default dict }}
     {{- range .Values.protocols }}
+      {{- if regexFind "Kathma" .command }}
+      {{- /*
+      Only protos higher than Kathmandu support VDF
+      */}}
 - name: vdf-{{ lower .command }}
   image: "{{ or $node_vals_images.octez $.Values.images.octez }}"
   imagePullPolicy: IfNotPresent
@@ -317,9 +317,9 @@
   args:
     - run
     - vdf
+      {{- end }}
     {{- end }}
   {{- end }}
-{{- end }}
 {{- end }}
 
 
