@@ -177,7 +177,7 @@ spec:
 
               BLOCK_HEIGHT=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HEIGHT)
               BLOCK_HASH=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH)
-              ROLLING_SNAPSHOT_NAME="${NETWORK}"-"${BLOCK_HEIGHT}"
+              ROLLING_SNAPSHOT_NAME="${NAMESPACE%%-*}"-"${BLOCK_HEIGHT}"
 
               tezos-node config init \
               --config-file /home/tezos/.tezos-node/config.json \
