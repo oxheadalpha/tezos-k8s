@@ -417,12 +417,13 @@ fi
 touch base.json
 echo '[]' > "base.json"
 
-tmp=$(mktemp)
-cp base.json "${tmp}"
-
-aws s3 ls s3://"$NETWORK".xtz-shots.io |  grep '\.json'| sort | awk '{print $4}' | awk -F '\\\\n' '{print $1}' | tr ' ' '\n' | while read ITEM; do
-    jq --argjson file "$(curl https://$NETWORK.xtz-shots.io/$ITEM)" '. += [$file]' "${tmp}" > base.json && rm "${tmp}"
+aws s3 ls s3://"${NETWORK}".xtz-shots.io |  grep '\.json'| sort | awk '{print $4}' | awk -F '\\\\n' '{print $1}' | tr ' ' '\n' | grep -v base.json | while read ITEM; do
+    tmp=$(mktemp) && cp base.json "${tmp}" && jq --argjson file "$(curl  -S -s -o /dev/null https://"${NETWORK}".xtz-shots.io/$ITEM)" '. += [$file]' "${tmp}" > base.json
 done
+
+# aws s3 ls s3://$NETWORK.xtz-shots.io |  grep '\.json'| sort | awk '{print $4}' | awk -F '\\\\n' '{print $1}' | tr ' ' '\n' | grep -v base.json | while read ITEM; do
+#     echo $ITEM
+# done
 
 #Upload base.json
 if ! aws s3 cp base.json s3://"${S3_BUCKET}"/base.json; then

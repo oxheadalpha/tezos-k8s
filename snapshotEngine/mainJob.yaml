@@ -197,7 +197,7 @@ spec:
 
                 tezos-node snapshot import \
                 /"${HISTORY_MODE}"-snapshot-cache-volume/"${ROLLING_SNAPSHOT_NAME}".rolling \
-                --in-memory
+                --in-memory \
                 --block "${BLOCK_HASH}" \
                 --config-file /home/tezos/.tezos-node/config.json \
                 --data-dir /rolling-tarball-restore/var/tezos/node/data
