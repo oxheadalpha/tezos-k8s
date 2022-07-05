@@ -57,5 +57,5 @@ spec:
             command:
             - /bin/sh
             - -c
-            - python src/main.py -M 2 --reward_data_provider {{ .Values.reward_data_provider }} --node_addr_public {{ .Values.tezos_node_addr }} --node_endpoint {{ .Values.tezos_node_addr }} --base_directory /trd --signer_endpoint {{ .Values.signer_addr }} {{ .Values.extra_trd_args }} -N ITHACANET
+            - python src/main.py -M 2 --reward_data_provider {{ .Values.reward_data_provider }} --node_addr_public {{ .Values.tezos_node_addr }} --node_endpoint {{ .Values.tezos_node_addr }} --base_directory /trd --signer_endpoint {{ .Values.signer_addr }} {{ .Values.extra_trd_args }} -N GHOSTNET
           restartPolicy: OnFailure
