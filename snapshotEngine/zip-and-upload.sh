@@ -420,7 +420,7 @@ echo '[]' > "base.json"
 tmp=$(mktemp)
 cp base.json "${tmp}"
 
-aws s3 ls s3://ithacanet.xtz-shots.io |  grep '\.json'| sort | awk '{print $4}' | awk -F '\\\\n' '{print $1}' | tr ' ' '\n' | while read ITEM; do
+aws s3 ls s3://"$NETWORK".xtz-shots.io |  grep '\.json'| sort | awk '{print $4}' | awk -F '\\\\n' '{print $1}' | tr ' ' '\n' | while read ITEM; do
     jq --argjson file "$(curl https://$NETWORK.xtz-shots.io/$ITEM)" '. += [$file]' "${tmp}" > base.json && rm "${tmp}"
 done
 
