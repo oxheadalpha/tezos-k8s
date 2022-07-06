@@ -178,21 +178,16 @@ spec:
               mountPath: /app/signer-config
               readOnly: true
           env:
-            {{- /* Just using some of these for devel */}}
-          {{- range $name, $value := $signerConfig.env }}
-            - name: {{ $name }}
-              value: {{ $value }}
-          {{- end }}
-            - name: REGION
-              value: us-east-1
-            - name: FLASK_ENV
-              value: development
             {{- /*
               - name: AWS_ACCESS_KEY_ID
                 value: {{ $.Values.access }}
               - name: AWS_SECRET_ACCESS_KEY
                 value: {{ $.Values.secret }}
             */}}
+          {{- range $name, $value := $signerConfig.env }}
+            - name: {{ $name }}
+              value: {{ $value }}
+          {{- end }}
 
           # */ -}}
           # livenessProbe:
