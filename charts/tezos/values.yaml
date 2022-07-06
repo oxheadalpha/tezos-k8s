@@ -10,7 +10,7 @@ is_invitation: false
 images:
   octez: tezos/tezos:v13-release
   tezedge: tezedge/tezedge:v1.6.8
-  tacoinfraRemoteSigner: tacoinfra-remote-signer
+  tacoinfraRemoteSigner: oxheadalpha/tacoinfra-remote-signer
 # Images that are part of the tezos-k8s repo go here with 'dev' tag
 tezos_k8s_images:
   utils: tezos-k8s-utils:dev
