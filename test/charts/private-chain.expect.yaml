@@ -451,7 +451,7 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume
+              name: var-volume        
       initContainers:                        
         - name: config-generator
           image: "tezos-k8s-utils:dev"
@@ -617,7 +617,7 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume
+              name: var-volume        
       initContainers:                        
         - name: config-generator
           image: "tezos-k8s-utils:dev"
@@ -897,7 +897,7 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume
+              name: var-volume        
       initContainers:                        
         - name: config-generator
           image: "tezos-k8s-utils:dev"
@@ -1114,7 +1114,7 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume
+              name: var-volume        
       initContainers:                        
         - name: config-generator
           image: "tezos-k8s-utils:dev"

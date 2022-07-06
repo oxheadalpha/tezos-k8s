@@ -15,6 +15,7 @@ const sidebars = {
       items: [
         'Public-Node',
         'Private-Chain',
+        'Indexers',
         'RPC-Auth']
     },
     {

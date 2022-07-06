@@ -121,7 +121,7 @@ should_generate_unsafe_deterministic_data: false
 #           field up above.
 # - "runs": A list of containers to run. A tezos node implementation is required.
 #         Options being "octez_node" or "tezedge_node". Other optional
-#         containers are "accuser", "baker", "logger", and "metrics".
+#         containers are "accuser", "baker", "logger", "vdf" and "metrics".
 # - "local_storage": use local storage instead of a volume. The storage will be
 #                  wiped when the node restarts for any reason. Useful when
 #                  faster IO is desired. Defaults to false.
