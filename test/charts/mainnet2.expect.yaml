@@ -281,7 +281,7 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume
+              name: var-volume        
       initContainers:        
         - name: config-init
           image: "tezos/tezos:v13-release"
@@ -638,7 +638,7 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume
+              name: var-volume        
       initContainers:        
         - name: config-init
           image: "tezos/tezos:v12-release"
