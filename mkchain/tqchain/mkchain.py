@@ -313,7 +313,11 @@ def main():
 
     with open(f"{files_path}_values.yaml", "w") as yaml_file:
         yaml.dump(
-            creation_constants, yaml_file, Dumper=MyDumper, default_flow_style=False
+            creation_constants,
+            yaml_file,
+            Dumper=MyDumper,
+            default_flow_style=False,
+            sort_keys=False,
         )
         print(f"Wrote chain creation constants to {files_path}_values.yaml")
 
@@ -348,6 +352,7 @@ def main():
                 yaml_file,
                 Dumper=MyDumper,
                 default_flow_style=False,
+                sort_keys=False,
             )
 
 
