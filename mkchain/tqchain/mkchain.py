@@ -3,11 +3,11 @@ import os
 import sys
 from datetime import datetime, timezone
 
-import oyaml
+import yaml
 
 
 # https://stackoverflow.com/a/52424865/207209
-class MyDumper(oyaml.Dumper):  # your force-indent dumper
+class MyDumper(yaml.Dumper):  # your force-indent dumper
     def increase_indent(self, flow=False, indentless=False):
         return super(MyDumper, self).increase_indent(flow, False)
 
@@ -200,7 +200,7 @@ def main():
             "delete the values file to generate all new values.\n"
         )
         with open(f"{files_path}_values.yaml", "r") as yaml_file:
-            old_create_values = oyaml.safe_load(yaml_file)
+            old_create_values = yaml.safe_load(yaml_file)
 
         current_number_of_bakers = len(
             old_create_values["nodes"][ARCHIVE_BAKER_NODE_NAME]["instances"]
@@ -213,7 +213,7 @@ def main():
 
         if os.path.isfile(f"{files_path}_invite_values.yaml"):
             with open(f"{files_path}_invite_values.yaml", "r") as yaml_file:
-                old_invite_values = oyaml.safe_load(yaml_file)
+                old_invite_values = yaml.safe_load(yaml_file)
 
     if old_create_values.get("node_config_network", {}).get("genesis"):
         print("Using existing genesis parameters")
@@ -289,7 +289,7 @@ def main():
     with open(
         f"{os.path.dirname(os.path.realpath(__file__))}/parameters.yaml", "r"
     ) as yaml_file:
-        parametersYaml = oyaml.safe_load(yaml_file)
+        parametersYaml = yaml.safe_load(yaml_file)
         activation = {
             "activation": {
                 "protocol_hash": "Psithaca2MLRFYargivpo7YvUr7wUDqyxrdhC5CQq78mRvimz6A",
@@ -312,7 +312,7 @@ def main():
     }
 
     with open(f"{files_path}_values.yaml", "w") as yaml_file:
-        oyaml.dump(
+        yaml.dump(
             creation_constants, yaml_file, Dumper=MyDumper, default_flow_style=False
         )
         print(f"Wrote chain creation constants to {files_path}_values.yaml")
@@ -343,7 +343,7 @@ def main():
             print(
                 f"Wrote chain invitation constants to {files_path}_invite_values.yaml"
             )
-            oyaml.dump(
+            yaml.dump(
                 invitation_constants,
                 yaml_file,
                 Dumper=MyDumper,
