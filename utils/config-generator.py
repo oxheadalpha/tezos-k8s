@@ -66,8 +66,8 @@ if not THIS_IS_A_PUBLIC_NET and JOIN_PUBLIC_NETWORK:
 def main():
     all_accounts = ACCOUNTS
 
+    fill_in_missing_genesis_block()
     if SHOULD_GENERATE_UNSAFE_DETERMINISTIC_DATA:
-        fill_in_missing_genesis_block()
         all_accounts = fill_in_missing_accounts()
         fill_in_missing_keys(all_accounts)
 
@@ -157,7 +157,11 @@ def fill_in_missing_genesis_block():
         == genesis_block_placeholder
     ):
         print("Deterministically generating missing genesis_block")
-        seed = "foo"
+        if NETWORK_CONFIG.get("chain_name", None):
+            seed = NETWORK_CONFIG["chain_name"]
+        else:
+            seed = "foo"
+
         gbk = blake2b(seed.encode(), digest_size=32).digest()
         gbk_b58 = b58encode_check(b"\x01\x34" + gbk).decode("utf-8")
         genesis_config["block"] = gbk_b58
