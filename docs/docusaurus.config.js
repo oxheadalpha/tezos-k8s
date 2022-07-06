@@ -14,7 +14,7 @@ const config = {
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
   organizationName: 'oxheadalpha', // Usually your GitHub org/user name.
-  projectName: 'tezos-k8', // Usually your repo name.
+  projectName: 'tezos-k8s', // Usually your repo name.
 
   presets: [
     [
