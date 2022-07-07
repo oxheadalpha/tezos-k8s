@@ -292,7 +292,7 @@ def main():
         parametersYaml = yaml.safe_load(yaml_file)
         activation = {
             "activation": {
-                "protocol_hash": "Psithaca2MLRFYargivpo7YvUr7wUDqyxrdhC5CQq78mRvimz6A",
+                "protocol_hash": "PtJakart2xVj7pYXJBXrqHgd82rdkLey5ZeeGwDgPp9rhQUbSqY",
                 "protocol_parameters": parametersYaml,
             },
         }
@@ -313,7 +313,11 @@ def main():
 
     with open(f"{files_path}_values.yaml", "w") as yaml_file:
         yaml.dump(
-            creation_constants, yaml_file, Dumper=MyDumper, default_flow_style=False
+            creation_constants,
+            yaml_file,
+            Dumper=MyDumper,
+            default_flow_style=False,
+            sort_keys=False,
         )
         print(f"Wrote chain creation constants to {files_path}_values.yaml")
 
@@ -348,6 +352,7 @@ def main():
                 yaml_file,
                 Dumper=MyDumper,
                 default_flow_style=False,
+                sort_keys=False,
             )
 
 

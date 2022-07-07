@@ -33,17 +33,20 @@ data:
       "protocol_activation": {
           "deterministic_faucet_number_of_accounts": 1000,
           "deterministic_faucet_seed": "oM0TxIV5gYNVd0T9kasdfnv352",
-          "protocol_hash": "Psithaca2MLRFYargivpo7YvUr7wUDqyxrdhC5CQq78mRvimz6A",
+          "protocol_hash": "PtJakart2xVj7pYXJBXrqHgd82rdkLey5ZeeGwDgPp9rhQUbSqY",
           "protocol_parameters": {
             "baking_reward_bonus_per_slot": "4286",
             "baking_reward_fixed_portion": "10000000",
             "blocks_per_commitment": 4,
             "blocks_per_cycle": 8,
             "blocks_per_stake_snapshot": 4,
-            "blocks_per_voting_period": 64,
+            "cache_sampler_state_cycles": 8,
+            "cache_script_size": 100000000,
+            "cache_stake_distribution_cycles": 8,
             "consensus_committee_size": 7000,
             "consensus_threshold": 4667,
-            "cost_per_byte": "1000",
+            "cost_per_byte": "250",
+            "cycles_per_voting_period": 1,
             "delay_increment_per_round": "5",
             "double_baking_punishment": "640000000",
             "endorsing_reward_per_slot": "2857",
@@ -51,9 +54,9 @@ data:
             "hard_gas_limit_per_block": "5200000",
             "hard_gas_limit_per_operation": "1040000",
             "hard_storage_limit_per_operation": "60000",
-            "liquidity_baking_escape_ema_threshold": 100000,
             "liquidity_baking_subsidy": "2500000",
-            "liquidity_baking_sunset_level": 525600,
+            "liquidity_baking_sunset_level": 10000000,
+            "liquidity_baking_toggle_ema_threshold": 100000,
             "max_operations_time_to_live": 120,
             "max_slashing_period": 2,
             "min_proposal_quorum": 500,
@@ -71,8 +74,27 @@ data:
               "denominator": 2,
               "numerator": 1
             },
+            "sc_rollup_challenge_window_in_blocks": 40,
+            "sc_rollup_enable": false,
+            "sc_rollup_max_available_messages": 1000000,
+            "sc_rollup_origination_size": 6314,
             "seed_nonce_revelation_tip": "125000",
-            "tokens_per_roll": "8000000000"
+            "tokens_per_roll": "8000000000",
+            "tx_rollup_commitment_bond": "10000000000",
+            "tx_rollup_cost_per_byte_ema_factor": 120,
+            "tx_rollup_enable": true,
+            "tx_rollup_finality_period": 10,
+            "tx_rollup_hard_size_limit_per_inbox": 500000,
+            "tx_rollup_hard_size_limit_per_message": 5000,
+            "tx_rollup_max_commitments_count": 30,
+            "tx_rollup_max_inboxes_count": 15,
+            "tx_rollup_max_messages_per_inbox": 1010,
+            "tx_rollup_max_ticket_payload_size": 2048,
+            "tx_rollup_max_withdrawals_per_batch": 15,
+            "tx_rollup_origination_size": 4000,
+            "tx_rollup_rejection_max_proof_size": 30000,
+            "tx_rollup_sunset_level": 17280,
+            "tx_rollup_withdraw_period": 10
           }
         }
     }
@@ -290,7 +312,7 @@ spec:
             httpGet:
               path: /is_synced
               port: 31732                
-        - name: baker-012-psithaca
+        - name: baker-013-ptjakart
           image: "tezos/tezos:v12-release"
           imagePullPolicy: IfNotPresent
           command:
@@ -307,7 +329,7 @@ spec:
               NODE_DATA_DIR="$TEZ_VAR/node/data"
               BAKER_EXTRA_ARGS_FROM_ENV=${BAKER_EXTRA_ARGS}
               
-              proto_command="012-Psithaca"
+              proto_command="013-PtJakart"
               
               if [ "${proto_command}" == "012-Psithaca" ]; then
                   extra_args=""
@@ -429,7 +451,7 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume
+              name: var-volume        
       initContainers:                        
         - name: config-generator
           image: "tezos-k8s-utils:dev"
@@ -595,7 +617,7 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume
+              name: var-volume        
       initContainers:                        
         - name: config-generator
           image: "tezos-k8s-utils:dev"
@@ -736,7 +758,7 @@ spec:
             httpGet:
               path: /is_synced
               port: 31732                        
-        - name: baker-012-psithaca
+        - name: baker-013-ptjakart
           image: "tezos/tezos:v10-release"
           imagePullPolicy: IfNotPresent
           command:
@@ -753,7 +775,7 @@ spec:
               NODE_DATA_DIR="$TEZ_VAR/node/data"
               BAKER_EXTRA_ARGS_FROM_ENV=${BAKER_EXTRA_ARGS}
               
-              proto_command="012-Psithaca"
+              proto_command="013-PtJakart"
               
               if [ "${proto_command}" == "012-Psithaca" ]; then
                   extra_args=""
@@ -875,7 +897,7 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume
+              name: var-volume        
       initContainers:                        
         - name: config-generator
           image: "tezos-k8s-utils:dev"
@@ -1015,7 +1037,7 @@ spec:
             httpGet:
               path: /is_synced
               port: 31732                        
-        - name: baker-012-psithaca
+        - name: baker-013-ptjakart
           image: "tezos/tezos:v12-release"
           imagePullPolicy: IfNotPresent
           command:
@@ -1032,7 +1054,7 @@ spec:
               NODE_DATA_DIR="$TEZ_VAR/node/data"
               BAKER_EXTRA_ARGS_FROM_ENV=${BAKER_EXTRA_ARGS}
               
-              proto_command="012-Psithaca"
+              proto_command="013-PtJakart"
               
               if [ "${proto_command}" == "012-Psithaca" ]; then
                   extra_args=""
@@ -1092,7 +1114,7 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume
+              name: var-volume        
       initContainers:                        
         - name: config-generator
           image: "tezos-k8s-utils:dev"
@@ -1276,7 +1298,7 @@ spec:
               echo Activating chain:
               $CLIENT -d /var/tezos/client --block					\
               	genesis activate protocol					\
-              	Psithaca2MLRFYargivpo7YvUr7wUDqyxrdhC5CQq78mRvimz6A				\
+              	PtJakart2xVj7pYXJBXrqHgd82rdkLey5ZeeGwDgPp9rhQUbSqY				\
               	with fitness -1 and key						\
               	$( cat /etc/tezos/activation_account_name )			\
               	and parameters /etc/tezos/parameters.json 2>&1 | head -200
