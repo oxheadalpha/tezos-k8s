@@ -277,6 +277,7 @@ octezSigners: {}
 tacoinfraSigners: {}
 # Example:
 # ```
+# tacoinfraSigners
 #   tacoinfra-signer:
 #     accounts:
 #       - tacoinfraSigner

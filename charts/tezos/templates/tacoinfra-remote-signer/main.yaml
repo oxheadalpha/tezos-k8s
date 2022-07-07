@@ -104,7 +104,6 @@ spec:
         runAsUser: 999
         runAsGroup: 999
         fsGroup: 999
-      # TODO FIGURE OUT MERGING VALUES
       {{- with $signerConfig.podSecurityContext }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -164,7 +163,6 @@ spec:
             capabilities:
               drop:
                 - ALL
-          # TODO FIGURE OUT MERGING VALUES
           {{- with $signerConfig.securityContext }}
             {{- toYaml . | nindent 12 }}
           {{- end }}
@@ -178,18 +176,11 @@ spec:
               mountPath: /app/signer-config
               readOnly: true
           env:
-            {{- /*
-              - name: AWS_ACCESS_KEY_ID
-                value: {{ $.Values.access }}
-              - name: AWS_SECRET_ACCESS_KEY
-                value: {{ $.Values.secret }}
-            */}}
           {{- range $name, $value := $signerConfig.env }}
             - name: {{ $name }}
               value: {{ $value }}
           {{- end }}
 
-          # */ -}}
           # livenessProbe:
           #   httpGet:
           #     path: /

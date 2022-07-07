@@ -1,6 +1,7 @@
 ---
 # Source: tezos-chain/templates/configs.yaml
 ---
+
 apiVersion: v1
 data:
   ACCOUNTS: |
@@ -12,6 +13,10 @@ metadata:
 ---
 # Source: tezos-chain/templates/configs.yaml
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tezos-config
+  namespace: testing
 data:
   CHAIN_NAME: "mainnet"
   CHAIN_PARAMS: |
@@ -56,12 +61,10 @@ data:
       }
     }
 
-  SIGNERS: |
+  OCTEZ_SIGNERS: |
     {}
-kind: ConfigMap
-metadata:
-  name: tezos-config
-  namespace: testing
+  TACOINFRA_SIGNERS: |
+    {}
 ---
 # Source: tezos-chain/templates/static.yaml
 apiVersion: v1
