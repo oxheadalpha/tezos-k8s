@@ -1,14 +1,9 @@
-import random
-import string
 import subprocess
 
 use_docker = False
 
 try:
-    from secrets import token_bytes
-
     from pytezos import pytezos
-    from pytezos.crypto.encoding import base58_encode
 except (ImportError, NotImplementedError):
     use_docker = True
 
