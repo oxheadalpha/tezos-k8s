@@ -148,16 +148,10 @@ def main():
 # If NETWORK_CONFIG["genesis"]["block"] hasn't been specified, we generate a
 # deterministic one.
 def fill_in_missing_genesis_block():
-    print("\nEnsure that we have genesis_block")
-    genesis_config = NETWORK_CONFIG["genesis"]
-    genesis_block_placeholder = "YOUR_GENESIS_BLOCK_HASH_HERE"
-
-    if (
-        genesis_config.get("block", genesis_block_placeholder)
-        == genesis_block_placeholder
-    ):
+    genesis_config = NETWORK_CONFIG.get("genesis")
+    if genesis_config and not genesis_config.get("block"):
         print("Deterministically generating missing genesis_block")
-        if NETWORK_CONFIG.get("chain_name", None):
+        if NETWORK_CONFIG.get("chain_name"):
             seed = NETWORK_CONFIG["chain_name"]
         else:
             seed = "foo"
