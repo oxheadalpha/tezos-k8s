@@ -293,7 +293,7 @@ rolling_snapshot_url: https://mainnet.xtz-shots.io/rolling
 ## `rolling_tarball_url` and `rolling_snapshot_url` are mutually exclusive and
 ## cannot both be specified at the same time.
 archive_tarball_url: https://mainnet.xtz-shots.io/archive-tarball
-# rolling_tarball_url: "https://mainnet.xtz-shots.io/rolling-tarball
+# rolling_tarball_url: https://mainnet.xtz-shots.io/rolling-tarball
 
 # List of peers for nodes to connect to. Gets set under config.json `p2p` field
 bootstrap_peers: []
