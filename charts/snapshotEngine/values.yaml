@@ -86,3 +86,8 @@ restoredStorageInitTime: 2m
 
 # We also provide the ability to disable the time limit for debugging purposes.
 disableStorageInitTime: "false"
+
+# Used to start the snapshotable node, and for the initialization network on the restored snapshot.
+# Can be useful if namespace does not begin with network name.
+# Optional, defaults to beginning word of namespace before "-shots" ex "mainnet-shots" = "mainnet"
+network: ""
