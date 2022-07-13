@@ -29,7 +29,7 @@ spec:
               trap "exit" SIGINT SIGTERM
 
               # Strip network from namespace or use configmap value
-              NETWORK="${NETWORK:-${NAMESPACE%%-*}}"
+              NETWORK="${NETWORK_OVERRIDE:-${NAMESPACE%%-*}}"
 
               # Set up config for headless RPC using new restored storage
               tezos-node config init \
@@ -154,11 +154,11 @@ spec:
                 configMapKeyRef:
                   name: snapshot-configmap
                   key: NAMESPACE
-            - name: NETWORK
+            - name: NETWORK_OVERRIDE
               valueFrom:
                 configMapKeyRef:
                   name: snapshot-configmap
-                  key: NETWORK
+                  key: NETWORK_OVERRIDE
       containers:
         - name: create-tezos-rolling-snapshot
           image: ""
@@ -173,7 +173,7 @@ spec:
               sudo chown -R 100:100 /rolling-tarball-restore
 
               # Strip network from namespace or use configmap value
-              NETWORK="${NETWORK:-${NAMESPACE%%-*}}"
+              NETWORK="${NETWORK_OVERRIDE:-${NAMESPACE%%-*}}"
 
               BLOCK_HEIGHT=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HEIGHT)
               BLOCK_HASH=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH)
@@ -221,11 +221,11 @@ spec:
                 configMapKeyRef:
                   name: snapshot-configmap
                   key: NAMESPACE
-            - name: NETWORK
+            - name: NETWORK_OVERRIDE
               valueFrom:
                 configMapKeyRef:
                   name: snapshot-configmap
-                  key: NETWORK
+                  key: NETWORK_OVERRIDE
         - name: zip-and-upload
           image: ""
           imagePullPolicy: Always
