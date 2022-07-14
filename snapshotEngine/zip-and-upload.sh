@@ -440,3 +440,8 @@ if ! aws s3 cp base.json s3://"${S3_BUCKET}"/base.json; then
 else
     printf "%s Upload base.json : File base.json sucessfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 fi
+
+# Create snapshot.json
+# List of all snapshot metadata accross all subdomains
+
+python updateAvailableSnapshotMetadata.py

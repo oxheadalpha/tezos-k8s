@@ -91,3 +91,6 @@ disableStorageInitTime: "false"
 # Can be useful if namespace does not begin with network name.
 # Optional, defaults to beginning word of namespace before "-shots" ex "mainnet-shots" = "mainnet"
 networkOverride: ""
+
+# List of all xtz-shots subdomains
+allSubdomains: ""
