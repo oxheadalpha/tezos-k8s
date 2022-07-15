@@ -5,6 +5,7 @@ TEZ_BIN=/usr/local/bin
 CLIENT_DIR="$TEZ_VAR/client"
 NODE_DIR="$TEZ_VAR/node"
 NODE_DATA_DIR="$TEZ_VAR/node/data"
+BAKER_EXTRA_ARGS_FROM_ENV=${BAKER_EXTRA_ARGS}
 
 proto_command="{{ .command_in_tpl }}"
 
@@ -37,4 +38,4 @@ while ! $CLIENT rpc get chains/main/blocks/head; do
     sleep 5
 done
 
-exec $CMD run with local node $NODE_DATA_DIR ${extra_args} ${my_baker_account}
+exec $CMD run with local node $NODE_DATA_DIR ${extra_args} ${BAKER_EXTRA_ARGS_FROM_ENV} ${my_baker_account}

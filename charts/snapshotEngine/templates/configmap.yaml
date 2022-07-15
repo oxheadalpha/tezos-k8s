@@ -10,6 +10,7 @@ data:
   SERVICE_ACCOUNT: {{ $.Values.service_account }}
   RESTORED_STORAGE_INIT_TIME: {{ $.Values.restoredStorageInitTime }}
   DISABLE_STORAGE_INIT_TIME: {{ $.Values.disableStorageInitTime | quote }}
+  NETWORK_OVERRIDE: {{ $.Values.networkOverride | default "" | quote }}
 kind: ConfigMap
 metadata:
   name: snapshot-configmap

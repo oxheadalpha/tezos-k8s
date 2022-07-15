@@ -8,13 +8,13 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 const config = {
   title: 'Tezos K8s',
   tagline: 'Deploy a Tezos Blockchain on Kubernetes',
-  url: 'https://oxheadalpha.com',
-  baseUrl: '/tezos-k8s/',
+  url: 'https://tezos-k8s.xyz',
+  baseUrl: '/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
   organizationName: 'oxheadalpha', // Usually your GitHub org/user name.
-  projectName: 'tezos-k8', // Usually your repo name.
+  projectName: 'tezos-k8s', // Usually your repo name.
 
   presets: [
     [
@@ -23,6 +23,7 @@ const config = {
       ({
         docs: {
           routeBasePath: '/', // Serve the docs at the site's root
+          sidebarPath: require.resolve('./sidebars.js'),
           path: '.',
           include: ['*.md']
         },
@@ -38,7 +39,7 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       navbar: {
-        title: 'Home',
+        title: 'Tezos-k8s',
         logo: {
           alt: 'Oxhead Alpha Logo',
           src: 'img/logo.svg',

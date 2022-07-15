@@ -24,7 +24,7 @@ def quoted_scalar(dumper, data):  # a representer to force quotations on scalars
 MyDumper.add_representer(QuotedString, quoted_scalar)
 # end https://stackoverflow.com/a/52424865/207209
 
-from tqchain.keys import gen_key, get_genesis_vanity_chain_id, set_use_docker
+from tqchain.keys import gen_key, set_use_docker
 
 from ._version import get_versions
 
@@ -70,7 +70,7 @@ cli_args = {
     },
     "octez_docker_image": {
         "help": "Version of the Octez docker image",
-        "default": "tezos/tezos:v12-release",
+        "default": "tezos/tezos:v13-release",
     },
     "use_docker": {
         "action": "store_true",
@@ -223,9 +223,6 @@ def main():
     else:
         # create new chain genesis params if brand new chain
         base_constants["node_config_network"]["genesis"] = {
-            "block": get_genesis_vanity_chain_id()
-            if not args.should_generate_unsafe_deterministic_data
-            else "YOUR_GENESIS_BLOCK_HASH_HERE",
             "protocol": "Ps9mPmXaRzmzk35gbAYNCAw6UXdE2qoABTHbN2oEEc1qM7CwT9P",
             "timestamp": datetime.utcnow().replace(tzinfo=timezone.utc).isoformat(),
         }
@@ -292,7 +289,7 @@ def main():
         parametersYaml = yaml.safe_load(yaml_file)
         activation = {
             "activation": {
-                "protocol_hash": "Psithaca2MLRFYargivpo7YvUr7wUDqyxrdhC5CQq78mRvimz6A",
+                "protocol_hash": "PtJakart2xVj7pYXJBXrqHgd82rdkLey5ZeeGwDgPp9rhQUbSqY",
                 "protocol_parameters": parametersYaml,
             },
         }
@@ -313,7 +310,11 @@ def main():
 
     with open(f"{files_path}_values.yaml", "w") as yaml_file:
         yaml.dump(
-            creation_constants, yaml_file, Dumper=MyDumper, default_flow_style=False
+            creation_constants,
+            yaml_file,
+            Dumper=MyDumper,
+            default_flow_style=False,
+            sort_keys=False,
         )
         print(f"Wrote chain creation constants to {files_path}_values.yaml")
 
@@ -348,6 +349,7 @@ def main():
                 yaml_file,
                 Dumper=MyDumper,
                 default_flow_style=False,
+                sort_keys=False,
             )
 
 

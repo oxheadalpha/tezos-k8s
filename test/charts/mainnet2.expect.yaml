@@ -290,10 +290,10 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume
+              name: var-volume        
       initContainers:        
         - name: config-init
-          image: "tezos/tezos:v12-release"
+          image: "tezos/tezos:v13-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -403,7 +403,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume        
         - name: snapshot-importer
-          image: "tezos/tezos:v12-release"
+          image: "tezos/tezos:v13-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -650,7 +650,7 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume
+              name: var-volume        
       initContainers:        
         - name: config-init
           image: "tezos/tezos:v12-release"

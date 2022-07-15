@@ -17,36 +17,6 @@ printf "%s BLOCK_HASH is...$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_
 printf "%s BLOCK_HEIGHT is...$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HEIGHT)\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 printf "%s BLOCK_TIMESTAMP is...$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_TIMESTAMP)\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
-# Download base.json or create if if it doesn't exist
-if ! aws s3api head-object --bucket "${S3_BUCKET}" --key "base.json" > /dev/null; then
-    printf "%s Check base.json : Did not detect in S3.  Creating base.json locally to append and upload later.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    if ! touch base.json; then
-        printf "%s Create base.json : Error creating file base.json locally. \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    else
-        printf "%s Create base.json : Created file base.json. \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    fi
-else
-    printf "%s Check base.json : Exists in S3.  Downloading to append new information and will upload later. \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    if ! aws s3 cp s3://"${S3_BUCKET}"/base.json base.json > /dev/null; then
-        printf "%s Download base.json : Error downloading file base.json from S3. \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    else
-        printf "%s Download base.json : Downloaded file base.json from S3. \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    fi
-fi
-
-# Check if base.json exists locally
-if test -f base.json; then
-    printf "%s Check base.json : File base.json exists locally. \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    # Write empty array if empty
-    if ! [ -s "base.json" ]
-    then
-    # It is. Write an empty array to it
-    echo '[]' > "base.json"
-    fi
-else
-    printf "%s Check base.json : File base.json does not exist locally. \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-fi
-
 #
 # Archive Tarball
 #
@@ -86,56 +56,6 @@ if [ "${HISTORY_MODE}" = archive ]; then
         --query ContentLength \
         --output text)
     FILESIZE=$(echo "${FILESIZE_BYTES}" | awk '{ suffix="KMGT"; for(i=0; $1>1024 && i < length(suffix); i++) $1/=1024; print int($1) substr(suffix, i, 1), $3; }' | xargs)
-
-    # Add file to base.json
-    # have to do it here because base.json is being overwritten
-    # by other snapshot actions that are faster
-    tmp=$(mktemp)
-    cp base.json "${tmp}"
-
-    if ! jq \
-    --arg BLOCK_HASH "$BLOCK_HASH" \
-    --arg BLOCK_HEIGHT "$BLOCK_HEIGHT" \
-    --arg BLOCK_TIMESTAMP "$BLOCK_TIMESTAMP" \
-    --arg ARCHIVE_TARBALL_FILENAME "$ARCHIVE_TARBALL_FILENAME" \
-    --arg SHA256 "$SHA256" \
-    --arg FILESIZE_BYTES "$FILESIZE_BYTES" \
-    --arg FILESIZE "$FILESIZE" \
-    --arg TEZOS_VERSION "$TEZOS_VERSION" \
-    --arg NETWORK "$NETWORK" \
-    --arg HISTORY_MODE "archive" \
-    --arg ARTIFACT_TYPE "tarball" \
-    '. |= 
-    [
-        {
-                ($ARCHIVE_TARBALL_FILENAME): {
-                "contents": {
-                    "block_hash": $BLOCK_HASH,
-                    "block_height": $BLOCK_HEIGHT,
-                    "block_timestamp": $BLOCK_TIMESTAMP,
-                    "sha256": $SHA256,
-                    "filesize_bytes": $FILESIZE_BYTES,
-                    "filesize": $FILESIZE,
-                    "tezos_version": $TEZOS_VERSION,
-                    "chain_name": $NETWORK,
-                    "history_mode": $HISTORY_MODE,
-                    "artifact_type": $ARTIFACT_TYPE
-                }
-            }
-        }
-    ] 
-    + .' "${tmp}" > base.json && rm "${tmp}";then
-        printf "%s Archive Tarball base.json: Error updating base.json.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    else
-        printf "%s Archive Tarball : Sucessfully updated base.json with artifact information.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    fi
-
-    #Upload base.json
-    if ! aws s3 cp base.json s3://"${S3_BUCKET}"/base.json; then
-        printf "%s Upload base.json : Error uploading file base.json to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    else
-        printf "%s Upload base.json : File base.json sucessfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    fi
 
     # Check if archive-tarball exists in S3 and process redirect
     if ! aws s3api head-object --bucket "${S3_BUCKET}" --key "${ARCHIVE_TARBALL_FILENAME}" > /dev/null; then
@@ -282,54 +202,6 @@ if [ "${HISTORY_MODE}" = rolling ]; then
     --output text)
     FILESIZE=$(echo "${FILESIZE_BYTES}" | awk '{ suffix="KMGT"; for(i=0; $1>1024 && i < length(suffix); i++) $1/=1024; print int($1) substr(suffix, i, 1), $3; }' | xargs)
 
-    # Add file to base.json
-    tmp=$(mktemp)
-    cp base.json "${tmp}"
-
-    if ! jq \
-    --arg BLOCK_HASH "$BLOCK_HASH" \
-    --arg BLOCK_HEIGHT "$BLOCK_HEIGHT" \
-    --arg BLOCK_TIMESTAMP "$BLOCK_TIMESTAMP" \
-    --arg ROLLING_TARBALL_FILENAME "$ROLLING_TARBALL_FILENAME" \
-    --arg SHA256 "$SHA256" \
-    --arg FILESIZE_BYTES "$FILESIZE_BYTES" \
-    --arg FILESIZE "$FILESIZE" \
-    --arg TEZOS_VERSION "$TEZOS_VERSION" \
-    --arg NETWORK "$NETWORK" \
-    --arg HISTORY_MODE "rolling" \
-    --arg ARTIFACT_TYPE "tarball" \
-    '. |= 
-    [
-        {
-                ($ROLLING_TARBALL_FILENAME): {
-                "contents": {
-                    "block_hash": $BLOCK_HASH,
-                    "block_height": $BLOCK_HEIGHT,
-                    "block_timestamp": $BLOCK_TIMESTAMP,
-                    "sha256": $SHA256,
-                    "filesize_bytes": $FILESIZE_BYTES,
-                    "filesize": $FILESIZE,
-                    "tezos_version": $TEZOS_VERSION,
-                    "chain_name": $NETWORK,
-                    "history_mode": $HISTORY_MODE,
-                    "artifact_type": $ARTIFACT_TYPE
-                }
-            }
-        }
-    ] 
-    + .' "${tmp}" > base.json && rm "${tmp}";then
-        printf "%s Rolling Tarball base.json: Error updating base.json.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    else
-        printf "%s Rolling Tarball : Sucessfully updated base.json with artifact information.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    fi
-
-    #Upload base.json
-    if ! aws s3 cp base.json s3://"${S3_BUCKET}"/base.json; then
-        printf "%s Upload base.json : Error uploading file base.json to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    else
-        printf "%s Upload base.json : File base.json sucessfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    fi
-
     # Check if rolling-tarball exists and process redirect
     if ! aws s3api head-object --bucket "${S3_BUCKET}" --key "${ROLLING_TARBALL_FILENAME}" > /dev/null; then
         printf "%s Rolling Tarball : Error uploading ${ROLLING_TARBALL_FILENAME} to S3 Bucket ${S3_BUCKET}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -427,54 +299,6 @@ if [ "${HISTORY_MODE}" = rolling ]; then
 
             FILESIZE=$(echo "${FILESIZE_BYTES}" | awk '{ suffix="KMGT"; for(i=0; $1>1024 && i < length(suffix); i++) $1/=1024; print int($1) substr(suffix, i, 1), $3; }' | xargs )
             SHA256=$(sha256sum "${ROLLING_SNAPSHOT}" | awk '{print $1}')
-
-            # Add file to base.json
-            tmp=$(mktemp)
-            cp base.json "${tmp}"
-
-            if ! jq \
-            --arg BLOCK_HASH "$BLOCK_HASH" \
-            --arg BLOCK_HEIGHT "$BLOCK_HEIGHT" \
-            --arg BLOCK_TIMESTAMP "$BLOCK_TIMESTAMP" \
-            --arg ROLLING_SNAPSHOT_FILENAME "$ROLLING_SNAPSHOT_FILENAME" \
-            --arg SHA256 "$SHA256" \
-            --arg FILESIZE_BYTES "$FILESIZE_BYTES" \
-            --arg FILESIZE "$FILESIZE" \
-            --arg TEZOS_VERSION "$TEZOS_VERSION" \
-            --arg NETWORK "$NETWORK" \
-            --arg HISTORY_MODE "rolling" \
-            --arg ARTIFACT_TYPE "tezos-snapshot" \
-            '. |= 
-            [
-                {
-                        ($ROLLING_SNAPSHOT_FILENAME): {
-                        "contents": {
-                            "block_hash": $BLOCK_HASH,
-                            "block_height": $BLOCK_HEIGHT,
-                            "block_timestamp": $BLOCK_TIMESTAMP,
-                            "sha256": $SHA256,
-                            "filesize_bytes": $FILESIZE_BYTES,
-                            "filesize": $FILESIZE,
-                            "tezos_version": $TEZOS_VERSION,
-                            "chain_name": $NETWORK,
-                            "history_mode": $HISTORY_MODE,
-                            "artifact_type": $ARTIFACT_TYPE
-                        }
-                    }
-                }
-            ] 
-            + .' "${tmp}" > base.json && rm "${tmp}";then
-                printf "%s Rolling Snapshot base.json: Error updating base.json.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-            else
-                printf "%s Rolling Snapshot : Sucessfully updated base.json with artifact information.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-            fi
-
-            #Upload base.json
-            if ! aws s3 cp base.json s3://"${S3_BUCKET}"/base.json; then
-                printf "%s Upload base.json : Error uploading file base.json to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-            else
-                printf "%s Upload base.json : File base.json sucessfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-            fi
 
             jq -n \
             --arg BLOCK_HASH "$BLOCK_HASH" \
@@ -585,4 +409,34 @@ if ! aws s3 cp _site/ s3://"${S3_BUCKET}" --recursive --include "*"; then
     printf "%s Website Build & Deploy : Error uploading site to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 else
     printf "%s Website Build & Deploy  : Sucessfully uploaded website to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+fi
+
+# Build base.json from existing metadata files
+
+printf "##### BEGINNING OF BASE.JSON"
+
+# Create new base.json locally
+touch base.json
+echo '[]' > "base.json"
+
+printf "%s Building base.json... this may take a while." "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+aws s3 ls s3://"${NETWORK}".xtz-shots.io |  grep '\.json'| sort | awk '{print $4}' | awk -F '\\\\n' '{print $1}' | tr ' ' '\n' | grep -v base.json | while read ITEM; do
+    tmp=$(mktemp) && cp base.json "${tmp}" && jq --argjson file "$(curl -s https://"${NETWORK}".xtz-shots.io/$ITEM)" '. += [$file]' "${tmp}" > base.json
+done
+
+# DEBUG
+
+printf "%s" "$(cat base.json || true)"
+printf "##### END OF BASE.JSON"
+# END DEBUG
+
+# aws s3 ls s3://$NETWORK.xtz-shots.io |  grep '\.json'| sort | awk '{print $4}' | awk -F '\\\\n' '{print $1}' | tr ' ' '\n' | grep -v base.json | while read ITEM; do
+#     echo $ITEM
+# done
+
+#Upload base.json
+if ! aws s3 cp base.json s3://"${S3_BUCKET}"/base.json; then
+    printf "%s Upload base.json : Error uploading file base.json to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+else
+    printf "%s Upload base.json : File base.json sucessfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 fi
