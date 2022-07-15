@@ -85,8 +85,7 @@ accounts: {}
 # When running bakers for a public net, you must provide your own secret keys.
 # For non public networks you can change the
 # `should_generate_unsafe_deterministic_data` setting to true, and deterministic
-# keys will be generated for your nodes automatically. If a genesis block hash
-# is not provided, that will also be generated. This is helpful for spinning up
+# keys will be generated for your nodes automatically. This is helpful to spin up
 # local testnets.
 should_generate_unsafe_deterministic_data: false
 # # End Accounts
@@ -279,6 +278,8 @@ expected_proof_of_work: 26
 
 ## Create a custom network using a config structure that is similar to a node's
 ## config.json. Run `tezos-node config --help` for more info.
+## Note that the genesis block hash will be deterministically generated from
+## the chain name if omitted.
 ##
 # node_config_network:
 #   chain_name: YOUR_CHAIN_NAME_HERE
