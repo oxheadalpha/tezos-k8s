@@ -5,8 +5,7 @@ BLOCK_HASH=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH)
 BLOCK_TIMESTAMP=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_TIMESTAMP)
 TEZOS_VERSION=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_VERSION)
 NETWORK="${NAMESPACE%%-*}"
-
-S3_BUCKET="${NETWORK}.${SNAPSHOT_WEBSITE_DOMAIN_NAME}"
+export S3_BUCKET="${NETWORK}.${SNAPSHOT_WEBSITE_DOMAIN_NAME}"
 
 cd /
 
@@ -424,16 +423,6 @@ aws s3 ls s3://"${NETWORK}".xtz-shots.io |  grep '\.json'| sort | awk '{print $4
     tmp=$(mktemp) && cp base.json "${tmp}" && jq --argjson file "$(curl -s https://"${NETWORK}".xtz-shots.io/$ITEM)" '. += [$file]' "${tmp}" > base.json
 done
 
-# DEBUG
-
-printf "%s" "$(cat base.json || true)"
-printf "##### END OF BASE.JSON"
-# END DEBUG
-
-# aws s3 ls s3://$NETWORK.xtz-shots.io |  grep '\.json'| sort | awk '{print $4}' | awk -F '\\\\n' '{print $1}' | tr ' ' '\n' | grep -v base.json | while read ITEM; do
-#     echo $ITEM
-# done
-
 #Upload base.json
 if ! aws s3 cp base.json s3://"${S3_BUCKET}"/base.json; then
     printf "%s Upload base.json : Error uploading file base.json to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -444,4 +433,4 @@ fi
 # Create snapshot.json
 # List of all snapshot metadata accross all subdomains
 
-python updateAvailableSnapshotMetadata.py
+python /updateAvailableSnapshotMetadata.py

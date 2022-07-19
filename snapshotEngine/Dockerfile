@@ -2,8 +2,11 @@ FROM jekyll/jekyll:4.2.0
 
 ENV GLIBC_VER=2.31-r0
 
+# Install python/pip
+ENV PYTHONUNBUFFERED=1
+
 #
-# Installs lz4, jq, yq, kubectl, and awscliv2
+# Installs lz4, jq, yq, kubectl, and awscliv2, and python3
 #
 RUN apk --no-cache add \
         binutils \
@@ -38,7 +41,10 @@ RUN apk --no-cache add \
         glibc-*.apk \
     && apk --no-cache del \
         binutils \
-    && rm -rf /var/cache/apk/*
+    && rm -rf /var/cache/apk/* \
+    && apk add --update --no-cache python3 && ln -sf python3 /usr/bin/python \
+    && python3 -m ensurepip \
+    && pip3 install --no-cache --upgrade pip setuptools boto3
 
 RUN chown jekyll:jekyll -R /usr/gem
 
