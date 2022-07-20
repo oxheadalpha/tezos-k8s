@@ -5,34 +5,26 @@ import urllib.request
 import boto3
 import sys
 
-allSubDomains = os.environ['ALL_SUBDOMAINS']
+allSubDomains = os.environ['ALL_SUBDOMAINS'].split(",")
 
-# Iterate over each subDomain/base.json and append to snapshot.json
-filename = "snapshots.json"
-with open (filename, "w") as json_file:
-  json.dump("[]",json_file)
+filename="snapshots.json"
 
-if not exists(filename):
-  sys.exit('##### ERROR '+filename+' does not exist! #####')
+# Write empty top-level array to initialize json
+json_object = []
 
+# Get each subdomain's base.json and combine all artifacts into 1 metadata file
+for subDomain in allSubDomains:
+  with urllib.request.urlopen("https://"+subDomain+".xtz-shots.io/base.json") as url:
+    data = json.loads(url.read().decode())
+    for entry in data:
+      json_object.append(entry)
+
+# Write to file
 with open (filename, 'w') as json_file:
-  for subDomain in allSubDomains:
-    # Existing list in snapshots.json
-    existingData = json.load(json_file)
-    # URL to current network metadata file
-    url = "https://"+subDomain+"xtz-shots.io/base.json"
-    # Parse json and turn into list
-    response = urllib.request.urlopen(url)
-    data = json.loads(response.read())
-    # Add new data to new list object
-    existingData.append(data)
-    # Add to snapshots.json
-    json.dump(existingData, json_file)
-
-if not os.path.getsize(filename) > 3:
-  sys.exit('##### ERROR '+filename+' is not greater than 3 bytes! #####')
+  json_string = json.dumps(json_object, indent=4)
+  json_file.write(json_string)
 
 # Upload to S3 bucket
 s3 = boto3.resource('s3')
 BUCKET = os.environ['S3_BUCKET']
-s3.Bucket(BUCKET).upload_file(filename, filename)
+s3.Bucket(BUCKET).upload_file(filename, filename, ExtraArgs={'ContentDisposition': 'inline'})
