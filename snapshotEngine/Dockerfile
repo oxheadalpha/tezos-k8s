@@ -12,7 +12,7 @@ RUN apk --no-cache add \
         binutils \
         curl \
         lz4 \
-        jq  \
+        'jq<1.6-r1'  \
         bash \
     && wget -q -O /usr/bin/yq $(wget -q -O - https://api.github.com/repos/mikefarah/yq/releases/latest \
         | jq -r '.assets[] | select(.name == "yq_linux_amd64") | .browser_download_url') \

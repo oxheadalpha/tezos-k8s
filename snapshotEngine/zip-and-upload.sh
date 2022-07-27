@@ -412,13 +412,11 @@ fi
 
 # Build base.json from existing metadata files
 
-printf "##### BEGINNING OF BASE.JSON"
-
 # Create new base.json locally
 touch base.json
 echo '[]' > "base.json"
 
-printf "%s Building base.json... this may take a while." "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+printf "%s Building base.json... this may take a while.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 aws s3 ls s3://"${NETWORK}".xtz-shots.io |  grep '\.json'| sort | awk '{print $4}' | awk -F '\\\\n' '{print $1}' | tr ' ' '\n' | grep -v base.json | while read ITEM; do
     tmp=$(mktemp) && cp base.json "${tmp}" && jq --argjson file "$(curl -s https://"${NETWORK}".xtz-shots.io/$ITEM)" '. += [$file]' "${tmp}" > base.json
 done
