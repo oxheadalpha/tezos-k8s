@@ -1,10 +1,10 @@
-{{- range $k, $v := .Values.accounts }}
-  {{- if $v.type }}
+{{- range $k, $v := .Values.accounts -}}
+  {{- if $v.type -}}
 DEPRECATION WARNING: You specified a type for account {{ $k }}. This field is now ignored, the type of key is set automatically.
-  {{- end }}
-{{- end }}
-{{- range $p := .Values.protocols }}
+  {{- end -}}
+{{- end -}}
+{{- range $p := .Values.protocols -}}
   {{- if (not $p.vote) }}
 WARNING: you did not specify the liquidity baking toggle vote in "protocols" for protocol "{{ $p.command }}", your baker will not start.
-  {{- end }}
-{{- end }}
+  {{- end -}}
+{{- end -}}
