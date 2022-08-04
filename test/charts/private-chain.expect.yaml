@@ -363,7 +363,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume        
         - name: logger
-          image: "tezos-k8s-utils:dev"
+          image: "localhost/tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
           args:
             - logger
@@ -425,7 +425,7 @@ spec:
             - name: DAEMON
               value: tezos-metrics                
         - name: sidecar
-          image: "tezos-k8s-utils:dev"
+          image: "localhost/tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
           args:
             - sidecar
@@ -454,7 +454,7 @@ spec:
               name: var-volume        
       initContainers:                        
         - name: config-generator
-          image: "tezos-k8s-utils:dev"
+          image: "localhost/tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
           args:
             - config-generator
@@ -484,7 +484,7 @@ spec:
             - mountPath: /etc/secret-volume
               name: tezos-accounts                        
         - name: wait-for-dns
-          image: "tezos-k8s-utils:dev"
+          image: "localhost/tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
           args:
             - wait-for-dns
@@ -591,7 +591,7 @@ spec:
               path: /is_synced
               port: 31732                                                        
         - name: sidecar
-          image: "tezos-k8s-utils:dev"
+          image: "localhost/tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
           args:
             - sidecar
@@ -620,7 +620,7 @@ spec:
               name: var-volume        
       initContainers:                        
         - name: config-generator
-          image: "tezos-k8s-utils:dev"
+          image: "localhost/tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
           args:
             - config-generator
@@ -650,7 +650,7 @@ spec:
             - mountPath: /etc/secret-volume
               name: tezos-accounts                        
         - name: wait-for-dns
-          image: "tezos-k8s-utils:dev"
+          image: "localhost/tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
           args:
             - wait-for-dns
@@ -809,7 +809,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume        
         - name: logger
-          image: "tezos-k8s-utils:dev"
+          image: "localhost/tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
           args:
             - logger
@@ -871,7 +871,7 @@ spec:
             - name: DAEMON
               value: tezos-metrics                
         - name: sidecar
-          image: "tezos-k8s-utils:dev"
+          image: "localhost/tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
           args:
             - sidecar
@@ -900,7 +900,7 @@ spec:
               name: var-volume        
       initContainers:                        
         - name: config-generator
-          image: "tezos-k8s-utils:dev"
+          image: "localhost/tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
           args:
             - config-generator
@@ -930,7 +930,7 @@ spec:
             - mountPath: /etc/secret-volume
               name: tezos-accounts                        
         - name: wait-for-dns
-          image: "tezos-k8s-utils:dev"
+          image: "localhost/tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
           args:
             - wait-for-dns
@@ -1088,7 +1088,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume                                
         - name: sidecar
-          image: "tezos-k8s-utils:dev"
+          image: "localhost/tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
           args:
             - sidecar
@@ -1117,7 +1117,7 @@ spec:
               name: var-volume        
       initContainers:                        
         - name: config-generator
-          image: "tezos-k8s-utils:dev"
+          image: "localhost/tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
           args:
             - config-generator
@@ -1147,7 +1147,7 @@ spec:
             - mountPath: /etc/secret-volume
               name: tezos-accounts                        
         - name: wait-for-dns
-          image: "tezos-k8s-utils:dev"
+          image: "localhost/tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
           args:
             - wait-for-dns
@@ -1233,7 +1233,7 @@ spec:
             exec $CMD
             
       initContainers:
-      - image: tezos-k8s-utils:dev
+      - image: localhost/tezos-k8s-utils:dev
         imagePullPolicy: IfNotPresent
         name: config-generator
         args:
@@ -1313,7 +1313,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume
       initContainers:
-        - image: tezos-k8s-utils:dev
+        - image: localhost/tezos-k8s-utils:dev
           imagePullPolicy: IfNotPresent
           name: config-generator
           args:

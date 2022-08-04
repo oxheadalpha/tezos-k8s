@@ -158,7 +158,7 @@ spec:
               path: /is_synced
               port: 31732                                                        
         - name: sidecar
-          image: "tezos-k8s-utils:dev"
+          image: "localhost/tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
           args:
             - sidecar
@@ -233,7 +233,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume                
         - name: config-generator
-          image: "tezos-k8s-utils:dev"
+          image: "localhost/tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
           args:
             - config-generator
@@ -263,7 +263,7 @@ spec:
             - mountPath: /etc/secret-volume
               name: tezos-accounts        
         - name: snapshot-downloader
-          image: "tezos-k8s-utils:dev"
+          image: "localhost/tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
           args:
             - snapshot-downloader

@@ -12,8 +12,8 @@ images:
   tezedge: tezedge/tezedge:v1.6.8
 # Images that are part of the tezos-k8s repo go here with 'dev' tag
 tezos_k8s_images:
-  utils: tezos-k8s-utils:dev
-  zerotier: tezos-k8s-zerotier:dev
+  utils: localhost/tezos-k8s-utils:dev
+  zerotier: localhost/tezos-k8s-zerotier:dev
 
 ## Properties that are templated for some k8s resources. There are container
 ## scripts that will look up some of these values. They should not be modified.
