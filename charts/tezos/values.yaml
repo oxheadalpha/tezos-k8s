@@ -324,7 +324,7 @@ protocols:
     vote: {}
   # - command: alpha
   #   vote:
-  #     liquidity_baking_toggle_vote: "off"
+  #     liquidity_baking_toggle_vote: "pass"
 
 ## Activate a new chain from genesis. Uncommenting this will create an
 ## activation job. The activation job will activate the chain if the

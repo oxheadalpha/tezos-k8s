@@ -187,6 +187,12 @@ def main():
                 "all": {"TEZOS_CLIENT_UNSAFE_DISABLE_DISCLAIMER": QuotedString("Y")}
             }
         },
+        "protocols": [
+            {
+                "command": "013-PtJakart",
+                "vote": {"liquidity_baking_toggle_vote": "pass"},
+            }
+        ],
     }
 
     # preserve pre-existing values, if any (in case of scale-up)
