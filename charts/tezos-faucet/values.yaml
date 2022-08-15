@@ -1,10 +1,25 @@
-tezos_k8s_images:
-  faucet: tezos-k8s-faucet:dev
-  utils: tezos-k8s-utils:dev
-recaptcha_keys:
-  siteKey: # fill in recaptcha site key
-  secretKey: # fill in recaptcha secret key
-activation:
-  faucet:
-    number_of_accounts: 1000
-    seed: "a unique seed for deterministally generating accounts"
+images:
+  tezos-faucet: ghcr.io/nicolasochem/tezos-faucet:ghcr
+  tezos-faucet-backend: ghcr.io/nicolasochem/tezos-faucet-backend:ghcr
+  googleCaptchaSecretKey: 
+faucetPrivateKey: 
+authorizedHost: "*"
+config:
+  application:
+     name: "Tezos Jakartanet faucet"
+     googleCaptchaSiteKey: #6LeiK14fAAAAAPptX4v49I4wSrHjOrU2cb_y5oII
+     backendUrl: "http://localhost:3000"
+     githubRepo: "https://github.com/avysel/tezos-faucet"
+     profiles:
+       user:
+         profile: USER
+         amount: 1
+       baker:
+         profile: BAKER
+         amount: 6000
+  network:
+     name: #Jakartanet
+     rpcUrl: #https://jakartanet.tezos.marigold.dev/
+     faucetAddress: #tz1cpdS3qoQBYCGohszPWS8Gdya6Wg2e4JnL
+     viewer: #https://jakarta.tzstats.com
+     allowSendButton: true

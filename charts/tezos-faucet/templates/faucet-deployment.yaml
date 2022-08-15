@@ -16,39 +16,35 @@ spec:
         app: faucet
     spec:
       containers:
-        - image: {{ .Values.tezos_k8s_images.faucet }}
-          name: faucet
-            #command: [ "sleep", "1000" ]
+        - image: {{ .Values.images.tezos-faucet-backend }}
+          name: faucet-backend
           ports:
-            - containerPort: 8081
+            - containerPort: 3000
+          env:
+          - name: FAUCET_PRIVATE_KEY
+            value: {{ .Values.faucetPrivateKey }}
+          - name: FAUCET_ADDRESS
+            value: {{ .Values.config.network.faucetAddress }}
+          - name: FAUCET_CAPTCHA_SECRET
+            value: {{ .Values.googleCaptchaSecretKey }}
+          - name: RPC_URL
+            value: {{ .Values.config.network.rpcUrl }}
+          - name: AUTHORIZED_HOST
+            value: {{ .Values.authorizedHost }}
+          - name: FAUCET_AMOUNT_USER
+            value:: {{ .Values.config.applicatoin.profiles.user.amount}}
+          - name: FAUCET_AMOUNT_BAKER
+            value:: {{ .Values.config.applicatoin.profiles.baker.amount}}
+        - image: {{ .Values.images.tezos-faucet }}
+          name: faucet
+          ports:
+            - containerPort: 80
           volumeMounts:
           - name: recaptcha
             mountPath: "/recaptcha_keys"
             readOnly: true
-          - name: secret-seeds
-            mountPath: "/secret-seeds"
-            readOnly: true
-          env:
-          - name: TESTNET
-            value: {{ .Release.Namespace }}
-      initContainers:
-        - image: {{ .Values.tezos_k8s_images.utils }}
-          name: faucet-gen
-          args:
-            - faucet-gen
-            - --seed
-            - "{{ .Values.activation.faucet.seed }}"
-            - --number-of-accounts
-            - "{{ .Values.activation.faucet.number_of_accounts }}"
-            - --write-secret-seeds-to
-            - "/secret-seeds/secret-seeds.json"
-          volumeMounts:
-          - name: secret-seeds
-            mountPath: "/secret-seeds"
       restartPolicy: Always
       volumes:
-      - name: secret-seeds
-        emptyDir: {}
       - name: recaptcha
         secret:
           secretName: recaptcha
