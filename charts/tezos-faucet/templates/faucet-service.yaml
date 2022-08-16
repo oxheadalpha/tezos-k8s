@@ -3,7 +3,7 @@ kind: Service
 metadata:
   labels:
     app: faucet
-  name: faucet
+  name: tezos_faucet
   namespace: {{ .Release.Namespace }}
 spec:
   type: NodePort

@@ -16,33 +16,33 @@ spec:
         app: faucet
     spec:
       containers:
-        - image: {{ .Values.images.tezos-faucet-backend }}
-          name: faucet-backend
-          ports:
-            - containerPort: 3000
-          env:
-          - name: FAUCET_PRIVATE_KEY
-            value: {{ .Values.faucetPrivateKey }}
-          - name: FAUCET_ADDRESS
-            value: {{ .Values.config.network.faucetAddress }}
-          - name: FAUCET_CAPTCHA_SECRET
-            value: {{ .Values.googleCaptchaSecretKey }}
-          - name: RPC_URL
-            value: {{ .Values.config.network.rpcUrl }}
-          - name: AUTHORIZED_HOST
-            value: {{ .Values.authorizedHost }}
-          - name: FAUCET_AMOUNT_USER
-            value:: {{ .Values.config.applicatoin.profiles.user.amount}}
-          - name: FAUCET_AMOUNT_BAKER
-            value:: {{ .Values.config.applicatoin.profiles.baker.amount}}
-        - image: {{ .Values.images.tezos-faucet }}
-          name: faucet
-          ports:
-            - containerPort: 80
-          volumeMounts:
-          - name: recaptcha
-            mountPath: "/recaptcha_keys"
-            readOnly: true
+      - image: {{ .Values.images.tezos-faucet-backend }}
+        name: faucet-backend
+        ports:
+        - containerPort: 3000
+        env:
+        - name: FAUCET_PRIVATE_KEY
+          value: {{ .Values.faucetPrivateKey }}
+        - name: FAUCET_ADDRESS
+          value: {{ .Values.config.network.faucetAddress }}
+        - name: FAUCET_CAPTCHA_SECRET
+          value: {{ .Values.googleCaptchaSecretKey }}
+        - name: RPC_URL
+          value: {{ .Values.config.network.rpcUrl }}
+        - name: AUTHORIZED_HOST
+          value: {{ .Values.authorizedHost }}
+        - name: FAUCET_AMOUNT_USER
+          value:: {{ .Values.config.application.profiles.user.amount}}
+        - name: FAUCET_AMOUNT_BAKER
+          value:: {{ .Values.config.application.profiles.baker.amount}}
+      - image: {{ .Values.images.tezos-faucet }}
+        name: faucet
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: recaptcha
+          mountPath: "/recaptcha_keys"
+          readOnly: true
       restartPolicy: Always
       volumes:
       - name: recaptcha
