@@ -23,8 +23,3 @@ for subDomain in allSubDomains:
 with open (filename, 'w') as json_file:
   json_string = json.dumps(json_object, indent=4)
   json_file.write(json_string)
-
-# Upload to S3 bucket
-s3 = boto3.resource('s3')
-BUCKET = os.environ['S3_BUCKET']
-s3.Bucket(BUCKET).upload_file(filename, filename, ExtraArgs={'ContentDisposition': 'inline'})

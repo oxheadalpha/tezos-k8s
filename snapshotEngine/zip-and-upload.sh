@@ -432,3 +432,17 @@ fi
 # List of all snapshot metadata accross all subdomains
 
 python /updateAvailableSnapshotMetadata.py
+
+# Check if snapshots.json exists
+if [[ ! -f snapshots.json ]]; then
+    printf "%s ERROR snapshots.json does not exist.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    sleep 5
+    exit 1
+fi
+
+# Upload snapshots.json
+if ! aws s3 cp base.json s3://"${S3_BUCKET}"/snapshots.json; then
+    printf "%s Upload snapshots.json : Error uploading file snapshots.json to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+else
+    printf "%s Upload snapshots.json : File snapshots.json sucessfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+fi
