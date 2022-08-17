@@ -8,10 +8,8 @@ spec:
   selector:
     matchLabels:
       app: tezos-faucet
-  strategy: {}
   template:
     metadata:
-      creationTimestamp: null
       labels:
         app: tezos-faucet
     spec:

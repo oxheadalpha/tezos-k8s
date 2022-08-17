@@ -17,6 +17,4 @@ spec:
       targetPort: backend
       protocol: TCP
   selector:
-    app: faucet
-status:
-  loadBalancer: {}
+    app: tezos-faucet
