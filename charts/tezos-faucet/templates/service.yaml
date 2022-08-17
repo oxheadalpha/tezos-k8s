@@ -10,10 +10,12 @@ spec:
   ports:
     - name: frontend
       port: 80
-      targetPort: 80
+      targetPort: frontend
+      protocol: TCP
     - name: backend
       port: 3000
-      targetPort: 3000
+      targetPort: backend
+      protocol: TCP
   selector:
     app: faucet
 status:

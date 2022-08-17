@@ -19,7 +19,9 @@ spec:
       - image: {{ .Values.images.tezos_faucet_backend }}
         name: faucet-backend
         ports:
-        - containerPort: 3000
+        - name: backend
+          containerPort: 3000
+          protocol: TCP
         env:
         - name: FAUCET_PRIVATE_KEY
           value: {{ .Values.faucetPrivateKey }}
@@ -38,7 +40,9 @@ spec:
       - image: {{ .Values.images.tezos_faucet }}
         name: faucet
         ports:
-        - containerPort: 80
+        - name: frontend
+          containerPort: 80
+          protocol: TCP
         volumeMounts:
         - name: faucet-config
           mountPath: "/config"
