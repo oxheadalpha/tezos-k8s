@@ -43,7 +43,8 @@ spec:
           protocol: TCP
         volumeMounts:
         - name: faucet-config
-          mountPath: "/config"
+          mountPath: "/app/src/config.json"
+          subPath: "config.json"
           readOnly: true
       restartPolicy: Always
       volumes:
