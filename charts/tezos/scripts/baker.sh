@@ -23,7 +23,7 @@ fi
 extra_args="--votefile ${per_block_vote_file}"
 
 tezos_version=$(tezos-client --version | sed -e 's/ //g')
-if [[ "$tezos_version" == *"13"* ]]; then
+if [[ "$tezos_version" == *"13.0"* ]]; then
   # version 13 of octez mandates CLI flag as well as vote file
   extra_args="$extra_args --liquidity-baking-toggle-vote on"
 fi
