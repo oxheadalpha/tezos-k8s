@@ -36,15 +36,13 @@ ingress:
     - path: "/"
       pathType: 'Prefix'
       backend:
-        serviceName: "tezos-faucet"
-        portName: 'backend'
+        portNumber: 3000
   - host: chart-example-frontend.local
     paths:
     - path: "/"
       pathType: 'Prefix'
       backend:
-        serviceName: "tezos-faucet"
-        portName: 'frontend'
+        portNumber: 80
   tls: []
   #  - secretName: chart-example-tls
   #    hosts:
