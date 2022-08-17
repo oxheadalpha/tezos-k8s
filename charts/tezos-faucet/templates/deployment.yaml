@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: faucet
+  name: tezos-faucet
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: faucet
+      app: tezos-faucet
   strategy: {}
   template:
     metadata:
       creationTimestamp: null
       labels:
-        app: faucet
+        app: tezos-faucet
     spec:
       containers:
-      - image: {{ .Values.images.tezos-faucet-backend }}
+      - image: {{ .Values.images.tezos_faucet_backend }}
         name: faucet-backend
         ports:
         - containerPort: 3000
@@ -35,17 +35,17 @@ spec:
           value:: {{ .Values.config.application.profiles.user.amount}}
         - name: FAUCET_AMOUNT_BAKER
           value:: {{ .Values.config.application.profiles.baker.amount}}
-      - image: {{ .Values.images.tezos-faucet }}
+      - image: {{ .Values.images.tezos_faucet }}
         name: faucet
         ports:
         - containerPort: 80
         volumeMounts:
-        - name: recaptcha
-          mountPath: "/recaptcha_keys"
+        - name: faucet-config
+          mountPath: "/config"
           readOnly: true
       restartPolicy: Always
       volumes:
-      - name: recaptcha
-        secret:
-          secretName: recaptcha
+      - name: faucet-config
+        configMap:
+          name: faucet-config
 status: {}

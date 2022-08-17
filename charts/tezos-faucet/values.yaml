@@ -1,9 +1,9 @@
 images:
-  tezos-faucet: ghcr.io/nicolasochem/tezos-faucet:ghcr
-  tezos-faucet-backend: ghcr.io/nicolasochem/tezos-faucet-backend:ghcr
-  googleCaptchaSecretKey: 
+  tezos_faucet: ghcr.io/nicolasochem/tezos-faucet:ghcr
+  tezos_faucet_backend: ghcr.io/nicolasochem/tezos-faucet-backend:ghcr
+googleCaptchaSecretKey: 
 faucetPrivateKey: 
-authorizedHost: "*"
+authorizedHost: \*
 config:
   application:
      name: "Tezos Jakartanet faucet"
