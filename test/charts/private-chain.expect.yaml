@@ -132,7 +132,7 @@ data:
       },
       "eu": {
         "images": {
-          "octez": "tezos/tezos:v10-release"
+          "octez": "tezos/tezos:v14-release"
         },
         "instances": [
           {
@@ -197,7 +197,7 @@ metadata:
 # Source: tezos-chain/templates/configs.yaml
 apiVersion: v1
 data:
-  013-PtJakart-per-block-votes.json: "{}"
+  013-PtJakart-per-block-votes.json: "{\"liquidity_baking_toggle_vote\":\"pass\"}"
 kind: ConfigMap
 metadata:
   name: per-block-votes
@@ -322,7 +322,7 @@ spec:
               path: /is_synced
               port: 31732                
         - name: baker-013-ptjakart
-          image: "tezos/tezos:v12-release"
+          image: "tezos/tezos:v14-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -567,7 +567,7 @@ spec:
     spec:
       containers:        
         - name: octez-node
-          image: "tezos/tezos:v12-release"
+          image: "tezos/tezos:v14-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -738,7 +738,7 @@ spec:
     spec:
       containers:        
         - name: octez-node
-          image: "tezos/tezos:v10-release"
+          image: "tezos/tezos:v14-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -787,7 +787,7 @@ spec:
               path: /is_synced
               port: 31732                        
         - name: baker-013-ptjakart
-          image: "tezos/tezos:v10-release"
+          image: "tezos/tezos:v14-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -1033,7 +1033,7 @@ spec:
     spec:
       containers:        
         - name: octez-node
-          image: "tezos/tezos:v12-release"
+          image: "tezos/tezos:v14-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -1082,7 +1082,7 @@ spec:
               path: /is_synced
               port: 31732                        
         - name: baker-013-ptjakart
-          image: "tezos/tezos:v12-release"
+          image: "tezos/tezos:v14-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -1264,7 +1264,7 @@ spec:
     spec:
       containers:
       - name: tezos-signer
-        image: "tezos/tezos:v12-release"
+        image: "tezos/tezos:v14-release"
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 6732
@@ -1335,7 +1335,7 @@ spec:
     spec:
       containers:        
         - name: chain-initiator
-          image: "tezos/tezos:v12-release"
+          image: "tezos/tezos:v14-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
