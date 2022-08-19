@@ -6,6 +6,7 @@ BLOCK_TIMESTAMP=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_TIMESTAMP)
 TEZOS_VERSION=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_VERSION)
 NETWORK="${NAMESPACE%%-*}"
 export S3_BUCKET="${NETWORK}.${SNAPSHOT_WEBSITE_DOMAIN_NAME}"
+export WEB_BUCKET="monosite.xtz-shots.io"
 
 cd /
 
@@ -152,7 +153,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
     until [ -f "${ROLLING_SNAPSHOT}" ]; do
         printf "%s Waiting for ${ROLLING_SNAPSHOT} to exist...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         until [ -f "${ROLLING_SNAPSHOT}" ]; do
-            if ! [ -f "${ROLLING_SNAPSHOT}" ];then
+            if [ -f "${ROLLING_SNAPSHOT}" ];then
                 break
             fi
         done
@@ -409,13 +410,29 @@ cat <<EOF >> _config.yml
 remote_theme: ${JEKYLL_REMOTE_THEME_REPOSITORY}
 plugins:
 - jekyll-remote-theme
+- jekyll-datapage-generator
+
+page_gen-dirs: true
+page_gen:
+- data: snapshot_jekyll_data.latest_snapshots
+  template: latest_snapshots
+  debug: true
+  name: "name"
+  dir: "latest"
+  extension: "md"
 EOF
+
+# Create snapshot.json
+# List of all snapshot metadata accross all subdomains
+# build site pages
+
+python /updateAvailableSnapshotMetadata.py
 
 chown -R jekyll:jekyll ./*
 bundle exec jekyll build
 
 # Upload chain page (index.html and assets) to root of website bucket
-if ! aws s3 cp _site/ s3://"${S3_BUCKET}" --recursive --include "*"; then
+if ! aws s3 cp _site/ s3://"${WEB_BUCKET}" --recursive --include "*"; then
     printf "%s Website Build & Deploy : Error uploading site to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 else
     printf "%s Website Build & Deploy  : Sucessfully uploaded website to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -438,11 +455,6 @@ if ! aws s3 cp base.json s3://"${S3_BUCKET}"/base.json; then
 else
     printf "%s Upload base.json : File base.json sucessfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 fi
-
-# Create snapshot.json
-# List of all snapshot metadata accross all subdomains
-
-python /updateAvailableSnapshotMetadata.py
 
 # Check if snapshots.json exists
 if [[ ! -f snapshots.json ]]; then
