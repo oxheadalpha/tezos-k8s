@@ -14,7 +14,8 @@ def pyrometer_webhook():
     '''
     Receive all events from pyrometer
     '''
-    content = request.json
+    # FIXME remove force=True once https://gitlab.com/tezos-kiln/pyrometer/-/issues/157 is fixed
+    content = request.get_json(force=True)
     print(content)
     return "Webhook received"
 
