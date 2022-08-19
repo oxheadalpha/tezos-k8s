@@ -70,6 +70,7 @@ metadata:
   name: tezos-secret
   namespace: {{ .Release.Namespace }}
 ---
+{{- if (include "tezos.hasPerBlockVotes" .) }}
 apiVersion: v1
 data:
 {{- range .Values.protocols }}
@@ -80,3 +81,4 @@ metadata:
   name: per-block-votes
   namespace: {{ .Release.Namespace }}
 ---
+{{- end }}
