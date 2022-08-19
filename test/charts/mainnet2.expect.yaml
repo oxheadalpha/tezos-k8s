@@ -105,15 +105,6 @@ metadata:
   name: tezos-config
   namespace: testing
 ---
-# Source: tezos-chain/templates/configs.yaml
-apiVersion: v1
-data:
-  013-PtJakart-per-block-votes.json: "{}"
-kind: ConfigMap
-metadata:
-  name: per-block-votes
-  namespace: testing
----
 # Source: tezos-chain/templates/static.yaml
 apiVersion: v1
 kind: Service
