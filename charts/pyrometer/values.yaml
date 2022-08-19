@@ -1,7 +1,9 @@
 # Pass below the pyrometer config, in yaml format (will be converted to toml)
-config: {}
+tezos_k8s_images:
+  utils: tezos-k8s-utils:dev
 images:
   pyrometer: registry.gitlab.com/tezos-kiln/pyrometer:latest
+config: {}
 service:
   type: ClusterIP
   port: 80
