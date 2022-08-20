@@ -9,14 +9,22 @@ log.setLevel(logging.ERROR)
 
 application = Flask(__name__)
 
+unhealthy_bakers = set()
+
 @application.route('/pyrometer_webhook', methods=['POST'])
 def pyrometer_webhook():
     '''
     Receive all events from pyrometer
     '''
     # FIXME remove force=True once https://gitlab.com/tezos-kiln/pyrometer/-/issues/157 is fixed
-    content = request.get_json(force=True)
-    print(content)
+    for msg in request.get_json(force=True):
+        if msg["kind"] == "baker_unhealthy":
+            print(f"Baker {msg['baker']} is unhealthy")
+            unhealthy_bakers.add(msg["baker"])
+        if msg["kind"] == "baker_recovered":
+            print(f"Baker {msg['baker']} recovered")
+            unhealthy_bakers.remove(msg["baker"])
+
     return "Webhook received"
 
 @application.route('/status', methods=['GET'])
@@ -24,7 +32,9 @@ def prometheus_status():
     '''
     Receive all events from pyrometer
     '''
-    return jsonify("hi") 
+    return f'''# total number of monitored bakers that are currently unhealthy
+pyrometer_unhealthy_bakers_total={len(unhealthy_bakers)}
+'''
 
 if __name__ == "__main__":
    application.run(host = "0.0.0.0", port = 31732, debug = False)
