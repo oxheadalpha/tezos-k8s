@@ -3,8 +3,8 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-    app: polkadot-metrics
-  name: polkadot-service-monitor
+    app: pyrometer
+  name: pyrometer-service-monitor
   namespace: {{ .Release.Namespace }}
 spec:
   endpoints:
