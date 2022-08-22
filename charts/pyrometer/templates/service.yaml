@@ -3,6 +3,8 @@ kind: Service
 metadata:
   name: pyrometer
   namespace: {{ .Release.Namespace }}
+  labels:
+    app: pyrometer
 spec:
   type: NodePort
   ports:
