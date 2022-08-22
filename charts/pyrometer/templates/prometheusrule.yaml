@@ -2,7 +2,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
   labels:
-{{- toYaml .Values.prometheusRules.labels | nindent 4 }}
+{{- toYaml .Values.prometheusRule.labels | nindent 4 }}
   name: baker-external-monitor-alerter
 spec:
   groups:
@@ -10,9 +10,9 @@ spec:
     rules:
     - alert: BakersUnhealthy
       annotations:
-        description: '{{ .Values.prometheusRules.numberOfUnhealthyBakersAlertThreshold }} or more unhealthy bakers'
-        summary: "{{ .Values.prometheusRules.numberOfUnhealthyBakersAlertThreshold }} or more unhealthy Tezos baker according to Pyrometer external monitoring"
-      expr: prometheus_unhealthy_bakers_total >= {{ .Values.prometheusRules.numberOfUnhealthyBakersAlertThreshold }}
+        description: '{{ .Values.prometheusRule.numberOfUnhealthyBakersAlertThreshold }} or more unhealthy bakers'
+        summary: "{{ .Values.prometheusRule.numberOfUnhealthyBakersAlertThreshold }} or more unhealthy Tezos baker according to Pyrometer external monitoring"
+      expr: prometheus_unhealthy_bakers_total >= {{ .Values.prometheusRule.numberOfUnhealthyBakersAlertThreshold }}
       for: 1m
       labels:
         severity: critical
