@@ -28,6 +28,12 @@ ingress:
   #  - secretName: chart-example-tls
   #    hosts:
   #      - chart-example.local
+
+# Prometheus Operator is required in your cluster in order to enable
+# serviceMonitor and prometheusRule below.
 serviceMonitor:
   enabled: false
+prometheusRule:
+  enabled: false
   numberOfUnhealthyBakersAlertThreshold: 1
+  labels: {}

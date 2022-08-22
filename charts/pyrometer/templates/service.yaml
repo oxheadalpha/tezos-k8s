@@ -10,5 +10,9 @@ spec:
       targetPort: http
       protocol: TCP
       name: http
+    - port: 31732
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
   selector:
     app: pyrometer

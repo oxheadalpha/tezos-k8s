@@ -33,8 +33,8 @@ spec:
       - name: prom-exporter
         image: {{ .Values.tezos_k8s_images.utils }}
         ports:
-          - name: http
-            containerPort: 9091
+          - name: metrics
+            containerPort: 31732
             protocol: TCP
         command:
           - /usr/local/bin/python
