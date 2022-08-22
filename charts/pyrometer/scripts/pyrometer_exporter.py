@@ -27,10 +27,10 @@ def pyrometer_webhook():
 
     return "Webhook received"
 
-@application.route('/status', methods=['GET'])
-def prometheus_status():
+@application.route('/metrics', methods=['GET'])
+def prometheus_metrics():
     '''
-    Receive all events from pyrometer
+    Prometheus endpoint
     '''
     return f'''# total number of monitored bakers that are currently unhealthy
 pyrometer_unhealthy_bakers_total={len(unhealthy_bakers)}
