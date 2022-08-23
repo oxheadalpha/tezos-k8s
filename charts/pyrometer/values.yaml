@@ -32,7 +32,7 @@ ingress:
 # Prometheus Operator is required in your cluster in order to enable
 # serviceMonitor and prometheusRule below.
 serviceMonitor:
-  enabled: true
+  enabled: false
 prometheusRule:
   enabled: false
   numberOfUnhealthyBakersAlertThreshold: 1
