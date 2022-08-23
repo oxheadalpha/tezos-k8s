@@ -33,7 +33,7 @@ def prometheus_metrics():
     Prometheus endpoint
     '''
     return f'''# total number of monitored bakers that are currently unhealthy
-pyrometer_unhealthy_bakers_total={len(unhealthy_bakers)}
+pyrometer_unhealthy_bakers_total {len(unhealthy_bakers)}
 '''
 
 if __name__ == "__main__":
