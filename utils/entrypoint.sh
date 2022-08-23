@@ -9,7 +9,6 @@ case "$CMD" in
 	sidecar)		exec /sidecar.py		"$@"	;;
 	snapshot-downloader)	exec /snapshot-downloader.sh	"$@"	;;
 	wait-for-dns)		exec /wait-for-dns.sh		"$@"	;;
-	faucet-gen)	        exec /faucet-gen.py     	"$@"	;;
 esac
 
 #
@@ -24,6 +23,5 @@ echo "	logger"
 echo "	sidecar"
 echo "	snapshot-downloader"
 echo "	wait-for-dns"
-echo "	faucet-gen"
 
 exit 1

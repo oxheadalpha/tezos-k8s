@@ -388,14 +388,6 @@ protocols:
 #   # This data is typically too large to pass it directly inside helm chart.
 #   bootstrap_contract_urls: []
 #
-#   # Use the "faucet" map to predictably create a desired number of faucet
-#   # accounts. Change the seed to generate different sets of accounts.
-#   # Pass the same map to the "tezos-faucet" chart in the same repository
-#   # so you can deploy a website where people get free tez from the faucet.
-#   faucet:
-#     seed: "deterministic faucet seed"
-#     number_of_accounts: 100
-
 ## Deploy an indexer with the chain. An indexer puts the chain
 ## contents in a database for efficient indexing. Most dapps need it.
 ## Supported indexers:
