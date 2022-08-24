@@ -39,6 +39,8 @@ spec:
           value:: {{ .Values.config.application.profiles.user.amount}}
         - name: FAUCET_AMOUNT_BAKER
           value:: {{ .Values.config.application.profiles.baker.amount}}
+        - name: MAX_BALANCE
+          value:: {{ .Values.maxBalance}}
       - image: {{ .Values.images.tezos_faucet }}
         name: faucet
         ports:

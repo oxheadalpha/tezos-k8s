@@ -2,6 +2,10 @@ images:
   tezos_faucet: ghcr.io/nicolasochem/tezos-faucet:ghcr
   tezos_faucet_backend: ghcr.io/nicolasochem/tezos-faucet-backend:ghcr
 authorizedHost: "'*'"
+
+# if your balance is over the max, the faucet won't give you more tokens
+maxBalance: 12000
+
 config:
   application:
      name: "Tezos Jakartanet faucet"
