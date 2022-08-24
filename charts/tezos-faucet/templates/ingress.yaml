@@ -40,6 +40,20 @@ spec:
     - host: {{ .Values.ingress.host | quote }}
       http:
         paths:
+        - path: "/info"
+          pathType: 'Prefix'
+          backend:
+            service:
+              name: {{ $fullName }}
+              port:
+                number: 3000
+        - path: "/send"
+          pathType: 'Prefix'
+          backend:
+            service:
+              name: {{ $fullName }}
+              port:
+                number: 3000
         - path: "/"
           pathType: 'Prefix'
           backend:
@@ -47,18 +61,4 @@ spec:
               name: {{ $fullName }}
               port:
                 number: 80
-        - path: "/info"
-          pathType: 'Exact'
-          backend:
-            service:
-              name: {{ $fullName }}
-              port:
-                number: 3000
-        - path: "/send"
-          pathType: 'Exact'
-          backend:
-            service:
-              name: {{ $fullName }}
-              port:
-                number: 3000
 {{- end }}
