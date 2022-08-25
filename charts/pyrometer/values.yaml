@@ -2,9 +2,6 @@
 config: {}
 images:
   pyrometer: registry.gitlab.com/tezos-kiln/pyrometer:latest
-service:
-  type: ClusterIP
-  port: 80
 ingress:
   enabled: false
   className: ""
