@@ -461,9 +461,6 @@ spec:
         - name: tezos-accounts
           secret:
             secretName: tezos-secret
-        - name: per-block-votes
-          configMap:
-            name: per-block-votes
   volumeClaimTemplates:
     - metadata:
         name: var-volume
@@ -821,9 +818,6 @@ spec:
         - name: tezos-accounts
           secret:
             secretName: tezos-secret
-        - name: per-block-votes
-          configMap:
-            name: per-block-votes
   volumeClaimTemplates:
     - metadata:
         name: var-volume
