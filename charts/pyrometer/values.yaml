@@ -2,3 +2,14 @@
 config: {}
 images:
   pyrometer: registry.gitlab.com/tezos-kiln/pyrometer:latest
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  host: "" # fill in the desired hostname for your ingress
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
