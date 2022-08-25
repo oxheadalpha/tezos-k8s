@@ -37,10 +37,11 @@ spec:
   {{- end }}
   rules:
     - host: {{ .Values.ingress.host | quote }}
-      paths:
-        - path: /
-          pathType: Prefix
-          backend:
-            serviceName: "pyrometer"
-            portName: "http"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              serviceName: "pyrometer"
+              portName: "http"
 {{- end }}
