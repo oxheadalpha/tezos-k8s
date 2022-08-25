@@ -16,8 +16,7 @@ def pyrometer_webhook():
     '''
     Receive all events from pyrometer
     '''
-    # FIXME remove force=True once https://gitlab.com/tezos-kiln/pyrometer/-/issues/157 is fixed
-    for msg in request.get_json(force=True):
+    for msg in request.get_json():
         if msg["kind"] == "baker_unhealthy":
             print(f"Baker {msg['baker']} is unhealthy")
             unhealthy_bakers.add(msg["baker"])
