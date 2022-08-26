@@ -147,6 +147,10 @@
     - mountPath: /etc/secret-volume
       name: tezos-accounts
     {{- end }}
+  {{- if eq .type "baker" }}
+    - mountPath: /etc/tezos/per-block-votes
+      name: per-block-votes
+  {{- end }}
   {{- if (or (eq .type "octez-node")
              (eq .type "tezedge-node")) }}
   ports:
@@ -274,6 +278,9 @@
   {{- if has "baker" $.node_vals.runs }}
     {{- $node_vals_images := $.node_vals.images | default dict }}
     {{- range .Values.protocols }}
+      {{- if (not .vote) }}
+        {{ fail (print "You did not specify the liquidity baking toggle vote in 'protocols' for protocol " .command ".") }}
+      {{- end -}}
       {{- $_ := set $ "command_in_tpl" .command }}
       {{- include "tezos.generic_container" (dict "root" $
                                                   "name" (print "baker-"

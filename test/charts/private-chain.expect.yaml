@@ -132,7 +132,7 @@ data:
       },
       "eu": {
         "images": {
-          "octez": "tezos/tezos:v10-release"
+          "octez": "tezos/tezos:v14-release"
         },
         "instances": [
           {
@@ -192,6 +192,15 @@ data:
 kind: ConfigMap
 metadata:
   name: tezos-config
+  namespace: testing
+---
+# Source: tezos-chain/templates/configs.yaml
+apiVersion: v1
+data:
+  013-PtJakart-per-block-votes.json: "{\"liquidity_baking_toggle_vote\":\"pass\"}"
+kind: ConfigMap
+metadata:
+  name: per-block-votes
   namespace: testing
 ---
 # Source: tezos-chain/templates/signer.yaml
@@ -313,7 +322,7 @@ spec:
               path: /is_synced
               port: 31732                
         - name: baker-013-ptjakart
-          image: "tezos/tezos:v12-release"
+          image: "tezos/tezos:v14-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -331,12 +340,23 @@ spec:
               
               proto_command="013-PtJakart"
               
-              if [ "${proto_command}" == "012-Psithaca" ]; then
-                  extra_args=""
-              else
-                  echo '{"liquidity_baking_toggle_vote": "pass"}' > /etc/tezos/per_block_votes.json
-                  # we pass both a vote argument and a votefile argument; vote argument is mandatory as a fallback
-                  extra_args="--liquidity-baking-toggle-vote on --votefile /etc/tezos/per_block_votes.json"
+              per_block_vote_file=/etc/tezos/per-block-votes/${proto_command}-per-block-votes.json
+              if [ $(cat $per_block_vote_file) == "null" ]; then
+                cat << EOF
+              You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
+              protocols:
+              - command: ${proto_command}
+                vote:
+                  liquidity_baking_toggle_vote: "on"
+              EOF
+                exit 1
+              fi
+              extra_args="--votefile ${per_block_vote_file}"
+              
+              tezos_version=$(tezos-client --version | sed -e 's/ //g')
+              if [[ "$tezos_version" == *"13.0"* ]]; then
+                # version 13 of octez mandates CLI flag as well as vote file
+                extra_args="$extra_args --liquidity-baking-toggle-vote on"
               fi
               
               my_baker_account="$(cat /etc/tezos/baker-account )"
@@ -361,7 +381,9 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume
+            - mountPath: /etc/tezos/per-block-votes
+              name: per-block-votes        
         - name: logger
           image: "tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
@@ -510,6 +532,9 @@ spec:
         - name: tezos-accounts
           secret:
             secretName: tezos-secret
+        - name: per-block-votes
+          configMap:
+            name: per-block-votes
   volumeClaimTemplates:
     - metadata:
         name: var-volume
@@ -542,7 +567,7 @@ spec:
     spec:
       containers:        
         - name: octez-node
-          image: "tezos/tezos:v12-release"
+          image: "tezos/tezos:v14-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -676,6 +701,9 @@ spec:
         - name: tezos-accounts
           secret:
             secretName: tezos-secret
+        - name: per-block-votes
+          configMap:
+            name: per-block-votes
   volumeClaimTemplates:
     - metadata:
         name: var-volume
@@ -710,7 +738,7 @@ spec:
     spec:
       containers:        
         - name: octez-node
-          image: "tezos/tezos:v10-release"
+          image: "tezos/tezos:v14-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -759,7 +787,7 @@ spec:
               path: /is_synced
               port: 31732                        
         - name: baker-013-ptjakart
-          image: "tezos/tezos:v10-release"
+          image: "tezos/tezos:v14-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -777,12 +805,23 @@ spec:
               
               proto_command="013-PtJakart"
               
-              if [ "${proto_command}" == "012-Psithaca" ]; then
-                  extra_args=""
-              else
-                  echo '{"liquidity_baking_toggle_vote": "pass"}' > /etc/tezos/per_block_votes.json
-                  # we pass both a vote argument and a votefile argument; vote argument is mandatory as a fallback
-                  extra_args="--liquidity-baking-toggle-vote on --votefile /etc/tezos/per_block_votes.json"
+              per_block_vote_file=/etc/tezos/per-block-votes/${proto_command}-per-block-votes.json
+              if [ $(cat $per_block_vote_file) == "null" ]; then
+                cat << EOF
+              You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
+              protocols:
+              - command: ${proto_command}
+                vote:
+                  liquidity_baking_toggle_vote: "on"
+              EOF
+                exit 1
+              fi
+              extra_args="--votefile ${per_block_vote_file}"
+              
+              tezos_version=$(tezos-client --version | sed -e 's/ //g')
+              if [[ "$tezos_version" == *"13.0"* ]]; then
+                # version 13 of octez mandates CLI flag as well as vote file
+                extra_args="$extra_args --liquidity-baking-toggle-vote on"
               fi
               
               my_baker_account="$(cat /etc/tezos/baker-account )"
@@ -807,7 +846,9 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume
+            - mountPath: /etc/tezos/per-block-votes
+              name: per-block-votes        
         - name: logger
           image: "tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
@@ -956,6 +997,9 @@ spec:
         - name: tezos-accounts
           secret:
             secretName: tezos-secret
+        - name: per-block-votes
+          configMap:
+            name: per-block-votes
   volumeClaimTemplates:
     - metadata:
         name: var-volume
@@ -989,7 +1033,7 @@ spec:
     spec:
       containers:        
         - name: octez-node
-          image: "tezos/tezos:v12-release"
+          image: "tezos/tezos:v14-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -1038,7 +1082,7 @@ spec:
               path: /is_synced
               port: 31732                        
         - name: baker-013-ptjakart
-          image: "tezos/tezos:v12-release"
+          image: "tezos/tezos:v14-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -1056,12 +1100,23 @@ spec:
               
               proto_command="013-PtJakart"
               
-              if [ "${proto_command}" == "012-Psithaca" ]; then
-                  extra_args=""
-              else
-                  echo '{"liquidity_baking_toggle_vote": "pass"}' > /etc/tezos/per_block_votes.json
-                  # we pass both a vote argument and a votefile argument; vote argument is mandatory as a fallback
-                  extra_args="--liquidity-baking-toggle-vote on --votefile /etc/tezos/per_block_votes.json"
+              per_block_vote_file=/etc/tezos/per-block-votes/${proto_command}-per-block-votes.json
+              if [ $(cat $per_block_vote_file) == "null" ]; then
+                cat << EOF
+              You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
+              protocols:
+              - command: ${proto_command}
+                vote:
+                  liquidity_baking_toggle_vote: "on"
+              EOF
+                exit 1
+              fi
+              extra_args="--votefile ${per_block_vote_file}"
+              
+              tezos_version=$(tezos-client --version | sed -e 's/ //g')
+              if [[ "$tezos_version" == *"13.0"* ]]; then
+                # version 13 of octez mandates CLI flag as well as vote file
+                extra_args="$extra_args --liquidity-baking-toggle-vote on"
               fi
               
               my_baker_account="$(cat /etc/tezos/baker-account )"
@@ -1086,7 +1141,9 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume                                
+              name: var-volume
+            - mountPath: /etc/tezos/per-block-votes
+              name: per-block-votes                                
         - name: sidecar
           image: "tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
@@ -1173,6 +1230,9 @@ spec:
         - name: tezos-accounts
           secret:
             secretName: tezos-secret
+        - name: per-block-votes
+          configMap:
+            name: per-block-votes
   volumeClaimTemplates:
     - metadata:
         name: var-volume
@@ -1204,7 +1264,7 @@ spec:
     spec:
       containers:
       - name: tezos-signer
-        image: "tezos/tezos:v12-release"
+        image: "tezos/tezos:v14-release"
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 6732
@@ -1275,7 +1335,7 @@ spec:
     spec:
       containers:        
         - name: chain-initiator
-          image: "tezos/tezos:v12-release"
+          image: "tezos/tezos:v14-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh

@@ -68,7 +68,7 @@ data:
           }
         },
         "images": {
-          "octez": "tezos/tezos:v12-release"
+          "octez": "tezos/tezos:v14-release"
         },
         "instances": [
           {
@@ -284,7 +284,7 @@ spec:
               name: var-volume        
       initContainers:        
         - name: config-init
-          image: "tezos/tezos:v13-release"
+          image: "tezos/tezos:v14-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -394,7 +394,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume        
         - name: snapshot-importer
-          image: "tezos/tezos:v13-release"
+          image: "tezos/tezos:v14-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -493,7 +493,7 @@ spec:
     spec:
       containers:        
         - name: octez-node
-          image: "tezos/tezos:v12-release"
+          image: "tezos/tezos:v14-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -641,7 +641,7 @@ spec:
               name: var-volume        
       initContainers:        
         - name: config-init
-          image: "tezos/tezos:v12-release"
+          image: "tezos/tezos:v14-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -751,7 +751,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume        
         - name: snapshot-importer
-          image: "tezos/tezos:v12-release"
+          image: "tezos/tezos:v14-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
