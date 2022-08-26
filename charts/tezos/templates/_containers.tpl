@@ -312,7 +312,7 @@
   {{- if has "vdf" $.node_vals.runs }}
   {{ $node_vals_images := $.node_vals.images | default dict }}
     {{- range .Values.protocols }}
-      {{- if regexFind "Kathma" .command }}
+      {{- if or (regexFind "Kathma" .command) (regexFind "alpha" .command) }}
       {{- /*
       Only protos higher than Kathmandu support VDF
       */}}
