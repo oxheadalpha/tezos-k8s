@@ -10,9 +10,6 @@ config:
   webhook:
     enabled: true
     url: http://127.0.0.1:31732/pyrometer_webhook
-service:
-  type: ClusterIP
-  port: 80
 ingress:
   enabled: false
   className: ""
