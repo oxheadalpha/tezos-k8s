@@ -111,14 +111,14 @@ if [ "${HISTORY_MODE}" = archive ]; then
         if ! touch archive-tarball; then
             printf "%s Archive Tarball : Error creating ${NETWORK}-archive-tarball file locally.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         else
-            printf "%s Archive Tarball : ${NETWORK}-archive-tarball created sucessfully.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+            printf "%s Archive Tarball : ${NETWORK}-archive-tarball created successfully.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         fi
 
         # Upload redirect file and set header for previously uploaded LZ4 File
         if ! aws s3 cp archive-tarball s3://"${S3_BUCKET}" --website-redirect /"${ARCHIVE_TARBALL_FILENAME}" --cache-control 'no-cache'; then
             printf "%s Archive Tarball : Error uploading ${NETWORK}-archive-tarball. to S3\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         else
-            printf "%s Archive Tarball : Upload of ${NETWORK}-archive-tarball sucessful to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+            printf "%s Archive Tarball : Upload of ${NETWORK}-archive-tarball successful to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         fi
 
         # Archive Tarball json redirect file
@@ -293,7 +293,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
         if ! aws s3 cp "${ROLLING_SNAPSHOT}" s3://"${S3_BUCKET}"; then
             printf "%s Rolling Tezos : Error uploading ${ROLLING_SNAPSHOT} to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         else
-            printf "%s Rolling Tezos : Sucessfully uploaded ${ROLLING_SNAPSHOT} to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+            printf "%s Rolling Tezos : Successfully uploaded ${ROLLING_SNAPSHOT} to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
             printf "%s Rolling Tezos : Uploading redirect...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
             FILESIZE_BYTES=$(stat -c %s "${ROLLING_SNAPSHOT}")
@@ -345,7 +345,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             if ! aws s3 cp rolling s3://"${S3_BUCKET}" --website-redirect /"${ROLLING_SNAPSHOT_FILENAME}" --cache-control 'no-cache'; then
                 printf "%s Rolling Tezos : Error uploading redirect object for ${ROLLING_SNAPSHOT} to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
             else
-                printf "%s Rolling Tezos : Sucessfully uploaded redirect object for ${ROLLING_SNAPSHOT} to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+                printf "%s Rolling Tezos : Successfully uploaded redirect object for ${ROLLING_SNAPSHOT} to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
             fi
 
             # Rolling snapshot json redirect file
@@ -377,30 +377,30 @@ cd /srv/jekyll || exit
 cp /snapshot-website-base/* .
 
 # Grab latest metadata and put in _data
-if curl --fail -L "${S3_BUCKET}"/archive-tarball-metadata --silent > /dev/null; then
-    curl -L "${S3_BUCKET}"/archive-tarball-metadata -o _data/archive_tarball.json --create-dirs --silent
-fi
+# if curl --fail -L "${S3_BUCKET}"/archive-tarball-metadata --silent > /dev/null; then
+#     curl -L "${S3_BUCKET}"/archive-tarball-metadata -o _data/archive_tarball.json --create-dirs --silent
+# fi
 
-if curl --fail -L "${S3_BUCKET}"/rolling-tarball-metadata --silent > /dev/null; then
-    curl -L "${S3_BUCKET}"/rolling-tarball-metadata -o _data/rolling_tarball.json --create-dirs --silent
-fi
+# if curl --fail -L "${S3_BUCKET}"/rolling-tarball-metadata --silent > /dev/null; then
+#     curl -L "${S3_BUCKET}"/rolling-tarball-metadata -o _data/rolling_tarball.json --create-dirs --silent
+# fi
 
-if curl --fail -L "${S3_BUCKET}"/rolling-snapshot-metadata --silent > /dev/null; then
-    curl -L "${S3_BUCKET}"/rolling-snapshot-metadata -o _data/rolling_snapshot.json --create-dirs --silent
-fi
+# if curl --fail -L "${S3_BUCKET}"/rolling-snapshot-metadata --silent > /dev/null; then
+#     curl -L "${S3_BUCKET}"/rolling-snapshot-metadata -o _data/rolling_snapshot.json --create-dirs --silent
+# fi
 
 # Store network name for liquid templating
-jq -n \
---arg NETWORK "$NETWORK" \
-'{
-  "network": $NETWORK
-}' > _data/tezos_metadata.json
+# jq -n \
+# --arg NETWORK "$NETWORK" \
+# '{
+#   "network": $NETWORK
+# }' > _data/tezos_metadata.json
 
 # Grab liquid-templated chain website page
 curl -o index.md "${SNAPSHOT_MARKDOWN_TEMPLATE}"
 
 # Update chain name for page title using variable
-sed -i'' -e 's/${NETWORK}/'"${NETWORK}"'/g' index.md
+#sed -i'' -e 's/${NETWORK}/'"${NETWORK}"'/g' index.md
 
 # Grab Jekyll config
 curl -o _config.yml "${JEKYLL_CONFIG}"
@@ -410,23 +410,35 @@ cat <<EOF >> _config.yml
 remote_theme: ${JEKYLL_REMOTE_THEME_REPOSITORY}
 plugins:
 - jekyll-remote-theme
-- jekyll-datapage-generator
-
-page_gen-dirs: true
-page_gen:
-- data: snapshot_jekyll_data.latest_snapshots
-  template: latest_snapshots
-  debug: true
-  name: "name"
-  dir: "latest"
-  extension: "md"
 EOF
+
+git clone https://github.com/oxheadalpha/xtz-shots-website.git --branch monosite monosite
+
+cp -r monosite/* .
+
+rm -rf monosite
 
 # Create snapshot.json
 # List of all snapshot metadata accross all subdomains
 # build site pages
 
 python /updateAvailableSnapshotMetadata.py
+
+# Check if snapshots.json exists
+if [[ ! -f snapshots.json ]]; then
+    printf "%s ERROR snapshots.json does not exist.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    sleep 5
+    exit 1
+fi
+
+# Upload snapshots.json
+if ! aws s3 cp snapshots.json s3://"${S3_BUCKET}"/snapshots.json; then
+    printf "%s Upload snapshots.json : Error uploading file snapshots.json to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+else
+    printf "%s Upload snapshots.json : File snapshots.json successfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+fi
+
+python /buildpages.py
 
 chown -R jekyll:jekyll ./*
 bundle exec jekyll build
@@ -435,7 +447,7 @@ bundle exec jekyll build
 if ! aws s3 cp _site/ s3://"${WEB_BUCKET}" --recursive --include "*"; then
     printf "%s Website Build & Deploy : Error uploading site to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 else
-    printf "%s Website Build & Deploy  : Sucessfully uploaded website to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    printf "%s Website Build & Deploy  : Successful uploaded website to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 fi
 
 # Build base.json from existing metadata files
@@ -453,19 +465,5 @@ done
 if ! aws s3 cp base.json s3://"${S3_BUCKET}"/base.json; then
     printf "%s Upload base.json : Error uploading file base.json to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 else
-    printf "%s Upload base.json : File base.json sucessfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-fi
-
-# Check if snapshots.json exists
-if [[ ! -f snapshots.json ]]; then
-    printf "%s ERROR snapshots.json does not exist.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    sleep 5
-    exit 1
-fi
-
-# Upload snapshots.json
-if ! aws s3 cp base.json s3://"${S3_BUCKET}"/snapshots.json; then
-    printf "%s Upload snapshots.json : Error uploading file snapshots.json to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-else
-    printf "%s Upload snapshots.json : File snapshots.json sucessfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    printf "%s Upload base.json : File base.json successfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 fi
