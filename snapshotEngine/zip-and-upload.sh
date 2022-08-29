@@ -160,8 +160,6 @@ if [ "${HISTORY_MODE}" = rolling ]; then
     done
 
     # Wait for rolling snapshot to import to temporary filesystem for tarball.
-    # done
-
     while  [ -f "${IMPORT_IN_PROGRESS}" ]; do
         printf "%s Waiting for snapshot to import...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         while  [ -f "${IMPORT_IN_PROGRESS}" ]; do
@@ -170,8 +168,6 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             fi
         done
     done
-
-
 
     # LZ4 /"${HISTORY_MODE}"-snapshot-cache-volume/var/tezos/node selectively and upload to S3
     printf "%s ********************* Rolling Tarball *********************\\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -376,79 +372,17 @@ cd /srv/jekyll || exit
 # Copy Gemfile and Gemfile.lock to current dir
 cp /snapshot-website-base/* .
 
-# Grab latest metadata and put in _data
-# if curl --fail -L "${S3_BUCKET}"/archive-tarball-metadata --silent > /dev/null; then
-#     curl -L "${S3_BUCKET}"/archive-tarball-metadata -o _data/archive_tarball.json --create-dirs --silent
-# fi
-
-# if curl --fail -L "${S3_BUCKET}"/rolling-tarball-metadata --silent > /dev/null; then
-#     curl -L "${S3_BUCKET}"/rolling-tarball-metadata -o _data/rolling_tarball.json --create-dirs --silent
-# fi
-
-# if curl --fail -L "${S3_BUCKET}"/rolling-snapshot-metadata --silent > /dev/null; then
-#     curl -L "${S3_BUCKET}"/rolling-snapshot-metadata -o _data/rolling_snapshot.json --create-dirs --silent
-# fi
-
-# Store network name for liquid templating
-# jq -n \
-# --arg NETWORK "$NETWORK" \
-# '{
-#   "network": $NETWORK
-# }' > _data/tezos_metadata.json
-
 # Grab liquid-templated chain website page
 curl -o index.md "${SNAPSHOT_MARKDOWN_TEMPLATE}"
-
-# Update chain name for page title using variable
-#sed -i'' -e 's/${NETWORK}/'"${NETWORK}"'/g' index.md
 
 # Grab Jekyll config
 curl -o _config.yml "${JEKYLL_CONFIG}"
 
-# Add remote theme to config
-cat <<EOF >> _config.yml
-remote_theme: ${JEKYLL_REMOTE_THEME_REPOSITORY}
-plugins:
-- jekyll-remote-theme
-EOF
-
+# Remote theme does not work
+# Using git instead
 git clone https://github.com/oxheadalpha/xtz-shots-website.git --branch monosite monosite
-
 cp -r monosite/* .
-
 rm -rf monosite
-
-# Create snapshot.json
-# List of all snapshot metadata accross all subdomains
-# build site pages
-
-python /updateAvailableSnapshotMetadata.py
-
-# Check if snapshots.json exists
-if [[ ! -f snapshots.json ]]; then
-    printf "%s ERROR snapshots.json does not exist.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    sleep 5
-    exit 1
-fi
-
-# Upload snapshots.json
-if ! aws s3 cp snapshots.json s3://"${S3_BUCKET}"/snapshots.json; then
-    printf "%s Upload snapshots.json : Error uploading file snapshots.json to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-else
-    printf "%s Upload snapshots.json : File snapshots.json successfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-fi
-
-python /buildpages.py
-
-chown -R jekyll:jekyll ./*
-bundle exec jekyll build
-
-# Upload chain page (index.html and assets) to root of website bucket
-if ! aws s3 cp _site/ s3://"${WEB_BUCKET}" --recursive --include "*"; then
-    printf "%s Website Build & Deploy : Error uploading site to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-else
-    printf "%s Website Build & Deploy  : Successful uploaded website to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-fi
 
 # Build base.json from existing metadata files
 
@@ -466,4 +400,39 @@ if ! aws s3 cp base.json s3://"${S3_BUCKET}"/base.json; then
     printf "%s Upload base.json : Error uploading file base.json to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 else
     printf "%s Upload base.json : File base.json successfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+fi
+
+# Create snapshot.json
+# List of all snapshot metadata accross all subdomains
+# build site pages
+python /getAllSnapshotMetadata.py
+
+# Check if snapshots.json exists
+# Snapshots.json is a list of all snapshots in all buckets
+if [[ ! -f snapshots.json ]]; then
+    printf "%s ERROR snapshots.json does not exist locally.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    sleep 5
+    exit 1
+fi
+
+# Upload snapshots.json
+if ! aws s3 cp snapshots.json s3://"${S3_BUCKET}"/snapshots.json; then
+    printf "%s Upload snapshots.json : Error uploading file snapshots.json to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+else
+    printf "%s Upload snapshots.json : File snapshots.json successfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+fi
+
+# Separate python for web page build
+# Needs snapshots.json to exist before pages are built
+python /getLatestSnapshotMetadata.py
+
+# Generate HTML from markdown and metadata
+chown -R jekyll:jekyll ./*
+bundle exec jekyll build
+
+# Upload chain page (index.html and assets) to root of website bucket
+if ! aws s3 cp _site/ s3://"${WEB_BUCKET}" --recursive --include "*"; then
+    printf "%s Website Build & Deploy : Error uploading site to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+else
+    printf "%s Website Build & Deploy  : Successful uploaded website to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 fi
