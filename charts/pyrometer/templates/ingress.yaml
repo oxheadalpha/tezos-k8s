@@ -42,6 +42,8 @@ spec:
           - path: /
             pathType: Prefix
             backend:
-              serviceName: "pyrometer"
-              portName: "http"
+              service:
+                name: "pyrometer"
+                port:
+                  number: 80
 {{- end }}
