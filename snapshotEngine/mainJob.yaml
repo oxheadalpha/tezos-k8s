@@ -139,26 +139,9 @@ spec:
           env:
             - name: HISTORY_MODE
               value: ""
-            - name: RESTORED_STORAGE_INIT_TIME
-              valueFrom:
-                configMapKeyRef:
-                  name: snapshot-configmap
-                  key: RESTORED_STORAGE_INIT_TIME
-            - name: DISABLE_STORAGE_INIT_TIME
-              valueFrom:
-                configMapKeyRef:
-                  name: snapshot-configmap
-                  key: DISABLE_STORAGE_INIT_TIME
-            - name: NAMESPACE
-              valueFrom:
-                configMapKeyRef:
-                  name: snapshot-configmap
-                  key: NAMESPACE
-            - name: NETWORK_OVERRIDE
-              valueFrom:
-                configMapKeyRef:
-                  name: snapshot-configmap
-                  key: NETWORK_OVERRIDE
+          envFrom:
+            - configMapRef:
+                name: snapshot-configmap
       containers:
         - name: create-tezos-rolling-snapshot
           image: ""

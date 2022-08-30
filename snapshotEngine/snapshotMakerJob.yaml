@@ -19,24 +19,7 @@ spec:
           env:
             - name: HISTORY_MODE
               value: ""
-            - name: NAMESPACE
-              valueFrom:
-                configMapKeyRef:
-                  name: snapshot-configmap
-                  key: NAMESPACE
-            - name: IMAGE_NAME
-              valueFrom:
-                configMapKeyRef:
-                  name: snapshot-configmap
-                  key: IMAGE_NAME
-            - name: TEZOS_IMAGE
-              valueFrom:
-                configMapKeyRef:
-                  name: snapshot-configmap
-                  key: TEZOS_IMAGE
-            - name: SERVICE_ACCOUNT
-              valueFrom:
-                configMapKeyRef:
-                  name: snapshot-configmap
-                  key: SERVICE_ACCOUNT
+          envFrom:
+            - configMapRef:
+                name: snapshot-configmap
       restartPolicy: Never
