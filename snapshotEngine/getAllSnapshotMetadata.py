@@ -16,10 +16,14 @@ print(allSubDomains)
 # Get each subdomain's base.json and combine all artifacts into 1 metadata file
 "https://"+subDomain+"."+snapshotWebsiteBaseDomain+"/base.json"
 for subDomain in allSubDomains:
-  with urllib.request.urlopen("https://"+subDomain+"."+snapshotWebsiteBaseDomain+"/base.json") as url:
-    data = json.loads(url.read().decode())
-    for entry in data:
-      json_object.append(entry)
+  baseJsonUrl="https://"+subDomain+"."+snapshotWebsiteBaseDomain+"/base.json"
+  try:
+    with urllib.request.urlopen(baseJsonUrl) as url:
+      data = json.loads(url.read().decode())
+      for entry in data:
+        json_object.append(entry)
+  except urllib.error.HTTPError:
+    continue
 
 # Write to file
 with open (filename, 'w') as json_file:
