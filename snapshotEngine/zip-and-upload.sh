@@ -416,7 +416,7 @@ if [[ ! -f snapshots.json ]]; then
 fi
 
 # Upload snapshots.json
-if ! aws s3 cp snapshots.json s3://"${S3_BUCKET}"/snapshots.json; then
+if ! aws s3 cp snapshots.json s3://"${WEB_BUCKET}"/snapshots.json; then
     printf "%s Upload snapshots.json : Error uploading file snapshots.json to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 else
     printf "%s Upload snapshots.json : File snapshots.json successfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"

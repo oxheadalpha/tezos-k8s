@@ -1,10 +1,17 @@
 from genericpath import exists
 import urllib, json
-import urllib.request# build page data
-
-with urllib.request.urlopen("https://monosite.xtz-shots.io/snapshots.json") as url: #CHANGEME
-    snapshots = json.loads(url.read().decode())
+import urllib.request
 from pathlib import Path
+
+# with urllib.request.urlopen("https://monosite.xtz-shots.io/snapshots.json") as url: #CHANGEME
+#     snapshots = json.loads(url.read().decode())
+
+if exists('snapshots.json'):
+    print('SUCCESS snapshots.json exists locally!')
+    with open() as localJson:
+        snapshots = json.load(localJson)
+else:
+    print('ERROR snapshots.json does not exist locally!')
 
 # sort per network
 snapshots_per_network = {}
