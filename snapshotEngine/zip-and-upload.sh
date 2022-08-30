@@ -6,7 +6,7 @@ BLOCK_TIMESTAMP=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_TIMESTAMP)
 TEZOS_VERSION=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_VERSION)
 NETWORK="${NAMESPACE%%-*}"
 export S3_BUCKET="${NETWORK}.${SNAPSHOT_WEBSITE_DOMAIN_NAME}"
-export WEB_BUCKET="monosite.xtz-shots.io"
+export WEB_BUCKET="xtz-shots.io"
 
 cd /
 
@@ -380,9 +380,12 @@ curl -o _config.yml "${JEKYLL_CONFIG}"
 
 # Remote theme does not work
 # Using git instead
-git clone https://github.com/oxheadalpha/xtz-shots-website.git --branch monosite monosite
-cp -r monosite/* .
-rm -rf monosite
+REPO="${JEKYLL_REMOTE_THEME_REPOSITORY%@*}"
+BRANCH="${JEKYLL_REMOTE_THEME_REPOSITORY#*@}"
+LOCAL_DIR=monosite
+git clone "${REPO}" --branch "${BRANCH}" "${LOCAL_DIR}"
+cp -r "${LOCAL_DIR}"/* .
+rm -rf "${LOCAL_DIR}"
 
 # Build base.json from existing metadata files
 
