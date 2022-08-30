@@ -372,12 +372,6 @@ cd /srv/jekyll || exit
 # Copy Gemfile and Gemfile.lock to current dir
 cp /snapshot-website-base/* .
 
-# Grab liquid-templated chain website page
-curl -o index.md "${SNAPSHOT_MARKDOWN_TEMPLATE}"
-
-# Grab Jekyll config
-curl -o _config.yml "${JEKYLL_CONFIG}"
-
 # Remote theme does not work
 # Using git instead
 REPO="${JEKYLL_REMOTE_THEME_REPOSITORY%@*}"
@@ -386,8 +380,6 @@ LOCAL_DIR=monosite
 git clone "${REPO}" --branch "${BRANCH}" "${LOCAL_DIR}"
 cp -r "${LOCAL_DIR}"/* .
 rm -rf "${LOCAL_DIR}"
-
-# Build base.json from existing metadata files
 
 # Create new base.json locally
 touch base.json
