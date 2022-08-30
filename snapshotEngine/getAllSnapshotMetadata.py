@@ -11,7 +11,10 @@ filename="snapshots.json"
 # Write empty top-level array to initialize json
 json_object = []
 
+print(allSubDomains)
+
 # Get each subdomain's base.json and combine all artifacts into 1 metadata file
+"https://"+subDomain+"."+snapshotWebsiteBaseDomain+"/base.json"
 for subDomain in allSubDomains:
   with urllib.request.urlopen("https://"+subDomain+"."+snapshotWebsiteBaseDomain+"/base.json") as url:
     data = json.loads(url.read().decode())
