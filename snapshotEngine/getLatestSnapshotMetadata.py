@@ -3,9 +3,6 @@ import urllib, json
 import urllib.request
 from pathlib import Path
 
-# with urllib.request.urlopen("https://monosite.xtz-shots.io/snapshots.json") as url: #CHANGEME
-#     snapshots = json.loads(url.read().decode())
-
 if exists('snapshots.json'):
     print('SUCCESS snapshots.json exists locally!')
     with open() as localJson:

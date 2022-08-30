@@ -6,7 +6,6 @@ BLOCK_TIMESTAMP=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_TIMESTAMP)
 TEZOS_VERSION=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_VERSION)
 NETWORK="${NAMESPACE%%-*}"
 export S3_BUCKET="${NETWORK}.${SNAPSHOT_WEBSITE_DOMAIN_NAME}"
-export WEB_BUCKET="xtz-shots.io"
 
 cd /
 
@@ -386,8 +385,8 @@ touch base.json
 echo '[]' > "base.json"
 
 printf "%s Building base.json... this may take a while.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-aws s3 ls s3://"${NETWORK}".xtz-shots.io |  grep '\.json'| sort | awk '{print $4}' | awk -F '\\\\n' '{print $1}' | tr ' ' '\n' | grep -v -e base.json -e snapshots.json | while read ITEM; do
-    tmp=$(mktemp) && cp base.json "${tmp}" && jq --argjson file "$(curl -s https://"${NETWORK}".xtz-shots.io/$ITEM)" '. += [$file]' "${tmp}" > base.json
+aws s3 ls s3://"${NETWORK}"."${SNAPSHOT_WEBSITE_DOMAIN_NAME}" |  grep '\.json'| sort | awk '{print $4}' | awk -F '\\\\n' '{print $1}' | tr ' ' '\n' | grep -v -e base.json -e snapshots.json | while read ITEM; do
+    tmp=$(mktemp) && cp base.json "${tmp}" && jq --argjson file "$(curl -s https://"${NETWORK}"."${SNAPSHOT_WEBSITE_DOMAIN_NAME}"/$ITEM)" '. += [$file]' "${tmp}" > base.json
 done
 
 #Upload base.json
@@ -411,7 +410,7 @@ if [[ ! -f snapshots.json ]]; then
 fi
 
 # Upload snapshots.json
-if ! aws s3 cp snapshots.json s3://"${WEB_BUCKET}"/snapshots.json; then
+if ! aws s3 cp snapshots.json s3://"${SNAPSHOT_WEBSITE_DOMAIN_NAME}"/snapshots.json; then
     printf "%s Upload snapshots.json : Error uploading file snapshots.json to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 else
     printf "%s Upload snapshots.json : File snapshots.json successfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -426,7 +425,7 @@ chown -R jekyll:jekyll ./*
 bundle exec jekyll build
 
 # Upload chain page (index.html and assets) to root of website bucket
-if ! aws s3 cp _site/ s3://"${WEB_BUCKET}" --recursive --include "*"; then
+if ! aws s3 cp _site/ s3://"${SNAPSHOT_WEBSITE_DOMAIN_NAME}" --recursive --include "*"; then
     printf "%s Website Build & Deploy : Error uploading site to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 else
     printf "%s Website Build & Deploy  : Successful uploaded website to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"

@@ -10,7 +10,6 @@ data:
   DISABLE_STORAGE_INIT_TIME: {{ $.Values.disableStorageInitTime | quote }}
   NETWORK_OVERRIDE: {{ $.Values.networkOverride | default "" | quote }}
   ALL_SUBDOMAINS: {{ $.Values.allSubdomains }}
-  SNAPSHOT_WEBSITE_DOMAIN_NAME: {{ $.Values.snapshotWebsiteDomainName }}
 kind: ConfigMap
 metadata:
   name: snapshot-configmap

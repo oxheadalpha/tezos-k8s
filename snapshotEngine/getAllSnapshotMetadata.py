@@ -4,6 +4,7 @@ import urllib, json
 import urllib.request
 
 allSubDomains = os.environ['ALL_SUBDOMAINS'].split(",")
+snapshotWebsiteBaseDomain = os.environ['SNAPSHOT_WEBSITE_DOMAIN_NAME']
 
 filename="snapshots.json"
 
@@ -12,7 +13,7 @@ json_object = []
 
 # Get each subdomain's base.json and combine all artifacts into 1 metadata file
 for subDomain in allSubDomains:
-  with urllib.request.urlopen("https://"+subDomain+".xtz-shots.io/base.json") as url:
+  with urllib.request.urlopen("https://"+subDomain+"."+snapshotWebsiteBaseDomain+"/base.json") as url:
     data = json.loads(url.read().decode())
     for entry in data:
       json_object.append(entry)
