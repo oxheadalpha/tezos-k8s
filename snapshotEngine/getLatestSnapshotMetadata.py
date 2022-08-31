@@ -3,9 +3,11 @@ import urllib, json
 import urllib.request
 from pathlib import Path
 
-if exists('snapshots.json'):
+filename='snapshots.json'
+
+if exists(filename):
     print('SUCCESS snapshots.json exists locally!')
-    with open() as localJson:
+    with open(filename,'r') as localJson:
         snapshots = json.load(localJson)
 else:
     print('ERROR snapshots.json does not exist locally!')
