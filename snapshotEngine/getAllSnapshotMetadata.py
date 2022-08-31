@@ -14,7 +14,6 @@ json_object = []
 print(allSubDomains)
 
 # Get each subdomain's base.json and combine all artifacts into 1 metadata file
-"https://"+subDomain+"."+snapshotWebsiteBaseDomain+"/base.json"
 for subDomain in allSubDomains:
   baseJsonUrl="https://"+subDomain+"."+snapshotWebsiteBaseDomain+"/base.json"
   try:

@@ -376,7 +376,7 @@ cp /snapshot-website-base/* .
 REPO="${JEKYLL_REMOTE_THEME_REPOSITORY%@*}"
 BRANCH="${JEKYLL_REMOTE_THEME_REPOSITORY#*@}"
 LOCAL_DIR=monosite
-git clone "${REPO}" --branch "${BRANCH}" "${LOCAL_DIR}"
+git clone https://github.com/"${REPO}".git --branch "${BRANCH}" "${LOCAL_DIR}"
 cp -r "${LOCAL_DIR}"/* .
 rm -rf "${LOCAL_DIR}"
 
