@@ -76,7 +76,7 @@ full_snapshot_url: null
 rolling_snapshot_url: null
 archive_tarball_url: null
 images:
-  octez: 'tezos/tezos:v12-release'
+  octez: 'tezos/tezos:v14-release'
 is_invitation: false
 node_config_network:
   activation_account_name: tezos-baking-node-0
@@ -88,7 +88,7 @@ node_config_network:
 nodes:
   eu:
     images:
-      octez: tezos/tezos:v10-release
+      octez: tezos/tezos:v14-release
     labels:
       rpc_node: "true"
     instances:
@@ -116,10 +116,13 @@ nodes:
     instances:
     - {}
   rolling-node: null
-rolling_snapshot_url: null
 should_generate_unsafe_deterministic_data: true
 signers:
   tezos-signer-0:
     sign_for_accounts: [tezos-baking-node-0]
 zerotier_config: {zerotier_network: null, zerotier_token: null}
 open_acls: true
+protocols:
+  - command: 013-PtJakart
+    vote:
+      liquidity_baking_toggle_vote: "pass"

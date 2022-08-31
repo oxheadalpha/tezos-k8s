@@ -24,7 +24,7 @@ def quoted_scalar(dumper, data):  # a representer to force quotations on scalars
 MyDumper.add_representer(QuotedString, quoted_scalar)
 # end https://stackoverflow.com/a/52424865/207209
 
-from tqchain.keys import gen_key, get_genesis_vanity_chain_id, set_use_docker
+from tqchain.keys import gen_key, set_use_docker
 
 from ._version import get_versions
 
@@ -70,7 +70,7 @@ cli_args = {
     },
     "octez_docker_image": {
         "help": "Version of the Octez docker image",
-        "default": "tezos/tezos:v13-release",
+        "default": "tezos/tezos:v14-release",
     },
     "use_docker": {
         "action": "store_true",
@@ -187,6 +187,12 @@ def main():
                 "all": {"TEZOS_CLIENT_UNSAFE_DISABLE_DISCLAIMER": QuotedString("Y")}
             }
         },
+        "protocols": [
+            {
+                "command": "013-PtJakart",
+                "vote": {"liquidity_baking_toggle_vote": "pass"},
+            }
+        ],
     }
 
     # preserve pre-existing values, if any (in case of scale-up)
@@ -223,9 +229,6 @@ def main():
     else:
         # create new chain genesis params if brand new chain
         base_constants["node_config_network"]["genesis"] = {
-            "block": get_genesis_vanity_chain_id()
-            if not args.should_generate_unsafe_deterministic_data
-            else "YOUR_GENESIS_BLOCK_HASH_HERE",
             "protocol": "Ps9mPmXaRzmzk35gbAYNCAw6UXdE2qoABTHbN2oEEc1qM7CwT9P",
             "timestamp": datetime.utcnow().replace(tzinfo=timezone.utc).isoformat(),
         }

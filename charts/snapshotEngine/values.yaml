@@ -3,7 +3,7 @@ tezos_k8s_images:
 
 # the tezos version used to run `tezos-node snapshot import/export`
 images:
-  octez: tezos/tezos:v13-release
+  octez: tezos/tezos:v14-release
 
 # snapshotEngine containers interact with the kubernetes control
 # plane to create volume snapshots. This requires a special IAM role
@@ -87,3 +87,4 @@ networkOverride: ""
 
 # List of all xtz-shots subdomains
 allSubdomains: ""
+
