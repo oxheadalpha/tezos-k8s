@@ -364,6 +364,15 @@ else
   printf "%s Skipping rolling snapshot import and export because this is an archive job.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 fi
 
+# Network bucket redirect
+# Redirects from network.website.com to website.com/network
+touch index.html
+if ! aws s3 cp index.html s3://"${NETWORK}"."${SNAPSHOT_WEBSITE_DOMAIN_NAME}" --website-redirect https://"${SNAPSHOT_WEBSITE_DOMAIN_NAME}"/"${NETWORK}" --cache-control 'no-cache'; then
+    printf "%s ERROR ##### Could not upload network site redirect.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+else
+    printf "%s Successfully uploaded network site redirect.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+fi
+
 # Need to be in this dir for jekyll to run.
 # Container-specific requirement
 cd /srv/jekyll || exit
