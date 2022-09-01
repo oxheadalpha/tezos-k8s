@@ -189,8 +189,6 @@ if [ "${HISTORY_MODE}" = rolling ]; then
     #     done
     # done
 
-    sleep infinity
-
     # LZ4 /"${HISTORY_MODE}"-snapshot-cache-volume/var/tezos/node selectively and upload to S3
     printf "%s ********************* Rolling Tarball *********************\\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
