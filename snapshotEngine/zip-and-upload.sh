@@ -179,10 +179,20 @@ if [ "${HISTORY_MODE}" = rolling ]; then
         done
     done
 
+    # Errors if above loop is broken out of but for some reason rolling snapshot doesnt exist
+    if [ -f "${ROLLING_SNAPSHOT}" ]; then
+        printf "%s ${ROLLING_SNAPSHOT} exists!\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    else
+        printf "%s ERROR ##### ${ROLLING_SNAPSHOT} does not exist!\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+        sleep 10
+        exit 1
+    fi
+
+    # Needs time in between checks. This is faster than the snapshot container can create and delete the import files
     sleep 10s
 
     # Wait for rolling snapshot to import to temporary filesystem for tarball.
-    while  [ -f "${IMPORT_IN_PROGRESS}" ]; do
+    while [ -f "${IMPORT_IN_PROGRESS}" ]; do
         printf "%s Waiting for snapshot to import...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         while  [ -f "${IMPORT_IN_PROGRESS}" ]; do
             if ! [ -f "${IMPORT_IN_PROGRESS}" ]; then
@@ -191,6 +201,15 @@ if [ "${HISTORY_MODE}" = rolling ]; then
         done
     done
 
+    # Errors if above loop is broken out of but for some reason import_in_progress_file still exists
+    if ! [ -f "${IMPORT_IN_PROGRESS}" ]; then
+        printf "%s Snapshot import finished!\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    else
+        printf "%s ERROR ##### Snapshot import did not finish!\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+        sleep 10
+        exit 1
+    fi
+
     # LZ4 /"${HISTORY_MODE}"-snapshot-cache-volume/var/tezos/node selectively and upload to S3
     printf "%s ********************* Rolling Tarball *********************\\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
@@ -198,7 +217,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
     # Instead of guessing size, you can use expected-size which tells S3 how big the file is and it calculates the size for you.
     # However if the file gets bigger than your expected size, the multipart upload fails because it uses a part size outside of the bounds (1-10000)
     # This gets the old rolling tarball size and then adds 10%.  rolling tarballs dont seem to grow more than that.
-    if aws s3 ls s3://"${S3_BUCKET}" | grep archive-tarball-metadata; then #Use last file for expected size if it exists
+    if aws s3 ls s3://"${S3_BUCKET}" | grep rolling-tarball-metadata; then #Use last file for expected size if it exists
         EXPECTED_SIZE=$(curl -L http://"${S3_BUCKET}"/rolling-tarball-metadata 2>/dev/null | jq -r '.filesize_bytes' | awk '{print $1*1.1}' | awk '{print ($0-int($0)>0)?int($0)+1:int($0)}')
     else
         EXPECTED_SIZE=100000000000 #100GB Arbitrary filesize for initial value. Only used if no archive-tarball-metadata exists. IE starting up test network
