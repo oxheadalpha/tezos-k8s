@@ -152,8 +152,8 @@ spec:
               #!/bin/sh
               set -e
 
-              sudo chown -R 100:100 /"${HISTORY_MODE}"-snapshot-cache-volume
-              sudo chown -R 100:100 /rolling-tarball-restore
+              sudo chown -R tezos /"${HISTORY_MODE}"-snapshot-cache-volume
+              sudo chown -R tezos /rolling-tarball-restore
 
               # Strip network from namespace or use configmap value
               NETWORK="${NETWORK_OVERRIDE:-${NAMESPACE%%-*}}"
