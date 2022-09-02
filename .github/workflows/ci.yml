@@ -44,39 +44,40 @@ jobs:
       - name: black
         run: black . --check
 
-  test:
-    runs-on: ${{ matrix.os }}
-    needs: check-lint-and-format
-    defaults:
-      run:
-        working-directory: ./mkchain
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9]
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    steps:
-      - uses: actions/checkout@v2
+  # We don't have mkchain tests yet
+  # test:
+  #   runs-on: ${{ matrix.os }}
+  #   needs: check-lint-and-format
+  #   defaults:
+  #     run:
+  #       working-directory: ./mkchain
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       python-version: [3.7, 3.8, 3.9]
+  #       os: [ubuntu-latest, macos-latest, windows-latest]
+  #   steps:
+  #     - uses: actions/checkout@v2
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.python-version }}
+  #     - name: Set up Python ${{ matrix.python-version }}
+  #       uses: actions/setup-python@v1
+  #       with:
+  #         python-version: ${{ matrix.python-version }}
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pyyaml kubernetes
-          pip install pytest
+  #     - name: Install dependencies
+  #       run: |
+  #         python -m pip install --upgrade pip
+  #         pip install pyyaml kubernetes
+  #         pip install pytest
 
-      - name: Build Python package
-        run: pip install .
+  #     - name: Build Python package
+  #       run: pip install .
 
-      - name: pytest
-        run: pytest tests
+  #     - name: pytest
+  #       run: pytest tests
 
   publish_mkchain:
-    needs: test
+    needs: check-lint-and-format
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -126,7 +127,7 @@ jobs:
     # based on
     # https://stackoverflow.com/a/62953566/207209
     runs-on: ubuntu-latest
-    needs: test
+    needs: check-lint-and-format
     outputs:
       matrix: ${{ steps.gen-containers-matrix.outputs.matrix }}
     steps:
@@ -135,7 +136,7 @@ jobs:
       - id: gen-containers-matrix
         run: |
           container_list=$(jq -c -n --arg cont "$(find -name 'Dockerfile' -printf '%h\n' | sort -u | sed 's/.\///')" '{ container: $cont | split("\n")}')
-          echo "Dynamically generated container list based on subdirectories of the docker directory. The following list will be passed to next build step:"
+          echo "Dynamically generated container list based on subdirectories of the repo with a dockerfile in it. The following list will be passed to next build step:"
           echo $container_list
           echo "::set-output name=matrix::$container_list"
 
@@ -173,16 +174,16 @@ jobs:
 
           curl -s -H "Authorization: JWT ${TOKEN}" "https://hub.docker.com/v2/repositories/" \
           --data 'description="tezos-k8s ${{ matrix.container }}"' \
-          --data 'full_description="The container for https://github.com/tqtezos/tezos-k8s/tree/master/${{ matrix.container }}' \
+          --data 'full_description="The container for https://github.com/oxheadalpha/tezos-k8s/tree/master/${{ matrix.container }}' \
           --data 'is_private=false' \
           --data 'name=tezos-k8s-${{ matrix.container }}' \
-          --data "namespace=tqtezos" || true
+          --data "namespace=oxheadalpha" || true
 
       - name: Docker meta
         id: docker_meta
         uses: crazy-max/ghaction-docker-meta@v1
         with:
-          images: tqtezos/tezos-k8s-${{ matrix.container }}
+          images: oxheadalpha/tezos-k8s-${{ matrix.container }}
           tag-sha: true
 
       - name: Publish ${{ matrix.container }} container to Docker Hub
@@ -203,14 +204,29 @@ jobs:
       - name: Set up Helm
         uses: azure/setup-helm@v1
         with:
-          version: v3.4.2
+          version: v3.8.1
 
       - name: Lint Helm Charts
         run: helm lint charts/*
 
+  test-helm-charts:
+    runs-on: ubuntu-latest
+    needs: lint_helm_charts
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v1
+        with:
+          version: v3.8.1
+
+      - name: Run Helm Template Tests
+        run: ./bin/test-charts
+
   publish_helm_charts:
     runs-on: ubuntu-latest
-    needs: [lint_helm_charts, publish_containers]
+    needs: [test-helm-charts, lint_helm_charts, publish_containers]
     if: github.event_name == 'release' && github.event.action == 'created'
     steps:
       - name: Checkout
@@ -238,13 +254,13 @@ jobs:
             # Update Chart.yaml with release version
             yq e ".version = \"$RELEASE_VERSION\"" -i "$chart/Chart.yaml"
 
-            # Get tqtezos/tezos-k8s images specified in values.yaml
+            # Get oxheadalpha/tezos-k8s images specified in values.yaml
             tq_images=$(yq e '(.tezos_k8s_images[]) | path | .[-1]' "$chart/values.yaml")
 
             # Update the release version of each of tezos-k8s images
             for image in $tq_images; do
               image_name=$(yq e ".tezos_k8s_images.$image" $chart/values.yaml | sed -E "s/tezos-k8s-(.*):.*/\1/")
-              yq e ".tezos_k8s_images.$image = \"tqtezos/tezos-k8s-$image_name:$RELEASE_VERSION\"" -i $chart/values.yaml
+              yq e ".tezos_k8s_images.$image = \"oxheadalpha/tezos-k8s-$image_name:$RELEASE_VERSION\"" -i $chart/values.yaml
             done
           done
 

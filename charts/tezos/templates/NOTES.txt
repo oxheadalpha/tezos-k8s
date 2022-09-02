@@ -1,0 +1,5 @@
+{{- range $k, $v := .Values.accounts -}}
+  {{- if $v.type -}}
+DEPRECATION WARNING: You specified a type for account {{ $k }}. This field is now ignored, the type of key is set automatically.
+  {{- end -}}
+{{- end -}}

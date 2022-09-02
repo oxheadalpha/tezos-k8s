@@ -14,7 +14,7 @@ setuptools.setup(
     description="A utility to generate k8s configs for a Tezos blockchain",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/tqtezos/tezos-k8s",
+    url="https://github.com/oxheadalpha/tezos-k8s",
     include_package_data=True,
     install_requires=["pyyaml"],
     setup_requires=["wheel"],
@@ -25,5 +25,5 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires=">=3.6",
+    python_requires=">=3.7",
 )

@@ -1,0 +1,32 @@
+images:
+  pyrometer: registry.gitlab.com/tezos-kiln/pyrometer:latest
+tezos_k8s_images:
+  utils: tezos-k8s-utils:dev
+# Pass below the pyrometer config, in yaml format
+config:
+  node_monitor:
+    nodes:
+    - http://tezos-node-rpc:8732
+  webhook:
+    enabled: true
+    url: http://127.0.0.1:31732/pyrometer_webhook
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  host: "" # fill in the desired hostname for your ingress
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+# Prometheus Operator is required in your cluster in order to enable
+# serviceMonitor and prometheusRule below.
+serviceMonitor:
+  enabled: false
+prometheusRule:
+  enabled: false
+  numberOfUnhealthyBakersAlertThreshold: 1
+  labels: {}

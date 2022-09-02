@@ -1,0 +1,61 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "tezos-reward-distributor.fullname" . }}
+  labels:
+    {{- include "tezos-reward-distributor.labels" . | nindent 4 }}
+spec:
+
+  # important to prevent launch of concurrent payout processes
+  concurrencyPolicy:  Forbid
+
+  schedule: {{ .Values.schedule }}
+  jobTemplate:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "tezos-reward-distributor.selectorLabels" . | nindent 8 }}
+    spec:
+      template:
+        spec:
+          securityContext:
+            fsGroup: 1000
+          volumes:
+            - name: storage
+              persistentVolumeClaim:
+                claimName: tezos-reward-distributor-volume
+            - name: config-volume
+              configMap:
+                 name: tezos-reward-distributor-config
+          initContainers:
+            # Work around a bug where fsGroup is ignored
+            - name: change-ownership-container
+              image: {{ .Values.images.tezos_reward_distributor }}
+              command:
+              - /bin/sh
+              - -c
+              - "mkdir -p /trd/cfg && chown -R 1000:1000 /trd"
+              securityContext:
+                runAsUser: 0
+                privileged: true
+              volumeMounts:
+              - mountPath: /trd
+                name: storage
+          containers:
+          - name: tezos-reward-distributor-cron-job
+            image: {{ .Values.images.tezos_reward_distributor }}
+            imagePullPolicy: IfNotPresent
+            volumeMounts:
+              - mountPath: /trd
+                name: storage
+              - mountPath: /trd/cfg/config.yaml
+                name: config-volume
+                subPath: config.yaml
+            command:
+            - /bin/sh
+            - -c
+            - python src/main.py -M 2 --reward_data_provider {{ .Values.reward_data_provider }} --node_addr_public {{ .Values.tezos_node_addr }} --node_endpoint {{ .Values.tezos_node_addr }} --base_directory /trd --signer_endpoint {{ .Values.signer_addr }} {{ .Values.extra_trd_args }} -N GHOSTNET
+          restartPolicy: OnFailure

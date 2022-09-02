@@ -1,21 +1,44 @@
 apiVersion: v1
 data:
+  CHAIN_NAME: "{{ .Values.node_config_network.chain_name }}"
   CHAIN_PARAMS: |
     {
       "bootstrap_peers": {{ toJson .Values.bootstrap_peers }},
       "default_bootstrap_mutez": "{{ .Values.bootstrap_mutez }}",
       "expected-proof-of-work": {{ toJson .Values.expected_proof_of_work }},
 
-      "full_snapshot_url": {{ toJson .Values.full_snapshot_url }},
-      "rolling_snapshot_url": {{ toJson .Values.rolling_snapshot_url }},
-
       "should_generate_unsafe_deterministic_data": {{ toJson .Values.should_generate_unsafe_deterministic_data }},
       "network": {{ mustToPrettyJson .Values.node_config_network | indent 8 | trim }},
-      "proto_command": "{{ .Values.protocol.command }}",
       "protocol_activation": {{ .Values.activation | mustToPrettyJson | indent 8 | trim }}
     }
+  FULL_SNAPSHOT_URL: "{{ .Values.full_snapshot_url }}"
+  FULL_TARBALL_URL: "{{ .Values.full_tarball_url }}"
+  ROLLING_SNAPSHOT_URL: "{{ .Values.rolling_snapshot_url }}"
+  ROLLING_TARBALL_URL: "{{ .Values.rolling_tarball_url }}"
+  ARCHIVE_TARBALL_URL: "{{ .Values.archive_tarball_url }}"
+  NODE_GLOBALS: |
+{{ .Values.node_globals | mustToPrettyJson | indent 4 }}
+
   NODES: |
-{{ .Values.nodes | mustToPrettyJson | indent 4 }}
+{{/*
+  Don't add node classes without configuration to the configmap.
+  Also remove the secret "identity" field on node instances. Creates
+  a deep copy because "unset" modifies the object.
+*/}}
+{{- $nodes_copy := deepCopy .Values.nodes }}
+{{- range $node_class, $node_config := $nodes_copy }}
+  {{- if $node_config }}
+    {{- range $_, $instance_config := $node_config.instances }}
+      {{- $_ := unset $instance_config "identity" }}
+    {{- end }}
+  {{- else }}
+    {{- $_ := unset $nodes_copy $node_class }}
+  {{- end }}
+{{- end }}
+{{- $nodes_copy | mustToPrettyJson | indent 4 }}
+
+  SIGNERS: |
+{{ .Values.signers | mustToPrettyJson | indent 4 }}
 kind: ConfigMap
 metadata:
   name: tezos-config
@@ -24,7 +47,6 @@ metadata:
 {{- if (include "tezos.doesZerotierConfigExist" .) }}
 apiVersion: v1
 data:
-  CHAIN_NAME: "{{ .Values.node_config_network.chain_name }}"
   NETWORK_ID: "{{ .Values.zerotier_config.zerotier_network }}"
   ZTAUTHTOKEN: "{{ .Values.zerotier_config.zerotier_token }}"
   NODES: |
@@ -38,8 +60,25 @@ metadata:
 apiVersion: v1
 data:
   ACCOUNTS: |
-{{ .Values.accounts | toJson | b64enc | indent 4 }}
+{{- $accounts := dict }}
+{{- range $k, $v := .Values.accounts }}
+  {{- $_ := set $accounts $k (omit $v "type" ) }}
+{{- end }}
+{{ $accounts | toJson | b64enc | indent 4 }}
 kind: Secret
 metadata:
   name: tezos-secret
   namespace: {{ .Release.Namespace }}
+---
+{{- if (include "tezos.hasPerBlockVotes" .) }}
+apiVersion: v1
+data:
+{{- range .Values.protocols }}
+  {{ .command }}-per-block-votes.json: {{ .vote | toJson | quote }}
+{{- end }}
+kind: ConfigMap
+metadata:
+  name: per-block-votes
+  namespace: {{ .Release.Namespace }}
+---
+{{- end }}

@@ -1,0 +1,37 @@
+In this directory, please find a number of scripts that are used
+to start various components in the tezos docker images.
+
+These script snippets are not executed as files by /bin/sh, but rather
+as a single line passed in via -c.
+
+We also ask for the helm template system to be passed over the snippet
+before it is inserted into the chart.
+
+YAML ISSUES
+
+    Because we are actually including this snippet into YAML as
+    an indented blob, it is a requirement that the first character
+    in the file is in column zero.
+
+TEMPLATING
+
+    Because the templating system is used, you can use any of the
+    features provided.  Mostly, variable expansion, i.e.
+
+	{{ .Values.expected_proof_of_work }}
+
+    If you use braces within the file, you will have to escape them,
+    though:
+
+	{{ "{{" }}
+
+SCRIPT SIZE LIMIT
+
+    Each OS has limit on the number of bytes that can be passed to
+    a command to be executed.  In some cases, this may be relatively
+    small, but we should be able to assume that it's at least 64KB.
+    So, be explicit, take care of all of the error cases, but do not
+    write your great novel.
+
+    In practice, you are unlikely to run into this limit, but it
+    exists and so it must be mentioned.

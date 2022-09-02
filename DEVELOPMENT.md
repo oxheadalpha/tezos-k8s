@@ -32,12 +32,10 @@
 - Tell devspace which namespace to use:
 
   ```shell
-  devspace use namespace tqtezos
+  devspace use namespace oxheadalpha
   ```
 
 - Run `mkchain` to generate your Helm values. (Note: Devspace will only deploy `rpc-auth` if you use the `rpc-auth` profile, regardless if you set it in mkchain. This is to avoid devspace deployment issues. See more below.)
-
-- Run `helm dependency update charts/tezos`. This grabs all the Tezos chart dependencies and packages them inside the chart's `charts/` directory. Currently this is just the `rpc-auth` chart. You'll need to run this for all charts that have dependencies in the future.
 
 - Set a `CHAIN_NAME` env var.
 
@@ -77,14 +75,14 @@ Chart.yaml does not require an `appVersion`. So we are not using it as it doesn'
 
 Regarding chart dependencies, Chart.yaml should not specify a dependency version for another _local_ chart.
 
-Being that all charts are bumped to the same version on release, the parent chart will get the latest version of the dependency by default (which is the same as its own version) when installing via our Helm chart [repo](https://github.com/tqtezos/tezos-helm-charts).
+Being that all charts are bumped to the same version on release, the parent chart will get the latest version of the dependency by default (which is the same as its own version) when installing via our Helm chart [repo](https://github.com/oxheadalpha/tezos-helm-charts).
 
 ## Run local development chart
 
 Instructions as per README install the latest release of tezos-k8s helm chart from a helm repository. To install a development version of a tezos chart in the charts/tezos directory instead, run:
 
 ```
-helm install tezos-mainnet charts/tezos --namespace tqtezos --create-namespace
+helm install tezos-mainnet charts/tezos --namespace oxheadalpha --create-namespace
 ```
 
 ## Notes
@@ -99,7 +97,7 @@ Here is an example of the flow for creating new images and how they are publishe
 
 - You are creating a new image that you call `chain-initiator`. Name its folder `chain-initiator`. This folder should contain at least a `Dockerfile`.
 
-- The CI on release will pre-pend `tezos-k8s` to the folder name, so `tezos-k8s-chain-initiator`. That is what the image will be named on Docker Hub under the `tqtezos` repo. So you would pull/push `tqtezos/tezos-k8s-chain-initiator`. All of our image names will have this format.
+- The CI on release will pre-pend `tezos-k8s` to the folder name, so `tezos-k8s-chain-initiator`. That is what the image will be named on Docker Hub under the `oxheadalpha` repo. So you would pull/push `oxheadalpha/tezos-k8s-chain-initiator`. All of our image names will have this format.
 
 - In Helm charts that will be using the new image, set in the `values.yaml` file under the field `tezos_k8s_images` the value of `tezos-k8s-chain-initiator:dev`. (Any other images that a chart uses that it just pulls from a remote registry should go under the `images` field.) This is how the file will be stored in version control. On releases, the CI will set the tags to the release version and publish that to Docker Hub.
 
@@ -119,6 +117,6 @@ Upon release, every component of the tezos-k8s repo will be bumped to that versi
 
 - mkchain will be published to pypi
 - Docker images will be deployed to Docker Hub
-- Helm charts will be deployed to our Github Pages [repo](https://github.com/tqtezos/tezos-helm-charts)
+- Helm charts will be deployed to our Github Pages [repo](https://github.com/oxheadalpha/tezos-helm-charts)
 
 See the Github CI file [./.github/workflows/ci.yml](.github/workflows/ci.yml) for our full CI pipeline.

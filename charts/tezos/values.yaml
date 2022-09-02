@@ -1,9 +1,6 @@
 # Is the values file an invitation for a private chain
 is_invitation: false
 
-# Should the rpc-auth service be spun up
-rpc_auth: false
-
 # A chain using Zerotier would be a private chain
 # zerotier_config:
 #   zerotier_network: YOUR_NETWORK_ID_HERE
@@ -11,42 +8,42 @@ rpc_auth: false
 
 # Images not part of the tezos-k8s repo go here
 images:
-  tezos: tezos/tezos:v9.0-rc1
+  octez: tezos/tezos:v14-release
+  tezedge: tezedge/tezedge:v1.6.8
 # Images that are part of the tezos-k8s repo go here with 'dev' tag
 tezos_k8s_images:
-  baker_endorser: tezos-k8s-baker-endorser:dev
-  chain_initiator: tezos-k8s-chain-initiator:dev
-  config_generator: tezos-k8s-config-generator:dev
-  snapshot_downloader: tezos-k8s-snapshot-downloader:dev
-  wait_for_bootstrap: tezos-k8s-wait-for-bootstrap:dev
+  utils: tezos-k8s-utils:dev
   zerotier: tezos-k8s-zerotier:dev
 
-# Properties that are templated in Helm template files
-baker_statefulset: # charts/tezos/templates/baker.yaml
-  name: tezos-baking-node
-  node_type: baking
-  storage_size: 15Gi
-regular_node_statefulset: # charts/tezos/templates/node.yaml
-  name: tezos-node
-  node_type: regular
-  storage_size: 15Gi
-nomadic_indexer_statefulset:
-  name: nomadic-indexer
+## Properties that are templated for some k8s resources. There are container
+## scripts that will look up some of these values. They should not be modified.
+tzkt_indexer_statefulset:
+  name: tzkt-indexer
 bcd_indexer_statefulset:
   name: bcd-indexer
+signer_statefulset:
+  name: tezos-signer
+  pod_type: signing
+chain_initiator_job:
+  name: chain-initiator
+  pod_type: activating
 
 # For non-public chains the defualt mutez given to an account if the
 # account is not explicitly set below.
 bootstrap_mutez: "4000000000000"
 
-# # ACCOUNTS
+# # Accounts
 #
-# When running bakers for a public net, you must provide your own secret keys.
-# For non public networks you can change this setting to true, and deterministic
-# keys will be generated for your nodes automatically. If a genesis block hash
-# is not provided, that will also be generated. This is helpful for spinning up
-# local testnets.
-should_generate_unsafe_deterministic_data: false
+# The `accounts` object of values.yaml defines Tezos accounts used in the chart.
+# By default no account is configured:
+accounts: {}
+#
+# `accounts` is a map where keys are account aliases and values are maps of
+# fields `key`, `is_bootstrap_baker_account`, `bootstrap_balance` and `signer_url`.
+#
+# The `key` field can be set to a public or private key. For a bootstrap baker,
+# it must be set to a private key. The key type will be recognized automatically,
+# and the pod will fail if the key type is unexpected.
 #
 # - Public chains: Accounts do not get `is_bootstrap_baker_account` and
 # `bootstrap_balance` fields.
@@ -57,65 +54,223 @@ should_generate_unsafe_deterministic_data: false
 #   node but they will not be bootstrap accounts. If you don't set a bootstrap
 #   balance, it will default to the `bootstrap_mutez` field above.
 #
-accounts: {}
-#   tqtezos_baker_0:
+# Example:
+#
+# ```
+# accounts:
+#   baker0:
 #     key: edsk...
-#     type: secret
 #     is_bootstrap_baker_account: true
 #     bootstrap_balance: "50000000000000"
-
-#   tqtezos_regular_account_0:
+#
+#   baker1:
 #     key: edpk...
-#     type: public
 #     is_bootstrap_baker_account: false
 #     bootstrap_balance: "4000000000000"
+# ```
+#
+# A public key account can contain a url to a remote signer that signs with the
+# corresponding secret key. You shouldn't need to set this if you're deploying
+# a tezos-k8s chart's signer into the same namespace. See the `signers` values
+# field below in the file to define remote signers.
+# ```
+#   baker2:
+#     key: edpk...
+#     is_bootstrap_baker_account: false
+#     bootstrap_balance: "4000000000000"
+#     signer_url: http://[POD-NAME].[SERVICE-NAME].[NAMESPACE]:6732
+# ```
+#
+# NOTE - signer_url must be URL to external remote signer without anything extra
+# in the path, such as the public key hash.
+#
+# When running bakers for a public net, you must provide your own secret keys.
+# For non public networks you can change the
+# `should_generate_unsafe_deterministic_data` setting to true, and deterministic
+# keys will be generated for your nodes automatically. This is helpful to spin up
+# local testnets.
+should_generate_unsafe_deterministic_data: false
+# # End Accounts
 
-# # NODES
-# Names of nodes should be consistent with their statefulset names but with
-# an added suffix being the index of the node.
-# Example: `baker_statefulset.name: tezos-baking-node` -> `nodes.baking.tezos-baking-node-0`
-# These names with suffix are the
-# `metadata.name` of the downward k8s API. They should be kebab case.
-# https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/
+# # Nodes
 #
-# Params for for non-public chains:
-# - `bake_using_account`: The name of the account that should be used for baking.
-# - `is_bootstrap_node`: Is this node a bootstrap peer.
+# Use `nodes` to configure the Tezos nodes running in your chart.
 #
-# The `config` property should mimic the structure of a node's config.json.
-# Run `tezos-node config --help` for more info.
+# `nodes` is a dictionary where each key/value pair defines a statefulset and a
+# number of instances thereof. The name (key) defines the name of the
+# statefulset and will be the base of the pod names. The instances are defined
+# as a list because their names are simply -N appended to the statefulsetname.
+# Said names are typically kebab case.
+#
+# Params at the statefulset level:
+# - "config": The "config" property should mimic the structure of a node's
+#             config.json. Run `tezos-node config --help` for more info.
+#             If present at the statefulset level, it overrides it in
+#             node_globals.
+# - "env": a dictionary of containers mapped to a dictionary of env
+#          vars.  The container name "all" will apply the env vars to
+#          all containers.  The most specific wins.  Find the names of
+#          the containers by examining an installed environment, or by
+#          looking at charts/tezos/templates/nodes.yaml.  Please note
+#          that we truncate the protocol from the container name for
+#          bakers and accusers, so "baker-011-pthangz2" is configured
+#          using just "baker".
+# - "storage_size": the size of the PV
+# - "images": Optional specification of images to use for the tezos node and
+#           baker. Options are "octez" with a tezos/tezos image or
+#           "tezedge" with a tezedge/tezedge image. If no images are provided,
+#           the containers will default to the images defined in the "images"
+#           field up above.
+# - "runs": A list of containers to run. A tezos node implementation is required.
+#         Options being "octez_node" or "tezedge_node". Other optional
+#         containers are "accuser", "baker", "logger", "vdf" and "metrics".
+# - "local_storage": use local storage instead of a volume. The storage will be
+#                  wiped when the node restarts for any reason. Useful when
+#                  faster IO is desired. Defaults to false.
+# - "labels": https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+#      NOTE: the labels appType, node_class, and baking_node are set
+#      automatically for you.
+# - "node_selector": Specify a kubernetes node selector in 'key: value' format
+#     for your tezos nodes.
+# - "readiness_probe": Attach a probe to the node. The probe checks whether
+#                    the most recent block is recent enough. If not, the
+#                    services will be unreachable. Defaults to True.
+#                    True is good for RPC nodes, private nodes, and
+#                    self-contained private chains.
+#                    Recommended to set to False when bootstrapping a new
+#                    chain with external bakers, such as a new test chain.
+#                    Otherwise, the chain may become unreachable externally
+#                    while waiting for other nodes to come online.
+# - "instances": a list of nodes to fire up, each is a dictionary defining:
+#    - "bake_using_account": Account name that should be used for baking.
+#    - "bake_using_accounts": List of account names that should be used for baking.
+#    - "config": Same as the outer statefulset level "config". It overrides the
+#                statefulset level.
+#    - "is_bootstrap_node": Is this node a bootstrap peer.
+#    - "identity": An optional map containing a pre-generated Tezos node
+#                 identity. This is useful for local storage nodes which would
+#                 need to generate an identity at every boot. The identity file
+#                 will be created at /var/tezos/node/data/identity.json.
+#                 Required fields are "peer_id", "public_key", "secret_key",
+#                 and "proof_of_work_timestamp".
+#
+# Defaults are filled in for most of the above values.  You can also provide
+# global defaults for all nodes via a node_globals: section which is also
+# a dictionary.  Currently, two keys are defined: "config" and "env".  These
+# operate in the same way as the section in "nodes" going by the same name.
+#
+# Example config:
+#
+# ```
+# node_globals:
+#   config:
+#     shell:
+#       history_mode: full
+#   env:
+#     baker:
+#       TEZOS_LOG: "* -> debug"
+# nodes:
+#   rolling-baking-node:
+#     config:
+#       shell:
+#         history_mode: rolling
+#     env:
+#       all:
+#         TEZOS_CLIENT_UNSAFE_DISABLE_DISCLAIMER: "Y"
+#       snapshot-downloader:
+#         HTTP_PROXY: http://my-proxy.my-company.com:3128/
+#     labels:
+#       # Example labels you might use to specify certain attributes of your nodes.
+#       peer_node: "true" # Forward P2P traffic to this node types instances
+#       rpc_node: "true" # Forward RPC traffic to this node types instances
+#     node_selector:
+#       nodeSelectorKey: nodeSelectorValue
+#     storage_size: 15Gi
+#     images: # (optional field)
+#       octez: tezos/tezos:v...
+#     # tezedge: tezedge/tezedg:v...
+#     local_storage: false
+#     runs:
+#       - octez_node
+#     # - tezedge_node
+#       - baker
+#     instances:
+#       - bake_using_account: baker0
+#         is_bootstrap_node: true
+#         # Note the following config section overrides the above one even
+#         # if we make them the same in this example.
+#         config:
+#           shell:
+#             history_mode: rolling
+#         identity:
+#            peer_id: id...
+#            public_key: ...
+#            secret_key: ...
+#            proof_of_work_stamp: ...
+#   rolling-node:
+#     labels:
+#       # Example labels you might use to specify certain attributes of your nodes.
+#       peer_node: "true"
+#       rpc_node: "true"
+#     images: # (optional field)
+#       tezedge: tezedge/tezedge:v...
+#     runs: ["tezedge_node"]
+#     instances:
+#       - {}
+#       - {}
+# ```
+# The default configuration is:
+node_globals:
+  env: {}
 nodes:
-  baking: {}
-    # tezos-baking-node-0:
-      # bake_using_account: tqtezos_baker_0
-      # is_bootstrap_node: true
-      # config:
-      #   shell:
-      #     history_mode: rolling
+  rolling-node:
+    storage_size: 100Gi
+    runs:
+      - octez_node
+    instances:
+      - is_bootstrap_node: false
+        config:
+          shell:
+            history_mode: rolling
+# End nodes
 
-    # Non-public chains: An account with deterministic keys will
-    # automatically be created for this baker, as no account named
-    # tqtezos_baker_1 is specified in accounts.
-    #
-    # Public chain: This baker will fail to boot as it doesn't have a secret key.
-    #
-    # tezos-baking-node-1:
-    #   bake_using_account: tqtezos_baker_1
-    #   is_bootstrap_node: true
-    #   config:
-    #     shell:
-    #       history_mode: full
+## Configuration for K8s Service resources. Configuring the labels selector of a
+## service will result in the service forwarding traffic only to pods that have
+## matching labels.
+services:
+  ## Configure the labels selector of the Tezos node RPC service. Traffic will
+  ## be forwarded to all nodes if no labels are specified.
+  tezos_node_rpc:
+    selector:
+#      rpc_node: "true"
 
-  # Non-baking nodes
-  regular:
-    tezos-node-0:
-      config:
-        shell:
-          history_mode: rolling
+# # Signers
+#
+# Define remote signers. Bakers automatically use signers in their namespace
+# that are configured to sign for the accounts they are baking for.
+#
+# By default no signer is configured:
+signers: {}
+# Here is an example of octez signer config. When set, the
+# ```
+# signers:
+#  tezos-signer-0:
+#    sign_for_accounts:
+#    - baker0
+# ```
+# End Signers
 
-# Where full and rolling history mode nodes will get their snapshots from
+## Where full and rolling history mode nodes will get their Tezos snapshots from.
 full_snapshot_url: https://mainnet.xtz-shots.io/full
 rolling_snapshot_url: https://mainnet.xtz-shots.io/rolling
+
+## Alternatively to a Tezos snapshot, you can download an LZ4-compressed
+## filesystem tar of a node's data directory by setting `archive_tarball_url`
+## and `rolling_tarball_url` fields to the URL of the file. NOTE:
+## `rolling_tarball_url` and `rolling_snapshot_url` are mutually exclusive and
+## cannot both be specified at the same time.
+archive_tarball_url: https://mainnet.xtz-shots.io/archive-tarball
+# rolling_tarball_url: "https://mainnet.xtz-shots.io/rolling-tarball
 
 # List of peers for nodes to connect to. Gets set under config.json `p2p` field
 bootstrap_peers: []
@@ -123,67 +278,178 @@ bootstrap_peers: []
 # Identity generation difficulty.
 expected_proof_of_work: 26
 
-# Create a custom network using a config structure that is similar to a node's
-# config.json.
-# Run `tezos-node config --help` for more info.
-#
+## Create a custom network using a config structure that is similar to a node's
+## config.json. Run `tezos-node config --help` for more info.
+## Note that the genesis block hash will be deterministically generated from
+## the chain name if omitted.
+##
 # node_config_network:
 #   chain_name: YOUR_CHAIN_NAME_HERE
 #   genesis:
 #     timestamp: "2021-03-04T20:00:00Z"
 #     block: YOUR_GENESIS_BLOCK_HASH_HERE
-#     protocol: PtYuensgYBb3G3x1hLLbCmcav8ue8Kyd2khADcL5LsT5R1hcXex
+#     protocol: Ps9mPmXaRzmzk35gbAYNCAw6UXdE2qoABTHbN2oEEc1qM7CwT9P
 #   # The name of the account who's public key will be set downstream in
 #   # config.json at `network.genesis_parameters.values.genesis_pubkey`.
-#   activation_account_name: tqtezos_baker_0
+#   activation_account_name: baker0
 #
-# For joining a public network. The network must be recognized by the
-# tezos/tezos:v9.0-rc1 docker image.
+## To join a public network you may set `chain_name` in one of two ways:
+## - Specify the name of the network which must be recognized by the
+##   tezos-node binary of the Octez image being used.
+## - Pass a url that returns the config.json of the network. Example:
+##   "https://teztnets.xyz/mondaynet". It is helpful for running
+##   testnets and shouldn't be needed in general.
 node_config_network:
   chain_name: mainnet
+  ## When joining a public network, a tezos node will by default
+  ## connect to the boot-nodes of the selected chain. This may not
+  ## always be desired. For example, you may want to run a mainnet
+  ## replica in isolation with yes-nodes. Uncomment the line below to
+  ## stop the node from connecting to the chain's default boot-nodes.
+  ## You can still specify boot-nodes with the `bootstrap_peers` field.
+  # join_public_network: false
 
-protocol:
-  # Set the protocol binary. The protocol must be recognized by the
-  # tezos/tezos:v9.0-rc1 docker image.
-  command: 008-PtEdo2Zk
+protocols:
+  ## Tezos builds baker binaries for every supported protocol.
+  ## List here the protocols that you wish to run bakers for.
+  ## These binaries must be present in the docker image specified.
+  ## You may want to run two or more if you are expecting an on-chain upgrade.
+  ## Be mindful that running more protocols will start more containers in your
+  ## pods which may consume more memory.
+  ## Syntax:
+  ## * command: the suffix of the tezos-baker binary
+  ## * vote: a map of per-block votes. These are protocol specific.
+  ##   "on" and "off" must be between quotes.
+  ## Note that we are not providing default votes since every baker needs
+  ## to make an explicit educated choice on every toggle.
+  - command: 013-PtJakart
+    vote: {}
+  # - command: alpha
+  #   vote:
+  #     liquidity_baking_toggle_vote: "pass"
 
-# # Activate a new chain from genesis. Note, this is only for when your chain does
-# # not exist yet. For subsequent deploys, remove this.
-#
+## Activate a new chain from genesis. Uncommenting this will create an
+## activation job. The activation job will activate the chain if the
+## level is at zero, and do nothing otherwise, so this section can remain
+## after chain activation.
+##
 # activation:
-#   protocol_hash: PtEdo2ZkT9oKpimTah6x2embF25oss54njMuPzkJTEi5RqfdZFA
-#   # Should the commitments data in
-#   # tezos-k8s/config-generator/commitment-params.json be part of parameters.json.
-#   should_include_commitments: false
-#   # parameters.json
-#   protocol_parameters:
-#     preserved_cycles: 2
-#     blocks_per_cycle: 8
-#     blocks_per_commitment: 4
-#     blocks_per_roll_snapshot: 4
-#     blocks_per_voting_period: 64
-#     time_between_blocks: ["10", "20"]
-#     endorsers_per_block: 32
-#     hard_gas_limit_per_operation: "800000"
-#     hard_gas_limit_per_block: "8000000"
-#     proof_of_work_threshold: "-1"
-#     tokens_per_roll: "8000000000"
-#     michelson_maximum_type_size: 1000
-#     seed_nonce_revelation_tip: "125000"
-#     origination_size: 257
-#     block_security_deposit: "512000000"
-#     endorsement_security_deposit: "64000000"
-#     endorsement_reward: ["2000000"]
-#     cost_per_byte: "1000"
-#     hard_storage_limit_per_operation: "60000"
-#     test_chain_duration: "1966080"
-#     quorum_min: 2000
-#     quorum_max: 7000
-#     min_proposal_quorum: 500
-#     initial_endorsers: 1
-#     delay_per_missing_endorsement: "1"
-#     baking_reward_per_endorsement: ["200000"]
+#  protocol_hash: PtJakart2xVj7pYXJBXrqHgd82rdkLey5ZeeGwDgPp9rhQUbSqY
+#  protocol_parameters:
+#    preserved_cycles: 3
+#    blocks_per_cycle: 8
+#    blocks_per_commitment: 4
+#    blocks_per_stake_snapshot: 4
+#    cycles_per_voting_period: 1
+#    hard_gas_limit_per_operation: '1040000'
+#    hard_gas_limit_per_block: '5200000'
+#    proof_of_work_threshold: '-1'
+#    tokens_per_roll: '8000000000'
+#    seed_nonce_revelation_tip: '125000'
+#    baking_reward_fixed_portion: '10000000'
+#    baking_reward_bonus_per_slot: '4286'
+#    endorsing_reward_per_slot: '2857'
+#    hard_storage_limit_per_operation: '60000'
+#    origination_size: 257
+#    cost_per_byte: '250'
+#    quorum_max: 7000
+#    quorum_min: 2000
+#    min_proposal_quorum: 500
+#    liquidity_baking_subsidy: '2500000'
+#    liquidity_baking_sunset_level: 10000000
+#    liquidity_baking_toggle_ema_threshold: 100000
+#    max_operations_time_to_live: 120
+#    minimal_block_delay: "5"
+#    delay_increment_per_round: "5"
+#    consensus_committee_size: 7000
+#    consensus_threshold: 4667
+#    minimal_participation_ratio:
+#      numerator: 2
+#      denominator: 3
+#    max_slashing_period: 2
+#    frozen_deposits_percentage: 10
+#    double_baking_punishment: "640000000"
+#    ratio_of_frozen_deposits_slashed_per_double_endorsement:
+#      numerator: 1
+#      denominator: 2
+#    cache_script_size: 100000000
+#    cache_stake_distribution_cycles: 8
+#    cache_sampler_state_cycles: 8
+#    tx_rollup_enable: true
+#    tx_rollup_origination_size: 4000
+#    tx_rollup_hard_size_limit_per_inbox: 500000
+#    tx_rollup_hard_size_limit_per_message: 5000
+#    tx_rollup_max_withdrawals_per_batch: 15
+#    tx_rollup_commitment_bond: "10000000000"
+#    tx_rollup_finality_period: 10
+#    tx_rollup_max_inboxes_count: 15
+#    tx_rollup_withdraw_period: 10
+#    tx_rollup_max_messages_per_inbox: 1010
+#    tx_rollup_max_commitments_count: 30
+#    tx_rollup_cost_per_byte_ema_factor: 120
+#    tx_rollup_max_ticket_payload_size: 2048
+#    tx_rollup_rejection_max_proof_size: 30000
+#    tx_rollup_sunset_level: 17280
+#    sc_rollup_enable: false
+#    sc_rollup_origination_size: 6314
+#    sc_rollup_challenge_window_in_blocks: 40
+#    sc_rollup_max_available_messages: 1000000
 #
+#   # Pass url pointing to additional contracts that you want injected at activation.
+#   # This data is typically too large to pass it directly inside helm chart.
+#   bootstrap_contract_urls: []
+#
+#   # Use the "faucet" map to predictably create a desired number of faucet
+#   # accounts. Change the seed to generate different sets of accounts.
+#   # Pass the same map to the "tezos-faucet" chart in the same repository
+#   # so you can deploy a website where people get free tez from the faucet.
+#   faucet:
+#     seed: "deterministic faucet seed"
+#     number_of_accounts: 100
+
+## Deploy an indexer with the chain. An indexer puts the chain
+## contents in a database for efficient indexing. Most dapps need it.
+## Supported indexers:
+## * tzkt https://github.com/baking-bad/tzkt
+#
+## Templatized indexer configuration values go in the config field.
+##
+# indexers:
+#   tzkt:
+#     api_image: "bakingbad/tzkt-api"
+#     api_image_tag: "1.6.4"
+#     indexer_image: "bakingbad/tzkt-sync"
+#     indexer_image_tag: "1.6.4"
+#
+#     ## Database volumeClaimTemplates config
+#     storageClassName: ""
+#     storage: "100Gi"
+#     ## Statefulset annotations
+#     # annotations:
+#
+#     ## Indexer replicas
+#     replicas: 1
+#
+#     ## Tzkt provides new snapshots as they update their code. Update your
+#     ## indexers by specifying new docker image tags and by using the matching
+#     ## db_snapshot_url. Spin up an additional replica if you only have one to
+#     ## avoid downtime. See tzkt's readme for public networks' db snapshot urls.
+#     ## If you want to index a brand new archive node you are spinning up, just
+#     ## let the indexer start syncing with it from scratch.
+#     ## https://github.com/baking-bad/tzkt
+#     db_snapshot_url: https://tzkt.fra1.digitaloceanspaces.com/snapshots/tzkt_v1.6_mainnet.backup
+#
+#     ## Configurable tzkt fields
+#     config:
+#       ## Url of the archive node to index. You will need to create an archive node up
+#       ## above in the `nodes` section. The `rpc_url` field is looking for a node named
+#       ## `archive-node`.
+#       rpc_url: http://archive-node-0.archive-node:8732
+#       db_name: db
+#       db_user: foo
+#       db_password: bar
+#       # api_log_level: Debug
+#       # indexer_log_level: Debug
 
 # Deploy an indexer with the chain. An indexer puts the chain
 # contents in a database for efficient indexing. Most dapps need it.

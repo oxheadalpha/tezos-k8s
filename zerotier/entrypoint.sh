@@ -13,7 +13,7 @@ supervisord -c /etc/supervisor/supervisord.conf
 # waiting for Zerotier IP
 # why 2? because you have an ipv6 and an a ipv4 address by default if everything is ok
 IP_OK=0
-while [ $IP_OK -lt 1 ]
+while [ $IP_OK -lt 2 ]
 do
   ZTDEV=$( ip addr | grep -i zt | grep -i mtu | awk '{ print $2 }' | cut -f1 -d':' | tail -1 )
   IP_OK=$( ip addr show dev $ZTDEV | grep -i inet | wc -l )
@@ -32,7 +32,10 @@ do
 done
 
 echo "Set zerotier name"
-if [ "$(echo $NODES | jq -r ".${MY_NODE_TYPE}.\"${MY_POD_NAME}\".is_bootstrap_node")" == "true" ]; then
+if echo $NODES | jq -er "
+    .\"${MY_NODE_CLASS}\"
+    .instances[${MY_POD_NAME#$MY_NODE_CLASS-}]
+    .is_bootstrap_node"; then
   zerotier_name="${CHAIN_NAME}_bootstrap"
   zerotier_description="Bootstrap node ${MY_POD_NAME} for chain ${CHAIN_NAME}"
 else

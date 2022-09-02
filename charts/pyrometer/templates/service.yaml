@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: pyrometer
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: pyrometer
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+    - port: 31732
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
+  selector:
+    app: pyrometer

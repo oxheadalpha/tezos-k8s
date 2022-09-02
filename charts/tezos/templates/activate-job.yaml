@@ -1,0 +1,65 @@
+{{- if (include "tezos.shouldActivateProtocol" .) }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: activate-job
+  namespace: {{ .Release.Namespace }}
+spec:
+  template:
+    metadata:
+      name: activate-job
+    spec:
+      containers:
+{{- include "tezos.init_container.chain_initiator"    $ | indent 8 }}
+      initContainers:
+{{- if (include "tezos.shouldInitializeFaucet" .) }}
+        - image: {{ .Values.tezos_k8s_images.utils }}
+          name: faucet-gen
+          args:
+            - faucet-gen
+            - --seed
+            - "{{ .Values.activation.faucet.seed }}"
+            - --number-of-accounts
+            - "{{ .Values.activation.faucet.number_of_accounts }}"
+            - --write-commitments-to
+            - "/faucet-commitments/commitments.json"
+          volumeMounts:
+          - name: faucet-commitments
+            mountPath: "/faucet-commitments"
+{{ end }}
+        - image: {{ .Values.tezos_k8s_images.utils }}
+          imagePullPolicy: IfNotPresent
+          name: config-generator
+          args:
+            - config-generator
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          env:
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: {{ .Values.chain_initiator_job.pod_type }}
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+            - name: faucet-commitments
+              mountPath: "/faucet-commitments"
+            - mountPath: /etc/secret-volume
+              name: tezos-accounts
+      restartPolicy: Never
+      volumes:
+        - emptyDir: {}
+          name: config-volume
+        - emptyDir: {}
+          name: var-volume
+        - name: faucet-commitments
+          emptyDir: {}
+        - name: tezos-accounts
+          secret:
+            secretName: tezos-secret
+{{ end }}

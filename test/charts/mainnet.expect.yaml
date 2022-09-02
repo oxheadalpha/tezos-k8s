@@ -1,0 +1,368 @@
+---
+# Source: tezos-chain/templates/configs.yaml
+---
+apiVersion: v1
+data:
+  ACCOUNTS: |
+    e30=
+kind: Secret
+metadata:
+  name: tezos-secret
+  namespace: testing
+---
+# Source: tezos-chain/templates/configs.yaml
+apiVersion: v1
+data:
+  CHAIN_NAME: "mainnet"
+  CHAIN_PARAMS: |
+    {
+      "bootstrap_peers": [],
+      "default_bootstrap_mutez": "4000000000000",
+      "expected-proof-of-work": 26,
+
+      "should_generate_unsafe_deterministic_data": false,
+      "network": {
+          "chain_name": "mainnet"
+        },
+      "protocol_activation": null
+    }
+  FULL_SNAPSHOT_URL: "https://mainnet.xtz-shots.io/full"
+  FULL_TARBALL_URL: ""
+  ROLLING_SNAPSHOT_URL: "https://mainnet.xtz-shots.io/rolling"
+  ROLLING_TARBALL_URL: ""
+  ARCHIVE_TARBALL_URL: "https://mainnet.xtz-shots.io/archive-tarball"
+  NODE_GLOBALS: |
+    {
+      "env": {}
+    }
+
+  NODES: |
+    {
+      "rolling-node": {
+        "instances": [
+          {
+            "config": {
+              "shell": {
+                "history_mode": "rolling"
+              }
+            },
+            "is_bootstrap_node": false
+          }
+        ],
+        "runs": [
+          "octez_node"
+        ],
+        "storage_size": "100Gi"
+      }
+    }
+
+  SIGNERS: |
+    {}
+kind: ConfigMap
+metadata:
+  name: tezos-config
+  namespace: testing
+---
+# Source: tezos-chain/templates/static.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: tezos-node-rpc
+  namespace: testing
+spec:
+  ports:
+    - port: 8732
+      name: rpc
+  selector:
+    appType: tezos-node
+  type: NodePort
+---
+# Source: tezos-chain/templates/static.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: rolling-node
+spec:
+  publishNotReadyAddresses: true
+  clusterIP: None
+  selector:
+    node_class: rolling-node
+---
+# Source: tezos-chain/templates/nodes.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: rolling-node
+  namespace: testing
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  serviceName: rolling-node
+  selector:
+    matchLabels:
+      node_class: rolling-node
+  template:
+    metadata:
+      labels:
+        appType: tezos-node
+        node_class: rolling-node
+    spec:
+      containers:        
+        - name: octez-node
+          image: "tezos/tezos:v14-release"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              set -x
+              
+              set
+              
+              # ensure we can run tezos-client commands without specifying client dir
+              ln -s /var/tezos/client /home/tezos/.tezos-client
+              #
+              # Not every error is fatal on start.  In particular, with zerotier,
+              # the listen-addr may not yet be bound causing tezos-node to fail.
+              # So, we try a few times with increasing delays:
+              
+              for d in 1 1 5 10 20 60 120; do
+              	/usr/local/bin/tezos-node run				\
+              			--bootstrap-threshold 0			\
+              			--config-file /etc/tezos/config.json
+              	sleep $d
+              done
+              
+              #
+              # Keep the container alive for troubleshooting on failures:
+              
+              sleep 3600
+              
+          envFrom:
+          env:
+            - name: DAEMON
+              value: octez-node
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+          ports:
+            - containerPort: 8732
+              name: tezos-rpc
+            - containerPort: 9732
+              name: tezos-net
+          readinessProbe:
+            httpGet:
+              path: /is_synced
+              port: 31732                                                        
+        - name: sidecar
+          image: "tezos-k8s-utils:dev"
+          imagePullPolicy: IfNotPresent
+          args:
+            - sidecar
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: rolling-node
+            - name: DAEMON
+              value: sidecar
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume        
+      initContainers:        
+        - name: config-init
+          image: "tezos/tezos:v14-release"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              echo "Writing custom configuration for public node"
+              mkdir -p /etc/tezos/data
+              
+              #
+              # This is my comment.
+              
+              /usr/local/bin/tezos-node config init		\
+                  --config-file /etc/tezos/data/config.json	\
+                  --data-dir /etc/tezos/data			\
+                  --network $CHAIN_NAME
+              
+              cat /etc/tezos/data/config.json
+              
+              printf "\n\n\n\n\n\n\n"
+              
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: rolling-node
+            - name: DAEMON
+              value: config-init
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume                
+        - name: config-generator
+          image: "tezos-k8s-utils:dev"
+          imagePullPolicy: IfNotPresent
+          args:
+            - config-generator
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: rolling-node
+            - name: DAEMON
+              value: config-generator
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+            - mountPath: /etc/secret-volume
+              name: tezos-accounts        
+        - name: snapshot-downloader
+          image: "tezos-k8s-utils:dev"
+          imagePullPolicy: IfNotPresent
+          args:
+            - snapshot-downloader
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: rolling-node
+            - name: DAEMON
+              value: snapshot-downloader
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume        
+        - name: snapshot-importer
+          image: "tezos/tezos:v14-release"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              set -ex
+              
+              bin_dir="/usr/local/bin"
+              data_dir="/var/tezos"
+              node_dir="$data_dir/node"
+              node_data_dir="$node_dir/data"
+              node="$bin_dir/tezos-node"
+              snapshot_file=${node_dir}/chain.snapshot
+              
+              if [ -d ${node_data_dir}/context ]; then
+                  echo "Blockchain has already been imported. If a tarball"
+                  echo "instead of a regular tezos snapshot was used, it was"
+                  echo "imported in the snapshot-downloader container."
+                  exit 0
+              fi
+              
+              cp -v /etc/tezos/config.json ${node_data_dir}
+              
+              ${node} snapshot import ${snapshot_file} --data-dir ${node_data_dir} \
+                  --network $CHAIN_NAME
+              find ${node_dir}
+              
+              rm -rvf ${snapshot_file}
+              
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: rolling-node
+            - name: DAEMON
+              value: snapshot-importer
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume        
+      securityContext:
+        fsGroup: 100      
+      volumes:
+        - hostPath:
+            path: /dev/net/tun
+          name: dev-net-tun
+        - emptyDir: {}
+          name: config-volume
+        - name: tezos-accounts
+          secret:
+            secretName: tezos-secret
+  volumeClaimTemplates:
+    - metadata:
+        name: var-volume
+        namespace: testing
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 100Gi

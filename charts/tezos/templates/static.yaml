@@ -7,32 +7,38 @@ spec:
   ports:
     - port: 8732
       name: rpc
+  {{- with .Values.services.tezos_node_rpc.selector | default (dict "appType" "tezos-node") }}
   selector:
-    appType: tezos-node
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   type: NodePort
 ---
-{{- if (include "tezos.shouldDeployRegularNodeStatefulset" .) }}
+{{- range $key, $val := .Values.nodes }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.regular_node_statefulset.name }}
+  name: {{ $key }}
 spec:
+  publishNotReadyAddresses: true
   clusterIP: None
   selector:
-    app: {{ .Values.regular_node_statefulset.name }}
+    node_class: {{ $key }}
+---
+{{- end }}
+{{- if (include "tezos.shouldDeployTzktIndexer" .) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.tzkt_indexer_statefulset.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+    - port: 5000
+  selector:
+    app: {{ .Values.tzkt_indexer_statefulset.name }}
+  type: NodePort
 {{- end }}
 
-{{- if (include "tezos.shouldDeployBakerStatefulset" .) }}
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ .Values.baker_statefulset.name }}
-spec:
-  clusterIP: None
-  selector:
-    app: {{ .Values.baker_statefulset.name }}
-{{- end }}
 ---
 {{- if (include "tezos.shouldDeployBcdIndexer" .) }}
 apiVersion: v1

@@ -1,0 +1,31 @@
+node_globals:
+  env:
+    all:
+      key: outer-value
+    snapshot-downloader:
+      key: outer-container
+    octez-node:
+      TEZOS_LOG: "* -> DEBUG"
+nodes:
+  country-town:
+    env:
+      all:
+        key: specific-pod
+      snapshot-downloader:
+        key: specific-container
+    images:
+      octez: tezos/tezos:v14-release
+    runs: [ octez_node, logger, metrics ]
+    instances:
+    - config:
+        shell: {history_mode: rolling}
+    - config:
+        shell:
+          history_mode:
+            rolling:
+              additional_cycles: 5
+  city-block:
+    runs: [tezedge_node, logger, metrics]
+    instances:
+      - {}
+  rolling-node: null

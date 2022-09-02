@@ -1,0 +1,121 @@
+#!/bin/sh -e
+
+copy_vals() {
+
+	NEWLOC="$(mktemp "$MYDIR/valuesXXXXXX")"
+	cp "test/charts/$1.in.yaml" $NEWLOC
+	echo $NEWLOC
+}
+
+usage() {
+
+	(  echo "$1"
+	   echo "usage: $0 [-S] [-b oldbranch] old_values [new_values]"
+	   echo
+	   echo "-S: stash before compare, stash pop after"
+	   echo "-b: checkout oldbranch to compare"
+	) 1>&2
+
+	exit 1
+}
+
+CUR_BRANCH=
+OLD_BRANCH=
+COMPARE_STASHED=0
+I_STASHED_IT=0
+DIFF="diff -u"
+DIFF_ARGS=
+
+MYDIR="$(mktemp -d /tmp/helm-compare-versions-XXXXXX)"
+
+while getopts SU:Yb:n:w f; do
+	case $f in
+	S)	COMPARE_STASHED=1;;
+	U)	DIFF_ARGS="$DIFF_ARGS -U$OPTARG";;
+	Y)	DIFF="dyff between";;
+	b)	OLD_BRANCH=$OPTARG;;
+	n)	NEW_BRANCH=$OPTARG;;
+	w)	DIFF_ARGS="$DIFF_ARGS -w";;
+	\?)	usage "Invalid option $f";;
+	esac
+done
+shift $(expr $OPTIND - 1)
+
+if [ $# -lt 1 -o $# -gt 2 ]; then
+	usage "Wrong number of arguments"
+fi
+
+if [ ! -z "$NEW_BRANCH" -a "$COMPARE_STASHED" = 1 ]; then
+	usage "Incompatible flags: -n can't be used with -S"
+fi
+
+OLD_VALUES="$1"
+NEW_VALUES="$2"
+
+if [ -z "$NEW_VALUES" ]; then
+	NEW_VALUES="$OLD_VALUES"
+fi
+
+[ ! -f "$NEW_VALUES" ] && NEW_VALUES="$(copy_vals $NEW_VALUES)"
+[ ! -f "$OLD_VALUES" ] && OLD_VALUES="$(copy_vals $OLD_VALUES)"
+
+CHART1=
+CHART2=
+CUR_BRANCH=
+
+cleanup() {
+
+	#
+	# XXXrcd: note that this cleanup is not perfect, it has
+	#         race conditions, especially vis a vis the handling
+	#         of "git stash".  Don't use -S unless you understand
+	#         how git stash works, git reflog, etc...
+
+	trap '' PIPE INT
+
+	if [ -d "$MYDIR" ]; then
+		rm -rf "$MYDIR"
+	fi
+	if [ ! -z "$CUR_BRANCH" ]; then
+		git checkout "$CUR_BRANCH"
+	fi
+	if [ "$I_STASHED_IT" = 1 ]; then
+		git stash pop
+	fi
+}
+trap cleanup EXIT INT PIPE
+
+get_branch() {
+	CUR_BRANCH=$(git branch --show-current)
+	if [ -z "$CUR_BRANCH" ]; then
+		echo "Could not determine current branch"		1>&2
+		usage
+	fi
+	echo $CUR_BRANCH
+}
+
+if [ ! -z "$NEW_BRANCH" ]; then
+	CUR_BRANCH=$(get_branch)
+	git checkout "$NEW_BRANCH"
+fi
+
+CHART1="$MYDIR/chart1"
+helm template charts/tezos/ --values "$NEW_VALUES" --namespace tez > "$CHART1"
+
+if [ "$COMPARE_STASHED" = 1 ]; then
+	if [ "$(git diff | wc -c)" -gt 0 ]; then
+		git stash
+		I_STASHED_IT=1
+	fi
+fi
+
+CHART2="$MYDIR/chart2"
+if [ ! -z "$OLD_BRANCH" ]; then
+	if [ -z "$CUR_BRANCH" ]; then
+		CUR_BRANCH=$(get_branch)
+	fi
+	git checkout "$OLD_BRANCH"
+fi
+helm template charts/tezos/ --values "$OLD_VALUES" --namespace tez > "$CHART2"
+
+$DIFF $DIFF_ARGS "$CHART2" "$CHART1"
