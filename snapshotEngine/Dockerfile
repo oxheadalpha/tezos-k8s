@@ -4,6 +4,7 @@ ENV GLIBC_VER=2.31-r0
 
 # Install python/pip
 ENV PYTHONUNBUFFERED=1
+ENV KUBECTL_VERSION=v1.24.3
 
 #
 # Installs lz4, jq, yq, kubectl, and awscliv2, and python3
@@ -17,7 +18,7 @@ RUN apk --no-cache add \
     && wget -q -O /usr/bin/yq $(wget -q -O - https://api.github.com/repos/mikefarah/yq/releases/latest \
         | jq -r '.assets[] | select(.name == "yq_linux_amd64") | .browser_download_url') \
     && chmod +x /usr/bin/yq \
-    && curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl \
+    && curl -LO https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl \
     && chmod +x ./kubectl \
     && mv ./kubectl /usr/local/bin \
     && curl -sL https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub -o /etc/apk/keys/sgerrand.rsa.pub \
