@@ -344,7 +344,41 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume                
+        - name: upgrade-storage
+          image: "tezos/tezos:v14-release"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              set -ex
+              
+              tezos-node upgrade storage --data-dir /var/tezos/node/data
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: rolling-node
+            - name: DAEMON
+              value: upgrade-storage
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
       securityContext:
         fsGroup: 100      
       volumes:
