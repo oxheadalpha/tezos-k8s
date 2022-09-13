@@ -409,7 +409,7 @@ fi
 # Network bucket redirect
 # Redirects from network.website.com to website.com/network
 touch index.html
-if ! aws s3 cp index.html s3://"${NETWORK}"."${SNAPSHOT_WEBSITE_DOMAIN_NAME}" --website-redirect https://"${SNAPSHOT_WEBSITE_DOMAIN_NAME}"/"${NETWORK}" --cache-control 'no-cache'; then
+if ! aws s3 cp index.html s3://"${S3_BUCKET}" --website-redirect https://"${SNAPSHOT_WEBSITE_DOMAIN_NAME}"/"${NETWORK}" --cache-control 'no-cache'; then
     printf "%s ERROR ##### Could not upload network site redirect.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 else
     printf "%s Successfully uploaded network site redirect.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -436,8 +436,8 @@ touch base.json
 echo '[]' > "base.json"
 
 printf "%s Building base.json... this may take a while.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-aws s3 ls s3://"${NETWORK}"."${SNAPSHOT_WEBSITE_DOMAIN_NAME}" |  grep '\.json'| sort | awk '{print $4}' | awk -F '\\\\n' '{print $1}' | tr ' ' '\n' | grep -v -e base.json -e snapshots.json | while read ITEM; do
-    tmp=$(mktemp) && cp base.json "${tmp}" && jq --argjson file "$(curl -s https://"${NETWORK}"."${SNAPSHOT_WEBSITE_DOMAIN_NAME}"/$ITEM)" '. += [$file]' "${tmp}" > base.json
+aws s3 ls s3://"${S3_BUCKET}" |  grep '\.json'| sort | awk '{print $4}' | awk -F '\\\\n' '{print $1}' | tr ' ' '\n' | grep -v -e base.json -e snapshots.json | while read ITEM; do
+    tmp=$(mktemp) && cp base.json "${tmp}" && jq --argjson file "$(curl -s https://"${S3_BUCKET}"/$ITEM)" '. += [$file]' "${tmp}" > base.json
 done
 
 #Upload base.json
