@@ -346,7 +346,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume        
       securityContext:
-        fsGroup: 100      
+        fsGroup: 1000      
       volumes:
         - hostPath:
             path: /dev/net/tun
