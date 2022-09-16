@@ -520,6 +520,26 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
+              name: var-volume        
+        - name: upgrade-storage
+          image: "tezos/tezos:v14-release"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              set -ex
+              
+              tezos-node upgrade storage --data-dir /var/tezos/node/data
+          envFrom:
+          env:
+            - name: DAEMON
+              value: upgrade-storage
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
               name: var-volume
       securityContext:
         fsGroup: 1000      
@@ -685,6 +705,26 @@ spec:
           env:
             - name: DAEMON
               value: wait-for-dns
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume        
+        - name: upgrade-storage
+          image: "tezos/tezos:v14-release"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              set -ex
+              
+              tezos-node upgrade storage --data-dir /var/tezos/node/data
+          envFrom:
+          env:
+            - name: DAEMON
+              value: upgrade-storage
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -985,6 +1025,26 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
+              name: var-volume        
+        - name: upgrade-storage
+          image: "tezos/tezos:v14-release"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              set -ex
+              
+              tezos-node upgrade storage --data-dir /var/tezos/node/data
+          envFrom:
+          env:
+            - name: DAEMON
+              value: upgrade-storage
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
               name: var-volume
       securityContext:
         fsGroup: 1000      
@@ -1214,6 +1274,26 @@ spec:
           env:
             - name: DAEMON
               value: wait-for-dns
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume        
+        - name: upgrade-storage
+          image: "tezos/tezos:v14-release"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              set -ex
+              
+              tezos-node upgrade storage --data-dir /var/tezos/node/data
+          envFrom:
+          env:
+            - name: DAEMON
+              value: upgrade-storage
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
