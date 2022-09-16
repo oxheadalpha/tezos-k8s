@@ -63,5 +63,5 @@ elif [ -n "$tarball_url" ]; then
   curl -LfsS "$tarball_url" | lz4 -d | tar -x -C "$data_dir"
 fi
 
-chown -R tezos "$data_dir"
+chown -R 1000 "$data_dir"
 ls -lR "$data_dir"
