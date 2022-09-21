@@ -1,10 +1,12 @@
-from genericpath import exists
-import urllib, json
+import datetime
+import json
+import urllib
 import urllib.request
 from pathlib import Path
+
 import datefinder
-import datetime
 import pytz
+from genericpath import exists
 
 filename='snapshots.json'
 
@@ -34,28 +36,42 @@ for snapshot in snapshots:
 for network, snapshots in snapshots_per_network.items():
     network_latest_snapshots = {}
     network_snapshots = {}
+
+    # Old date for initial compare of latest tezos build
     last_tezos_build_datetime=datetime.datetime(1900,1,1,tzinfo=pytz.UTC)
     for (type, mode, path) in [("tarball", "rolling", "rolling-tarball"), ("tarball", "archive", "archive-tarball"), ("tezos-snapshot", "rolling", "rolling")]:
-        # Figure out latest tezos build we have available
+
+        # Parses date from tezos build of each artifact, compares to last date, updates if newer, otherwise its older
         for snapshot in snapshots:
             matches=datefinder.find_dates(snapshot['tezos_version'])
             tezos_build_datetime=list(matches)[0]
             if tezos_build_datetime > last_tezos_build_datetime:
                 latest_tezos_build_version=[src for time, src in datefinder.find_dates(snapshot['tezos_version'], source=True)][1]
                 last_tezos_build_datetime=tezos_build_datetime
-        # Filter latest version for latest snapshots
-        typed_snapshots = [s for s in snapshots if s["artifact_type"] == type and s["history_mode"] == mode and latest_tezos_build_version in s['tezos_version']]
+
+        # Snapshots of type (tarball/snapshot) and history mode
+        typed_snapshots = [s for s in snapshots if s["artifact_type"] == type and s["history_mode"] == mode]
         typed_snapshots.sort(key=lambda x: int(x["block_height"]), reverse=True)
+
         try:
-            network_latest_snapshots[path] = typed_snapshots[0]
+            # Keep list of all snapshots
             network_snapshots[path] = typed_snapshots
         except IndexError:
             continue
+
+        # Latest should only show newest build so let's filter by the latest version we found above
+        typed_snapshots=[t for t in typed_snapshots if latest_tezos_build_version in t['tezos_version']]
+
+        try:
+            # Latest snapshot of type is the first item in typed_snapshots which we just filtered by the latest tezos build
+            network_latest_snapshots[path] = typed_snapshots[0]
+        except IndexError:
+            continue
+
     latest_snapshots.append(
         { "name": network, "permalink": network+"/index.html", "latest_snapshots": network_latest_snapshots })
     all_snapshots.append(
         { "name": network, "permalink": network+"/list.html", "snapshots": network_snapshots })
-    print(network+" "+latest_tezos_build_version)
 
 Path("_data").mkdir(parents=True, exist_ok=True)
 with open(f"_data/snapshot_jekyll_data.json", 'w') as f:
