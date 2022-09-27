@@ -8,14 +8,14 @@ import datefinder
 import pytz
 from genericpath import exists
 
-filename='snapshots.json'
+filename='tezos-snapshots.json'
 
 if exists(filename):
-    print('SUCCESS snapshots.json exists locally!')
+    print('SUCCESS tezos-snapshots.json exists locally!')
     with open(filename,'r') as localJson:
         snapshots = json.load(localJson)
 else:
-    print('ERROR snapshots.json does not exist locally!')
+    print('ERROR tezos-snapshots.json does not exist locally!')
 
 # sort per network
 snapshots_per_network = {}

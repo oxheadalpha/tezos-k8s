@@ -6,7 +6,7 @@ import urllib.request
 allSubDomains = os.environ['ALL_SUBDOMAINS'].split(",")
 snapshotWebsiteBaseDomain = os.environ['SNAPSHOT_WEBSITE_DOMAIN_NAME']
 
-filename="snapshots.json"
+filename="tezos-snapshots.json"
 
 # Write empty top-level array to initialize json
 json_object = []

@@ -436,7 +436,7 @@ touch base.json
 echo '[]' > "base.json"
 
 printf "%s Building base.json... this may take a while.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-aws s3 ls s3://"${S3_BUCKET}" |  grep '\.json'| sort | awk '{print $4}' | awk -F '\\\\n' '{print $1}' | tr ' ' '\n' | grep -v -e base.json -e snapshots.json | while read ITEM; do
+aws s3 ls s3://"${S3_BUCKET}" |  grep '\.json'| sort | awk '{print $4}' | awk -F '\\\\n' '{print $1}' | tr ' ' '\n' | grep -v -e base.json -e tezos-snapshots.json | while read ITEM; do
     tmp=$(mktemp) && cp base.json "${tmp}" && jq --argjson file "$(curl -s https://"${S3_BUCKET}"/$ITEM)" '. += [$file]' "${tmp}" > base.json
 done
 
@@ -452,23 +452,23 @@ fi
 # build site pages
 python /getAllSnapshotMetadata.py
 
-# Check if snapshots.json exists
-# Snapshots.json is a list of all snapshots in all buckets
-if [[ ! -f snapshots.json ]]; then
-    printf "%s ERROR snapshots.json does not exist locally.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+# Check if tezos-snapshots.json exists
+# tezos-snapshots.json is a list of all snapshots in all buckets
+if [[ ! -f tezos-snapshots.json ]]; then
+    printf "%s ERROR tezos-snapshots.json does not exist locally.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     sleep 5
     exit 1
 fi
 
-# Upload snapshots.json
-if ! aws s3 cp snapshots.json s3://"${SNAPSHOT_WEBSITE_DOMAIN_NAME}"/snapshots.json; then
-    printf "%s Upload snapshots.json : Error uploading file snapshots.json to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+# Upload tezos-snapshots.json
+if ! aws s3 cp tezos-snapshots.json s3://"${SNAPSHOT_WEBSITE_DOMAIN_NAME}"/tezos-snapshots.json; then
+    printf "%s Upload tezos-snapshots.json : Error uploading file tezos-snapshots.json to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 else
-    printf "%s Upload snapshots.json : File snapshots.json successfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    printf "%s Upload tezos-snapshots.json : File tezos-snapshots.json successfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 fi
 
 # Separate python for web page build
-# Needs snapshots.json to exist before pages are built
+# Needs tezos-snapshots.json to exist before pages are built
 python /getLatestSnapshotMetadata.py
 
 # Generate HTML from markdown and metadata
