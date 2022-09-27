@@ -33,7 +33,7 @@ if [ "${HISTORY_MODE}" = archive ]; then
     if aws s3 ls s3://"${S3_BUCKET}" | grep archive-tarball-metadata; then #Use last file for expected size if it exists
         EXPECTED_SIZE=$(curl -L http://"${S3_BUCKET}"/archive-tarball-metadata 2>/dev/null | jq -r '.filesize_bytes' | awk '{print $1*1.1}' | awk '{print ($0-int($0)>0)?int($0)+1:int($0)}')
     else
-        EXPECTED_SIZE=100000000000 #100GB Arbitrary filesize for initial value. Only used if no archive-tarball-metadata exists. IE starting up test network
+        EXPECTED_SIZE=1000000000000 #1000GB Arbitrary filesize for initial value. Only used if no archive-tarball-metadata exists. IE starting up test network
     fi
 
     # LZ4 /var/tezos/node selectively and upload to S3
