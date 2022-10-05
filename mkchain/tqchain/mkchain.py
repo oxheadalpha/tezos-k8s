@@ -189,7 +189,7 @@ def main():
         },
         "protocols": [
             {
-                "command": "013-PtJakart",
+                "command": "014-PtKathma",
                 "vote": {"liquidity_baking_toggle_vote": "pass"},
             }
         ],
@@ -295,7 +295,7 @@ def main():
         parametersYaml = yaml.safe_load(yaml_file)
         activation = {
             "activation": {
-                "protocol_hash": "PtJakart2xVj7pYXJBXrqHgd82rdkLey5ZeeGwDgPp9rhQUbSqY",
+                "protocol_hash": "PtKathmankSpLLDALzWw7CGD2j2MtyveTwboEYokqUCP4a1LxMg",
                 "protocol_parameters": parametersYaml,
             },
         }
