@@ -419,9 +419,6 @@ fi
 # Container-specific requirement
 cd /srv/jekyll || exit
 
-# Copy Gemfile and Gemfile.lock to current dir
-cp /snapshot-website-base/* .
-
 # Remote theme does not work
 # Using git instead
 REPO="${JEKYLL_REMOTE_THEME_REPOSITORY%@*}"
