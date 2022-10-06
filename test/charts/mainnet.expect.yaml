@@ -355,23 +355,14 @@ spec:
             - |
               set -ex
               
+              if [ ! -e /var/tezos/node/data ]
+              then
+                printf "No data dir found, probably initial start, doing nothing."
+                exit 0
+              fi
               tezos-node upgrade storage --data-dir /var/tezos/node/data
           envFrom:
-            - configMapRef:
-                name: tezos-config
-          env:    
-            - name: MY_POD_IP
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.podIP
-            - name: MY_POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-            - name: MY_POD_TYPE
-              value: node
-            - name: MY_NODE_CLASS
-              value: rolling-node
+          env:
             - name: DAEMON
               value: upgrade-storage
           volumeMounts:
@@ -380,7 +371,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume
       securityContext:
-        fsGroup: 100      
+        fsGroup: 1000      
       volumes:
         - hostPath:
             path: /dev/net/tun

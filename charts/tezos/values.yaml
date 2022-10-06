@@ -320,7 +320,7 @@ protocols:
   ##   "on" and "off" must be between quotes.
   ## Note that we are not providing default votes since every baker needs
   ## to make an explicit educated choice on every toggle.
-  - command: 013-PtJakart
+  - command: 014-PtKathma
     vote: {}
   # - command: alpha
   #   vote:
@@ -332,7 +332,7 @@ protocols:
 ## after chain activation.
 ##
 # activation:
-#  protocol_hash: PtJakart2xVj7pYXJBXrqHgd82rdkLey5ZeeGwDgPp9rhQUbSqY
+#  protocol_hash: PtKathmankSpLLDALzWw7CGD2j2MtyveTwboEYokqUCP4a1LxMg
 #  protocol_parameters:
 #    preserved_cycles: 3
 #    blocks_per_cycle: 8

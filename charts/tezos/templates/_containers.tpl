@@ -233,8 +233,6 @@
     {{- include "tezos.generic_container" (dict "root"   $
                                            "type"        "upgrade-storage"
                                            "image"       "octez"
-                                           "with_config" 1
-                                           "localvars"   1
     )  | nindent 0 }}
 {{- end }}
 

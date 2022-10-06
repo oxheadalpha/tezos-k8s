@@ -49,7 +49,7 @@ spec:
         {{- include "tezos.init_container.wait_for_dns"        $ | indent 8 }}
         {{- include "tezos.init_container.upgrade_storage"     $ | indent 8 }}
       securityContext:
-        fsGroup: 100
+        fsGroup: 1000
 {{- include "tezos.nodeSelectorConfig" $ | indent 6 }}
       volumes:
         - hostPath:
