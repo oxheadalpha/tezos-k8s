@@ -361,6 +361,7 @@ spec:
                 exit 0
               fi
               tezos-node upgrade storage --data-dir /var/tezos/node/data
+              
           envFrom:
           env:
             - name: DAEMON
