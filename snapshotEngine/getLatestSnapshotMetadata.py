@@ -3,6 +3,8 @@ import json
 import urllib
 import urllib.request
 from pathlib import Path
+import pprint
+from datetime import datetime
 
 import datefinder
 import pytz
@@ -37,15 +39,15 @@ for network, snapshots in snapshots_per_network.items():
     network_latest_snapshots = {}
     network_snapshots = {}
 
-    # Old date for initial compare of latest tezos build
-    last_tezos_build_datetime=datetime.datetime(1900,1,1,tzinfo=pytz.UTC)
+    # Initialize date to now, and then update with build date as we iterate
+    last_tezos_build_datetime=datetime.now().replace(tzinfo=pytz.UTC)
     for (type, mode, path) in [("tarball", "rolling", "rolling-tarball"), ("tarball", "archive", "archive-tarball"), ("tezos-snapshot", "rolling", "rolling")]:
 
-        # Parses date from tezos build of each artifact, compares to last date, updates if newer, otherwise its older
+        # Parses date from tezos build of each artifact, compares to last date, updates if older, otherwise its newer
         for snapshot in snapshots:
             matches=datefinder.find_dates(snapshot['tezos_version'])
             tezos_build_datetime=list(matches)[0]
-            if tezos_build_datetime > last_tezos_build_datetime:
+            if tezos_build_datetime < last_tezos_build_datetime:
                 latest_tezos_build_version=[src for time, src in datefinder.find_dates(snapshot['tezos_version'], source=True)][1]
                 last_tezos_build_datetime=tezos_build_datetime
 
@@ -59,11 +61,11 @@ for network, snapshots in snapshots_per_network.items():
         except IndexError:
             continue
 
-        # Latest should only show newest build so let's filter by the latest version we found above
+        # Latest should only show oldest supported build so let's filter by the oldest supported version we found above
         typed_snapshots=[t for t in typed_snapshots if latest_tezos_build_version in t['tezos_version']]
 
         try:
-            # Latest snapshot of type is the first item in typed_snapshots which we just filtered by the latest tezos build
+            # Latest snapshot of type is the first item in typed_snapshots which we just filtered by the latest supported tezos build
             network_latest_snapshots[path] = typed_snapshots[0]
         except IndexError:
             continue
