@@ -125,9 +125,3 @@ while true; do
     delete_stuck_volumesnapshots
   fi
 done
-
-if kubectl get asdfasf > /dev/null 2>&1; then
-  echo "Success!"
-else
-  echo "Failure!"
-fi

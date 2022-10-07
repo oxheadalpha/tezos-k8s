@@ -148,27 +148,6 @@ if [ "${HISTORY_MODE}" = rolling ]; then
     ROLLING_TARBALL_FILENAME=tezos-"${NETWORK}"-rolling-tarball-"${BLOCK_HEIGHT}".lz4
     IMPORT_IN_PROGRESS=/rolling-tarball-restore/snapshot-import-in-progress
 
-    # # Wait for rolling snapshot file
-    # while  ! [ -f "${ROLLING_SNAPSHOT}" ]; do
-    #     printf "%s Waiting for ${ROLLING_SNAPSHOT} to exist...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-        
-    #     if [ "${HISTORY_MODE}" = archive ]; then
-    #         sleep 15m
-    #     else
-    #         sleep 2m
-    #     fi
-    # done
-
-    # # Wait for rolling snapshot to import to temporary filesystem for tarball.
-    # while  [ -f "${IMPORT_IN_PROGRESS}" ]; do
-    #     printf "%s Waiting for snapshot to import...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    #     if [ "${HISTORY_MODE}" = archive ]; then
-    #         sleep 15m
-    #     else
-    #         sleep 2m
-    #     fi
-    # done
-
     # Wait for rolling snapshot file
     until [ -f "${ROLLING_SNAPSHOT}" ]; do
         printf "%s Waiting for ${ROLLING_SNAPSHOT} to exist...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
