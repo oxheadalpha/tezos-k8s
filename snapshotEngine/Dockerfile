@@ -51,6 +51,7 @@ RUN apk --no-cache add \
 RUN chown jekyll:jekyll -R /usr/gem
 
 # TODO: Make file structure organized like  with /scripts and /templates
+# We install gemfile here to save time on website build in zip-and-upload
 WORKDIR /snapshot-website-base
 COPY --chown=jekyll:jekyll snapshot-website-base/Gem* /
 RUN bundle install
