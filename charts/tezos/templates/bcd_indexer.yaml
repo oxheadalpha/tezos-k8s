@@ -1,4 +1,44 @@
 {{- if (include "tezos.shouldDeployBcdIndexer" .) }}
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: bcd
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+    - port: 14000
+      name: bcd
+      targetPort: bcd
+  selector:
+    app: {{ .Values.bcd_indexer_statefulset.name }}
+  type: NodePort
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bcd-env
+  namespace: {{ .Release.Namespace }}
+data:
+  BCD_ENV: sandbox
+  GIN_MODE: debug
+  DB_HOSTNAME: localhost
+  SANDBOX_NODE_URI: {{ .Values.bcdIndexer.indexerRpcUrl }}
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: db-creds
+  namespace: {{ .Release.Namespace }}
+data:
+  POSTGRES_USER: {{ b64enc .Values.bcdIndexer.dbUser }}
+  POSTGRES_PASSWORD: {{ b64enc .Values.bcdIndexer.dbPassword }}
+  POSTGRES_DB: {{ b64enc .Values.bcdIndexer.dbName }}
+  PGDATA: {{ b64enc "/var/lib/postgresql/data/pgdata" }}
+
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -15,89 +55,34 @@ spec:
       labels:
         app: {{ .Values.bcd_indexer_statefulset.name }}
     spec:
-      securityContext:
-        fsGroup: 1000
       containers:
-        - image: bakingbad/bcdhub-api:3.5
+        - image: ghcr.io/baking-bad/bcdhub-api:4.3.0
           name: api
           ports:
             - containerPort: 14000
               name: bcd
-          volumeMounts:
-            - mountPath: /etc/bcd
-              name: shared-volume
           envFrom:
-          - configMapRef:
-              name: bcd-env
-          - configMapRef:
-              name: db-creds
-        - image: bakingbad/bcdhub-indexer:3.5
+            - configMapRef:
+                name: bcd-env
+            - secretRef:
+                name: db-creds
+        - image: ghcr.io/baking-bad/bcdhub-indexer:4.3.0
           name: indexer
-          volumeMounts:
-            - mountPath: /etc/bcd
-              name: shared-volume
           envFrom:
-          - configMapRef:
-              name: bcd-env
-        - image: bakingbad/bcdhub-metrics:3.5
-          name: metrics
-          volumeMounts:
-            - mountPath: /etc/bcd
-              name: shared-volume
-          envFrom:
-          - configMapRef:
-              name: bcd-env
-          - configMapRef:
-              name: db-creds
-        - image: postgres:alpine
+            - configMapRef:
+                name: bcd-env
+            - secretRef:
+                name: db-creds
+        - image: postgres:14
           name: db
           imagePullPolicy: IfNotPresent
           volumeMounts:
-            - mountPath: /var/lib/postgresql/
+            - mountPath: /var/lib/postgresql/data
               name: indexer-db
           envFrom:
-          - configMapRef:
-              name: db-creds
-        - image: rabbitmq:latest
-          name: mq
-          imagePullPolicy: IfNotPresent
-          volumeMounts:
-            - mountPath: /var/lib/rabbitmq/mnesia
-              name: mq-data
-          env:
-            - name: RABBITMQ_DEFAULT_USER
-              value: guest
-            - name: RABBITMQ_DEFAULT_PASS
-              value: guest
-        - image: bakingbad/bcdhub-elastic:3.5
-          name: elastic
-          volumeMounts:
-            - mountPath: /usr/share/elasticsearch/data
-              name: esdata
-          env:
-            - name: "bootstrap.memory_lock"
-              value: "true"
-            - name: "discovery.type"
-              value: single-node
-            - name: ES_JAVA_OPTS
-              value: "-Xms256m -Xmx256m"
+            - secretRef:
+                name: db-creds
   volumeClaimTemplates:
-    - metadata:
-        name: esdata
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        resources:
-          requests:
-            storage: "300Gi"
-    - metadata:
-        name: mq-data
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        resources:
-          requests:
-            storage: "5Gi"
     - metadata:
         name: indexer-db
       spec:
@@ -106,36 +91,5 @@ spec:
         resources:
           requests:
             storage: "300Gi"
-    - metadata:
-        name: shared-volume
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        resources:
-          requests:
-            storage: "1Gi"
 
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: bcd-env
-data:
-  BCD_ENV: sandbox
-  GIN_MODE: debug
-  ELASTIC_HOSTNAME: localhost
-  RABBITMQ_HOSTNAME: localhost
-  DB_HOSTNAME: 127.0.0.1
-  RABBITMQ_DEFAULT_USER: guest
-  RABBITMQ_DEFAULT_PASS: guest
-  SANDBOX_NODE_URI: {{ .Values.indexer.rpc_url }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: db-creds
-data:
-  POSTGRES_USER: root
-  POSTGRES_PASSWORD: root
-  POSTGRES_DB: bcd
 {{- end }}

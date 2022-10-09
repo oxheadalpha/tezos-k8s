@@ -153,18 +153,14 @@ metadata:
 {{- end }}
 
 {{/*
-  BCD indexer
-  Checks if indexer config has an indexer and rpc_url set.
-  Then checks if indexer name is "bcd".
+  Checks if `bcdIndexer` has `rpcUrl` and `dbPassword` set.
   Returns the true type or empty string which is falsey.
 */}}
 {{- define "tezos.shouldDeployBcdIndexer" -}}
-  {{- $index_config := .Values.indexer | default dict }}
-  {{- if and $index_config.name $index_config.rpc_url }}
-    {{- if eq $index_config.name "bcd" }}
-      {{- "true" }}
-    {{- else }}
-      {{- "" }}
-    {{- end }}
+  {{- $indexConfig := .Values.bcdIndexer | default dict }}
+  {{- if and $indexConfig.indexerRpcUrl $indexConfig.dbPassword }}
+    {{- "true" }}
+  {{- else }}
+    {{- "" }}
   {{- end }}
 {{- end }}

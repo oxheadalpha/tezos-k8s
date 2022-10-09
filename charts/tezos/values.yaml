@@ -410,8 +410,8 @@ protocols:
 ## Deploy an indexer with the chain. An indexer puts the chain
 ## contents in a database for efficient indexing. Most dapps need it.
 ## Supported indexers:
-## * tzkt https://github.com/baking-bad/tzkt
-#
+## * tzkt: https://github.com/baking-bad/tzkt
+## * bcd: https://github.com/baking-bad/bcdhub
 ## Templatized indexer configuration values go in the config field.
 ##
 # indexers:
@@ -451,10 +451,9 @@ protocols:
 #       # api_log_level: Debug
 #       # indexer_log_level: Debug
 
-# Deploy an indexer with the chain. An indexer puts the chain
-# contents in a database for efficient indexing. Most dapps need it.
-# Supports:
-# * "bcd": Better Call Dev indexer: https://better-call.dev/
-# indexer:
-#  name: bcd
-#  rpc_url: http://tezos-node-0.tezos-node:8732
+bcdIndexer:
+  # dbName: bcd
+  # dbPassword: bcd-password
+  # dbUser: bcd
+  # indexerRpcUrl: http://archive-baking-node-0.archive-baking-node:8732
+

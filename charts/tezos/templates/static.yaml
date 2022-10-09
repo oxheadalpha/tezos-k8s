@@ -38,19 +38,3 @@ spec:
     app: {{ .Values.tzkt_indexer_statefulset.name }}
   type: NodePort
 {{- end }}
-
----
-{{- if (include "tezos.shouldDeployBcdIndexer" .) }}
-apiVersion: v1
-kind: Service
-metadata:
-  name: bcd
-  namespace: {{ .Release.Namespace }}
-spec:
-  ports:
-    - port: 14000
-      name: bcd
-  selector:
-    app: {{ .Values.bcd_indexer_statefulset.name }}
-  type: NodePort
-{{- end }}
