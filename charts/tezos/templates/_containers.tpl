@@ -229,6 +229,13 @@
   {{- end }}
 {{- end }}
 
+{{- define "tezos.init_container.upgrade_storage" }}
+    {{- include "tezos.generic_container" (dict "root"   $
+                                           "type"        "upgrade-storage"
+                                           "image"       "octez"
+    )  | nindent 0 }}
+{{- end }}
+
 {{- define "tezos.container.sidecar" }}
   {{- if or (not (hasKey $.node_vals "readiness_probe")) $.node_vals.readiness_probe }}
     {{- include "tezos.generic_container" (dict "root"  $
