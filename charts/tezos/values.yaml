@@ -455,5 +455,6 @@ bcdIndexer:
   # dbName: bcd
   # dbPassword: bcd-password
   # dbUser: bcd
+  # storageClassName: ""
   # indexerRpcUrl: http://archive-baking-node-0.archive-baking-node:8732
 

@@ -88,6 +88,7 @@ spec:
       spec:
         accessModes:
           - ReadWriteOnce
+        storageClassName: {{ .Values.bcdIndexer.storageClassName }}
         resources:
           requests:
             storage: "300Gi"
