@@ -41,5 +41,5 @@ ingress:
   #      - chart-example-frontend.local
 
 # Secrets
-googleCaptchaSecretKey:
-faucetPrivateKey: 
+googleCaptchaSecretKey: secret_key_goes_here
+faucetPrivateKey: edsk***
