@@ -50,20 +50,6 @@
 {{- end }}
 
 {{/*
-  When activating a protocol, check whether faucet commitments
-  should be included.
-  Returns a string "true" or empty string which is falsey.
-*/}}
-{{- define "tezos.shouldInitializeFaucet" -}}
-{{ $faucet := .Values.activation.faucet | default dict }}
-{{- if and ($faucet.seed)  ($faucet.number_of_accounts) }}
-{{- "true" }}
-{{- else }}
-{{- "" }}
-{{- end }}
-{{- end }}
-
-{{/*
   Checks if a snapshot/tarball should be downloaded.
   Returns a string "true" or empty string which is falsey.
 */}}
