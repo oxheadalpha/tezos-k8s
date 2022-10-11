@@ -1,6 +1,6 @@
 images:
-  tezos_faucet: ghcr.io/nicolasochem/tezos-faucet:ghcr
-  tezos_faucet_backend: ghcr.io/nicolasochem/tezos-faucet-backend:ghcr
+  tezos_faucet: ghcr.io/oxheadalpha/tezos-faucet:latest
+  tezos_faucet_backend: ghcr.io/oxheadalpha/tezos-faucet-backend:latest
 authorizedHost: "'*'"
 
 # if your balance is over the max, the faucet won't give you more tokens
@@ -11,7 +11,7 @@ config:
      name: "Tezos Jakartanet faucet"
      googleCaptchaSiteKey: #6LeiK14fAAAAAPptX4v49I4wSrHjOrU2cb_y5oII
      backendUrl: "http://localhost:3000"
-     githubRepo: "https://github.com/avysel/tezos-faucet"
+     githubRepo: "https://github.com/oxheadalpha/tezos-faucet"
      profiles:
        user:
          profile: USER
