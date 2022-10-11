@@ -2,19 +2,23 @@ FROM jekyll/jekyll:4.2.0
 
 ENV GLIBC_VER=2.31-r0
 
+# Install python/pip
+ENV PYTHONUNBUFFERED=1
+ENV KUBECTL_VERSION=v1.24.3
+
 #
-# Installs lz4, jq, yq, kubectl, and awscliv2
+# Installs lz4, jq, yq, kubectl, and awscliv2, and python3
 #
 RUN apk --no-cache add \
         binutils \
         curl \
         lz4 \
-        jq  \
+        'jq<1.6-r1'  \
         bash \
     && wget -q -O /usr/bin/yq $(wget -q -O - https://api.github.com/repos/mikefarah/yq/releases/latest \
         | jq -r '.assets[] | select(.name == "yq_linux_amd64") | .browser_download_url') \
     && chmod +x /usr/bin/yq \
-    && curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl \
+    && curl -LO https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl \
     && chmod +x ./kubectl \
     && mv ./kubectl /usr/local/bin \
     && curl -sL https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub -o /etc/apk/keys/sgerrand.rsa.pub \
@@ -38,11 +42,16 @@ RUN apk --no-cache add \
         glibc-*.apk \
     && apk --no-cache del \
         binutils \
-    && rm -rf /var/cache/apk/*
+    && rm -rf /var/cache/apk/* \
+    && apk add --update --no-cache python3 && ln -sf python3 /usr/bin/python \
+    && python3 -m ensurepip \
+    && pip3 install --no-cache-dir --upgrade pip && \
+       pip3 install --no-cache-dir setuptools boto3 datefinder datetime pytz
 
 RUN chown jekyll:jekyll -R /usr/gem
 
 # TODO: Make file structure organized like  with /scripts and /templates
+# We install gemfile here to save time on website build in zip-and-upload
 WORKDIR /snapshot-website-base
 COPY --chown=jekyll:jekyll snapshot-website-base/Gem* /
 RUN bundle install

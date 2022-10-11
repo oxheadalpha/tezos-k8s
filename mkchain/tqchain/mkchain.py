@@ -70,7 +70,7 @@ cli_args = {
     },
     "octez_docker_image": {
         "help": "Version of the Octez docker image",
-        "default": "tezos/tezos:v13-release",
+        "default": "tezos/tezos:v14-release",
     },
     "use_docker": {
         "action": "store_true",
@@ -187,6 +187,12 @@ def main():
                 "all": {"TEZOS_CLIENT_UNSAFE_DISABLE_DISCLAIMER": QuotedString("Y")}
             }
         },
+        "protocols": [
+            {
+                "command": "014-PtKathma",
+                "vote": {"liquidity_baking_toggle_vote": "pass"},
+            }
+        ],
     }
 
     # preserve pre-existing values, if any (in case of scale-up)
@@ -289,7 +295,7 @@ def main():
         parametersYaml = yaml.safe_load(yaml_file)
         activation = {
             "activation": {
-                "protocol_hash": "PtJakart2xVj7pYXJBXrqHgd82rdkLey5ZeeGwDgPp9rhQUbSqY",
+                "protocol_hash": "PtKathmankSpLLDALzWw7CGD2j2MtyveTwboEYokqUCP4a1LxMg",
                 "protocol_parameters": parametersYaml,
             },
         }

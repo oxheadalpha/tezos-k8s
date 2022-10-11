@@ -37,6 +37,32 @@ delete_old_volumesnapshots() {
   done
 }
 
+delete_stuck_volumesnapshots() {
+  snapshot_list=$(kubectl get volumesnapshots -o jsonpath="{.items[*].metadata.name}")
+  arr=(`echo ${snapshot_list}`);
+  for snapshot_name in "${arr[@]}"; do
+    snapshot_creation_time_iso8601=$(kubectl get volumesnapshots $snapshot_name -o jsonpath='{.metadata.creationTimestamp}')
+    snapshot_creation_time_without_offset=${snapshot_creation_time_iso8601::-1}
+    snapshot_creation_time_unix=$(date -ud "$(echo $snapshot_creation_time_without_offset | sed 's/T/ /')" +%s)
+    current_date_unix=$(date -u +%s)
+    snapshot_age_minutes=$(( (current_date_unix - snapshot_creation_time_unix) / 60  ))
+    # Snapshots should never be older than 6 minutes
+    # If they are then there's a problem on AWS' end and the snapshot needs to be deleted.
+    if [ $snapshot_age_minutes -ge 6 ]; then
+      printf "%s Snasphot %s is %s minutes old.  It must be stuck. Attempting to delete...\n" "$(timestamp)" "$snapshot_name" "$snapshot_age_minutes"
+      err=$(kubectl delete volumesnapshots $snapshot_name 2>&1 > /dev/null)
+      if [ $? -ne 0 ]; then
+        printf "%s ERROR##### Unable to delete stuck snapshot %s .\n" "$(timestamp)" "$snapshot_name"
+        printf "%s Error was: \"%s\"\n" "$(timestamp)" "$err"
+        sleep 10
+        exit 1
+      else
+         printf "%s Sucessfully deleted stuck snapshot %s! \n" "$(timestamp)" "$snapshot_name"
+      fi
+    fi
+  done
+}
+
 HISTORY_MODE="$(echo "$NODE_CONFIG" | jq -r ".history_mode")"
 TARGET_VOLUME="$(echo "$NODE_CONFIG" | jq ".target_volume")"
 PERSISTENT_VOLUME_CLAIM="$(
@@ -61,6 +87,8 @@ while true; do
   delete_old_volumesnapshots selector='!history_mode' max_snapshots=0
   # Maintain 4 snapshots of a certain history mode
   delete_old_volumesnapshots selector="history_mode=$HISTORY_MODE" max_snapshots=4
+  # Check for and delete old stuck snapshots
+  delete_stuck_volumesnapshots
 
   if ! [ "$(getSnapshotNames readyToUse=false -l history_mode="${HISTORY_MODE}")" ]; then
     # EBS Snapshot name based on current time and date
@@ -85,7 +113,7 @@ while true; do
     while [ "$(getSnapshotNames readyToUse=false -l history_mode="${HISTORY_MODE}")" ]; do
       printf "%s Snapshot is still creating...\n" "$(timestamp)"
       sleep 10
-
+      delete_stuck_volumesnapshots
     done
     end_time=$(date +%s)
     elapsed=$((end_time - start_time))
@@ -94,5 +122,6 @@ while true; do
   else
     printf "%s Snapshot already in progress...\n" "$(timestamp)"
     sleep 10
+    delete_stuck_volumesnapshots
   fi
 done

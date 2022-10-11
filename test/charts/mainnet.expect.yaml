@@ -109,7 +109,7 @@ spec:
     spec:
       containers:        
         - name: octez-node
-          image: "tezos/tezos:v13-release"
+          image: "tezos/tezos:v14-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -187,7 +187,7 @@ spec:
               name: var-volume        
       initContainers:        
         - name: config-init
-          image: "tezos/tezos:v13-release"
+          image: "tezos/tezos:v14-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -291,7 +291,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume        
         - name: snapshot-importer
-          image: "tezos/tezos:v13-release"
+          image: "tezos/tezos:v14-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -344,9 +344,35 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume                
+        - name: upgrade-storage
+          image: "tezos/tezos:v14-release"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              set -ex
+              
+              if [ ! -e /var/tezos/node/data ]
+              then
+                printf "No data dir found, probably initial start, doing nothing."
+                exit 0
+              fi
+              tezos-node upgrade storage --data-dir /var/tezos/node/data
+              
+          envFrom:
+          env:
+            - name: DAEMON
+              value: upgrade-storage
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
       securityContext:
-        fsGroup: 100      
+        fsGroup: 1000      
       volumes:
         - hostPath:
             path: /dev/net/tun
