@@ -26,9 +26,9 @@ spec:
           protocol: TCP
         envFrom:
         - configMapRef:
-            name: faucet-bakend-config
+            name: faucet-backend-config
         - secretRef:
-            name: faucet-bakend-secret
+            name: faucet-backend-secret
       - image: {{ .Values.images.tezos_faucet }}
         name: faucet
         ports:
