@@ -57,7 +57,7 @@ delete_stuck_volumesnapshots() {
         sleep 10
         exit 1
       else
-         printf "%s Sucessfully deleted stuck snapshot %s! \n" "$(timestamp)" "$snapshot_name"
+         printf "%s Successfully deleted stuck snapshot %s! \n" "$(timestamp)" "$snapshot_name"
       fi
     fi
   done

@@ -320,7 +320,7 @@ Overview of functionality of containers in Kubernetes Job Pods.
 
 ##### init-tezos-filesystem Container
 
-In order for the storage to be imported sucessfully to a new node, the storage needs to be initialized by the `tezos-node` application.
+In order for the storage to be imported successfully to a new node, the storage needs to be initialized by the `tezos-node` application.
 
 This container performs the following steps -
 

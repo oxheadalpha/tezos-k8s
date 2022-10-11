@@ -38,7 +38,7 @@
      *                   scripts/wait-for-dns.sh and pass it as a single
      *                   argument to /bin/sh -c.  For image == octez, this
      *                   is the default.
-     *    script_command overide the name of the script.  We still look
+     *    script_command override the name of the script.  We still look
      *                   in the scripts directory and postpend ".sh"
      *    with_config    bring in the configMap defaults true only on utils.
      *    with_secret    bring in the secrets map including the identities.
