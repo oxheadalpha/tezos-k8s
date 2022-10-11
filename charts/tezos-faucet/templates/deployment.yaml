@@ -24,23 +24,11 @@ spec:
         - name: backend
           containerPort: 3000
           protocol: TCP
-        env:
-        - name: FAUCET_PRIVATE_KEY
-          value: {{ .Values.faucetPrivateKey }}
-        - name: FAUCET_ADDRESS
-          value: {{ .Values.config.network.faucetAddress }}
-        - name: FAUCET_CAPTCHA_SECRET
-          value: {{ .Values.googleCaptchaSecretKey }}
-        - name: RPC_URL
-          value: {{ .Values.config.network.rpcUrl }}
-        - name: AUTHORIZED_HOST
-          value: {{ .Values.authorizedHost }}
-        - name: FAUCET_AMOUNT_USER
-          value: "{{ .Values.config.application.profiles.user.amount}}"
-        - name: FAUCET_AMOUNT_BAKER
-          value: "{{ .Values.config.application.profiles.baker.amount}}"
-        - name: MAX_BALANCE
-          value: "{{ .Values.maxBalance }}"
+        envFrom:
+        - configMapRef:
+            name: faucet-bakend-config
+        - secretRef:
+            name: faucet-bakend-secret
       - image: {{ .Values.images.tezos_faucet }}
         name: faucet
         ports:
