@@ -248,7 +248,7 @@ def verify_this_bakers_account(accounts):
 #
 # import_keys() creates three files in /var/tezos/client which specify
 # the keys for each of the accounts: secret_keys, public_keys, and
-# public_key_hashes.
+# public_key_hashs.
 #
 # We iterate over fill_in_missing_baker_accounts() which ensures that we
 # have a full set of accounts for which to write keys.
@@ -345,7 +345,7 @@ def import_keys(all_accounts):
     tezdir = "/var/tezos/client"
     secret_keys = []
     public_keys = []
-    public_key_hashes = []
+    public_key_hashs = []
 
     for account_name, account_values in all_accounts.items():
         print("\n  Importing keys for account: " + account_name)
@@ -391,7 +391,7 @@ def import_keys(all_accounts):
 
         pkh_b58 = key.public_key_hash()
         print(f"  Appending public key hash: {pkh_b58}")
-        public_key_hashes.append({"name": account_name, "value": pkh_b58})
+        public_key_hashs.append({"name": account_name, "value": pkh_b58})
         account_values["pkh"] = pkh_b58
 
         # XXXrcd: fix this print!
@@ -410,8 +410,8 @@ def import_keys(all_accounts):
     json.dump(secret_keys, open(tezdir + "/secret_keys", "w"), indent=4)
     print("  Writing " + tezdir + "/public_keys")
     json.dump(public_keys, open(tezdir + "/public_keys", "w"), indent=4)
-    print("  Writing " + tezdir + "/public_key_hashes")
-    json.dump(public_key_hashes, open(tezdir + "/public_key_hashes", "w"), indent=4)
+    print("  Writing " + tezdir + "/public_key_hashs")
+    json.dump(public_key_hashs, open(tezdir + "/public_key_hashs", "w"), indent=4)
 
 
 def create_node_identity_json():
