@@ -431,8 +431,8 @@ def create_node_identity_json():
         print(json.dumps(NODE_IDENTITIES.get(MY_POD_NAME)), file=identity_file)
 
     nogroup = getgrnam("nogroup").gr_gid
-    chown(DATA_DIR, user=100, group=nogroup)
-    chown(identity_file_path, user=100, group=nogroup)
+    chown(DATA_DIR, user=1000, group=nogroup)
+    chown(identity_file_path, user=1000, group=nogroup)
     print(f"Identity file written at {identity_file_path}")
 
 
