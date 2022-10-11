@@ -30,7 +30,7 @@ def sync_checker():
     header = r.json()
     if header["level"] == 0:
         # when chain has not been activated, bypass age check
-        # and return succesfully to mark as ready
+        # and return successfully to mark as ready
         # otherwise it will never activate (activation uses rpc service)
         return "Chain has not been activated yet"
     timestamp = r.json()["timestamp"]

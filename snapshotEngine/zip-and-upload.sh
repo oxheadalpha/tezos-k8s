@@ -26,7 +26,7 @@ if [ "${HISTORY_MODE}" = archive ]; then
     ARCHIVE_TARBALL_FILENAME=tezos-"${NETWORK}"-archive-tarball-"${BLOCK_HEIGHT}".lz4
     printf "%s Archive tarball filename is ${ARCHIVE_TARBALL_FILENAME}\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
-    # If you upload a file bigger than 50GB, you have to do a mulitpart upload with a part size between 1 and 10000.
+    # If you upload a file bigger than 50GB, you have to do a multipart upload with a part size between 1 and 10000.
     # Instead of guessing size, you can use expected-size which tells S3 how big the file is and it calculates the size for you.
     # However if the file gets bigger than your expected size, the multipart upload fails because it uses a part size outside of the bounds (1-10000)
     # This gets the old archive tarball size and then adds 10%.  Archive tarballs dont seem to grow more than that.
@@ -192,7 +192,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
     # LZ4 /"${HISTORY_MODE}"-snapshot-cache-volume/var/tezos/node selectively and upload to S3
     printf "%s ********************* Rolling Tarball *********************\\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
-    # If you upload a file bigger than 50GB, you have to do a mulitpart upload with a part size between 1 and 10000.
+    # If you upload a file bigger than 50GB, you have to do a multipart upload with a part size between 1 and 10000.
     # Instead of guessing size, you can use expected-size which tells S3 how big the file is and it calculates the size for you.
     # However if the file gets bigger than your expected size, the multipart upload fails because it uses a part size outside of the bounds (1-10000)
     # This gets the old rolling tarball size and then adds 10%.  rolling tarballs dont seem to grow more than that.
@@ -427,7 +427,7 @@ else
 fi
 
 # Create snapshot.json
-# List of all snapshot metadata accross all subdomains
+# List of all snapshot metadata across all subdomains
 # build site pages
 python /getAllSnapshotMetadata.py
 

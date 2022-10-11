@@ -177,7 +177,7 @@ SERVICE_ACCOUNT="${SERVICE_ACCOUNT}" yq e -i '.spec.template.spec.serviceAccount
 
 sleep 10
 
-# Trigger subsequent filesytem inits, snapshots, tarballs, and uploads.
+# Trigger subsequent filesystem inits, snapshots, tarballs, and uploads.
 if ! kubectl apply -f mainJob.yaml
 then
     printf "%s Error creating Zip-and-upload job.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"

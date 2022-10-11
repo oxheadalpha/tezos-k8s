@@ -26,7 +26,7 @@ chain_initiator_job:
   name: chain-initiator
   pod_type: activating
 
-# For non-public chains the defualt mutez given to an account if the
+# For non-public chains the default mutez given to an account if the
 # account is not explicitly set below.
 bootstrap_mutez: "4000000000000"
 

@@ -190,7 +190,7 @@ def get_baking_accounts(baker_values):
 # Secret and public keys are matches and need be processed together. Neither key
 # must be specified, as later code will fill in the details if they are not.
 #
-# We create any missing accounts that are refered to by a node at
+# We create any missing accounts that are referred to by a node at
 # BAKING_NODES to ensure that all named accounts exist.
 def fill_in_missing_accounts():
     print("\nFilling in any missing accounts...")
