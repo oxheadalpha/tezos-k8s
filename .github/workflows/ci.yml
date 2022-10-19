@@ -170,7 +170,8 @@ jobs:
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
-        file: Dockerfile
+        file: ${{ matrix.container }}/Dockerfile
+        context: ${{ matrix.container}}/.
 
   lint_helm_charts:
     runs-on: ubuntu-latest
