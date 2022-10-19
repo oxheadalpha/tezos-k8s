@@ -158,7 +158,7 @@ jobs:
       id: meta
       uses: docker/metadata-action@v3
       with:
-        images: ghcr.io/${{ github.repository_owner }}/${{ matrix.container }}
+        images: ghcr.io/${{ github.repository_owner }}/tezos-k8s-${{ matrix.container }}
         tags: |
           type=ref,event=branch
           type=ref,event=pr
