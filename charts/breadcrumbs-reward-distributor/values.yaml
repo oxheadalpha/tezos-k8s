@@ -1,0 +1,73 @@
+images:
+  breadcrumbs: ghcr.io/nicolasochem/breadcrumbs:docker
+
+# This is an example of breadcrumbs config. Customize to your needs.
+# For details, please consult TRD documentation:
+# https://github.com/kalouo/breadcrumbs/wiki/2.-Configuration
+breadcrumbs_config:
+  {
+    "baking_address": "YOUR_BAKING_ADDRESS",
+    "default_fee": 10,
+    "payout_wallet_mode": "local-private-key | ledger | remote-signer",
+    "delegator_requirements": {
+      "minimum_balance": 100
+    },
+    "income_recipients": {
+      "bond_rewards": {
+        "tz1...xyz": 60,
+        "tz2...xyz": 40
+      },
+      "fee_income": {
+        "tz1...xyz": 60,
+        "tz2...xyz": 40
+      }
+    },
+    "delegator_overrides": {
+      "tz1...xyz": {
+        "fee": 8
+      },
+      "tz2..xyz": {
+        "recipient": "tz3...xyz"
+      }
+    },
+    "network_configuration": {
+      "rpc_url": "https://mainnet-tezos.giganode.io/",
+      "suppress_KT_payments": "true | false"
+    },
+    "overdelegation": {
+      "excluded_addresses": [
+        "tz1...xyz",
+        "tz2...xyz"
+      ],
+      "guard": "true | false"
+    },
+    "payment_requirements": {
+      "baker_pays_transaction_fee": "true | false",
+      "minimum_amount": 1
+    },
+    "notifications": [
+      {
+        "type": "discord",
+        "messageTemplate": "Payouts for cycle <CYCLE>",
+        "webhook": "<webhook url>"
+      },
+      {
+        "type": "telegram",
+        "api_token": "API_TOKEN",
+        "chat_id": -123456789,
+        "messageTemplate": "A total of <T_REWARDS> tez was distributed for cycle <CYCLE>."
+      },
+      {
+        "type": "twitter",
+        "messageTemplate": "Distributed a total of <T_REWARDS> tez for cycle <CYCLE>",
+        "api_key": "<api_key>",
+        "api_key_secret": "<api_key_secret>",
+        "access_token": "<access_token>",
+        "access_token_secret": "<access_token_secret>"
+      }
+    ]
+  }
+
+breadcrumbs_remote_signer_config:
+  public_key: #pkh of account
+  url: #http://remote-signer:6732/

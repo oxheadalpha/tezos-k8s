@@ -1,0 +1,64 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "tezos-reward-distributor.fullname" . }}
+  labels:
+    {{- include "tezos-reward-distributor.labels" . | nindent 4 }}
+spec:
+
+  # important to prevent launch of concurrent payout processes
+  concurrencyPolicy:  Forbid
+
+  schedule: {{ .Values.schedule }}
+  jobTemplate:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "tezos-reward-distributor.selectorLabels" . | nindent 8 }}
+    spec:
+      template:
+        spec:
+          securityContext:
+            fsGroup: 1000
+          volumes:
+            - name: storage
+              persistentVolumeClaim:
+                claimName: breadcrumbs-volume
+            - name: config-volume
+              configMap:
+                 name: breadcrumbs-config
+          # initContainers:
+          #   # Work around a bug where fsGroup is ignored
+          #   - name: change-ownership-container
+          #     image: {{ .Values.images.tezos_reward_distributor }}
+          #     command:
+          #     - /bin/sh
+          #     - -c
+          #     - "mkdir -p /trd/cfg && chown -R 1000:1000 /trd"
+          #     securityContext:
+          #       runAsUser: 0
+          #       privileged: true
+          #     volumeMounts:
+          #     - mountPath: /trd
+          #       name: storage
+          containers:
+          - name: breadcrumbs-cron-job
+            image: {{ .Values.images.breadcrumbs }}
+            imagePullPolicy: IfNotPresent
+            volumeMounts:
+              - mountPath: /breadcrumbs
+                name: storage
+              - mountPath: /breadcrumbs/config.hjson
+                name: config-volume
+                subPath: config.hjson
+              - mountPath: /breadcrumbs/remote-signer.hjson
+                name: config-volume
+                subPath: remote-signer.hjson
+            command:
+            - /bin/sh
+            - -c
+            - npm run pay --dry-run --work-dir
+          restartPolicy: OnFailure
