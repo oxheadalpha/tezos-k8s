@@ -60,5 +60,5 @@ spec:
             command:
             - /bin/sh
             - -c
-            - npm run pay --dry-run --work-dir
+            - npm run pay --dry-run --work-dir /breadcrumbs
           restartPolicy: OnFailure

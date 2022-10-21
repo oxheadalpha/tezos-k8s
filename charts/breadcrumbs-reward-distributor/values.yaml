@@ -1,6 +1,10 @@
 images:
   breadcrumbs: ghcr.io/nicolasochem/breadcrumbs:docker
 
+# The schedule for reward distribution cron job. By default, runs every 6 hours.
+# When there is nothing to pay, it just exits.
+schedule: "0 */6 * * *"
+
 # This is an example of breadcrumbs config. Customize to your needs.
 # For details, please consult TRD documentation:
 # https://github.com/kalouo/breadcrumbs/wiki/2.-Configuration
