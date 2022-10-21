@@ -1,9 +1,9 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ include "tezos-reward-distributor.fullname" . }}
+  name: {{ include "breadcrumbs.fullname" . }}
   labels:
-    {{- include "tezos-reward-distributor.labels" . | nindent 4 }}
+    {{- include "breadcrumbs.labels" . | nindent 4 }}
 spec:
 
   # important to prevent launch of concurrent payout processes
@@ -17,7 +17,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "tezos-reward-distributor.selectorLabels" . | nindent 8 }}
+        {{- include "breadcrumbs.selectorLabels" . | nindent 8 }}
     spec:
       template:
         spec:
