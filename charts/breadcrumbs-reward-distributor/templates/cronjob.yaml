@@ -59,6 +59,6 @@ spec:
                 subPath: remote-signer.hjson
             command:
             - /bin/sh
-            - -c
-            - npm run pay --dry-run --work-dir /breadcrumbs
+            - -xc
+            - npm run pay -- --dry-run --work-dir /breadcrumbs
           restartPolicy: OnFailure
