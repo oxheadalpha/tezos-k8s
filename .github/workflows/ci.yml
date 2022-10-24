@@ -140,60 +140,38 @@ jobs:
           echo $container_list
           echo "::set-output name=matrix::$container_list"
 
-  publish_containers:
-    # based on
-    # https://github.com/docker/build-push-action#usage
+  publish-to-ghcr:
     runs-on: ubuntu-latest
     needs: list_containers_to_publish
-    if: github.event_name == 'release' && github.event.action == 'created'
     strategy:
       matrix: ${{fromJson(needs.list_containers_to_publish.outputs.matrix)}}
 
     steps:
-      - uses: actions/checkout@v2
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        submodules: 'true'
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
+    - name: Login to registry
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+    - name: Docker meta
+      id: meta
+      uses: docker/metadata-action@v3
+      with:
+        images: ghcr.io/${{ github.repository_owner }}/tezos-k8s-${{ matrix.container }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=match,pattern=v(.*),group=1
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
-
-      - name: Login to DockerHub
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-      - name: Create docker hub ${{ matrix.container }} repo if not exists
-        # requires a github username and password rather than a token, unfortunately
-        # https://github.com/docker/hub-feedback/issues/1914
-        run: |
-          USER=${{ secrets.DOCKERHUB_USERNAME }}
-          PASS=${{ secrets.DOCKERHUB_PASSWORD }}
-          TOKEN=$(curl -s -H "Content-Type: application/json" -X POST -d '{"username": "'${USER}'", "password": "'${PASS}'"}' https://hub.docker.com/v2/users/login/ | jq -r .token)
-
-          curl -s -H "Authorization: JWT ${TOKEN}" "https://hub.docker.com/v2/repositories/" \
-          --data 'description="tezos-k8s ${{ matrix.container }}"' \
-          --data 'full_description="The container for https://github.com/oxheadalpha/tezos-k8s/tree/master/${{ matrix.container }}' \
-          --data 'is_private=false' \
-          --data 'name=tezos-k8s-${{ matrix.container }}' \
-          --data "namespace=oxheadalpha" || true
-
-      - name: Docker meta
-        id: docker_meta
-        uses: crazy-max/ghaction-docker-meta@v1
-        with:
-          images: oxheadalpha/tezos-k8s-${{ matrix.container }}
-          tag-sha: true
-
-      - name: Publish ${{ matrix.container }} container to Docker Hub
-        uses: docker/build-push-action@v2
-        with:
-          context: ${{ matrix.container }}/.
-          file: ${{ matrix.container }}/Dockerfile
-          push: true
-          tags: ${{ steps.docker_meta.outputs.tags }}
-          labels: ${{ steps.docker_meta.outputs.labels }}
+    - name: Push ${{ matrix.container }} container to GHCR
+      uses: docker/build-push-action@v2
+      with:
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        file: ${{ matrix.container }}/Dockerfile
+        context: ${{ matrix.container}}/.
 
   lint_helm_charts:
     runs-on: ubuntu-latest
@@ -226,7 +204,7 @@ jobs:
 
   publish_helm_charts:
     runs-on: ubuntu-latest
-    needs: [test-helm-charts, lint_helm_charts, publish_containers]
+    needs: [test-helm-charts, lint_helm_charts, publish-to-ghcr]
     if: github.event_name == 'release' && github.event.action == 'created'
     steps:
       - name: Checkout
@@ -260,7 +238,7 @@ jobs:
             # Update the release version of each of tezos-k8s images
             for image in $tq_images; do
               image_name=$(yq e ".tezos_k8s_images.$image" $chart/values.yaml | sed -E "s/tezos-k8s-(.*):.*/\1/")
-              yq e ".tezos_k8s_images.$image = \"oxheadalpha/tezos-k8s-$image_name:$RELEASE_VERSION\"" -i $chart/values.yaml
+              yq e ".tezos_k8s_images.$image = \"ghcr.io/oxheadalpha/tezos-k8s-$image_name:$RELEASE_VERSION\"" -i $chart/values.yaml
             done
           done
 
