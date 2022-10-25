@@ -57,8 +57,12 @@ spec:
               - mountPath: /breadcrumbs/remote-signer.hjson
                 name: config-volume
                 subPath: remote-signer.hjson
+            envFrom:
+            - configMapRef:
+                name: breadcrumbs-env
             command:
             - /bin/sh
             - -xc
-            - npm run pay -- --dry-run --work-dir /breadcrumbs
+            - |
+{{ tpl ($.Files.Get (print "scripts/run.sh")) $ | indent 14 }}
           restartPolicy: OnFailure

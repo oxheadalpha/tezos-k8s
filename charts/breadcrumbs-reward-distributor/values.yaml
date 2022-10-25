@@ -5,6 +5,10 @@ images:
 # When there is nothing to pay, it just exits.
 schedule: "0 */6 * * *"
 
+# Set to 'false' to actually perform payments.
+# Otherwise it will run in dry-run mode and not perform any.
+dry_run: "true"
+
 # This is an example of breadcrumbs config. Customize to your needs.
 # For details, please consult TRD documentation:
 # https://github.com/kalouo/breadcrumbs/wiki/2.-Configuration

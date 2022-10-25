@@ -7,4 +7,10 @@ data:
     {{ toJson $.Values.breadcrumbs_config |nindent 4}}
   remote-signer.hjson: |
     {{ toJson $.Values.breadcrumbs_remote_signer_config |nindent 4}}
-
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: breadcrumbs-env
+data:
+  DRY_RUN: "{{ .Values.dry_run }}"
