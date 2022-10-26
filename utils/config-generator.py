@@ -43,6 +43,13 @@ for cl, val in NODES.items():
                 if "baker" in val["runs"]:
                     BAKING_NODES[name] = inst
 
+# MY_POD_CLASS is not set after iterating nodes configurations,
+# this can happen when the pod is one which scaled out by autoscaler.
+# Set this value to the value mapped by MY_NODE_CLASS to read possible config specified in at NODES
+if not MY_POD_CLASS:
+    my_node_class = os.environ["MY_NODE_CLASS"]
+    MY_POD_CLASS = NODES[my_node_class]
+
 if MY_POD_TYPE == "signing":
     MY_POD_CONFIG = SIGNERS[MY_POD_NAME]
 
