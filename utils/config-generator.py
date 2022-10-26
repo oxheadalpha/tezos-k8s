@@ -33,11 +33,11 @@ BAKING_NODES = {}
 
 for cl, val in NODES.items():
     if val != None:
+        MY_POD_CLASS = val
         for i, inst in enumerate(val["instances"]):
             name = f"{cl}-{i}"
             ALL_NODES[name] = inst
             if name == MY_POD_NAME:
-                MY_POD_CLASS = val
                 MY_POD_CONFIG = inst
             if "runs" in val:
                 if "baker" in val["runs"]:
