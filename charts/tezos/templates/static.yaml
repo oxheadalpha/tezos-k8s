@@ -19,6 +19,11 @@ kind: Service
 metadata:
   name: {{ $key }}
 spec:
+  ports:
+    - port: 9732
+      name: p2p
+    - port: 9001
+      name: metrics
   publishNotReadyAddresses: true
   clusterIP: None
   selector:

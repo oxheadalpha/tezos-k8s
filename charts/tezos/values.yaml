@@ -230,6 +230,7 @@ nodes:
         config:
           shell:
             history_mode: rolling
+          metrics_addr: [ ":9091" ]
 # End nodes
 
 ## Configuration for K8s Service resources. Configuring the labels selector of a
@@ -241,6 +242,15 @@ services:
   tezos_node_rpc:
     selector:
 #      rpc_node: "true"
+
+# Prometheus Operator is required in your cluster in order to enable
+# serviceMonitor below.
+# ServiceMonitor allows you to scrape the prometheus endpoints of your tezos nodes.
+# Make sure the endpoints are active by adding:
+#     metrics_addr: [ ":9091" ]
+# to your config.
+serviceMonitor:
+  enabled: false
 
 # # Signers
 #
