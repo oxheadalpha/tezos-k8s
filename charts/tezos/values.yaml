@@ -113,6 +113,7 @@ should_generate_unsafe_deterministic_data: false
 #          bakers and accusers, so "baker-011-pthangz2" is configured
 #          using just "baker".
 # - "storage_size": the size of the PV
+# - "resources": resources specifications for the node.
 # - "images": Optional specification of images to use for the tezos node and
 #           baker. Options are "octez" with a tezos/tezos image.
 #           If no images are provided, the containers will default to the images
@@ -187,6 +188,13 @@ should_generate_unsafe_deterministic_data: false
 #     runs:
 #       - octez_node
 #       - baker
+#     # You can optionally set resources and limits for your octez node/baker
+#     # See: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+#     resources:
+#       requests:
+#         memory: 16192Mi
+#       limits:
+#         memory: 16192Mi
 #     instances:
 #       - bake_using_account: baker0
 #         is_bootstrap_node: true

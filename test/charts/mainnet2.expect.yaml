@@ -90,6 +90,14 @@ data:
             }
           }
         ],
+        "resources": {
+          "limits": {
+            "memory": "16192Mi"
+          },
+          "requests": {
+            "memory": "16192Mi"
+          }
+        },
         "runs": [
           "octez_node",
           "logger",
@@ -293,7 +301,12 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume
+          resources:
+            limits:
+              memory: 100Mi
+            requests:
+              memory: 80Mi        
       initContainers:        
         - name: config-init
           image: "tezos/tezos:v15-release"
@@ -586,7 +599,12 @@ spec:
           readinessProbe:
             httpGet:
               path: /is_synced
-              port: 31732                        
+              port: 31732
+          resources:
+            limits:
+              memory: 16192Mi
+            requests:
+              memory: 16192Mi                        
         - name: logger
           image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
@@ -646,7 +664,12 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume
+          resources:
+            limits:
+              memory: 100Mi
+            requests:
+              memory: 80Mi        
       initContainers:        
         - name: config-init
           image: "tezos/tezos:v15-release"

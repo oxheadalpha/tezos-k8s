@@ -16,6 +16,11 @@ nodes:
     images:
       octez: tezos/tezos:v15-release
     runs: [ octez_node, logger, metrics ]
+    resources:
+      requests:
+        memory: 16192Mi
+      limits:
+        memory: 16192Mi
     instances:
     - config:
         shell: {history_mode: rolling}
