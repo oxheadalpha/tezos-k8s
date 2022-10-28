@@ -43,6 +43,8 @@
      *    with_config    bring in the configMap defaults true only on utils.
      *    with_secret    bring in the secrets map including the identities.
      *    localvars      set env vars MY_* Defaults to true only on utils.
+     *    resources      set container resources management, i.e. request
+     *                   and limit, default value is an empty dict.
      */ -}}
 
 {{- define "tezos.generic_container" }}
@@ -74,6 +76,9 @@
   {{- if eq .image "utils" }}
     {{- $_ := set . "args" (list .type) }}
   {{- end }}
+{{- end }}
+{{- if not (hasKey . "resources") }}
+    {{- $_ := set . "resources" dict }}
 {{- end }}
 
 {{- /*
@@ -167,6 +172,10 @@
       port: 31732
     {{- end }}
   {{- end }}
+{{- if .resources }}
+  resources:
+{{ toYaml .resources | indent 4 }}
+{{- end }}
 {{- end }}
 
 
@@ -240,9 +249,11 @@
 
 {{- define "tezos.container.sidecar" }}
   {{- if or (not (hasKey $.node_vals "readiness_probe")) $.node_vals.readiness_probe }}
-    {{- include "tezos.generic_container" (dict "root"  $
-                                                "type"  "sidecar"
-                                                "image" "utils"
+    {{- $sidecarResources := dict "requests" (dict "memory" "150Mi") "limits" (dict "memory" "200Mi") -}}
+    {{- include "tezos.generic_container" (dict "root"      $
+                                                "type"      "sidecar"
+                                                "image"     "utils"
+                                                "resources" $sidecarResources
     ) | nindent 0 }}
   {{- end }}
 {{- end }}
@@ -261,25 +272,36 @@
 {{- end }}
 
 {{- define "tezos.container.node" }}
-{{- if eq (include "tezos.getNodeImplementation" $) "octez" }}
-    {{- include "tezos.generic_container" (dict "root"        $
-                                                "type"        "octez-node"
-                                                "image"       "octez"
-                                                "with_config" 0
-    ) | nindent 0 }}
-{{- end }}
+  {{- if eq (include "tezos.getNodeImplementation" $) "octez" }}
+    {{- $octezNodeParams := dict "root"        $
+                                 "type"        "octez-node"
+                                 "image"       "octez"
+                                 "with_config" 0
+    -}}
+
+    {{- if hasKey $.node_vals "resources" }}
+      {{- $_ := set $octezNodeParams "resources" $.node_vals.resources -}}
+    {{- end }}
+
+    {{- include "tezos.generic_container" $octezNodeParams | nindent 0 }}
+  {{- end }}
 {{- end }}
 
 {{- define "tezos.container.tezedge" }}
   {{- if eq (include "tezos.getNodeImplementation" $) "tezedge" }}
-    {{- include "tezos.generic_container" (
-            dict "root"        $
-                 "type"        "tezedge-node"
-                 "image"       "tezedge"
-                 "with_config" 0
-                 "command"     "/light-node"
-                 "args"        (list "--config-file=/etc/tezos/tezedge.conf")
-    ) | nindent 0 }}
+    {{- $tezEdgeNodeParams := dict "root"        $
+                                   "type"        "tezedge-node"
+                                   "image"       "tezedge"
+                                   "with_config" 0
+                                   "command"     "/light-node"
+                                   "args"        (list "--config-file=/etc/tezos/tezedge.conf")
+    -}}
+
+    {{- if hasKey $.node_vals "resources" }}
+      {{- $_ := set $tezEdgeNodeParams "resources" $.node_vals.resources -}}
+    {{- end }}
+
+    {{- include "tezos.generic_container" $tezEdgeNodeParams | nindent 0 }}
   {{- end }}
 {{- end }}
 
@@ -291,12 +313,18 @@
         {{ fail (print "You did not specify the liquidity baking toggle vote in 'protocols' for protocol " .command ".") }}
       {{- end -}}
       {{- $_ := set $ "command_in_tpl" .command }}
-      {{- include "tezos.generic_container" (dict "root" $
-                                                  "name" (print "baker-"
-                                                          (lower .command))
-                                                  "type"        "baker"
-                                                  "image"       "octez"
-      ) | nindent 0 }}
+      {{- $bakerParams := dict "root" $
+                               "name" (print "baker-"
+                                       (lower .command))
+                               "type"        "baker"
+                               "image"       "octez"
+      -}}
+
+      {{- if hasKey $.node_vals "resources" }}
+        {{- $_ := set $bakerParams "resources" $.node_vals.resources -}}
+      {{- end }}
+
+      {{- include "tezos.generic_container" $bakerParams | nindent 0 }}
     {{- end }}
   {{- end }}
 {{- end }}

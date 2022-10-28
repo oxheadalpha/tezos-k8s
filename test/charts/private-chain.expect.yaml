@@ -469,7 +469,12 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume
+          resources:
+            limits:
+              memory: 200Mi
+            requests:
+              memory: 150Mi        
       initContainers:                        
         - name: config-generator
           image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
@@ -666,7 +671,12 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume
+          resources:
+            limits:
+              memory: 200Mi
+            requests:
+              memory: 150Mi        
       initContainers:                        
         - name: config-generator
           image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
@@ -956,7 +966,12 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume
+          resources:
+            limits:
+              memory: 200Mi
+            requests:
+              memory: 150Mi        
       initContainers:                        
         - name: config-generator
           image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
@@ -1217,7 +1232,12 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume
+          resources:
+            limits:
+              memory: 200Mi
+            requests:
+              memory: 150Mi        
       initContainers:                        
         - name: config-generator
           image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
