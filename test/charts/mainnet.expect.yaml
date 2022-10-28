@@ -198,7 +198,12 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume
+          resources:
+            limits:
+              memory: 100Mi
+            requests:
+              memory: 80Mi        
       initContainers:        
         - name: config-init
           image: "tezos/tezos:v15-release"
