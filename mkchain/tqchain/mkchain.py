@@ -151,6 +151,7 @@ def node_config(name, n, is_baker):
         "is_bootstrap_node": False,
         "config": {
             "shell": {"history_mode": "rolling"},
+            "metrics_addr": [ ":9001" ],
         },
     }
     if is_baker:
