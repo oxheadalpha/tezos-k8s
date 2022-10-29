@@ -3,7 +3,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-    appType: tezos-node
+{{- toYaml .Values.serviceMonitor.labels | nindent 4 }}
   name: tezos-service-monitor
   namespace: {{ .Release.Namespace }}
 spec:

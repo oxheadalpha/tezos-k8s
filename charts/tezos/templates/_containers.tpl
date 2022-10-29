@@ -156,10 +156,10 @@
   ports:
     - containerPort: 8732
       name: tezos-rpc
-    - containerPort: 9001
-      name: metrics
     - containerPort: 9732
       name: tezos-net
+    - containerPort: 9932
+      name: metrics
     {{- if or (not (hasKey $.node_vals "readiness_probe")) $.node_vals.readiness_probe }}
   readinessProbe:
     httpGet:
