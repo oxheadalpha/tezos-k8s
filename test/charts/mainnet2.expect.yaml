@@ -124,7 +124,14 @@ apiVersion: v1
 kind: Service
 metadata:
   name: city-block
+  labels:
+    appType: tezos-node
 spec:
+  ports:
+    - port: 9732
+      name: p2p
+    - port: 9932
+      name: metrics
   publishNotReadyAddresses: true
   clusterIP: None
   selector:
@@ -135,7 +142,14 @@ apiVersion: v1
 kind: Service
 metadata:
   name: country-town
+  labels:
+    appType: tezos-node
 spec:
+  ports:
+    - port: 9732
+      name: p2p
+    - port: 9932
+      name: metrics
   publishNotReadyAddresses: true
   clusterIP: None
   selector:
@@ -184,6 +198,8 @@ spec:
               name: tezos-rpc
             - containerPort: 9732
               name: tezos-net
+            - containerPort: 9932
+              name: metrics
           readinessProbe:
             httpGet:
               path: /is_synced
@@ -569,6 +585,8 @@ spec:
               name: tezos-rpc
             - containerPort: 9732
               name: tezos-net
+            - containerPort: 9932
+              name: metrics
           readinessProbe:
             httpGet:
               path: /is_synced
