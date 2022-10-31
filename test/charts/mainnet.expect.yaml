@@ -168,7 +168,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /is_synced
-              port: 31732                                                        
+              port: 31732                                                
         - name: sidecar
           image: "tezos-k8s-utils:dev"
           imagePullPolicy: IfNotPresent
