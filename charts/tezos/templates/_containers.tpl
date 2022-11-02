@@ -158,6 +158,8 @@
       name: tezos-rpc
     - containerPort: 9732
       name: tezos-net
+    - containerPort: 9932
+      name: metrics
     {{- if or (not (hasKey $.node_vals "readiness_probe")) $.node_vals.readiness_probe }}
   readinessProbe:
     httpGet:
@@ -339,34 +341,6 @@
                                                 "image"       "utils"
     ) | nindent 0 }}
   {{- end }}
-{{- end }}
-
-{{- define "tezos.container.metrics" }}
-{{- if has "metrics" $.node_vals.runs }}
-- image: "registry.gitlab.com/nomadic-labs/tezos-metrics"
-  args:
-    - "--listen-prometheus=6666"
-    - "--data-dir=/var/tezos/node/data"
-  imagePullPolicy: IfNotPresent
-  name: metrics
-  ports:
-    - containerPort: 6666
-      name: tezos-metrics
-  volumeMounts:
-    - mountPath: /etc/tezos
-      name: config-volume
-    - mountPath: /var/tezos
-      name: var-volume
-    - mountPath: /etc/secret-volume
-      name: tezos-accounts
-  envFrom:
-    - configMapRef:
-        name: tezos-config
-  env:
-{{- include "tezos.localvars.pod_envvars" . | indent 4 }}
-    - name: DAEMON
-      value: tezos-metrics
-{{- end }}
 {{- end }}
 
 {{/*
