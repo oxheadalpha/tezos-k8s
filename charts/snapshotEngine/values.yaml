@@ -1,5 +1,5 @@
 tezos_k8s_images:
-  snapshotEngine: tezos-k8s-snapshotengine:dev
+  snapshotEngine: ghcr.io/oxheadalpha/tezos-k8s-snapshotengine:latest
 
 # the tezos version used to run `tezos-node snapshot import/export`
 images:
