@@ -1,7 +1,7 @@
 images:
   pyrometer: registry.gitlab.com/tezos-kiln/pyrometer:latest
 tezos_k8s_images:
-  utils: ghcr.io/oxheadalpha/tezos-k8s-utils:latest
+  utils: ghcr.io/oxheadalpha/tezos-k8s-utils:master
 # Pass below the pyrometer config, in yaml format
 config:
   node_monitor:

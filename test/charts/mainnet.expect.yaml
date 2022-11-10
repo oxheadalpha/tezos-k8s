@@ -170,7 +170,7 @@ spec:
               path: /is_synced
               port: 31732                                                
         - name: sidecar
-          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:latest"
+          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - sidecar
@@ -245,7 +245,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume                
         - name: config-generator
-          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:latest"
+          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - config-generator
@@ -275,7 +275,7 @@ spec:
             - mountPath: /etc/secret-volume
               name: tezos-accounts        
         - name: snapshot-downloader
-          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:latest"
+          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - snapshot-downloader
