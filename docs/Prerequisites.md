@@ -12,7 +12,7 @@
 
 ### For deployment on a cloud platform (AWS)
 
-- we recommmend [pulumi](https://www.pulumi.com/docs/get-started/install/), an infrastructure-as-code platform, for cloud deployments
+- we recommend [pulumi](https://www.pulumi.com/docs/get-started/install/), an infrastructure-as-code platform, for cloud deployments
 
 ## Installing prerequisites
 

@@ -38,7 +38,7 @@
      *                   scripts/wait-for-dns.sh and pass it as a single
      *                   argument to /bin/sh -c.  For image == octez, this
      *                   is the default.
-     *    script_command overide the name of the script.  We still look
+     *    script_command override the name of the script.  We still look
      *                   in the scripts directory and postpend ".sh"
      *    with_config    bring in the configMap defaults true only on utils.
      *    with_secret    bring in the secrets map including the identities.
@@ -158,6 +158,8 @@
       name: tezos-rpc
     - containerPort: 9732
       name: tezos-net
+    - containerPort: 9932
+      name: metrics
     {{- if or (not (hasKey $.node_vals "readiness_probe")) $.node_vals.readiness_probe }}
   readinessProbe:
     httpGet:
@@ -319,10 +321,6 @@
   {{- if has "vdf" $.node_vals.runs }}
   {{ $node_vals_images := $.node_vals.images | default dict }}
     {{- range .Values.protocols }}
-      {{- if or (regexFind "Kathma" .command) (regexFind "alpha" .command) }}
-      {{- /*
-      Only protos higher than Kathmandu support VDF
-      */}}
 - name: vdf-{{ lower .command }}
   image: "{{ or $node_vals_images.octez $.Values.images.octez }}"
   imagePullPolicy: IfNotPresent
@@ -331,7 +329,6 @@
   args:
     - run
     - vdf
-      {{- end }}
     {{- end }}
   {{- end }}
 {{- end }}
@@ -344,34 +341,6 @@
                                                 "image"       "utils"
     ) | nindent 0 }}
   {{- end }}
-{{- end }}
-
-{{- define "tezos.container.metrics" }}
-{{- if has "metrics" $.node_vals.runs }}
-- image: "registry.gitlab.com/nomadic-labs/tezos-metrics"
-  args:
-    - "--listen-prometheus=6666"
-    - "--data-dir=/var/tezos/node/data"
-  imagePullPolicy: IfNotPresent
-  name: metrics
-  ports:
-    - containerPort: 6666
-      name: tezos-metrics
-  volumeMounts:
-    - mountPath: /etc/tezos
-      name: config-volume
-    - mountPath: /var/tezos
-      name: var-volume
-    - mountPath: /etc/secret-volume
-      name: tezos-accounts
-  envFrom:
-    - configMapRef:
-        name: tezos-config
-  env:
-{{- include "tezos.localvars.pod_envvars" . | indent 4 }}
-    - name: DAEMON
-      value: tezos-metrics
-{{- end }}
 {{- end }}
 
 {{/*

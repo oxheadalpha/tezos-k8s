@@ -12,8 +12,8 @@ images:
   tezedge: tezedge/tezedge:v1.6.8
 # Images that are part of the tezos-k8s repo go here with 'dev' tag
 tezos_k8s_images:
-  utils: tezos-k8s-utils:dev
-  zerotier: tezos-k8s-zerotier:dev
+  utils: ghcr.io/oxheadalpha/tezos-k8s-utils:master
+  zerotier: ghcr.io/oxheadalpha/tezos-k8s-zerotier:master
 
 ## Properties that are templated for some k8s resources. There are container
 ## scripts that will look up some of these values. They should not be modified.
@@ -28,7 +28,7 @@ chain_initiator_job:
   name: chain-initiator
   pod_type: activating
 
-# For non-public chains the defualt mutez given to an account if the
+# For non-public chains the default mutez given to an account if the
 # account is not explicitly set below.
 bootstrap_mutez: "4000000000000"
 
@@ -123,7 +123,7 @@ should_generate_unsafe_deterministic_data: false
 #           field up above.
 # - "runs": A list of containers to run. A tezos node implementation is required.
 #         Options being "octez_node" or "tezedge_node". Other optional
-#         containers are "accuser", "baker", "logger", "vdf" and "metrics".
+#         containers are "accuser", "baker", "logger" and "vdf".
 # - "local_storage": use local storage instead of a volume. The storage will be
 #                  wiped when the node restarts for any reason. Useful when
 #                  faster IO is desired. Defaults to false.
@@ -232,6 +232,7 @@ nodes:
         config:
           shell:
             history_mode: rolling
+          metrics_addr: [ "0.0.0.0:9932" ]
 # End nodes
 
 ## Configuration for K8s Service resources. Configuring the labels selector of a
@@ -243,6 +244,17 @@ services:
   tezos_node_rpc:
     selector:
 #      rpc_node: "true"
+
+# Prometheus Operator is required in your cluster in order to enable
+# serviceMonitor below.
+# ServiceMonitor allows you to scrape the prometheus endpoints of your tezos nodes.
+# Make sure the endpoints are active by adding:
+#     metrics_addr: [ ":9932" ]
+# to your config.
+serviceMonitor:
+  enabled: false
+  labels:
+    # release: my-monitoring-release
 
 # # Signers
 #
@@ -399,14 +411,6 @@ protocols:
 #   # This data is typically too large to pass it directly inside helm chart.
 #   bootstrap_contract_urls: []
 #
-#   # Use the "faucet" map to predictably create a desired number of faucet
-#   # accounts. Change the seed to generate different sets of accounts.
-#   # Pass the same map to the "tezos-faucet" chart in the same repository
-#   # so you can deploy a website where people get free tez from the faucet.
-#   faucet:
-#     seed: "deterministic faucet seed"
-#     number_of_accounts: 100
-
 ## Deploy an indexer with the chain. An indexer puts the chain
 ## contents in a database for efficient indexing. Most dapps need it.
 ## Supported indexers:

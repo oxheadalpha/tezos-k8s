@@ -236,7 +236,14 @@ apiVersion: v1
 kind: Service
 metadata:
   name: af
+  labels:
+    appType: tezos-node
 spec:
+  ports:
+    - port: 9732
+      name: p2p
+    - port: 9932
+      name: metrics
   publishNotReadyAddresses: true
   clusterIP: None
   selector:
@@ -247,7 +254,14 @@ apiVersion: v1
 kind: Service
 metadata:
   name: as
+  labels:
+    appType: tezos-node
 spec:
+  ports:
+    - port: 9732
+      name: p2p
+    - port: 9932
+      name: metrics
   publishNotReadyAddresses: true
   clusterIP: None
   selector:
@@ -258,7 +272,14 @@ apiVersion: v1
 kind: Service
 metadata:
   name: eu
+  labels:
+    appType: tezos-node
 spec:
+  ports:
+    - port: 9732
+      name: p2p
+    - port: 9932
+      name: metrics
   publishNotReadyAddresses: true
   clusterIP: None
   selector:
@@ -269,7 +290,14 @@ apiVersion: v1
 kind: Service
 metadata:
   name: us
+  labels:
+    appType: tezos-node
 spec:
+  ports:
+    - port: 9732
+      name: p2p
+    - port: 9932
+      name: metrics
   publishNotReadyAddresses: true
   clusterIP: None
   selector:
@@ -317,6 +345,8 @@ spec:
               name: tezos-rpc
             - containerPort: 9732
               name: tezos-net
+            - containerPort: 9932
+              name: metrics
           readinessProbe:
             httpGet:
               path: /is_synced
@@ -385,7 +415,7 @@ spec:
             - mountPath: /etc/tezos/per-block-votes
               name: per-block-votes        
         - name: logger
-          image: "tezos-k8s-utils:dev"
+          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - logger
@@ -411,43 +441,9 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
-        - image: "registry.gitlab.com/nomadic-labs/tezos-metrics"
-          args:
-            - "--listen-prometheus=6666"
-            - "--data-dir=/var/tezos/node/data"
-          imagePullPolicy: IfNotPresent
-          name: metrics
-          ports:
-            - containerPort: 6666
-              name: tezos-metrics
-          volumeMounts:
-            - mountPath: /etc/tezos
-              name: config-volume
-            - mountPath: /var/tezos
-              name: var-volume
-            - mountPath: /etc/secret-volume
-              name: tezos-accounts
-          envFrom:
-            - configMapRef:
-                name: tezos-config
-          env:    
-            - name: MY_POD_IP
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.podIP
-            - name: MY_POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-            - name: MY_POD_TYPE
-              value: node
-            - name: MY_NODE_CLASS
-              value: af
-            - name: DAEMON
-              value: tezos-metrics                
+              name: var-volume                
         - name: sidecar
-          image: "tezos-k8s-utils:dev"
+          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - sidecar
@@ -476,7 +472,7 @@ spec:
               name: var-volume        
       initContainers:                        
         - name: config-generator
-          image: "tezos-k8s-utils:dev"
+          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - config-generator
@@ -506,7 +502,7 @@ spec:
             - mountPath: /etc/secret-volume
               name: tezos-accounts                        
         - name: wait-for-dns
-          image: "tezos-k8s-utils:dev"
+          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - wait-for-dns
@@ -531,9 +527,9 @@ spec:
             - |
               set -ex
               
-              if [ ! -e /var/tezos/node/data ]
+              if [ ! -e /var/tezos/node/data/context ]
               then
-                printf "No data dir found, probably initial start, doing nothing."
+                printf "No context in data dir found, probably initial start, doing nothing."
                 exit 0
               fi
               tezos-node upgrade storage --data-dir /var/tezos/node/data
@@ -637,12 +633,14 @@ spec:
               name: tezos-rpc
             - containerPort: 9732
               name: tezos-net
+            - containerPort: 9932
+              name: metrics
           readinessProbe:
             httpGet:
               path: /is_synced
-              port: 31732                                                        
+              port: 31732                                                
         - name: sidecar
-          image: "tezos-k8s-utils:dev"
+          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - sidecar
@@ -671,7 +669,7 @@ spec:
               name: var-volume        
       initContainers:                        
         - name: config-generator
-          image: "tezos-k8s-utils:dev"
+          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - config-generator
@@ -701,7 +699,7 @@ spec:
             - mountPath: /etc/secret-volume
               name: tezos-accounts                        
         - name: wait-for-dns
-          image: "tezos-k8s-utils:dev"
+          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - wait-for-dns
@@ -726,9 +724,9 @@ spec:
             - |
               set -ex
               
-              if [ ! -e /var/tezos/node/data ]
+              if [ ! -e /var/tezos/node/data/context ]
               then
-                printf "No data dir found, probably initial start, doing nothing."
+                printf "No context in data dir found, probably initial start, doing nothing."
                 exit 0
               fi
               tezos-node upgrade storage --data-dir /var/tezos/node/data
@@ -834,6 +832,8 @@ spec:
               name: tezos-rpc
             - containerPort: 9732
               name: tezos-net
+            - containerPort: 9932
+              name: metrics
           readinessProbe:
             httpGet:
               path: /is_synced
@@ -902,7 +902,7 @@ spec:
             - mountPath: /etc/tezos/per-block-votes
               name: per-block-votes        
         - name: logger
-          image: "tezos-k8s-utils:dev"
+          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - logger
@@ -928,43 +928,9 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
-        - image: "registry.gitlab.com/nomadic-labs/tezos-metrics"
-          args:
-            - "--listen-prometheus=6666"
-            - "--data-dir=/var/tezos/node/data"
-          imagePullPolicy: IfNotPresent
-          name: metrics
-          ports:
-            - containerPort: 6666
-              name: tezos-metrics
-          volumeMounts:
-            - mountPath: /etc/tezos
-              name: config-volume
-            - mountPath: /var/tezos
-              name: var-volume
-            - mountPath: /etc/secret-volume
-              name: tezos-accounts
-          envFrom:
-            - configMapRef:
-                name: tezos-config
-          env:    
-            - name: MY_POD_IP
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.podIP
-            - name: MY_POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-            - name: MY_POD_TYPE
-              value: node
-            - name: MY_NODE_CLASS
-              value: eu
-            - name: DAEMON
-              value: tezos-metrics                
+              name: var-volume                
         - name: sidecar
-          image: "tezos-k8s-utils:dev"
+          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - sidecar
@@ -993,7 +959,7 @@ spec:
               name: var-volume        
       initContainers:                        
         - name: config-generator
-          image: "tezos-k8s-utils:dev"
+          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - config-generator
@@ -1023,7 +989,7 @@ spec:
             - mountPath: /etc/secret-volume
               name: tezos-accounts                        
         - name: wait-for-dns
-          image: "tezos-k8s-utils:dev"
+          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - wait-for-dns
@@ -1048,9 +1014,9 @@ spec:
             - |
               set -ex
               
-              if [ ! -e /var/tezos/node/data ]
+              if [ ! -e /var/tezos/node/data/context ]
               then
-                printf "No data dir found, probably initial start, doing nothing."
+                printf "No context in data dir found, probably initial start, doing nothing."
                 exit 0
               fi
               tezos-node upgrade storage --data-dir /var/tezos/node/data
@@ -1155,6 +1121,8 @@ spec:
               name: tezos-rpc
             - containerPort: 9732
               name: tezos-net
+            - containerPort: 9932
+              name: metrics
           readinessProbe:
             httpGet:
               path: /is_synced
@@ -1221,9 +1189,9 @@ spec:
             - mountPath: /var/tezos
               name: var-volume
             - mountPath: /etc/tezos/per-block-votes
-              name: per-block-votes                                
+              name: per-block-votes                        
         - name: sidecar
-          image: "tezos-k8s-utils:dev"
+          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - sidecar
@@ -1252,7 +1220,7 @@ spec:
               name: var-volume        
       initContainers:                        
         - name: config-generator
-          image: "tezos-k8s-utils:dev"
+          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - config-generator
@@ -1282,7 +1250,7 @@ spec:
             - mountPath: /etc/secret-volume
               name: tezos-accounts                        
         - name: wait-for-dns
-          image: "tezos-k8s-utils:dev"
+          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - wait-for-dns
@@ -1307,9 +1275,9 @@ spec:
             - |
               set -ex
               
-              if [ ! -e /var/tezos/node/data ]
+              if [ ! -e /var/tezos/node/data/context ]
               then
-                printf "No data dir found, probably initial start, doing nothing."
+                printf "No context in data dir found, probably initial start, doing nothing."
                 exit 0
               fi
               tezos-node upgrade storage --data-dir /var/tezos/node/data
@@ -1397,7 +1365,7 @@ spec:
             exec $CMD
             
       initContainers:
-      - image: tezos-k8s-utils:dev
+      - image: ghcr.io/oxheadalpha/tezos-k8s-utils:master
         imagePullPolicy: IfNotPresent
         name: config-generator
         args:
@@ -1477,7 +1445,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume
       initContainers:
-        - image: tezos-k8s-utils:dev
+        - image: ghcr.io/oxheadalpha/tezos-k8s-utils:master
           imagePullPolicy: IfNotPresent
           name: config-generator
           args:
@@ -1497,8 +1465,6 @@ spec:
               name: config-volume
             - mountPath: /var/tezos
               name: var-volume
-            - name: faucet-commitments
-              mountPath: "/faucet-commitments"
             - mountPath: /etc/secret-volume
               name: tezos-accounts
       restartPolicy: Never
@@ -1507,8 +1473,6 @@ spec:
           name: config-volume
         - emptyDir: {}
           name: var-volume
-        - name: faucet-commitments
-          emptyDir: {}
         - name: tezos-accounts
           secret:
             secretName: tezos-secret

@@ -23,7 +23,7 @@ spec:
               set -e
 
               # Give tezos user full ownership of mounted cache volume for writing metadata later
-              sudo chown -R 100:100 /"${HISTORY_MODE}"-snapshot-cache-volume
+              sudo chown -R tezos /"${HISTORY_MODE}"-snapshot-cache-volume
 
               # Set error trap in order to kill this job with the timer later
               trap "exit" SIGINT SIGTERM
@@ -139,26 +139,9 @@ spec:
           env:
             - name: HISTORY_MODE
               value: ""
-            - name: RESTORED_STORAGE_INIT_TIME
-              valueFrom:
-                configMapKeyRef:
-                  name: snapshot-configmap
-                  key: RESTORED_STORAGE_INIT_TIME
-            - name: DISABLE_STORAGE_INIT_TIME
-              valueFrom:
-                configMapKeyRef:
-                  name: snapshot-configmap
-                  key: DISABLE_STORAGE_INIT_TIME
-            - name: NAMESPACE
-              valueFrom:
-                configMapKeyRef:
-                  name: snapshot-configmap
-                  key: NAMESPACE
-            - name: NETWORK_OVERRIDE
-              valueFrom:
-                configMapKeyRef:
-                  name: snapshot-configmap
-                  key: NETWORK_OVERRIDE
+          envFrom:
+            - configMapRef:
+                name: snapshot-configmap
       containers:
         - name: create-tezos-rolling-snapshot
           image: ""
@@ -169,8 +152,8 @@ spec:
               #!/bin/sh
               set -e
 
-              sudo chown -R 100:100 /"${HISTORY_MODE}"-snapshot-cache-volume
-              sudo chown -R 100:100 /rolling-tarball-restore
+              sudo chown -R tezos /"${HISTORY_MODE}"-snapshot-cache-volume
+              sudo chown -R tezos /rolling-tarball-restore
 
               # Strip network from namespace or use configmap value
               NETWORK="${NETWORK_OVERRIDE:-${NAMESPACE%%-*}}"

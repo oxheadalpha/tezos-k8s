@@ -177,7 +177,7 @@ SERVICE_ACCOUNT="${SERVICE_ACCOUNT}" yq e -i '.spec.template.spec.serviceAccount
 
 sleep 10
 
-# Trigger subsequent filesytem inits, snapshots, tarballs, and uploads.
+# Trigger subsequent filesystem inits, snapshots, tarballs, and uploads.
 if ! kubectl apply -f mainJob.yaml
 then
     printf "%s Error creating Zip-and-upload job.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -190,7 +190,8 @@ sleep 5
 while [ "$(kubectl get jobs "zip-and-upload-${HISTORY_MODE}" --namespace "${NAMESPACE}" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')" != "True" ]; do
     printf "%s Waiting for zip-and-upload job to complete.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"    
     while [ "$(kubectl get jobs "zip-and-upload-${HISTORY_MODE}" --namespace "${NAMESPACE}" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')" != "True" ]; do
-        if kubectl get pod -l job-name=zip-and-upload-"${HISTORY_MODE}" --namespace="${NAMESPACE}"| grep -i -e error -e evicted -e pending; then
+        if [ "$(kubectl get pod -l job-name=zip-and-upload-"${HISTORY_MODE}" --namespace="${NAMESPACE}"| grep -i -e error -e evicted -e pending)" ] || \
+        [ "$(kubectl get jobs  "zip-and-upload-${HISTORY_MODE}" --namespace="${NAMESPACE}" -o jsonpath='{.status.conditions[?(@.type=="Failed")].type}')" ] ; then
             printf "%s Zip-and-upload job failed. This job will end and a new snapshot will be taken.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" 
             break 2
         fi

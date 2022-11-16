@@ -190,7 +190,7 @@ def get_baking_accounts(baker_values):
 # Secret and public keys are matches and need be processed together. Neither key
 # must be specified, as later code will fill in the details if they are not.
 #
-# We create any missing accounts that are refered to by a node at
+# We create any missing accounts that are referred to by a node at
 # BAKING_NODES to ensure that all named accounts exist.
 def fill_in_missing_accounts():
     print("\nFilling in any missing accounts...")
@@ -431,8 +431,8 @@ def create_node_identity_json():
         print(json.dumps(NODE_IDENTITIES.get(MY_POD_NAME)), file=identity_file)
 
     nogroup = getgrnam("nogroup").gr_gid
-    chown(DATA_DIR, user=100, group=nogroup)
-    chown(identity_file_path, user=100, group=nogroup)
+    chown(DATA_DIR, user=1000, group=nogroup)
+    chown(identity_file_path, user=1000, group=nogroup)
     print(f"Identity file written at {identity_file_path}")
 
 
@@ -481,12 +481,6 @@ def create_protocol_parameters_json(accounts):
         for url in protocol_activation["bootstrap_contract_urls"]:
             print(f"Injecting bootstrap contract from {url}")
             protocol_params["bootstrap_contracts"].append(requests.get(url).json())
-
-    if protocol_activation.get("faucet"):
-        with open("/faucet-commitments/commitments.json", "r") as f:
-            commitments = json.load(f)
-        print(f"Faucet commitment file found, adding faucet commitments to protocol parameters")
-        protocol_params["commitments"] = commitments
 
     return protocol_params
 

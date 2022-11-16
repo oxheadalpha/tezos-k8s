@@ -5,8 +5,7 @@ BLOCK_HASH=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH)
 BLOCK_TIMESTAMP=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_TIMESTAMP)
 TEZOS_VERSION=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_VERSION)
 NETWORK="${NAMESPACE%%-*}"
-
-S3_BUCKET="${NETWORK}.${SNAPSHOT_WEBSITE_DOMAIN_NAME}"
+export S3_BUCKET="${NAMESPACE%-*}.${SNAPSHOT_WEBSITE_DOMAIN_NAME}"
 
 cd /
 
@@ -27,14 +26,14 @@ if [ "${HISTORY_MODE}" = archive ]; then
     ARCHIVE_TARBALL_FILENAME=tezos-"${NETWORK}"-archive-tarball-"${BLOCK_HEIGHT}".lz4
     printf "%s Archive tarball filename is ${ARCHIVE_TARBALL_FILENAME}\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
-    # If you upload a file bigger than 50GB, you have to do a mulitpart upload with a part size between 1 and 10000.
+    # If you upload a file bigger than 50GB, you have to do a multipart upload with a part size between 1 and 10000.
     # Instead of guessing size, you can use expected-size which tells S3 how big the file is and it calculates the size for you.
     # However if the file gets bigger than your expected size, the multipart upload fails because it uses a part size outside of the bounds (1-10000)
     # This gets the old archive tarball size and then adds 10%.  Archive tarballs dont seem to grow more than that.
     if aws s3 ls s3://"${S3_BUCKET}" | grep archive-tarball-metadata; then #Use last file for expected size if it exists
         EXPECTED_SIZE=$(curl -L http://"${S3_BUCKET}"/archive-tarball-metadata 2>/dev/null | jq -r '.filesize_bytes' | awk '{print $1*1.1}' | awk '{print ($0-int($0)>0)?int($0)+1:int($0)}')
     else
-        EXPECTED_SIZE=100000000000 #100GB Arbitrary filesize for initial value. Only used if no archive-tarball-metadata exists. IE starting up test network
+        EXPECTED_SIZE=1000000000000 #1000GB Arbitrary filesize for initial value. Only used if no archive-tarball-metadata exists. IE starting up test network
     fi
 
     # LZ4 /var/tezos/node selectively and upload to S3
@@ -111,14 +110,14 @@ if [ "${HISTORY_MODE}" = archive ]; then
         if ! touch archive-tarball; then
             printf "%s Archive Tarball : Error creating ${NETWORK}-archive-tarball file locally.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         else
-            printf "%s Archive Tarball : ${NETWORK}-archive-tarball created sucessfully.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+            printf "%s Archive Tarball : ${NETWORK}-archive-tarball created successfully.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         fi
 
         # Upload redirect file and set header for previously uploaded LZ4 File
         if ! aws s3 cp archive-tarball s3://"${S3_BUCKET}" --website-redirect /"${ARCHIVE_TARBALL_FILENAME}" --cache-control 'no-cache'; then
             printf "%s Archive Tarball : Error uploading ${NETWORK}-archive-tarball. to S3\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         else
-            printf "%s Archive Tarball : Upload of ${NETWORK}-archive-tarball sucessful to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+            printf "%s Archive Tarball : Upload of ${NETWORK}-archive-tarball successful to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         fi
 
         # Archive Tarball json redirect file
@@ -150,37 +149,57 @@ if [ "${HISTORY_MODE}" = rolling ]; then
     IMPORT_IN_PROGRESS=/rolling-tarball-restore/snapshot-import-in-progress
 
     # Wait for rolling snapshot file
-    while  ! [ -f "${ROLLING_SNAPSHOT}" ]; do
+    until [ -f "${ROLLING_SNAPSHOT}" ]; do
         printf "%s Waiting for ${ROLLING_SNAPSHOT} to exist...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-        
-        if [ "${HISTORY_MODE}" = archive ]; then
-            sleep 15m
-        else
-            sleep 2m
-        fi
+        until [ -f "${ROLLING_SNAPSHOT}" ]; do
+            if [ -f "${ROLLING_SNAPSHOT}" ];then
+                break
+            fi
+        done
     done
 
+    # Errors if above loop is broken out of but for some reason rolling snapshot doesnt exist
+    if [ -f "${ROLLING_SNAPSHOT}" ]; then
+        printf "%s ${ROLLING_SNAPSHOT} exists!\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    else
+        printf "%s ERROR ##### ${ROLLING_SNAPSHOT} does not exist!\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+        sleep 10
+        exit 1
+    fi
+
+    # Needs time in between checks. This is faster than the snapshot container can create and delete the import files
+    sleep 10s
+
     # Wait for rolling snapshot to import to temporary filesystem for tarball.
-    while  [ -f "${IMPORT_IN_PROGRESS}" ]; do
+    while [ -f "${IMPORT_IN_PROGRESS}" ]; do
         printf "%s Waiting for snapshot to import...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-        if [ "${HISTORY_MODE}" = archive ]; then
-            sleep 15m
-        else
-            sleep 2m
-        fi
+        while  [ -f "${IMPORT_IN_PROGRESS}" ]; do
+            if ! [ -f "${IMPORT_IN_PROGRESS}" ]; then
+                break
+            fi
+        done
     done
+
+    # Errors if above loop is broken out of but for some reason import_in_progress_file still exists
+    if ! [ -f "${IMPORT_IN_PROGRESS}" ]; then
+        printf "%s Snapshot import finished!\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    else
+        printf "%s ERROR ##### Snapshot import did not finish!\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+        sleep 10
+        exit 1
+    fi
 
     # LZ4 /"${HISTORY_MODE}"-snapshot-cache-volume/var/tezos/node selectively and upload to S3
     printf "%s ********************* Rolling Tarball *********************\\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
-    # If you upload a file bigger than 50GB, you have to do a mulitpart upload with a part size between 1 and 10000.
+    # If you upload a file bigger than 50GB, you have to do a multipart upload with a part size between 1 and 10000.
     # Instead of guessing size, you can use expected-size which tells S3 how big the file is and it calculates the size for you.
     # However if the file gets bigger than your expected size, the multipart upload fails because it uses a part size outside of the bounds (1-10000)
     # This gets the old rolling tarball size and then adds 10%.  rolling tarballs dont seem to grow more than that.
-    if aws s3 ls s3://"${S3_BUCKET}" | grep archive-tarball-metadata; then #Use last file for expected size if it exists
+    if aws s3 ls s3://"${S3_BUCKET}" | grep rolling-tarball-metadata; then #Use last file for expected size if it exists
         EXPECTED_SIZE=$(curl -L http://"${S3_BUCKET}"/rolling-tarball-metadata 2>/dev/null | jq -r '.filesize_bytes' | awk '{print $1*1.1}' | awk '{print ($0-int($0)>0)?int($0)+1:int($0)}')
     else
-        EXPECTED_SIZE=100000000000 #100GB Arbitrary filesize for initial value. Only used if no archive-tarball-metadata exists. IE starting up test network
+        EXPECTED_SIZE=100000000000 #100GB Arbitrary filesize for initial value. Only used if no rolling-tarball-metadata exists. IE starting up test network
     fi
 
     printf "%s Rolling Tarball : Tarballing /rolling-tarball-restore/var/tezos/node, LZ4ing, and uploading to S3...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -290,7 +309,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
         if ! aws s3 cp "${ROLLING_SNAPSHOT}" s3://"${S3_BUCKET}"; then
             printf "%s Rolling Tezos : Error uploading ${ROLLING_SNAPSHOT} to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         else
-            printf "%s Rolling Tezos : Sucessfully uploaded ${ROLLING_SNAPSHOT} to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+            printf "%s Rolling Tezos : Successfully uploaded ${ROLLING_SNAPSHOT} to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
             printf "%s Rolling Tezos : Uploading redirect...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
             FILESIZE_BYTES=$(stat -c %s "${ROLLING_SNAPSHOT}")
@@ -342,7 +361,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             if ! aws s3 cp rolling s3://"${S3_BUCKET}" --website-redirect /"${ROLLING_SNAPSHOT_FILENAME}" --cache-control 'no-cache'; then
                 printf "%s Rolling Tezos : Error uploading redirect object for ${ROLLING_SNAPSHOT} to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
             else
-                printf "%s Rolling Tezos : Sucessfully uploaded redirect object for ${ROLLING_SNAPSHOT} to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+                printf "%s Rolling Tezos : Successfully uploaded redirect object for ${ROLLING_SNAPSHOT} to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
             fi
 
             # Rolling snapshot json redirect file
@@ -366,6 +385,15 @@ else
   printf "%s Skipping rolling snapshot import and export because this is an archive job.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 fi
 
+# Network bucket redirect
+# Redirects from network.website.com to website.com/network
+touch index.html
+if ! aws s3 cp index.html s3://"${S3_BUCKET}" --website-redirect https://"${SNAPSHOT_WEBSITE_DOMAIN_NAME}"/"${NETWORK}" --cache-control 'no-cache'; then
+    printf "%s ERROR ##### Could not upload network site redirect.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+else
+    printf "%s Successfully uploaded network site redirect.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+fi
+
 # Need to be in this dir for jekyll to run.
 # Container-specific requirement
 cd /srv/jekyll || exit
@@ -373,70 +401,62 @@ cd /srv/jekyll || exit
 # Copy Gemfile and Gemfile.lock to current dir
 cp /snapshot-website-base/* .
 
-# Grab latest metadata and put in _data
-curl -L "${S3_BUCKET}"/archive-tarball-metadata -o _data/archive_tarball.json --create-dirs --silent
-curl -L "${S3_BUCKET}"/rolling-tarball-metadata -o _data/rolling_tarball.json --create-dirs --silent
-curl -L "${S3_BUCKET}"/rolling-snapshot-metadata -o _data/rolling_snapshot.json --create-dirs --silent
-
-# Store network name for liquid templating
-jq -n \
---arg NETWORK "$NETWORK" \
-'{
-  "network": $NETWORK
-}' > _data/tezos_metadata.json
-
-# Grab liquid-templated chain website page
-curl -o index.md "${SNAPSHOT_MARKDOWN_TEMPLATE}"
-
-# Update chain name for page title using variable
-sed -i'' -e 's/${NETWORK}/'"${NETWORK}"'/g' index.md
-
-# Grab Jekyll config
-curl -o _config.yml "${JEKYLL_CONFIG}"
-
-# Add remote theme to config
-cat <<EOF >> _config.yml
-remote_theme: ${JEKYLL_REMOTE_THEME_REPOSITORY}
-plugins:
-- jekyll-remote-theme
-EOF
-
-chown -R jekyll:jekyll ./*
-bundle exec jekyll build
-
-# Upload chain page (index.html and assets) to root of website bucket
-if ! aws s3 cp _site/ s3://"${S3_BUCKET}" --recursive --include "*"; then
-    printf "%s Website Build & Deploy : Error uploading site to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-else
-    printf "%s Website Build & Deploy  : Sucessfully uploaded website to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-fi
-
-# Build base.json from existing metadata files
-
-printf "##### BEGINNING OF BASE.JSON"
+# Remote theme does not work
+# Using git instead
+REPO="${JEKYLL_REMOTE_THEME_REPOSITORY%@*}"
+BRANCH="${JEKYLL_REMOTE_THEME_REPOSITORY#*@}"
+LOCAL_DIR=monosite
+git clone https://github.com/"${REPO}".git --branch "${BRANCH}" "${LOCAL_DIR}"
+cp -r "${LOCAL_DIR}"/* .
+rm -rf "${LOCAL_DIR}"
 
 # Create new base.json locally
 touch base.json
 echo '[]' > "base.json"
 
-printf "%s Building base.json... this may take a while." "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-aws s3 ls s3://"${NETWORK}".xtz-shots.io |  grep '\.json'| sort | awk '{print $4}' | awk -F '\\\\n' '{print $1}' | tr ' ' '\n' | grep -v base.json | while read ITEM; do
-    tmp=$(mktemp) && cp base.json "${tmp}" && jq --argjson file "$(curl -s https://"${NETWORK}".xtz-shots.io/$ITEM)" '. += [$file]' "${tmp}" > base.json
+printf "%s Building base.json... this may take a while.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+aws s3 ls s3://"${S3_BUCKET}" |  grep '\.json'| sort | awk '{print $4}' | awk -F '\\\\n' '{print $1}' | tr ' ' '\n' | grep -v -e base.json -e tezos-snapshots.json | while read ITEM; do
+    tmp=$(mktemp) && cp base.json "${tmp}" && jq --argjson file "$(curl -s https://"${S3_BUCKET}"/$ITEM)" '. += [$file]' "${tmp}" > base.json
 done
-
-# DEBUG
-
-printf "%s" "$(cat base.json || true)"
-printf "##### END OF BASE.JSON"
-# END DEBUG
-
-# aws s3 ls s3://$NETWORK.xtz-shots.io |  grep '\.json'| sort | awk '{print $4}' | awk -F '\\\\n' '{print $1}' | tr ' ' '\n' | grep -v base.json | while read ITEM; do
-#     echo $ITEM
-# done
 
 #Upload base.json
 if ! aws s3 cp base.json s3://"${S3_BUCKET}"/base.json; then
     printf "%s Upload base.json : Error uploading file base.json to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 else
-    printf "%s Upload base.json : File base.json sucessfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    printf "%s Upload base.json : File base.json successfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+fi
+
+# Create snapshot.json
+# List of all snapshot metadata across all subdomains
+# build site pages
+python /getAllSnapshotMetadata.py
+
+# Check if tezos-snapshots.json exists
+# tezos-snapshots.json is a list of all snapshots in all buckets
+if [[ ! -f tezos-snapshots.json ]]; then
+    printf "%s ERROR tezos-snapshots.json does not exist locally.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    sleep 5
+    exit 1
+fi
+
+# Upload tezos-snapshots.json
+if ! aws s3 cp tezos-snapshots.json s3://"${SNAPSHOT_WEBSITE_DOMAIN_NAME}"/tezos-snapshots.json; then
+    printf "%s Upload tezos-snapshots.json : Error uploading file tezos-snapshots.json to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+else
+    printf "%s Upload tezos-snapshots.json : File tezos-snapshots.json successfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+fi
+
+# Separate python for web page build
+# Needs tezos-snapshots.json to exist before pages are built
+python /getLatestSnapshotMetadata.py
+
+# Generate HTML from markdown and metadata
+chown -R jekyll:jekyll ./*
+bundle exec jekyll build
+
+# Upload chain page (index.html and assets) to root of website bucket
+if ! aws s3 cp _site/ s3://"${SNAPSHOT_WEBSITE_DOMAIN_NAME}" --recursive --include "*"; then
+    printf "%s Website Build & Deploy : Error uploading site to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+else
+    printf "%s Website Build & Deploy  : Successful uploaded website to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 fi
