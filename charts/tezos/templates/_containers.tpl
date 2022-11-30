@@ -286,7 +286,8 @@
 {{- define "tezos.container.bakers" }}
   {{- if has "baker" $.node_vals.runs }}
     {{- $node_vals_images := $.node_vals.images | default dict }}
-    {{- range (first $.node_vals.instances).bake_using_accounts }}
+    {{- $baking_accounts := (first $.node_vals.instances).bake_using_accounts }}
+    {{- range $baking_accounts }}
       # note, if several instances of the same statefulset have a different number of bakers,
       # the chart is invalid.
       {{- range $.Values.protocols }}
