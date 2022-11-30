@@ -28,7 +28,7 @@
      *    name           the name of the container, defaults to type, this
      *                   is used for containers like baker which can have
      *                   multiple instances of the same type
-     *    image          one of: octez, tezedge, utils
+     *    image          one of: octez, utils
      *    command        the command
      *    args           the list of arguments to the command, will default
      *                   to the type if using a "utils" image
@@ -83,9 +83,7 @@
 {{- $node_vals_images := $.node_vals.images | default dict }}
 {{- if eq .image "octez" }}
   image: "{{ or $node_vals_images.octez $.Values.images.octez }}"
-{{- else if eq .image "tezedge" }}
-  image: "{{ or $node_vals_images.tezedge $.Values.images.tezedge }}"
-{{- else }}
+{{- else if eq .image "utils" }}
   image: "{{ $.Values.tezos_k8s_images.utils }}"
 {{- end }}
   imagePullPolicy: IfNotPresent
@@ -151,8 +149,7 @@
     - mountPath: /etc/tezos/per-block-votes
       name: per-block-votes
   {{- end }}
-  {{- if (or (eq .type "octez-node")
-             (eq .type "tezedge-node")) }}
+  {{- if (eq .type "octez-node") }}
   ports:
     - containerPort: 8732
       name: tezos-rpc
@@ -247,40 +244,12 @@
   {{- end }}
 {{- end }}
 
-{{- define "tezos.getNodeImplementation" }}
-  {{- $containers := $.node_vals.runs }}
-  {{- if and (has "tezedge_node" $containers) (has "octez_node" $containers) }}
-    {{- fail "Only either tezedge_node or octez_node container can be specified in 'runs' field " }}
-  {{- else if (has "octez_node" $containers) }}
-    {{- "octez" }}
-  {{- else if (has "tezedge_node" $containers) }}
-    {{- "tezedge" }}
-  {{- else }}
-    {{- fail "No Tezos node container was specified in 'runs' field. Must specify tezedge_node or octez_node" }}
-  {{- end }}
-{{- end }}
-
 {{- define "tezos.container.node" }}
-{{- if eq (include "tezos.getNodeImplementation" $) "octez" }}
     {{- include "tezos.generic_container" (dict "root"        $
                                                 "type"        "octez-node"
                                                 "image"       "octez"
                                                 "with_config" 0
     ) | nindent 0 }}
-{{- end }}
-{{- end }}
-
-{{- define "tezos.container.tezedge" }}
-  {{- if eq (include "tezos.getNodeImplementation" $) "tezedge" }}
-    {{- include "tezos.generic_container" (
-            dict "root"        $
-                 "type"        "tezedge-node"
-                 "image"       "tezedge"
-                 "with_config" 0
-                 "command"     "/light-node"
-                 "args"        (list "--config-file=/etc/tezos/tezedge.conf")
-    ) | nindent 0 }}
-  {{- end }}
 {{- end }}
 
 {{- define "tezos.container.bakers" }}

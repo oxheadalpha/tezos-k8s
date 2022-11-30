@@ -32,7 +32,6 @@ spec:
     spec:
       containers:
         {{- include "tezos.container.node"      $ | indent 8 }}
-        {{- include "tezos.container.tezedge"   $ | indent 8 }}
         {{- include "tezos.container.accusers"  $ | indent 8 }}
         {{- include "tezos.container.bakers"    $ | indent 8 }}
         {{- include "tezos.container.logger"    $ | indent 8 }}
