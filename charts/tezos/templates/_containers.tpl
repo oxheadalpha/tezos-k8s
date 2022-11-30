@@ -121,6 +121,10 @@
   {{- if .localvars }}
   {{- include "tezos.localvars.pod_envvars" $ | indent 4 }}
   {{- end }}
+  {{- if .baking_account }}
+    - name: BAKING_ACCOUNT
+      value: {{ .baking_account}}
+  {{- end }}
     - name: DAEMON
       value: {{ .type }}
 {{- $envdict := dict }}
@@ -286,8 +290,8 @@
 {{- define "tezos.container.bakers" }}
   {{- if has "baker" $.node_vals.runs }}
     {{- $node_vals_images := $.node_vals.images | default dict }}
-    {{- $baking_accounts := (first $.node_vals.instances).bake_using_accounts }}
-    {{- range $baking_accounts }}
+    {{- range (first $.node_vals.instances).bake_using_accounts }}
+      {{- $baking_account := . }}
       # note, if several instances of the same statefulset have a different number of bakers,
       # the chart is invalid.
       {{- range $.Values.protocols }}
@@ -297,9 +301,11 @@
         {{- $_ := set $ "command_in_tpl" .command }}
         {{- include "tezos.generic_container" (dict "root" $
                                                     "name" (print "baker-"
-                                                            (lower .command))
+                                                            (lower .command)
+                                                            (print $baking_account))
                                                     "type"        "baker"
                                                     "image"       "octez"
+                                                    "baking_account" (print $baking_account)
         ) | nindent 0 }}
       {{- end }}
     {{- end }}
