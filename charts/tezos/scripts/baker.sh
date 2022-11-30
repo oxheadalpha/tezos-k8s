@@ -28,8 +28,6 @@ if [[ "$tezos_version" == *"13.0"* ]]; then
   extra_args="$extra_args --liquidity-baking-toggle-vote on"
 fi
 
-my_baker_account="$(cat /etc/tezos/baker-account )"
-
 CLIENT="$TEZ_BIN/tezos-client -d $CLIENT_DIR"
 CMD="$TEZ_BIN/tezos-baker-$proto_command -d $CLIENT_DIR"
 
@@ -40,4 +38,4 @@ while ! $CLIENT rpc get chains/main/blocks/head; do
     sleep 5
 done
 
-exec $CMD run with local node $NODE_DATA_DIR ${extra_args} ${BAKER_EXTRA_ARGS_FROM_ENV} ${my_baker_account}
+exec $CMD run with local node $NODE_DATA_DIR ${extra_args} ${BAKER_EXTRA_ARGS_FROM_ENV} ${BAKING_ACCOUNT}
