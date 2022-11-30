@@ -286,17 +286,21 @@
 {{- define "tezos.container.bakers" }}
   {{- if has "baker" $.node_vals.runs }}
     {{- $node_vals_images := $.node_vals.images | default dict }}
-    {{- range .Values.protocols }}
-      {{- if (not .vote) }}
-        {{ fail (print "You did not specify the liquidity baking toggle vote in 'protocols' for protocol " .command ".") }}
-      {{- end -}}
-      {{- $_ := set $ "command_in_tpl" .command }}
-      {{- include "tezos.generic_container" (dict "root" $
-                                                  "name" (print "baker-"
-                                                          (lower .command))
-                                                  "type"        "baker"
-                                                  "image"       "octez"
-      ) | nindent 0 }}
+    {{- range (first $.node_vals.instances).bake_using_accounts }}
+      # note, if several instances of the same statefulset have a different number of bakers,
+      # the chart is invalid.
+      {{- range $.Values.protocols }}
+        {{- if (not .vote) }}
+          {{ fail (print "You did not specify the liquidity baking toggle vote in 'protocols' for protocol " .command ".") }}
+        {{- end -}}
+        {{- $_ := set $ "command_in_tpl" .command }}
+        {{- include "tezos.generic_container" (dict "root" $
+                                                    "name" (print "baker-"
+                                                            (lower .command))
+                                                    "type"        "baker"
+                                                    "image"       "octez"
+        ) | nindent 0 }}
+      {{- end }}
     {{- end }}
   {{- end }}
 {{- end }}
