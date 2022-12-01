@@ -83,7 +83,7 @@
 {{- $node_vals_images := $.node_vals.images | default dict }}
 {{- if eq .image "octez" }}
   image: "{{ or $node_vals_images.octez $.Values.images.octez }}"
-{{- else if eq .image "utils" }}
+{{- else }}
   image: "{{ $.Values.tezos_k8s_images.utils }}"
 {{- end }}
   imagePullPolicy: IfNotPresent
