@@ -323,18 +323,42 @@ spec:
         node_class: af
         baking_node: "true"
     spec:
-      containers:                
-        - name: tezedge-node
-          image: "tezedge/tezedge:v1.6.8"
+      containers:        
+        - name: octez-node
+          image: "tezos/tezos:v14-release"
           imagePullPolicy: IfNotPresent
           command:
-            - /light-node
+            - /bin/sh
           args:
-            - --config-file=/etc/tezos/tezedge.conf
+            - "-c"
+            - |
+              set -x
+              
+              set
+              
+              # ensure we can run tezos-client commands without specifying client dir
+              ln -s /var/tezos/client /home/tezos/.tezos-client
+              #
+              # Not every error is fatal on start.  In particular, with zerotier,
+              # the listen-addr may not yet be bound causing tezos-node to fail.
+              # So, we try a few times with increasing delays:
+              
+              for d in 1 1 5 10 20 60 120; do
+              	/usr/local/bin/tezos-node run				\
+              			--bootstrap-threshold 0			\
+              			--config-file /etc/tezos/config.json
+              	sleep $d
+              done
+              
+              #
+              # Keep the container alive for troubleshooting on failures:
+              
+              sleep 3600
+              
           envFrom:
           env:
             - name: DAEMON
-              value: tezedge-node
+              value: octez-node
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -638,7 +662,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /is_synced
-              port: 31732                                                
+              port: 31732                                        
         - name: sidecar
           image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
@@ -837,7 +861,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /is_synced
-              port: 31732                        
+              port: 31732                
         - name: baker-013-ptjakart
           image: "tezos/tezos:v14-release"
           imagePullPolicy: IfNotPresent
@@ -1126,7 +1150,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /is_synced
-              port: 31732                        
+              port: 31732                
         - name: baker-013-ptjakart
           image: "tezos/tezos:v14-release"
           imagePullPolicy: IfNotPresent

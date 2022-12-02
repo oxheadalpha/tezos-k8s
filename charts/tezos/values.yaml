@@ -9,7 +9,6 @@ is_invitation: false
 # Images not part of the tezos-k8s repo go here
 images:
   octez: tezos/tezos:v14-release
-  tezedge: tezedge/tezedge:v1.6.8
 # Images that are part of the tezos-k8s repo go here with 'dev' tag
 tezos_k8s_images:
   utils: ghcr.io/oxheadalpha/tezos-k8s-utils:master
@@ -115,13 +114,11 @@ should_generate_unsafe_deterministic_data: false
 #          using just "baker".
 # - "storage_size": the size of the PV
 # - "images": Optional specification of images to use for the tezos node and
-#           baker. Options are "octez" with a tezos/tezos image or
-#           "tezedge" with a tezedge/tezedge image. If no images are provided,
-#           the containers will default to the images defined in the "images"
-#           field up above.
-# - "runs": A list of containers to run. A tezos node implementation is required.
-#         Options being "octez_node" or "tezedge_node". Other optional
-#         containers are "accuser", "baker", "logger" and "vdf".
+#           baker. Options are "octez" with a tezos/tezos image.
+#           If no images are provided, the containers will default to the images
+#           defined in the "images" field up above.
+# - "runs": A list of containers to run.
+#         Options being "octez_node", "accuser", "baker", "logger" and "vdf".
 # - "local_storage": use local storage instead of a volume. The storage will be
 #                  wiped when the node restarts for any reason. Useful when
 #                  faster IO is desired. Defaults to false.
@@ -186,11 +183,9 @@ should_generate_unsafe_deterministic_data: false
 #     storage_size: 15Gi
 #     images: # (optional field)
 #       octez: tezos/tezos:v...
-#     # tezedge: tezedge/tezedg:v...
 #     local_storage: false
 #     runs:
 #       - octez_node
-#     # - tezedge_node
 #       - baker
 #     instances:
 #       - bake_using_account: baker0
@@ -211,8 +206,8 @@ should_generate_unsafe_deterministic_data: false
 #       peer_node: "true"
 #       rpc_node: "true"
 #     images: # (optional field)
-#       tezedge: tezedge/tezedge:v...
-#     runs: ["tezedge_node"]
+#       octez: tezos/tezos:v...
+#     runs: ["octez_node"]
 #     instances:
 #       - {}
 #       - {}
