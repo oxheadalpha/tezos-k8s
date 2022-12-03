@@ -23,6 +23,9 @@ schedule: "0 */6 * * *"
 # Pick one of "rpc", "tzstats", "tzkt"
 reward_data_provider: "rpc"
 
+# Tezos Network. Can be MAINNET or GHOSTNET
+network: MAINNET
+
 extra_trd_args: "--do_not_publish_stats"
 
 # This is an example of TRD config. Customize to your needs.
