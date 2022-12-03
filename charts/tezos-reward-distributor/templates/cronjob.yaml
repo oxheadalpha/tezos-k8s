@@ -57,5 +57,5 @@ spec:
             command:
             - /bin/sh
             - -c
-            - python src/main.py -M 2 --reward_data_provider {{ .Values.reward_data_provider }} --node_addr_public {{ .Values.tezos_node_addr }} --node_endpoint {{ .Values.tezos_node_addr }} --base_directory /trd --signer_endpoint {{ .Values.signer_addr }} {{ .Values.extra_trd_args }} -N {{ .Values.network }}
+            - python src/main.py -M 2 --reward_data_provider {{ .Values.reward_data_provider }} --node_addr_public {{ .Values.tezos_node_addr }} --node_endpoint {{ .Values.tezos_node_addr }} --base_directory /trd --signer_endpoint {{ .Values.signer_addr }} {{ .Values.extra_trd_args }} -N {{ .Values.network }} --initial_cycle {{ .Values.initial_cycle}} --release_override {{ .Values.release_override }} {{ if .Values.dry_run }}--dry_run {{ end }}
           restartPolicy: OnFailure

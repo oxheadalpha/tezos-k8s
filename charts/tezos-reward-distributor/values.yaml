@@ -26,74 +26,83 @@ reward_data_provider: "rpc"
 # Tezos Network. Can be MAINNET or GHOSTNET
 network: MAINNET
 
+# Release override: set to -5 to pay just finished cycle
+release_override: -5
+
+# Set initial cycle to pay rewards from. Set to -1 to start from just finished cycle.
+initial_cycle: -1
+
+# Dry-run. Set to "true" to not actually perform the payouts.
+dry_run: false
+
 extra_trd_args: "--do_not_publish_stats"
 
 # This is an example of TRD config. Customize to your needs.
 # For details, please consult TRD documentation:
 #  https://tezos-reward-distributor-organization.github.io/tezos-reward-distributor/
 trd_config:
-  version: 1.0
-  baking_address: tz1WrZpjVRpsmjv8VL3781RhyLi5JyHsGXK2
-  payment_address: tz1WrZpjVRpsmjv8VL3781RhyLi5JyHsGXK2
-  rewards_type: actual
-  service_fee: 4.5
-  founders_map:
-    {'tz1WrZpjVRpsmjv8VL3781RhyLi5JyHsGXK2' : 1.0}
-  owners_map:
-    {'tz1eawTP2ueRCqsYZq3DebwW9PkthdCqcZa8' : 0.3,
-     'tz1WrZpjVRpsmjv8VL3781RhyLi5JyHsGXK2' : 0.7}
-  specials_map: {}
-  supporters_set: {}
-  min_delegation_amt: 100
-  reactivate_zeroed: True
-  delegator_pays_xfer_fee: True
-  delegator_pays_ra_fee: True
-  pay_denunciation_rewards: True
-  rules_map:
-    KT1MMhmTkUoHez4u58XMZL7NkpU9FWY4QLn3: KT1MMhmTkUoHez4u58XMZL7NkpU9FWY4QLn0
-    KT1D33n8zp1bqBkViiQtLLPLEGRW9xcqihY3: KT1MMhmTkUoHez4u58XMZL7NkpU9FWY4QLn0
-    KT1Ao8UXNJ9Dz71Wx3m8yzYNdnNQp2peqtM0: TOE
-    KT1VyxJWhe9oz3v4qwTp2U6Rb17ocHGpJmW0: TOB
-    KT19cJWfbDNXT4azVbgTBvtLMeqweuHH8W20: TOF
-    KT1DextebDNXT4azVbgTBvtLMeqweuHH8W20: Dexter
-    mindelegation: TOB
-  plugins:
-    enabled:
-    - webhook
-    email:
-      smtp_user: user@example.com
-      smtp_pass: horsebatterystaple2
-      smtp_host: smtp.example.com
-      smtp_port: 587
-      smtp_tls: true
-      smtp_sender: trdnotice@example.com
-      smtp_recipients:
-        - bob@example.com
-        - alice@example.com
-    telegram:
-      admin_chat_ids:
-        - 123456789
-      payouts_chat_ids:
-        - -13134455
-      bot_api_key: 988877766:SKDJFLSJDFJLJSKDFJLKSDJFLKJDF
-      telegram_text: >
-        Rewards for cycle %CYCLE% are completed.
-        We paid out %TREWARDS% tez in rewards to %NDELEGATORS% delegators.
-    twitter:
-      api_key: XXXXXXXX
-      api_secret: ZZZZZZZZ
-      access_token: YYYYYYYY
-      access_secret: WWWWWWWW
-      extra_tags:
-        - "our_baker"
-        - "tezos"
-        - "rewards"
-    webhook:
-      endpoint: https://example.com/webhook.php
-      token: Xynl6svphysd3BhjLP6IS
-    discord:
-      endpoint: https://discord.com/api/webhooks/9876543212345678/OmAfadfasdfasdfasdfasdfasdfasfsdf
-      send_admin: False
-      discord_text: >
-        Rewards for cycle %CYCLE% are completed.
-        We paid out %TREWARDS% tez in rewards to %NDELEGATORS% delegators.
+  # version: 1.0
+  # baking_address: tz1WrZpjVRpsmjv8VL3781RhyLi5JyHsGXK2
+  # payment_address: tz1WrZpjVRpsmjv8VL3781RhyLi5JyHsGXK2
+  # rewards_type: actual
+  # service_fee: 4.5
+  # founders_map:
+  #   {'tz1WrZpjVRpsmjv8VL3781RhyLi5JyHsGXK2' : 1.0}
+  # owners_map:
+  #   {'tz1eawTP2ueRCqsYZq3DebwW9PkthdCqcZa8' : 0.3,
+  #    'tz1WrZpjVRpsmjv8VL3781RhyLi5JyHsGXK2' : 0.7}
+  # specials_map: {}
+  # supporters_set: {}
+  # min_delegation_amt: 100
+  # reactivate_zeroed: True
+  # delegator_pays_xfer_fee: True
+  # delegator_pays_ra_fee: True
+  # pay_denunciation_rewards: True
+  # rules_map:
+  #   KT1MMhmTkUoHez4u58XMZL7NkpU9FWY4QLn3: KT1MMhmTkUoHez4u58XMZL7NkpU9FWY4QLn0
+  #   KT1D33n8zp1bqBkViiQtLLPLEGRW9xcqihY3: KT1MMhmTkUoHez4u58XMZL7NkpU9FWY4QLn0
+  #   KT1Ao8UXNJ9Dz71Wx3m8yzYNdnNQp2peqtM0: TOE
+  #   KT1VyxJWhe9oz3v4qwTp2U6Rb17ocHGpJmW0: TOB
+  #   KT19cJWfbDNXT4azVbgTBvtLMeqweuHH8W20: TOF
+  #   KT1DextebDNXT4azVbgTBvtLMeqweuHH8W20: Dexter
+  #   mindelegation: TOB
+  # plugins:
+  #   enabled:
+  #   - webhook
+  #   email:
+  #     smtp_user: user@example.com
+  #     smtp_pass: horsebatterystaple2
+  #     smtp_host: smtp.example.com
+  #     smtp_port: 587
+  #     smtp_tls: true
+  #     smtp_sender: trdnotice@example.com
+  #     smtp_recipients:
+  #       - bob@example.com
+  #       - alice@example.com
+  #   telegram:
+  #     admin_chat_ids:
+  #       - 123456789
+  #     payouts_chat_ids:
+  #       - -13134455
+  #     bot_api_key: 988877766:SKDJFLSJDFJLJSKDFJLKSDJFLKJDF
+  #     telegram_text: >
+  #       Rewards for cycle %CYCLE% are completed.
+  #       We paid out %TREWARDS% tez in rewards to %NDELEGATORS% delegators.
+  #   twitter:
+  #     api_key: XXXXXXXX
+  #     api_secret: ZZZZZZZZ
+  #     access_token: YYYYYYYY
+  #     access_secret: WWWWWWWW
+  #     extra_tags:
+  #       - "our_baker"
+  #       - "tezos"
+  #       - "rewards"
+  #   webhook:
+  #     endpoint: https://example.com/webhook.php
+  #     token: Xynl6svphysd3BhjLP6IS
+  #   discord:
+  #     endpoint: https://discord.com/api/webhooks/9876543212345678/OmAfadfasdfasdfasdfasdfasdfasfsdf
+  #     send_admin: False
+  #     discord_text: >
+  #       Rewards for cycle %CYCLE% are completed.
+  #       We paid out %TREWARDS% tez in rewards to %NDELEGATORS% delegators.
