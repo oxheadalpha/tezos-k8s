@@ -151,8 +151,6 @@ spec:
               
           envFrom:
           env:
-            - name: DAEMON
-              value: octez-node
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -190,8 +188,6 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: rolling-node
-            - name: DAEMON
-              value: sidecar
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -237,8 +233,6 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: rolling-node
-            - name: DAEMON
-              value: config-init
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -265,8 +259,6 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: rolling-node
-            - name: DAEMON
-              value: config-generator
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -295,8 +287,6 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: rolling-node
-            - name: DAEMON
-              value: snapshot-downloader
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -350,8 +340,6 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: rolling-node
-            - name: DAEMON
-              value: snapshot-importer
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -376,8 +364,6 @@ spec:
               
           envFrom:
           env:
-            - name: DAEMON
-              value: upgrade-storage
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume

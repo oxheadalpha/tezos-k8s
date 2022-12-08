@@ -119,8 +119,10 @@
   {{- if .localvars }}
   {{- include "tezos.localvars.pod_envvars" $ | indent 4 }}
   {{- end }}
-    - name: DAEMON
-      value: {{ .type }}
+  {{- if .baker_index }}
+    - name: BAKER_INDEX
+      value: "{{ .baker_index }}"
+  {{- end }}
 {{- $envdict := dict }}
 {{- $lenv := $.node_vals.env           | default dict }}
 {{- $genv := $.Values.node_globals.env | default dict }}
@@ -255,17 +257,31 @@
 {{- define "tezos.container.bakers" }}
   {{- if has "baker" $.node_vals.runs }}
     {{- $node_vals_images := $.node_vals.images | default dict }}
-    {{- range .Values.protocols }}
-      {{- if (not .vote) }}
-        {{ fail (print "You did not specify the liquidity baking toggle vote in 'protocols' for protocol " .command ".") }}
-      {{- end -}}
-      {{- $_ := set $ "command_in_tpl" .command }}
-      {{- include "tezos.generic_container" (dict "root" $
-                                                  "name" (print "baker-"
-                                                          (lower .command))
-                                                  "type"        "baker"
-                                                  "image"       "octez"
-      ) | nindent 0 }}
+    {{/* calculate the max number of bakers accross instances */}}
+    {{- $max_baker_num := 0 }}
+    {{- range $i := $.node_vals.instances }}
+      {{- if hasKey $i "bake_using_account" }}
+        {{- $max_baker_num = max 1 $max_baker_num }}
+      {{- else }}
+        {{- $max_baker_num = max (len (get $i "bake_using_accounts")) $max_baker_num }}
+      {{- end }}
+    {{- end }}
+    {{- range $n := until (int $max_baker_num) }}
+      {{- range $.Values.protocols }}
+        {{- if (not .vote) }}
+          {{ fail (print "You did not specify the liquidity baking toggle vote in 'protocols' for protocol " .command ".") }}
+        {{- end -}}
+        {{- $_ := set $ "command_in_tpl" .command }}
+        {{- include "tezos.generic_container" (dict "root" $
+                                                    "name" (print "baker-"
+                                                            print $n
+                                                            print "-"
+                                                            (lower .command))
+                                                    "type"        "baker"
+                                                    "image"       "octez"
+                                                    "baker_index"   (print $n)
+        ) | nindent 0 }}
+      {{- end }}
     {{- end }}
   {{- end }}
 {{- end }}
