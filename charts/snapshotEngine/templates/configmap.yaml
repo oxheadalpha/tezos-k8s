@@ -10,6 +10,8 @@ data:
   DISABLE_STORAGE_INIT_TIME: {{ $.Values.disableStorageInitTime | quote }}
   NETWORK_OVERRIDE: {{ $.Values.networkOverride | default "" | quote }}
   ALL_SUBDOMAINS: {{ $.Values.allSubdomains }}
+  ARCHIVE_SLEEP_DELAY: {{ $.Values.artifactDelay.archive }}
+  ROLLING_SLEEP_DELAY: {{ $.Values.artifactDelay.rolling }}
 kind: ConfigMap
 metadata:
   name: snapshot-configmap
