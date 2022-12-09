@@ -237,7 +237,7 @@ jobs:
 
             # Update the release version of each of tezos-k8s images
             for image in $tq_images; do
-              image_name=$(yq e ".tezos_k8s_images.$image" $chart/values.yaml | sed -E "s/tezos-k8s-(.*):.*/\1/")
+              image_name=$(yq e ".tezos_k8s_images.$image" $chart/values.yaml | sed -E "s/ghcr.io\/oxheadalpha\/tezos-k8s-(.*):.*/\1/")
               yq e ".tezos_k8s_images.$image = \"ghcr.io/oxheadalpha/tezos-k8s-$image_name:$RELEASE_VERSION\"" -i $chart/values.yaml
             done
           done
