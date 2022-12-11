@@ -62,19 +62,19 @@ spec:
 {{ tpl ($.Files.Get (print "scripts/run.sh")) $ | indent 14 }}
             env:
             - name: REWARD_DATA_PROVIDER
-              value: {{ .Values.reward_data_provider }}
+              value: "{{ .Values.reward_data_provider }}"
             - name: TEZOS_NODE_ADDR
-              value: {{ .Values.tezos_node_addr }}
+              value: "{{ .Values.tezos_node_addr }}"
             - name: SIGNER_ADDR
-              value: {{ .Values.signer_addr }}
+              value: "{{ .Values.signer_addr }}"
             - name: EXTRA_TRD_ARGS
-              value: {{ .Values.extra_trd_args }}
+              value: "{{ .Values.extra_trd_args }}"
             - name: NETWORK
-              value: {{ .Values.network }}
+              value: "{{ .Values.network }}"
             - name: RELEASE_OVERRIDE
-              value: {{ .Values.release_override }}
+              value: "{{ .Values.release_override }}"
             - name: INITIAL_CYCLE
-              value: {{ .Values.initial_cycle }}
+              value: "{{ .Values.initial_cycle }}"
             - name: DRY_RUN
-              value: {{ .Values.dry_run }}
+              value: "{{ .Values.dry_run }}"
           restartPolicy: OnFailure
