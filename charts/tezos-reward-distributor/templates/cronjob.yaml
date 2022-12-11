@@ -56,6 +56,25 @@ spec:
                 subPath: config.yaml
             command:
             - /bin/sh
-            - -c
-            - python src/main.py -M 2 --reward_data_provider {{ .Values.reward_data_provider }} --node_addr_public {{ .Values.tezos_node_addr }} --node_endpoint {{ .Values.tezos_node_addr }} --base_directory /trd --signer_endpoint {{ .Values.signer_addr }} {{ .Values.extra_trd_args }} -N {{ .Values.network }} --initial_cycle {{ .Values.initial_cycle}} --release_override {{ .Values.release_override }} {{ if .Values.dry_run }}--dry_run {{ end }}
+            args:
+            - "-c"
+            - |
+{{ tpl ($.Files.Get (print "scripts/run.sh")) $ | indent 14 }}
+            env:
+            - name: REWARD_DATA_PROVIDER
+              value: {{ .Values.reward_data_provider }}
+            - name: TEZOS_NODE_ADDR
+              value: {{ .Values.tezos_node_addr }}
+            - name: SIGNER_ADDR
+              value: {{ .Values.signer_addr }}
+            - name: EXTRA_TRD_ARGS
+              value: {{ .Values.extra_trd_args }}
+            - name: NETWORK
+              value: {{ .Values.network }}
+            - name: RELEASE_OVERRIDE
+              value: {{ .Values.release_override }}
+            - name: INITIAL_CYCLE
+              value: {{ .Values.initial_cycle }}
+            - name: DRY_RUN
+              value: {{ .Values.dry_run }}
           restartPolicy: OnFailure
