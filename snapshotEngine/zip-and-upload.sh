@@ -9,26 +9,6 @@ export S3_BUCKET="${NAMESPACE%-*}.${SNAPSHOT_WEBSITE_DOMAIN_NAME}"
 
 cd /
 
-SLEEP_TIME=0m
-
-if [ "${HISTORY_MODE}" = "archive" ]; then
-    SLEEP_TIME="${ARCHIVE_SLEEP_DELAY}"
-    if [ "${ARCHIVE_SLEEP_DELAY}" != "0m" ]; then
-        printf "%s artifactDelay.archive is set to %s sleeping...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${ARCHIVE_SLEEP_DELAY}"
-    fi
-elif [ "${HISTORY_MODE}" = "rolling" ]; then
-    SLEEP_TIME="${ROLLING_SLEEP_DELAY}"
-    if [ "${ROLLING_SLEEP_DELAY}" != "0m" ]; then
-        printf "%s artifactDelay.rolling is set to %s sleeping...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${ROLLING_SLEEP_DELAY}"
-    fi
-fi
-
-if [ "${SLEEP_TIME}" = "0m" ]; then
-    printf "%s artifactDelay.HISTORY_MODE was not set! No delay...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-fi
-
-sleep "${SLEEP_TIME}"
-
 # If block_height is not set than init container failed, exit this container
 [ -z "${BLOCK_HEIGHT}" ] && exit 1
 
@@ -480,3 +460,23 @@ if ! aws s3 cp _site/ s3://"${SNAPSHOT_WEBSITE_DOMAIN_NAME}" --recursive --inclu
 else
     printf "%s Website Build & Deploy  : Successful uploaded website to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 fi
+
+SLEEP_TIME=0m
+
+if [ "${HISTORY_MODE}" = "archive" ]; then
+    SLEEP_TIME="${ARCHIVE_SLEEP_DELAY}"
+    if [ "${ARCHIVE_SLEEP_DELAY}" != "0m" ]; then
+        printf "%s artifactDelay.archive is set to %s sleeping...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${ARCHIVE_SLEEP_DELAY}"
+    fi
+elif [ "${HISTORY_MODE}" = "rolling" ]; then
+    SLEEP_TIME="${ROLLING_SLEEP_DELAY}"
+    if [ "${ROLLING_SLEEP_DELAY}" != "0m" ]; then
+        printf "%s artifactDelay.rolling is set to %s sleeping...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${ROLLING_SLEEP_DELAY}"
+    fi
+fi
+
+if [ "${SLEEP_TIME}" = "0m" ]; then
+    printf "%s artifactDelay.HISTORY_MODE was not set! No delay...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+fi
+
+sleep "${SLEEP_TIME}"
