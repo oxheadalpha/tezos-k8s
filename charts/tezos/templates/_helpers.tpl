@@ -56,7 +56,7 @@
 {{- define "tezos.shouldDownloadSnapshot" -}}
   {{- if or (.Values.full_snapshot_url) (.Values.full_tarball_url)
             (.Values.rolling_snapshot_url) (.Values.rolling_tarball_url)
-            (.Values.archive_tarball_url) }}
+            (.Values.archive_tarball_url) (.Values.snapshot_source) }}
     {{- if or (and (.Values.rolling_tarball_url) (.Values.rolling_snapshot_url))
         (and (.Values.full_tarball_url) (.Values.full_snapshot_url))
     }}

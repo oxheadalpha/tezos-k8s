@@ -103,6 +103,9 @@ data:
   ROLLING_SNAPSHOT_URL: ""
   ROLLING_TARBALL_URL: ""
   ARCHIVE_TARBALL_URL: ""
+  PREFER_TARBALLS: "false"
+  SNAPSHOT_SOURCE: ""
+  OCTEZ_VERSION: "tezos/tezos:v14-release"
   NODE_GLOBALS: |
     {
       "env": {}

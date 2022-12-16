@@ -72,9 +72,7 @@ activation:
     sc_rollup_max_available_messages: 1000000
 bootstrap_peers: []
 expected_proof_of_work: 0
-full_snapshot_url: null
-rolling_snapshot_url: null
-archive_tarball_url: null
+snapshot_source: null
 images:
   octez: 'tezos/tezos:v14-release'
 is_invitation: false
