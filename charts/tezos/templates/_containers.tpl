@@ -119,6 +119,8 @@
   {{- if .localvars }}
   {{- include "tezos.localvars.pod_envvars" $ | indent 4 }}
   {{- end }}
+    - name: DAEMON
+      value: {{ .type }}
   {{- if .baker_index }}
     - name: BAKER_INDEX
       value: "{{ .baker_index }}"

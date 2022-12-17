@@ -208,6 +208,8 @@ spec:
               
           envFrom:
           env:
+            - name: DAEMON
+              value: octez-node
             - name:  TEZOS_LOG
               value: "* -> DEBUG"
             - name:  key
@@ -249,6 +251,8 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: city-block
+            - name: DAEMON
+              value: logger
             - name:  key
               value: "outer-value"
           volumeMounts:
@@ -277,6 +281,8 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: city-block
+            - name: DAEMON
+              value: sidecar
             - name:  key
               value: "outer-value"
           volumeMounts:
@@ -324,6 +330,8 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: city-block
+            - name: DAEMON
+              value: config-init
             - name:  key
               value: "outer-value"
           volumeMounts:
@@ -352,6 +360,8 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: city-block
+            - name: DAEMON
+              value: config-generator
             - name:  key
               value: "outer-value"
           volumeMounts:
@@ -382,6 +392,8 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: city-block
+            - name: DAEMON
+              value: snapshot-downloader
             - name:  key
               value: "outer-container"
           volumeMounts:
@@ -437,6 +449,8 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: city-block
+            - name: DAEMON
+              value: snapshot-importer
             - name:  key
               value: "outer-value"
           volumeMounts:
@@ -463,6 +477,8 @@ spec:
               
           envFrom:
           env:
+            - name: DAEMON
+              value: upgrade-storage
             - name:  key
               value: "outer-value"
           volumeMounts:
@@ -545,6 +561,8 @@ spec:
               
           envFrom:
           env:
+            - name: DAEMON
+              value: octez-node
             - name:  TEZOS_LOG
               value: "* -> DEBUG"
             - name:  key
@@ -586,6 +604,8 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: country-town
+            - name: DAEMON
+              value: logger
             - name:  key
               value: "specific-pod"
           volumeMounts:
@@ -614,6 +634,8 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: country-town
+            - name: DAEMON
+              value: sidecar
             - name:  key
               value: "specific-pod"
           volumeMounts:
@@ -661,6 +683,8 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: country-town
+            - name: DAEMON
+              value: config-init
             - name:  key
               value: "specific-pod"
           volumeMounts:
@@ -689,6 +713,8 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: country-town
+            - name: DAEMON
+              value: config-generator
             - name:  key
               value: "specific-pod"
           volumeMounts:
@@ -719,6 +745,8 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: country-town
+            - name: DAEMON
+              value: snapshot-downloader
             - name:  key
               value: "specific-container"
           volumeMounts:
@@ -774,6 +802,8 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: country-town
+            - name: DAEMON
+              value: snapshot-importer
             - name:  key
               value: "specific-pod"
           volumeMounts:
@@ -800,6 +830,8 @@ spec:
               
           envFrom:
           env:
+            - name: DAEMON
+              value: upgrade-storage
             - name:  key
               value: "specific-pod"
           volumeMounts:

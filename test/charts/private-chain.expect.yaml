@@ -357,6 +357,8 @@ spec:
               
           envFrom:
           env:
+            - name: DAEMON
+              value: octez-node
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -395,6 +397,8 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: af
+            - name: DAEMON
+              value: logger
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -421,6 +425,8 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: af
+            - name: DAEMON
+              value: sidecar
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -448,6 +454,8 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: af
+            - name: DAEMON
+              value: config-generator
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -464,6 +472,8 @@ spec:
             - configMapRef:
                 name: tezos-config
           env:
+            - name: DAEMON
+              value: wait-for-dns
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -488,6 +498,8 @@ spec:
               
           envFrom:
           env:
+            - name: DAEMON
+              value: upgrade-storage
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -571,6 +583,8 @@ spec:
               
           envFrom:
           env:
+            - name: DAEMON
+              value: octez-node
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -608,6 +622,8 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: as
+            - name: DAEMON
+              value: sidecar
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -635,6 +651,8 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: as
+            - name: DAEMON
+              value: config-generator
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -651,6 +669,8 @@ spec:
             - configMapRef:
                 name: tezos-config
           env:
+            - name: DAEMON
+              value: wait-for-dns
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -675,6 +695,8 @@ spec:
               
           envFrom:
           env:
+            - name: DAEMON
+              value: upgrade-storage
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -760,6 +782,8 @@ spec:
               
           envFrom:
           env:
+            - name: DAEMON
+              value: octez-node
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -833,6 +857,8 @@ spec:
               
           envFrom:
           env:
+            - name: DAEMON
+              value: baker
             - name: BAKER_INDEX
               value: "0"
           volumeMounts:
@@ -898,6 +924,8 @@ spec:
               
           envFrom:
           env:
+            - name: DAEMON
+              value: baker
             - name: BAKER_INDEX
               value: "1"
           volumeMounts:
@@ -963,6 +991,8 @@ spec:
               
           envFrom:
           env:
+            - name: DAEMON
+              value: baker
             - name: BAKER_INDEX
               value: "2"
           volumeMounts:
@@ -1028,6 +1058,8 @@ spec:
               
           envFrom:
           env:
+            - name: DAEMON
+              value: baker
             - name: BAKER_INDEX
               value: "3"
           volumeMounts:
@@ -1093,6 +1125,8 @@ spec:
               
           envFrom:
           env:
+            - name: DAEMON
+              value: baker
             - name: BAKER_INDEX
               value: "4"
           volumeMounts:
@@ -1123,6 +1157,8 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: eu
+            - name: DAEMON
+              value: logger
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -1149,6 +1185,8 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: eu
+            - name: DAEMON
+              value: sidecar
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -1176,6 +1214,8 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: eu
+            - name: DAEMON
+              value: config-generator
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -1192,6 +1232,8 @@ spec:
             - configMapRef:
                 name: tezos-config
           env:
+            - name: DAEMON
+              value: wait-for-dns
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -1216,6 +1258,8 @@ spec:
               
           envFrom:
           env:
+            - name: DAEMON
+              value: upgrade-storage
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -1300,6 +1344,8 @@ spec:
               
           envFrom:
           env:
+            - name: DAEMON
+              value: octez-node
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -1338,6 +1384,8 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: us
+            - name: DAEMON
+              value: sidecar
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -1365,6 +1413,8 @@ spec:
               value: node
             - name: MY_NODE_CLASS
               value: us
+            - name: DAEMON
+              value: config-generator
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -1381,6 +1431,8 @@ spec:
             - configMapRef:
                 name: tezos-config
           env:
+            - name: DAEMON
+              value: wait-for-dns
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -1405,6 +1457,8 @@ spec:
               
           envFrom:
           env:
+            - name: DAEMON
+              value: upgrade-storage
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -1556,6 +1610,8 @@ spec:
               
           envFrom:
           env:
+            - name: DAEMON
+              value: chain-initiator
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
