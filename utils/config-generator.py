@@ -46,7 +46,7 @@ for cl, val in NODES.items():
 # MY_POD_CLASS is not set after iterating nodes configurations,
 # this can happen when the pod is one which scaled out by autoscaler.
 # Set this value to the value mapped by MY_NODE_CLASS to read possible config specified in at NODES
-if not MY_POD_CLASS:
+if not MY_POD_CLASS and "MY_NODE_CLASS" in os.environ:
     my_node_class = os.environ["MY_NODE_CLASS"]
     MY_POD_CLASS = NODES[my_node_class]
 
