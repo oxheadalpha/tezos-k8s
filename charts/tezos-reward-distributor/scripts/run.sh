@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ "${DRY_RUN}" == "false"]; then
+if [ "${DRY_RUN}" == "false" ]; then
   dry_run_arg=""
 else
   dry_run_arg="--dry_run"
