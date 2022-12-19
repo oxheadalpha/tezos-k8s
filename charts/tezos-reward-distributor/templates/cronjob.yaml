@@ -7,8 +7,9 @@ metadata:
 spec:
 
   # important to prevent launch of concurrent payout processes
-  concurrencyPolicy:  Forbid
+  concurrencyPolicy: Forbid
 
+  failedJobsHistoryLimit: 100
   schedule: {{ .Values.schedule }}
   jobTemplate:
     metadata:
