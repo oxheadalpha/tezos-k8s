@@ -14,7 +14,7 @@ nodes:
       snapshot-downloader:
         key: specific-container
     images:
-      octez: tezos/tezos:v14-release
+      octez: tezos/tezos:v15-release
     runs: [ octez_node, logger, metrics ]
     instances:
     - config:

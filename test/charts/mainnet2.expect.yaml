@@ -68,7 +68,7 @@ data:
           }
         },
         "images": {
-          "octez": "tezos/tezos:v14-release"
+          "octez": "tezos/tezos:v15-release"
         },
         "instances": [
           {
@@ -116,7 +116,7 @@ spec:
     - port: 8732
       name: rpc
   selector:
-    appType: tezos-node
+    appType: octez-node
   type: NodePort
 ---
 # Source: tezos-chain/templates/static.yaml
@@ -125,7 +125,7 @@ kind: Service
 metadata:
   name: city-block
   labels:
-    appType: tezos-node
+    appType: octez-node
 spec:
   ports:
     - port: 9732
@@ -143,7 +143,7 @@ kind: Service
 metadata:
   name: country-town
   labels:
-    appType: tezos-node
+    appType: octez-node
 spec:
   ports:
     - port: 9732
@@ -171,12 +171,12 @@ spec:
   template:
     metadata:
       labels:
-        appType: tezos-node
+        appType: octez-node
         node_class: city-block
     spec:
       containers:        
         - name: octez-node
-          image: "tezos/tezos:v14-release"
+          image: "tezos/tezos:v15-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -187,15 +187,15 @@ spec:
               
               set
               
-              # ensure we can run tezos-client commands without specifying client dir
+              # ensure we can run octez-client commands without specifying client dir
               ln -s /var/tezos/client /home/tezos/.tezos-client
               #
               # Not every error is fatal on start.  In particular, with zerotier,
-              # the listen-addr may not yet be bound causing tezos-node to fail.
+              # the listen-addr may not yet be bound causing octez-node to fail.
               # So, we try a few times with increasing delays:
               
               for d in 1 1 5 10 20 60 120; do
-              	/usr/local/bin/tezos-node run				\
+              	/usr/local/bin/octez-node run				\
               			--bootstrap-threshold 0			\
               			--config-file /etc/tezos/config.json
               	sleep $d
@@ -292,7 +292,7 @@ spec:
               name: var-volume        
       initContainers:        
         - name: config-init
-          image: "tezos/tezos:v14-release"
+          image: "tezos/tezos:v15-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -305,7 +305,7 @@ spec:
               #
               # This is my comment.
               
-              /usr/local/bin/tezos-node config init		\
+              /usr/local/bin/octez-node config init		\
                   --config-file /etc/tezos/data/config.json	\
                   --data-dir /etc/tezos/data			\
                   --network $CHAIN_NAME
@@ -402,7 +402,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume        
         - name: snapshot-importer
-          image: "tezos/tezos:v14-release"
+          image: "tezos/tezos:v15-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -415,7 +415,7 @@ spec:
               data_dir="/var/tezos"
               node_dir="$data_dir/node"
               node_data_dir="$node_dir/data"
-              node="$bin_dir/tezos-node"
+              node="$bin_dir/octez-node"
               snapshot_file=${node_dir}/chain.snapshot
               
               if [ -d ${node_data_dir}/context ]; then
@@ -459,7 +459,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume                
         - name: upgrade-storage
-          image: "tezos/tezos:v14-release"
+          image: "tezos/tezos:v15-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -473,7 +473,7 @@ spec:
                 printf "No context in data dir found, probably initial start, doing nothing."
                 exit 0
               fi
-              tezos-node upgrade storage --data-dir /var/tezos/node/data
+              octez-node upgrade storage --data-dir /var/tezos/node/data
               
           envFrom:
           env:
@@ -524,12 +524,12 @@ spec:
   template:
     metadata:
       labels:
-        appType: tezos-node
+        appType: octez-node
         node_class: country-town
     spec:
       containers:        
         - name: octez-node
-          image: "tezos/tezos:v14-release"
+          image: "tezos/tezos:v15-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -540,15 +540,15 @@ spec:
               
               set
               
-              # ensure we can run tezos-client commands without specifying client dir
+              # ensure we can run octez-client commands without specifying client dir
               ln -s /var/tezos/client /home/tezos/.tezos-client
               #
               # Not every error is fatal on start.  In particular, with zerotier,
-              # the listen-addr may not yet be bound causing tezos-node to fail.
+              # the listen-addr may not yet be bound causing octez-node to fail.
               # So, we try a few times with increasing delays:
               
               for d in 1 1 5 10 20 60 120; do
-              	/usr/local/bin/tezos-node run				\
+              	/usr/local/bin/octez-node run				\
               			--bootstrap-threshold 0			\
               			--config-file /etc/tezos/config.json
               	sleep $d
@@ -645,7 +645,7 @@ spec:
               name: var-volume        
       initContainers:        
         - name: config-init
-          image: "tezos/tezos:v14-release"
+          image: "tezos/tezos:v15-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -658,7 +658,7 @@ spec:
               #
               # This is my comment.
               
-              /usr/local/bin/tezos-node config init		\
+              /usr/local/bin/octez-node config init		\
                   --config-file /etc/tezos/data/config.json	\
                   --data-dir /etc/tezos/data			\
                   --network $CHAIN_NAME
@@ -755,7 +755,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume        
         - name: snapshot-importer
-          image: "tezos/tezos:v14-release"
+          image: "tezos/tezos:v15-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -768,7 +768,7 @@ spec:
               data_dir="/var/tezos"
               node_dir="$data_dir/node"
               node_data_dir="$node_dir/data"
-              node="$bin_dir/tezos-node"
+              node="$bin_dir/octez-node"
               snapshot_file=${node_dir}/chain.snapshot
               
               if [ -d ${node_data_dir}/context ]; then
@@ -812,7 +812,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume                
         - name: upgrade-storage
-          image: "tezos/tezos:v14-release"
+          image: "tezos/tezos:v15-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -826,7 +826,7 @@ spec:
                 printf "No context in data dir found, probably initial start, doing nothing."
                 exit 0
               fi
-              tezos-node upgrade storage --data-dir /var/tezos/node/data
+              octez-node upgrade storage --data-dir /var/tezos/node/data
               
           envFrom:
           env:

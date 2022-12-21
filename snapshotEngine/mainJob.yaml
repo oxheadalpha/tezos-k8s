@@ -32,13 +32,13 @@ spec:
               NETWORK="${NETWORK_OVERRIDE:-${NAMESPACE%%-*}}"
 
               # Set up config for headless RPC using new restored storage
-              tezos-node config init \
+              octez-node config init \
               --config-file /home/tezos/.tezos-node/config.json \
               --network "${NETWORK}" \
               --data-dir /var/tezos/node/data
 
               # Run headless tezos node to validate storage on restored volume
-              tezos-node run --connections 0 --config-file /home/tezos/.tezos-node/config.json --rpc-addr=127.0.0.1:8732 &
+              octez-node run --connections 0 --config-file /home/tezos/.tezos-node/config.json --rpc-addr=127.0.0.1:8732 &
 
               # Limit validation to restoredStorageInitTime. If this takes longer then there is a tezos error
               # and this job is tossed.
@@ -119,8 +119,8 @@ spec:
               # Get BLOCK_TIMESTAMP from RPC
               wget -qO-  http://localhost:8732/chains/main/blocks/head/header | sed -E 's/.*"timestamp":"?([^,"]*)"?.*/\1/' > /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_TIMESTAMP
 
-              # Get Tezos Version from tezos-node command
-              /usr/local/bin/tezos-node --version > /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_VERSION
+              # Get Tezos Version from octez-node command
+              /usr/local/bin/octez-node --version > /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_VERSION
 
               # Print variables for debug
               printf "%s BLOCK_HASH is...$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH))\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -162,13 +162,13 @@ spec:
               BLOCK_HASH=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH)
               ROLLING_SNAPSHOT_NAME="${NAMESPACE%%-*}"-"${BLOCK_HEIGHT}"
 
-              tezos-node config init \
+              octez-node config init \
               --config-file /home/tezos/.tezos-node/config.json \
               --network "${NETWORK}" \
               --data-dir /var/tezos/node/data
 
               if [ "${HISTORY_MODE}" = rolling ]; then
-                tezos-node snapshot export \
+                octez-node snapshot export \
                 --block "${BLOCK_HASH}" \
                 --config-file /home/tezos/.tezos-node/config.json \
                 --rolling \
@@ -178,7 +178,7 @@ spec:
 
                 touch /rolling-tarball-restore/snapshot-import-in-progress
 
-                tezos-node snapshot import \
+                octez-node snapshot import \
                 /"${HISTORY_MODE}"-snapshot-cache-volume/"${ROLLING_SNAPSHOT_NAME}".rolling \
                 --in-memory \
                 --block "${BLOCK_HASH}" \
