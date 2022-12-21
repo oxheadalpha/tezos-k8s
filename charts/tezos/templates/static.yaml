@@ -22,6 +22,8 @@ metadata:
     appType: octez-node
 spec:
   ports:
+    - port: 8732
+      name: rpc
     - port: 9732
       name: p2p
     - port: 9932
