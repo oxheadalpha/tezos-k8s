@@ -188,7 +188,7 @@ should_generate_unsafe_deterministic_data: false
 #     runs:
 #       - octez_node
 #       - baker
-#     # You can optionally set resources and limits for your octez node/baker
+#     # You can optionally set resources and limits for your octez node
 #     # See: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
 #     resources:
 #       requests:
