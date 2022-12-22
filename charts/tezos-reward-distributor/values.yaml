@@ -1,6 +1,12 @@
 images:
   tezos_reward_distributor: trdo/tezos-reward-distributor:latest
 
+tezos_k8s_images:
+  # snapshotEngine is needed for upload of logs to bucket
+  # since it already exists, we do not create a new container
+  # just for this task.
+  snapshotEngine: ghcr.io/oxheadalpha/tezos-k8s-snapshotengine:master
+
 # The node endpoint. It must be an archive node.
 # May start with https://
 # Default value will connect to a tezos-k8s private chain running in the same workspace, with
@@ -106,3 +112,12 @@ trd_config:
   #     discord_text: >
   #       Rewards for cycle %CYCLE% are completed.
   #       We paid out %TREWARDS% tez in rewards to %NDELEGATORS% delegators.
+
+# optionally upload all TRD state to a bucket. This allows all data to be examined
+# when the cronjob is not running.
+bucket_upload:
+  access_key_id:
+  secret_access_key:
+  default_region:
+  bucket_endpoint_url:
+  bucket_name: 

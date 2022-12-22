@@ -45,37 +45,59 @@ spec:
               volumeMounts:
               - mountPath: /trd
                 name: storage
+            - name: tezos-reward-distributor-cron-job
+              image: {{ .Values.images.tezos_reward_distributor }}
+              imagePullPolicy: IfNotPresent
+              volumeMounts:
+                - mountPath: /trd
+                  name: storage
+                - mountPath: /trd/cfg/config.yaml
+                  name: config-volume
+                  subPath: config.yaml
+              command:
+              - /bin/sh
+              args:
+              - "-c"
+              - |
+{{ tpl ($.Files.Get (print "scripts/run.sh")) $ | indent 16 }}
+              env:
+              - name: REWARD_DATA_PROVIDER
+                value: "{{ .Values.reward_data_provider }}"
+              - name: TEZOS_NODE_ADDR
+                value: "{{ .Values.tezos_node_addr }}"
+              - name: SIGNER_ADDR
+                value: "{{ .Values.signer_addr }}"
+              - name: EXTRA_TRD_ARGS
+                value: "{{ .Values.extra_trd_args }}"
+              - name: NETWORK
+                value: "{{ .Values.network }}"
+              - name: RELEASE_OVERRIDE
+                value: "{{ .Values.release_override }}"
+              - name: INITIAL_CYCLE
+                value: "{{ .Values.initial_cycle }}"
+              - name: DRY_RUN
+                value: "{{ .Values.dry_run }}"
           containers:
-          - name: tezos-reward-distributor-cron-job
-            image: {{ .Values.images.tezos_reward_distributor }}
-            imagePullPolicy: IfNotPresent
-            volumeMounts:
+            - name: report-uploader
+              image: {{ .Values.tezos_k8s_images.snapshotEngine }}
+              volumeMounts:
               - mountPath: /trd
                 name: storage
-              - mountPath: /trd/cfg/config.yaml
-                name: config-volume
-                subPath: config.yaml
-            command:
-            - /bin/sh
-            args:
-            - "-c"
-            - |
-{{ tpl ($.Files.Get (print "scripts/run.sh")) $ | indent 14 }}
-            env:
-            - name: REWARD_DATA_PROVIDER
-              value: "{{ .Values.reward_data_provider }}"
-            - name: TEZOS_NODE_ADDR
-              value: "{{ .Values.tezos_node_addr }}"
-            - name: SIGNER_ADDR
-              value: "{{ .Values.signer_addr }}"
-            - name: EXTRA_TRD_ARGS
-              value: "{{ .Values.extra_trd_args }}"
-            - name: NETWORK
-              value: "{{ .Values.network }}"
-            - name: RELEASE_OVERRIDE
-              value: "{{ .Values.release_override }}"
-            - name: INITIAL_CYCLE
-              value: "{{ .Values.initial_cycle }}"
-            - name: DRY_RUN
-              value: "{{ .Values.dry_run }}"
+              command:
+              - /bin/sh
+              args:
+              - "-c"
+              - |
+{{ tpl ($.Files.Get (print "scripts/bucket_upload.sh")) $ | indent 16 }}
+              env:
+              - name: AWS_ACCESS_KEY_ID
+                value: "{{ .Values.bucket_upload.access_key_id }}"
+              - name: AWS_SECRET_ACCESS_KEY
+                value: "{{ .Values.bucket_upload.secret_access_key }}"
+              - name: AWS_DEFAULT_REGION
+                value: "{{ .Values.bucket_upload.default_region }}"
+              - name: BUCKET_ENDPOINT_URL
+                value: "{{ .Values.bucket_upload.bucket_endpoint_url }}"
+              - name: BUCKET_NAME
+                value: "{{ .Values.bucket_upload.bucket_name }}"
           restartPolicy: OnFailure
