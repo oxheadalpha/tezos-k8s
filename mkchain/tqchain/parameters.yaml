@@ -6,7 +6,7 @@ cycles_per_voting_period: 1
 hard_gas_limit_per_operation: '1040000'
 hard_gas_limit_per_block: '5200000'
 proof_of_work_threshold: '-1'
-tokens_per_roll: '6000000000'
+minimal_stake: '6000000000'
 seed_nonce_revelation_tip: '125000'
 baking_reward_fixed_portion: '10000000'
 baking_reward_bonus_per_slot: '4286'
@@ -18,7 +18,6 @@ quorum_max: 7000
 quorum_min: 2000
 min_proposal_quorum: 500
 liquidity_baking_subsidy: '2500000'
-liquidity_baking_sunset_level: 10000000
 liquidity_baking_toggle_ema_threshold: 100000
 max_operations_time_to_live: 120
 minimal_block_delay: "5"
@@ -60,12 +59,21 @@ dal_parametric:
   number_of_shards: 2048
   endorsement_lag: 2
   availability_threshold: 50
+  slot_size: 1048576
+  redundancy_factor: 16
+  page_size: 4096
 sc_rollup_enable: true
 sc_rollup_origination_size: 6314
 sc_rollup_challenge_window_in_blocks: 40
-sc_rollup_max_available_messages: 1000000
 sc_rollup_stake_amount: "32000000"
 sc_rollup_commitment_period_in_blocks: 20
 sc_rollup_max_lookahead_in_blocks: 30000
 sc_rollup_max_active_outbox_levels: 20160
 sc_rollup_max_outbox_messages_per_level: 100
+sc_rollup_max_number_of_cemented_commitments: 5
+sc_rollup_max_number_of_messages_per_commitment_period: 32765
+sc_rollup_number_of_sections_in_dissection: 32
+sc_rollup_timeout_period_in_blocks: 500
+zk_rollup_enable: true
+zk_rollup_origination_size: 4000
+zk_rollup_min_pending_to_process: 10

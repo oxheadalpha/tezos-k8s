@@ -199,7 +199,7 @@ On each computer, run this command to check that the nodes have matching heads b
 ```shell
 kubectl get pod -n oxheadalpha -l appType=octez-node -o name |
 while read line;
-  do kubectl -n oxheadalpha exec $line -c octez-node -- /usr/local/bin/tezos-client rpc get /chains/main/blocks/head/hash;
+  do kubectl -n oxheadalpha exec $line -c octez-node -- /usr/local/bin/octez-client rpc get /chains/main/blocks/head/hash;
 done
 ```
 

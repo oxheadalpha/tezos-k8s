@@ -4,7 +4,7 @@ mkdir -p /etc/tezos/data
 #
 # This is my comment.
 
-/usr/local/bin/tezos-node config init		\
+/usr/local/bin/octez-node config init		\
     --config-file /etc/tezos/data/config.json	\
     --data-dir /etc/tezos/data			\
     --network $CHAIN_NAME

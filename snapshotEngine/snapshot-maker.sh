@@ -5,7 +5,7 @@ cd /
 ZIP_AND_UPLOAD_JOB_NAME=zip-and-upload-"${HISTORY_MODE}"
 
 # Pause if nodes are not ready
-while [ "$(kubectl get pods -n "${NAMESPACE}" -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}' -l appType=tezos-node -l node_class_history_mode="${HISTORY_MODE}")" = "False" ]; do
+while [ "$(kubectl get pods -n "${NAMESPACE}" -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}' -l appType=octez-node -l node_class_history_mode="${HISTORY_MODE}")" = "False" ]; do
     printf "%s Tezos node is not ready for snapshot.  Check node pod logs.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     sleep 30
 done
