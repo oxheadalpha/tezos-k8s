@@ -100,4 +100,6 @@ spec:
                 value: "{{ .Values.bucket_upload.bucket_endpoint_url }}"
               - name: BUCKET_NAME
                 value: "{{ .Values.bucket_upload.bucket_name }}"
+              - name: BAKER_NAME
+                value: {{ include "tezos-reward-distributor.fullname" . }}
           restartPolicy: OnFailure

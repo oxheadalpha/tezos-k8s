@@ -1,8 +1,8 @@
 #!/bin/sh
 
-echo "Would upload bucket here"
-echo "AWS_ACCESS_KEY_ID"
-echo "$AWS_ACCESS_KEY_ID"
-echo "AWS_SECRET_ACCESS_KEY"
-echo "$AWS_SECRET_ACCESS_KEY"
+echo "Uploading TRD data to bucket"
+
+if [ ! -z ${BUCKET_NAME} ];then
+    aws s3  cp --recursive  /trd/ s3://${BUCKET_NAME}/${BAKER_NAME} --endpoint $BUCKET_ENDPOINT_URL
+fi
 sleep 10
