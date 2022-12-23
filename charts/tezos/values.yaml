@@ -114,6 +114,8 @@ should_generate_unsafe_deterministic_data: false
 #          using just "baker".
 # - "storage_size": the size of the PV
 # - "resources": resources specifications for the node.
+#                Optionally set resources and limits for octez node
+#                See: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
 # - "images": Optional specification of images to use for the tezos node and
 #           baker. Options are "octez" with a tezos/tezos image.
 #           If no images are provided, the containers will default to the images
@@ -188,8 +190,6 @@ should_generate_unsafe_deterministic_data: false
 #     runs:
 #       - octez_node
 #       - baker
-#     # You can optionally set resources and limits for your octez node
-#     # See: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
 #     resources:
 #       requests:
 #         memory: 16192Mi
