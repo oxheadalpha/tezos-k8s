@@ -5,6 +5,7 @@ import os
 import re
 import requests
 import socket
+import sys
 from grp import getgrnam
 from hashlib import blake2b
 from pathlib import Path
@@ -661,7 +662,8 @@ def create_node_snapshot_config_json(history_mode):
                     return {"url": archive_tarball_url, "artifact_type": "tarball"}
                 return
             case _:
-                return
+                print(f"Error: history mode {history_mode} is not known.")
+                sys.exit(1)
 
     octez_container_version = os.environ["OCTEZ_VERSION"]
     snapshot_source = os.environ["SNAPSHOT_SOURCE"]
