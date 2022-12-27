@@ -625,7 +625,6 @@ def create_node_snapshot_config_json(history_mode):
     """Create this node's snapshot config"""
 
     network_name = NETWORK_CONFIG.get("chain_name")
-    snapshot_source = os.environ["SNAPSHOT_SOURCE"]
     prefer_tarballs = os.environ["PREFER_TARBALLS"] == True
     artifact_type = "tarball" if prefer_tarballs else "tezos-snapshot"
     rolling_tarball_url = os.environ["ROLLING_TARBALL_URL"]
@@ -665,6 +664,7 @@ def create_node_snapshot_config_json(history_mode):
                 return {}
 
     octez_container_version = os.environ["OCTEZ_VERSION"]
+    snapshot_source = os.environ["SNAPSHOT_SOURCE"]
     if snapshot_source:
         try:
             all_snapshots = requests.get(snapshot_source).json()
