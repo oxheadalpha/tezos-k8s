@@ -1,7 +1,7 @@
 #!/bin/sh
 
-# When the tezos-node boots for the first time, if one of the bootstrap
-# nodes can't be contacted, then tezos-node will give up.
+# When the octez-node boots for the first time, if one of the bootstrap
+# nodes can't be contacted, then octez-node will give up.
 # So at first boot (when peers.json is empty) we wait for bootstrap node.
 # This is probably a bug in tezos core, though.
 

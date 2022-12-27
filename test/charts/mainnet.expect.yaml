@@ -80,7 +80,7 @@ spec:
     - port: 8732
       name: rpc
   selector:
-    appType: tezos-node
+    appType: octez-node
   type: NodePort
 ---
 # Source: tezos-chain/templates/static.yaml
@@ -89,9 +89,11 @@ kind: Service
 metadata:
   name: rolling-node
   labels:
-    appType: tezos-node
+    appType: octez-node
 spec:
   ports:
+    - port: 8732
+      name: rpc
     - port: 9732
       name: p2p
     - port: 9932
@@ -117,12 +119,12 @@ spec:
   template:
     metadata:
       labels:
-        appType: tezos-node
+        appType: octez-node
         node_class: rolling-node
     spec:
       containers:        
         - name: octez-node
-          image: "tezos/tezos:v14-release"
+          image: "tezos/tezos:v15-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -133,15 +135,15 @@ spec:
               
               set
               
-              # ensure we can run tezos-client commands without specifying client dir
+              # ensure we can run octez-client commands without specifying client dir
               ln -s /var/tezos/client /home/tezos/.tezos-client
               #
               # Not every error is fatal on start.  In particular, with zerotier,
-              # the listen-addr may not yet be bound causing tezos-node to fail.
+              # the listen-addr may not yet be bound causing octez-node to fail.
               # So, we try a few times with increasing delays:
               
               for d in 1 1 5 10 20 60 120; do
-              	/usr/local/bin/tezos-node run				\
+              	/usr/local/bin/octez-node run				\
               			--bootstrap-threshold 0			\
               			--config-file /etc/tezos/config.json
               	sleep $d
@@ -199,10 +201,15 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume
+          resources:
+            limits:
+              memory: 100Mi
+            requests:
+              memory: 80Mi        
       initContainers:        
         - name: config-init
-          image: "tezos/tezos:v14-release"
+          image: "tezos/tezos:v15-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -215,7 +222,7 @@ spec:
               #
               # This is my comment.
               
-              /usr/local/bin/tezos-node config init		\
+              /usr/local/bin/octez-node config init		\
                   --config-file /etc/tezos/data/config.json	\
                   --data-dir /etc/tezos/data			\
                   --network $CHAIN_NAME
@@ -306,7 +313,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume        
         - name: snapshot-importer
-          image: "tezos/tezos:v14-release"
+          image: "tezos/tezos:v15-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -319,7 +326,7 @@ spec:
               data_dir="/var/tezos"
               node_dir="$data_dir/node"
               node_data_dir="$node_dir/data"
-              node="$bin_dir/tezos-node"
+              node="$bin_dir/octez-node"
               snapshot_file=${node_dir}/chain.snapshot
               if [ -f ${node_dir}/chain.snapshot.block_hash ]; then
                   block_hash=$(cat ${node_dir}/chain.snapshot.block_hash)
@@ -373,7 +380,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume                
         - name: upgrade-storage
-          image: "tezos/tezos:v14-release"
+          image: "tezos/tezos:v15-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -387,7 +394,7 @@ spec:
                 printf "No context in data dir found, probably initial start, doing nothing."
                 exit 0
               fi
-              tezos-node upgrade storage --data-dir /var/tezos/node/data
+              octez-node upgrade storage --data-dir /var/tezos/node/data
               
           envFrom:
           env:

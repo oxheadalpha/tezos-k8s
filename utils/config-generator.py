@@ -587,7 +587,7 @@ def create_node_config_json(
     node_config = recursive_update(node_config, computed_node_config)
 
     if THIS_IS_A_PUBLIC_NET:
-        # `tezos-node config --network ...` will have been run in config-init.sh
+        # `octez-node config --network ...` will have been run in config-init.sh
         #  producing a config.json. The value passed to the `--network` flag may
         #  have been the chain name or a url to the config.json of the chain.
         #  Either way, set the `network` field here as the `network` object of the

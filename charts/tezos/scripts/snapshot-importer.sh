@@ -4,7 +4,7 @@ bin_dir="/usr/local/bin"
 data_dir="/var/tezos"
 node_dir="$data_dir/node"
 node_data_dir="$node_dir/data"
-node="$bin_dir/tezos-node"
+node="$bin_dir/octez-node"
 snapshot_file=${node_dir}/chain.snapshot
 if [ -f ${node_dir}/chain.snapshot.block_hash ]; then
     block_hash=$(cat ${node_dir}/chain.snapshot.block_hash)
