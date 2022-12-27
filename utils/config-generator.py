@@ -674,10 +674,8 @@ def create_node_snapshot_config_json(history_mode):
         return {}
     try:
         octez_long_version = octez_container_version.split(":")[1]
-        octez_version_re = re.search(r"v\d\d", octez_long_version)
-        octez_version = None
-        if octez_version_re:
-            octez_version = octez_version_re.group().replace("v", "")
+        octez_version_re = re.search(r"v(\d+)", octez_long_version)
+        octez_version = octez_version_re and octez_version_re.group(1)
     except Exception:
         octez_version = None
 
