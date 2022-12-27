@@ -287,16 +287,15 @@ snapshot_source: https://xtz-shots.io/tezos-snapshots.json
 prefer_tarballs: false
 
 # By default, tezos-k8s will attempt to download the right artifact from
-# `snapshot_source` set above.
-# You can override and hard-code a snapshot URL source below.
-# When any of the below variables is set, `snapshot_source` above will be
-# ignored for all artifact types.
+# `snapshot_source` set above. You can override and hard-code a snapshot URL
+# source below. When any of the below variables are set, `snapshot_source` above
+# will be ignored for all artifact types.
 ## NOTE: `*_tarball_url` and `*_snapshot_url` are mutually exclusive
 ## and cannot both be specified at the same time.
+archive_tarball_url: null # e.g. https://mainnet.xtz-shots.io/archive-tarball
 full_snapshot_url: null
 full_tarball_url: null
 rolling_snapshot_url: null
-archive_tarball_url: null
 rolling_tarball_url: null
 
 # List of peers for nodes to connect to. Gets set under config.json `p2p` field
