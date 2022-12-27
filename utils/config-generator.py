@@ -626,7 +626,7 @@ def create_node_snapshot_config_json(history_mode):
     """Create this node's snapshot config"""
 
     network_name = NETWORK_CONFIG.get("chain_name")
-    prefer_tarballs = os.environ["PREFER_TARBALLS"] == True
+    prefer_tarballs = os.environ["PREFER_TARBALLS"].lower() in ('true', '1', 't')
     artifact_type = "tarball" if prefer_tarballs else "tezos-snapshot"
     rolling_tarball_url = os.environ["ROLLING_TARBALL_URL"]
     full_tarball_url = os.environ["FULL_TARBALL_URL"]
