@@ -273,10 +273,10 @@ signers: {}
 # ```
 # End Signers
 
-# When spinning up nodes, tezos-k8s will attempt to download a snapshot
-# from a known source.
-# If you want to sync from scratch, set to 'null'
-# For a private chain, set to 'null'
+# When spinning up nodes, tezos-k8s will attempt to download a snapshot from a
+# known source. This should be a url to a json metadata file in the format
+# xtz-shots uses. If you want to sync from scratch or for a private chain, set
+# to `null`.
 snapshot_source: https://xtz-shots.io/tezos-snapshots.json
 
 # By default, tezos-k8s will download and unpack snapshots.
