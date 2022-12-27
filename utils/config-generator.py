@@ -649,29 +649,30 @@ def create_node_snapshot_config_json(history_mode):
                         "url": rolling_snapshot_url,
                         "artifact_type": "tezos-snapshot",
                     }
-                return {}
+                return
             case "full":
                 if full_tarball_url:
                     return {"url": full_tarball_url, "artifact_type": "tarball"}
                 elif full_snapshot_url:
                     return {"url": full_snapshot_url, "artifact_type": "tezos-snapshot"}
-                return {}
+                return
             case "archive":
                 if archive_tarball_url:
                     return {"url": archive_tarball_url, "artifact_type": "tarball"}
-                return {}
+                return
             case _:
-                return {}
+                return
 
     octez_container_version = os.environ["OCTEZ_VERSION"]
     snapshot_source = os.environ["SNAPSHOT_SOURCE"]
     if snapshot_source:
         try:
             all_snapshots = requests.get(snapshot_source).json()
-        except Exception:
-            return {}
+        except Exception as e:
+            print(f"Error while fetching {snapshot_source}: {e}")
+            return
     else:
-        return {}
+        return
     try:
         octez_long_version = octez_container_version.split(":")[1]
         octez_version_re = re.search(r"v(\d+)", octez_long_version)

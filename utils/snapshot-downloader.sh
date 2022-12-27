@@ -57,6 +57,7 @@ download() {
     fi
   fi
 }
+
 if [ "${artifact_type}" == "tezos-snapshot" ]; then
   echo "Downloading $artifact_url"
   echo '{ "version": "0.0.4" }' > "$node_dir/version.json"
