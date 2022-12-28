@@ -704,7 +704,7 @@ and octez version {octez_version}.
     ]
     if octez_version:
         matching_snapshots = [
-            s for s in matching_snapshots if octez_version in s.get("tezos_version")
+            s for s in matching_snapshots if octez_version in s.get("tezos_version", "")
         ]
     matching_snapshots = sorted(matching_snapshots, key=lambda s: s.get("block_height"))
 
