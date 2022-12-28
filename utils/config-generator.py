@@ -698,15 +698,15 @@ and octez version {octez_version}.
     matching_snapshots = [
         s
         for s in all_snapshots
-        if s["history_mode"] == history_mode
-        and s["artifact_type"] == artifact_type
-        and s["chain_name"] == network_name
+        if s.get("history_mode") == history_mode
+        and s.get("artifact_type") == artifact_type
+        and s.get("chain_name") == network_name
     ]
     if octez_version:
         matching_snapshots = [
-            s for s in matching_snapshots if octez_version in s["tezos_version"]
+            s for s in matching_snapshots if octez_version in s.get("tezos_version")
         ]
-    matching_snapshots = sorted(matching_snapshots, key=lambda d: d.get("block_height"))
+    matching_snapshots = sorted(matching_snapshots, key=lambda s: s.get("block_height"))
 
     return matching_snapshots[-1] if len(matching_snapshots) else None
 
