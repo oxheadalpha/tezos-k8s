@@ -1,4 +1,6 @@
-FROM python:3.9-alpine
+FROM python:3.10-alpine
+# TODO: update to 3.11 once the bug is fixed:
+# https://github.com/baking-bad/pytezos/issues/336
 ENV PYTHONUNBUFFERED=1
 
 #
@@ -14,7 +16,7 @@ RUN     PIP="pip --no-cache install"					\
   $APK_ADD --virtual .build-deps gcc python3-dev			\
   libffi-dev musl-dev make		\
   && $APK_ADD libsodium-dev libsecp256k1-dev gmp-dev			\
-  && $APK_ADD zeromq-dev						\
+  && $APK_ADD zeromq-dev findmnt						\
   && $PIP install base58 pynacl					\
   && $PIP install mnemonic pytezos requests				\
   && $PIP install pyblake2 pysodium flask \

@@ -19,48 +19,74 @@ fi
 
 echo "Did not find a pre-existing blockchain."
 
-my_nodes_history_mode=$(< /etc/tezos/config.json jq -r "
-				.shell.history_mode
-				|if type == \"object\" then
-					(keys|.[0])
-				 else .
-				 end")
-
-echo "My nodes history mode: '$my_nodes_history_mode'"
-
-snapshot_url=""
-tarball_url=""
-case "$my_nodes_history_mode" in
-  full)     snapshot_url="$FULL_SNAPSHOT_URL"
-            tarball_url="$FULL_TARBALL_URL";;
-
-  rolling)  snapshot_url="$ROLLING_SNAPSHOT_URL"
-            tarball_url="$ROLLING_TARBALL_URL";;
-
-  archive)  tarball_url="$ARCHIVE_TARBALL_URL";;
-
-  *)        echo "Invalid node history mode: '$my_nodes_history_mode'"
-            exit 1;;
-esac
-
-if [ -z "$snapshot_url" ] && [ -z "$tarball_url" ]; then
-  echo "ERROR: No snapshot or tarball url specified."
-  exit 1
+if [ ! -f ${data_dir}/snapshot_config.json ]; then
+  echo "No snapshot config found, nothing to do."
+  exit 0
 fi
 
-if [ -n "$snapshot_url" ] && [ -n "$tarball_url" ]; then
-  echo "ERROR: Either only a snapshot or tarball url may be specified per Tezos node history mode."
-fi
+echo "Tezos snapshot config is:"
+cat ${data_dir}/snapshot_config.json
 
+artifact_url=$(cat ${data_dir}/snapshot_config.json | jq -r '.url')
+artifact_type=$(cat ${data_dir}/snapshot_config.json | jq -r '.artifact_type')
 mkdir -p "$node_data_dir"
 
-if [ -n "$snapshot_url" ]; then
-  echo "Downloading $snapshot_url"
+download() {
+  # Smart Downloading function. When relevant metadata is accessible, it:
+  # * checks that there is enough space to download the file
+  # * verifies the sha256sum
+  filesize_bytes=$(cat ${data_dir}/snapshot_config.json | jq -r '.filesize_bytes // empty')
+  sha256=$(cat ${data_dir}/snapshot_config.json | jq -r '.sha256 // empty')
+  if [ ! -z "${filesize_bytes}" ]; then
+    free_space=$(findmnt -bno size -T ${data_dir})
+    echo "Free space available in filesystem: ${free_space}" >&2
+    if [ "${filesize_bytes}" -gt "${free_space}" ]; then
+      echo "Error: not enough disk space available (${free_space} bytes) to download artifact of size ${filesize_bytes} bytes." >&2
+      touch ${data_dir}/disk_space_failed
+      return 1
+    else
+      echo "There is sufficient free space to download the artifact of size ${filesize_bytes}." >&2
+    fi
+  fi
+  curl -LfsS $1 | tee >(sha256sum > ${snapshot_file}.sha256sum)
+  if [ ! -z "${sha256}" ]; then
+    if [ "${sha256}" != "$(cat ${snapshot_file}.sha256sum | head -c 64)" ]; then
+      echo "Error: sha256 checksum of the downloaded file did not match checksum from metadata file." >&2
+      touch ${data_dir}/sha256sum_failed
+      return 1
+    else
+      echo "Snapshot sha256sum check successful." >&2
+    fi
+  fi
+}
+
+if [ "${artifact_type}" == "tezos-snapshot" ]; then
+  echo "Downloading $artifact_url"
   echo '{ "version": "0.0.4" }' > "$node_dir/version.json"
-  curl -LfsS -o "$snapshot_file" "$snapshot_url"
-elif [ -n "$tarball_url" ]; then
-  echo "Downloading and extracting tarball from $tarball_url"
-  curl -LfsS "$tarball_url" | lz4 -d | tar -x -C "$data_dir"
+  block_hash=$(cat ${data_dir}/snapshot_config.json | jq -r '.block_hash // empty')
+  download "$artifact_url" > "$snapshot_file"
+  if [ -f "${data_dir}/sha256sum_failed" ]; then
+    # sha256 failure
+    rm -rvf ${snapshot_file}
+    rm -rvf "${data_dir}/sha256sum_failed"
+    exit 1
+  fi
+  if [ ! -z "${block_hash}" ]; then
+    echo ${block_hash} > ${snapshot_file}.block_hash
+  fi
+elif [ "${artifact_type}" == "tarball" ]; then
+  echo "Downloading and extracting tarball from $artifact_url"
+  download "$artifact_url" | lz4 -d | tar -x -C "$data_dir"
+  if [ -f "${data_dir}/sha256sum_failed" ]; then
+    echo "sha256 check failed, deleting data"
+    rm -rvf "${node_data_dir}"
+    rm -rvf "${data_dir}/sha256sum_failed"
+    exit 1
+  fi
+fi
+if [ -f "${data_dir}/disk_space_failed" ]; then
+  rm -rvf "${data_dir}/disk_space_failed"
+  exit 1
 fi
 
 chown -R 1000 "$data_dir"
