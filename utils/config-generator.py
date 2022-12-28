@@ -665,7 +665,10 @@ def create_node_snapshot_config_json(history_mode):
                 print(f"Error: history mode {history_mode} is not known.")
                 sys.exit(1)
 
-    octez_container_version = os.environ["OCTEZ_VERSION"]
+    if "images" in MY_POD_CLASS and "octez" in MY_POD_CLASS["images"]:
+        octez_container_version = MY_POD_CLASS["images"]["octez"]
+    else:
+        octez_container_version = os.environ["OCTEZ_VERSION"]
     snapshot_source = os.environ["SNAPSHOT_SOURCE"]
     if snapshot_source:
         try:
