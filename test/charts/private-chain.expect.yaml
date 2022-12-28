@@ -105,7 +105,7 @@ data:
   ARCHIVE_TARBALL_URL: ""
   PREFER_TARBALLS: "false"
   SNAPSHOT_SOURCE: ""
-  OCTEZ_VERSION: "tezos/tezos:v14-release"
+  OCTEZ_VERSION: "tezos/tezos:v15-release"
   NODE_GLOBALS: |
     {
       "env": {}
