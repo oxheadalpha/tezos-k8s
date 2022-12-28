@@ -668,8 +668,8 @@ def create_node_snapshot_config_json(history_mode):
     if "images" in MY_POD_CLASS and "octez" in MY_POD_CLASS["images"]:
         octez_container_version = MY_POD_CLASS["images"]["octez"]
     else:
-        octez_container_version = os.environ["OCTEZ_VERSION"]
-    snapshot_source = os.environ["SNAPSHOT_SOURCE"]
+        octez_container_version = os.environ.get("OCTEZ_VERSION")
+    snapshot_source = os.environ.get("SNAPSHOT_SOURCE")
     if snapshot_source:
         try:
             all_snapshots = requests.get(snapshot_source).json()
@@ -705,7 +705,7 @@ and octez version {octez_version}.
         ]
         if octez_version:
             matching_snapshots = [ s for s in matching_snapshots if  octez_version in s["tezos_version"] ]
-        matching_snapshots = sorted(matching_snapshots, key=lambda d: d["block_height"])
+        matching_snapshots = sorted(matching_snapshots, key=lambda d: d.get("block_height"))
 
         matching_snapshot = matching_snapshots[-1]
         return matching_snapshot
