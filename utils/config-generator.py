@@ -695,22 +695,18 @@ and octez version {octez_version}.
     """
     )
     # find snapshot matching all the requested fields
-    try:
-        matching_snapshots = [
-            s
-            for s in all_snapshots
-            if s["history_mode"] == history_mode
-            and s["artifact_type"] == artifact_type
-            and s["chain_name"] == network_name
-        ]
-        if octez_version:
-            matching_snapshots = [ s for s in matching_snapshots if  octez_version in s["tezos_version"] ]
-        matching_snapshots = sorted(matching_snapshots, key=lambda d: d.get("block_height"))
+    matching_snapshots = [
+        s
+        for s in all_snapshots
+        if s["history_mode"] == history_mode
+        and s["artifact_type"] == artifact_type
+        and s["chain_name"] == network_name
+    ]
+    if octez_version:
+        matching_snapshots = [ s for s in matching_snapshots if  octez_version in s["tezos_version"] ]
+    matching_snapshots = sorted(matching_snapshots, key=lambda d: d.get("block_height"))
 
-        matching_snapshot = matching_snapshots[-1]
-        return matching_snapshot
-    except Exception:
-        return None
+    return matching_snapshots[-1] if len(matching_snapshots) else None
 
 
 if __name__ == "__main__":
