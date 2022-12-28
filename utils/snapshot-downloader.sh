@@ -66,6 +66,7 @@ if [ "${artifact_type}" == "tezos-snapshot" ]; then
   download "$artifact_url" > "$snapshot_file"
   if [ -f "${data_dir}/sha256sum_failed" ]; then
     # sha256 failure
+    rm -rvf ${snapshot_file}
     rm -rvf "${data_dir}/sha256sum_failed"
     exit 1
   fi
