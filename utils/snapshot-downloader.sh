@@ -53,6 +53,7 @@ download() {
     if [ "${sha256}" != "$(cat ${snapshot_file}.sha256sum | head -c 64)" ]; then
       echo "Error: sha256 checksum of the downloaded file did not match checksum from metadata file." >&2
       touch ${data_dir}/sha256sum_failed
+      return 1
     else
       echo "Snapshot sha256sum check successful." >&2
     fi
