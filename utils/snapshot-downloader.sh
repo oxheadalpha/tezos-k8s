@@ -51,7 +51,7 @@ download() {
   if [ ! -z "${sha256}" ]; then
     if [ "${sha256}" != "$(cat ${snapshot_file}.sha256sum | head -c 64)" ]; then
       echo "Error: sha256 checksum of the downloaded file did not match checksum from metadata file." >&2
-      exit 1
+      touch ${data_dir}/sha256sum_failed
     else
       echo "Snapshot sha256sum check successful." >&2
     fi
@@ -63,12 +63,23 @@ if [ "${artifact_type}" == "tezos-snapshot" ]; then
   echo '{ "version": "0.0.4" }' > "$node_dir/version.json"
   block_hash=$(cat ${data_dir}/snapshot_config.json | jq -r '.block_hash // empty')
   download "$artifact_url" > "$snapshot_file"
+  if [ -f "${data_dir}/sha256sum_failed" ]; then
+    # sha256 failure
+    rm -rvf "${data_dir}/sha256sum_failed"
+    exit 1
+  fi
   if [ ! -z "${block_hash}" ]; then
     echo ${block_hash} > ${snapshot_file}.block_hash
   fi
 elif [ "${artifact_type}" == "tarball" ]; then
   echo "Downloading and extracting tarball from $artifact_url"
   download "$artifact_url" | lz4 -d | tar -x -C "$data_dir"
+  if [ -f "${data_dir}/sha256sum_failed" ]; then
+    echo "sha256 check failed, deleting data"
+    rm -rvf "${node_data_dir}"
+    rm -rvf "${data_dir}/sha256sum_failed"
+    exit 1
+  fi
 fi
 
 chown -R 1000 "$data_dir"
