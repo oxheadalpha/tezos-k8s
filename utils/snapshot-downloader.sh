@@ -41,7 +41,7 @@ download() {
     free_space=$(findmnt -bno size -T ${data_dir})
     echo "Free space available in filesystem: ${free_space}" >&2
     if [ "${filesize_bytes}" -gt "${free_space}" ]; then
-      echo "Error: not enough disk space available to download artifact." >&2
+      echo "Error: not enough disk space available (${free_space} bytes) to download artifact of size ${filesize_bytes} bytes." >&2
       touch ${data_dir}/disk_space_failed
       return 1
     else
