@@ -42,7 +42,7 @@ download() {
     echo "Free space available in filesystem: ${free_space}" >&2
     if [ "${filesize_bytes}" -gt "${free_space}" ]; then
       echo "Error: not enough disk space available to download artifact." >&2
-      exit 1
+      touch ${data_dir}/disk_space_failed
     else
       echo "There is sufficient free space to download the artifact of size ${filesize_bytes}." >&2
     fi
@@ -80,6 +80,10 @@ elif [ "${artifact_type}" == "tarball" ]; then
     rm -rvf "${data_dir}/sha256sum_failed"
     exit 1
   fi
+fi
+if [ -f "${data_dir}/disk_space_failed" ]; then
+  rm -rvf "${data_dir}/disk_space_failed"
+  exit 1
 fi
 
 chown -R 1000 "$data_dir"
