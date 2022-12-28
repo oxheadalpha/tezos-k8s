@@ -12,10 +12,6 @@ if [ ! -f ${snapshot_file} ]; then
     exit 0
 fi
 
-if [ -f ${node_dir}/chain.snapshot.block_hash ]; then
-    block_hash=$(cat ${node_dir}/chain.snapshot.block_hash)
-fi
-
 if [ -d ${node_data_dir}/context ]; then
     echo "Blockchain has already been imported. If a tarball"
     echo "instead of a regular tezos snapshot was used, it was"
@@ -25,8 +21,8 @@ fi
 
 cp -v /etc/tezos/config.json ${node_data_dir}
 
-if [ "${block_hash}" != "" ]; then
-  block_hash_arg="--block ${block_hash}"
+if [ -f ${node_dir}/chain.snapshot.block_hash ]; then
+    block_hash_arg="--block $(cat ${node_dir}/chain.snapshot.block_hash)"
 fi
 
 ${node} snapshot import ${snapshot_file} --data-dir ${node_data_dir} \
