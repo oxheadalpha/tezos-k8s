@@ -43,6 +43,7 @@ download() {
     if [ "${filesize_bytes}" -gt "${free_space}" ]; then
       echo "Error: not enough disk space available to download artifact." >&2
       touch ${data_dir}/disk_space_failed
+      return 1
     else
       echo "There is sufficient free space to download the artifact of size ${filesize_bytes}." >&2
     fi
