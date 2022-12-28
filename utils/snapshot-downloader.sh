@@ -19,7 +19,7 @@ fi
 
 echo "Did not find a pre-existing blockchain."
 
-if [ "$(cat ${data_dir}/snapshot_config.json)" == "null" ]; then
+if [ ! -f ${data_dir}/snapshot_config.json ]; then
   echo "No snapshot config found, nothing to do."
   exit 0
 fi

@@ -160,12 +160,13 @@ def main():
         )
         print("Generated config.json :")
         print(node_config_json)
-        print("Generated snapshot_config.json :")
-        print(node_snapshot_config_json)
         with open("/etc/tezos/config.json", "w") as json_file:
             print(node_config_json, file=json_file)
-        with open("/var/tezos/snapshot_config.json", "w") as json_file:
-            print(node_snapshot_config_json, file=json_file)
+        if node_snapshot_config:
+            print("Generated snapshot_config.json :")
+            print(node_snapshot_config_json)
+            with open("/var/tezos/snapshot_config.json", "w") as json_file:
+                print(node_snapshot_config_json, file=json_file)
 
 
 # If NETWORK_CONFIG["genesis"]["block"] hasn't been specified, we generate a
