@@ -32,10 +32,10 @@ if [ "${my_baker_account}" == "" ]; then
   done
 fi
 
-CLIENT="$TEZ_BIN/tezos-client -d $CLIENT_DIR"
+CLIENT="$TEZ_BIN/octez-client -d $CLIENT_DIR"
 CMD="$TEZ_BIN/tezos-baker-$proto_command -d $CLIENT_DIR"
 
-# ensure we can run tezos-client commands without specifying client dir
+# ensure we can run octez-client commands without specifying client dir
 ln -s /var/tezos/client /home/tezos/.tezos-client
 
 while ! $CLIENT rpc get chains/main/blocks/head; do

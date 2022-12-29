@@ -40,7 +40,7 @@ cli_args = {
     "should_generate_unsafe_deterministic_data": {
         "help": (
             "Should tezos-k8s generate deterministic account keys and genesis"
-            " block hash instead of mkchain using tezos-client to generate"
+            " block hash instead of mkchain using octez-client to generate"
             " random ones. This option is helpful for testing purposes."
         ),
         "action": "store_true",
@@ -70,7 +70,7 @@ cli_args = {
     },
     "octez_docker_image": {
         "help": "Version of the Octez docker image",
-        "default": "tezos/tezos:v14-release",
+        "default": "tezos/tezos:v15-release",
     },
     "use_docker": {
         "action": "store_true",
@@ -178,10 +178,7 @@ def main():
             "zerotier_token": args.zerotier_token,
         },
         # Custom chains should not pull snapshots or tarballs
-        "full_snapshot_url": None,
-        "rolling_snapshot_url": None,
-        "archive_tarball_url": None,
-        "rolling_tarball_url": None,
+        "snapshot_source": None,
         "node_globals": {
             # Needs a quotedstring otherwise helm interprets "Y" as true and it does not work
             "env": {
@@ -190,7 +187,7 @@ def main():
         },
         "protocols": [
             {
-                "command": "014-PtKathma",
+                "command": "PtLimaPt",
                 "vote": {"liquidity_baking_toggle_vote": "pass"},
             }
         ],
@@ -296,7 +293,7 @@ def main():
         parametersYaml = yaml.safe_load(yaml_file)
         activation = {
             "activation": {
-                "protocol_hash": "PtKathmankSpLLDALzWw7CGD2j2MtyveTwboEYokqUCP4a1LxMg",
+                "protocol_hash": "PtLimaPtLMwfNinJi9rCfDPWea8dFgTZ1MeJ9f1m2SRic6ayiwW",
                 "protocol_parameters": parametersYaml,
             },
         }

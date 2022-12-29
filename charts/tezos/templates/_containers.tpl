@@ -43,6 +43,8 @@
      *    with_config    bring in the configMap defaults true only on utils.
      *    with_secret    bring in the secrets map including the identities.
      *    localvars      set env vars MY_* Defaults to true only on utils.
+     *    resources      set container resources management, i.e. request
+     *                   and limit, default value is an empty dict.
      */ -}}
 
 {{- define "tezos.generic_container" }}
@@ -74,6 +76,9 @@
   {{- if eq .image "utils" }}
     {{- $_ := set . "args" (list .type) }}
   {{- end }}
+{{- end }}
+{{- if not (hasKey . "resources") }}
+    {{- $_ := set . "resources" dict }}
 {{- end }}
 
 {{- /*
@@ -168,6 +173,10 @@
       port: 31732
     {{- end }}
   {{- end }}
+{{- if .resources }}
+  resources:
+{{ toYaml .resources | indent 4 }}
+{{- end }}
 {{- end }}
 
 
@@ -241,9 +250,11 @@
 
 {{- define "tezos.container.sidecar" }}
   {{- if or (not (hasKey $.node_vals "readiness_probe")) $.node_vals.readiness_probe }}
-    {{- include "tezos.generic_container" (dict "root"  $
-                                                "type"  "sidecar"
-                                                "image" "utils"
+    {{- $sidecarResources := dict "requests" (dict "memory" "80Mi") "limits" (dict "memory" "100Mi") -}}
+    {{- include "tezos.generic_container" (dict "root"      $
+                                                "type"      "sidecar"
+                                                "image"     "utils"
+                                                "resources" $sidecarResources
     ) | nindent 0 }}
   {{- end }}
 {{- end }}
@@ -253,6 +264,7 @@
                                                 "type"        "octez-node"
                                                 "image"       "octez"
                                                 "with_config" 0
+                                                "resources"   $.node_vals.resources
     ) | nindent 0 }}
 {{- end }}
 

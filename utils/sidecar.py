@@ -16,7 +16,7 @@ AGE_LIMIT_IN_SECS = 600
 def sync_checker():
     '''
     Here we don't trust the /is_bootstrapped endpoint of
-    tezos-node. We have seen it return true when the node is
+    octez-node. We have seen it return true when the node is
     in a bad state (for example, some crashed threads)
     Instead, we query the head block and verify timestamp is
     not too old.

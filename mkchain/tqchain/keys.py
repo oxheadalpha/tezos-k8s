@@ -57,9 +57,9 @@ def gen_key(image):
         image,
         "sh",
         "-c",
-        "'/usr/local/bin/tezos-client "
+        "'/usr/local/bin/octez-client "
         + "--protocol PsDELPH1Kxsx gen keys mykey && "
-        + "/usr/local/bin/tezos-client "
+        + "/usr/local/bin/octez-client "
         + "--protocol PsDELPH1Kxsx show address mykey -S'",
     ).split(b"\n")
 

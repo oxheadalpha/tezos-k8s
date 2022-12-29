@@ -1,9 +1,9 @@
 tezos_k8s_images:
   snapshotEngine: ghcr.io/oxheadalpha/tezos-k8s-snapshotengine:master
 
-# the tezos version used to run `tezos-node snapshot import/export`
+# the tezos version used to run `octez-node snapshot import/export`
 images:
-  octez: tezos/tezos:v14-release
+  octez: tezos/tezos:v15-release
 
 # snapshotEngine containers interact with the kubernetes control
 # plane to create volume snapshots. This requires a special IAM role

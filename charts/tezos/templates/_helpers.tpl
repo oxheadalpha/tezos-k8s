@@ -56,7 +56,7 @@
 {{- define "tezos.shouldDownloadSnapshot" -}}
   {{- if or (.Values.full_snapshot_url) (.Values.full_tarball_url)
             (.Values.rolling_snapshot_url) (.Values.rolling_tarball_url)
-            (.Values.archive_tarball_url) }}
+            (.Values.archive_tarball_url) (.Values.snapshot_source) }}
     {{- if or (and (.Values.rolling_tarball_url) (.Values.rolling_snapshot_url))
         (and (.Values.full_tarball_url) (.Values.full_snapshot_url))
     }}
@@ -70,7 +70,7 @@
 {{- end }}
 
 {{/*
-  Checks if we need to run tezos-node config init to help config-generator
+  Checks if we need to run octez-node config init to help config-generator
   obtain the appropriate parameters to run a network. If there are no genesis
   params, we are dealing with a public network and want its default config.json
   to be created. If we are dealing with a custom chain, we validate that the

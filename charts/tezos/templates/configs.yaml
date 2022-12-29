@@ -16,6 +16,9 @@ data:
   ROLLING_SNAPSHOT_URL: "{{ .Values.rolling_snapshot_url }}"
   ROLLING_TARBALL_URL: "{{ .Values.rolling_tarball_url }}"
   ARCHIVE_TARBALL_URL: "{{ .Values.archive_tarball_url }}"
+  PREFER_TARBALLS: "{{ .Values.prefer_tarballs }}"
+  SNAPSHOT_SOURCE: "{{ .Values.snapshot_source }}"
+  OCTEZ_VERSION: "{{ .Values.images.octez }}"
   NODE_GLOBALS: |
 {{ .Values.node_globals | mustToPrettyJson | indent 4 }}
 
