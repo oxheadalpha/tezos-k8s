@@ -6,6 +6,7 @@ BLOCK_TIMESTAMP=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_TIMESTAMP)
 TEZOS_VERSION=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_VERSION)
 NETWORK="${NAMESPACE%%-*}"
 export S3_BUCKET="${NAMESPACE%-*}.${SNAPSHOT_WEBSITE_DOMAIN_NAME}"
+TEZOS_RPC_VERSION_INFO="$(wget -qO-  snapshot-"${HISTORY_MODE}"-node."${NAMESPACE}":8732/version)"
 
 cd /
 
@@ -72,10 +73,14 @@ if [ "${HISTORY_MODE}" = archive ]; then
         --arg SHA256 "${SHA256}" \
         --arg FILESIZE_BYTES "${FILESIZE_BYTES}" \
         --arg FILESIZE "${FILESIZE}" \
-        --arg TEZOS_VERSION "${TEZOS_VERSION}" \
         --arg NETWORK "${NETWORK}" \
         --arg HISTORY_MODE "archive" \
         --arg ARTIFACT_TYPE "tarball" \
+        --arg TEZOS_VERSION_MAJOR "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.major)" \
+        --arg TEZOS_VERSION_MINOR "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.minor)" \
+        --arg TEZOS_VERSION_ADDITIONAL_INFO "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.additional_info)" \
+        --arg TEZOS_VERSION_COMMIT_HASH "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_hash)" \
+        --arg TEZOS_VERSION_COMMIT_DATE "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_date)" \
         '{
             "block_hash": $BLOCK_HASH, 
             "block_height": $BLOCK_HEIGHT, 
@@ -85,10 +90,20 @@ if [ "${HISTORY_MODE}" = archive ]; then
             "url": $URL,
             "filesize_bytes": $FILESIZE_BYTES,
             "filesize": $FILESIZE, 
-            "tezos_version": $TEZOS_VERSION,
             "chain_name": $NETWORK,
             "history_mode": $HISTORY_MODE,
             "artifact_type": $ARTIFACT_TYPE
+            "tezos_version":{
+                "implementation": "octez",
+                "version": {
+                "major": $TEZOS_VERSION_MAJOR,
+                "minor": $TEZOS_VERSION_MINOR,
+                "additional_info": $TEZOS_VERSION_ADDITIONAL_INFO
+            },
+            "commit_info": {
+                "commit_hash": $TEZOS_VERSION_COMMIT_HASH,
+                "commit_date": $TEZOS_VERSION_COMMIT_DATE
+            }
         }' \
         > "${ARCHIVE_TARBALL_FILENAME}".json
 
@@ -236,10 +251,14 @@ if [ "${HISTORY_MODE}" = rolling ]; then
         --arg SHA256 "$SHA256" \
         --arg FILESIZE_BYTES "$FILESIZE_BYTES" \
         --arg FILESIZE "$FILESIZE" \
-        --arg TEZOS_VERSION "$TEZOS_VERSION" \
         --arg NETWORK "$NETWORK" \
         --arg HISTORY_MODE "rolling" \
         --arg ARTIFACT_TYPE "tarball" \
+        --arg TEZOS_VERSION_MAJOR "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.major)" \
+        --arg TEZOS_VERSION_MINOR "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.minor)" \
+        --arg TEZOS_VERSION_ADDITIONAL_INFO "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.additional_info)" \
+        --arg TEZOS_VERSION_COMMIT_HASH "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_hash)" \
+        --arg TEZOS_VERSION_COMMIT_DATE "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_date)" \
         '{
             "block_hash": $BLOCK_HASH, 
             "block_height": $BLOCK_HEIGHT, 
@@ -253,6 +272,17 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             "chain_name": $NETWORK,
             "history_mode": $HISTORY_MODE,
             "artifact_type": $ARTIFACT_TYPE
+            "tezos_version":{
+                "implementation": "octez",
+                "version": {
+                "major": $TEZOS_VERSION_MAJOR,
+                "minor": $TEZOS_VERSION_MINOR,
+                "additional_info": $TEZOS_VERSION_ADDITIONAL_INFO
+            },
+            "commit_info": {
+                "commit_hash": $TEZOS_VERSION_COMMIT_HASH,
+                "commit_date": $TEZOS_VERSION_COMMIT_DATE
+            }
         }' \
         > "${ROLLING_TARBALL_FILENAME}".json
         
@@ -328,10 +358,14 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             --arg SHA256 "$SHA256" \
             --arg FILESIZE_BYTES "$FILESIZE_BYTES" \
             --arg FILESIZE "$FILESIZE" \
-            --arg TEZOS_VERSION "$TEZOS_VERSION" \
             --arg NETWORK "$NETWORK" \
             --arg HISTORY_MODE "rolling" \
             --arg ARTIFACT_TYPE "tezos-snapshot" \
+            --arg TEZOS_VERSION_MAJOR "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.major)" \
+            --arg TEZOS_VERSION_MINOR "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.minor)" \
+            --arg TEZOS_VERSION_ADDITIONAL_INFO "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.additional_info)" \
+            --arg TEZOS_VERSION_COMMIT_HASH "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_hash)" \
+            --arg TEZOS_VERSION_COMMIT_DATE "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_date)" \
             '{
                 "block_hash": $BLOCK_HASH, 
                 "block_height": $BLOCK_HEIGHT, 
@@ -345,6 +379,17 @@ if [ "${HISTORY_MODE}" = rolling ]; then
                 "chain_name": $NETWORK,
                 "history_mode": $HISTORY_MODE,
                 "artifact_type": $ARTIFACT_TYPE
+                "tezos_version":{
+                    "implementation": "octez",
+                    "version": {
+                    "major": $TEZOS_VERSION_MAJOR,
+                    "minor": $TEZOS_VERSION_MINOR,
+                    "additional_info": $TEZOS_VERSION_ADDITIONAL_INFO
+                },
+                "commit_info": {
+                    "commit_hash": $TEZOS_VERSION_COMMIT_HASH,
+                    "commit_date": $TEZOS_VERSION_COMMIT_DATE
+                }
             }' \
             > "${ROLLING_SNAPSHOT_FILENAME}".json
             
