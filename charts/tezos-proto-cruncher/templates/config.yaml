@@ -1,0 +1,28 @@
+kind: Secret
+apiVersion: v1
+metadata:
+  name: s3-secrets
+data:
+  AWS_SECRET_ACCESS_KEY: "{{ .Values.s3_secret_access_key | b64enc }}"
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: s3-env
+data:
+  AWS_ACCESS_KEY_ID: "{{ .Values.s3_access_key_id }}"
+  HOST_BUCKET: "{{ .Values.host_bucket }}"
+  HOST_BASE: "{{ .Values.host_base }}"
+  BUCKET_NAME: "{{ .Values.bucket_name}}"
+  PROTO_NAME: "{{ .Values.proto_name}}"
+  VANITY_STRING: "{{ .Values.vanity_string}}"
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: s3cfg
+data:
+  s3cfg: |
+{{ tpl ($.Files.Get (print "scripts/.s3cfg")) $ | indent 4 }}
+  brute-force.sh: |
+{{ tpl ($.Files.Get (print "scripts/brute-force.sh")) $ | indent 4 }}

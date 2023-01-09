@@ -1,0 +1,54 @@
+# Default values for tezos-proto-cruncher.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+s3_access_key_id: ''
+s3_secret_access_key: ''
+host_bucket: '%(bucket)s.ams3.digitaloceanspaces.com'
+host_base: 'ams3.digitaloceanspaces.com'
+
+# name of the bucket
+bucket_name: "tezos-proto-cruncher"
+
+# name of the protocol archive in the bucket
+proto_name: "mumbai-f"
+#
+# vanity string we are looking for (after Pt)
+vanity_string: "Mumbai"
+
+
+image:
+  repository: tezos/tezos
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: v15-release
+
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+
