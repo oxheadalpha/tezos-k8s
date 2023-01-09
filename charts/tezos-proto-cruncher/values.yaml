@@ -1,0 +1,36 @@
+# tezos-proto-cruncher downloads a protocol in binary format
+# from a S3 bucket, and writes the results in the same bucket.
+# Put the credentials for access to your bucket below.
+s3_access_key_id: ''
+s3_secret_access_key: ''
+host_bucket: '%(bucket)s.ams3.digitaloceanspaces.com'
+host_base: 'ams3.digitaloceanspaces.com'
+
+# name of the bucket
+bucket_name: "tezos-proto-cruncher"
+
+# name of the protocol file in the bucket
+proto_name: "mumbai-f"
+#
+# vanity string we are looking for.
+# Must start with Pr, Ps, or Pt, but probably Pt as it is the convention.
+vanity_string: "PtMumbai"
+
+tezos_k8s_images:
+  utils: ghcr.io/oxheadalpha/tezos-k8s-utils:master
+
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
