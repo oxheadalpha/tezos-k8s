@@ -1,0 +1,51 @@
+{{- if .Values.prometheusRule.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+{{- toYaml .Values.prometheusRule.labels | nindent 4 }}
+  name: tezos-remote-signer-rules
+spec:
+  groups:
+  - name: tezos-remote-signer.rules
+    rules:
+    - alert: SignerPowerLoss
+      annotations:
+        description: 'Remote signer has lost power'
+        summary: Tezos remote signer has lost power
+      expr: power{namespace="{{ .Release.Namespace }}"} != 0
+      for: 1m
+      labels:
+        severity: critical
+        alertType: tezos-remote-signer-alert
+    - alert: SignerWiredNetworkLoss
+      annotations:
+        description: 'Remote signer has lost wired internet connection'
+        summary: Tezos remote signer has lost wired internet connection
+      expr: wired_network{namespace="{{ .Release.Namespace }}"} != 0
+      for: 1m
+      labels:
+        severity: critical
+        alertType: tezos-remote-signer-alert
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+{{- toYaml .Values.prometheusRule.labels | nindent 4 }}
+  name: tezos-remote-signer-reachability-rules
+spec:
+  groups:
+  - name: tezos-remote-signer.rules
+    rules:
+    - alert: NoRemoteSigner
+      annotations:
+        description: 'Remote signer is down'
+        summary: Remote signer is down or unable to sign.
+      expr: unhealthy_signers_total{namespace="{{ .Release.Namespace }}"} != 0
+      for: 1m
+      labels:
+        severity: critical
+        alertType: tezos-remote-signer-alert
+---
+{{- end }}

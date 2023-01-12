@@ -1,0 +1,38 @@
+{{- if .Values.serviceMonitor.enabled }}
+{{- range .Values.endpoints }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/name: tezos-signer-forwarder
+  name: tezos-remote-signer-monitoring-{{ .name }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  endpoints:
+  - interval: 20s
+    port: signer
+    path: /healthz
+    scrapeTimeout: 20s
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: tezos-signer-forwarder
+      app.kubernetes.io/baker-name: {{ .name }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    app.kubernetes.io/name: tezos-signer-forwarder
+  name: tezos-remote-signer-reachability-{{ .name }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  endpoints:
+  - port: metrics
+    path: /metrics
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: tezos-signer-forwarder
+      app.kubernetes.io/baker-name: {{ .name }}
+---
+{{- end }}
+{{- end }}

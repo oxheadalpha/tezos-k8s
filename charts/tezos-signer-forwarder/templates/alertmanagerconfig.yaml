@@ -1,0 +1,54 @@
+{{- if .Values.alertmanagerConfig.enabled }}
+{{- range .Values.endpoints }}
+{{- if .monitoring_email }}
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: tezos-remote-signer-alerts-{{ .name }}
+  labels:
+{{- toYaml $.Values.alertmanagerConfig.labels | nindent 4 }}
+spec:
+  route:
+    groupBy: ['job']
+    groupWait: 30s
+    groupInterval: 5m
+    repeatInterval: 12h
+    receiver: 'email_{{ .name }}'
+    matchers:
+    - name: service
+      value: tezos-remote-signer-{{ .name }}
+      regex: false
+    - name: alertType
+      value: tezos-remote-signer-alert
+      regex: false
+    continue: false
+  receivers:
+  - name: 'email_{{ .name }}'
+    emailConfigs:
+    - to: "{{ .monitoring_email }}"
+      sendResolved: true
+      headers:
+      - key: subject
+        value: '{{`[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .CommonLabels.alertname }}`}}'
+      html: >-
+        {{`{{ if eq .Status "firing" }}
+        Your attention is required regarding the following Tezos Remote Signer alert:
+        {{ else }}
+        The following Tezos Remote Signer Alert is resolved:
+        {{ end }}
+        {{ range .Alerts -}}
+        {{ .Annotations.summary }}
+        {{ end }}`}}
+      text: >-
+        {{`{{ if eq .Status "firing" }}
+        Your attention is required regarding the following Tezos Remote Signer alert:
+        {{ else }}
+        The following Tezos Remote Signer Alert is resolved:
+        {{ end }}
+        {{ range .Alerts -}}
+        {{ .Annotations.summary }}
+        {{ end }}`}}
+---
+{{- end }}
+{{- end }}
+{{- end }}

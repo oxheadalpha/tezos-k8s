@@ -1,0 +1,10 @@
+{{- range .Values.endpoints }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tezos-signer-forwarder-config-{{ .name }}
+data:
+  authorized_keys: "{{ .ssh_pubkey }} signer"
+  tunnel_endpoint_port: "{{ .tunnel_endpoint_port }}"
+---
+{{- end }}
