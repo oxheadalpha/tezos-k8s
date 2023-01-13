@@ -46,7 +46,10 @@ for network, snapshots in snapshots_per_network.items():
         # Parses date from tezos build of each artifact, compares to last date, updates if older, otherwise its newer
         for snapshot in snapshots:
             matches=datefinder.find_dates(snapshot['tezos_version'])
-            tezos_build_datetime=list(matches)[0]
+            try:
+                tezos_build_datetime=list(matches)[0]
+            except IndexError:
+                continue
             if tezos_build_datetime < last_tezos_build_datetime:
                 latest_tezos_build_version=[src for time, src in datefinder.find_dates(snapshot['tezos_version'], source=True)][1]
                 last_tezos_build_datetime=tezos_build_datetime
