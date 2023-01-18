@@ -11,9 +11,9 @@ metadata:
   name: s3-env
 data:
   AWS_ACCESS_KEY_ID: "{{ .Values.s3_access_key_id }}"
-  HOST_BUCKET: "{{ .Values.host_bucket }}"
-  HOST_BASE: "{{ .Values.host_base }}"
+  BUCKET_ENDPOINT_URL: "{{ .Values.bucket_endpoint_url }}"
   BUCKET_NAME: "{{ .Values.bucket_name}}"
+  BUCKET_REGION: "{{ .Values.bucket_region}}"
   PROTO_NAME: "{{ .Values.proto_name}}"
   VANITY_STRING: "{{ .Values.vanity_string}}"
 ---

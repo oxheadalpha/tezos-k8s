@@ -3,8 +3,8 @@
 # Put the credentials for access to your bucket below.
 s3_access_key_id: ''
 s3_secret_access_key: ''
-host_bucket: '%(bucket)s.ams3.digitaloceanspaces.com'
-host_base: 'ams3.digitaloceanspaces.com'
+bucket_endpoint_url: 'ams3.digitaloceanspaces.com'
+bucket_region: 'ams'
 
 # name of the bucket
 bucket_name: "tezos-proto-cruncher"

@@ -16,14 +16,14 @@ proto_prefix = tb([2, 170])
 PROTO_NAME = os.getenv("PROTO_NAME")
 VANITY_STRING = os.getenv("VANITY_STRING")
 BUCKET_NAME = os.getenv("BUCKET_NAME")
-ENDPOINT_URL = os.getenv("HOST_BASE")
-BUCKET_REGION_NAME = os.getenv("REGION_NAME")
+BUCKET_ENDPOINT_URL = os.getenv("BUCKET_ENDPOINT_URL")
+BUCKET_REGION = os.getenv("BUCKET_REGION")
 
 if BUCKET_NAME:
     import boto3
     s3 = boto3.resource('s3',
-                        region_name=BUCKET_REGION_NAME,
-                        endpoint_url=f"https://{ENDPOINT_URL}")
+                        region_name=BUCKET_REGION,
+                        endpoint_url=f"https://{BUCKET_ENDPOINT_URL}")
 
 with open(proto_file, "rb") as f:
     proto_bytes = f.read()
