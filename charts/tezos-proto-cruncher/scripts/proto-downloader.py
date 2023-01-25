@@ -14,4 +14,10 @@ s3 = boto3.resource('s3',
 print(f"Downloading {PROTO_NAME}")
 proto_file = f"/{PROTO_NAME}"
 s3_bucket = s3.Bucket(BUCKET_NAME)
-s3_bucket.download_file(PROTO_NAME, proto_file)
+try:
+    s3_bucket.download_file(PROTO_NAME, proto_file)
+except botocore.exceptions.ClientError as e:
+    if e.response['Error']['Code'] == "404":
+        print("The object does not exist.")
+    else:
+        raise
