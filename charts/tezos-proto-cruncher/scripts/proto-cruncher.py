@@ -74,4 +74,8 @@ while True:
     if re.match(f"^{VANITY_STRING}.*", new_hash):
         print(f"Found vanity nonce: {new_nonce} and hash: {new_hash}")
         if BUCKET_NAME:
-            s3.Object(BUCKET_NAME, f"{PROTO_NAME}_{new_hash}").put(Body=new_nonce)
+            try:
+                s3.Object(BUCKET_NAME, f"{PROTO_NAME}_{new_hash}").put(Body=new_nonce)
+            except:
+                print("ERROR: upload of the nonce and hash to s3 failed.")
+                continue
