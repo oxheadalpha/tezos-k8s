@@ -15,9 +15,15 @@ proto_prefix = tb([2, 170])
 
 PROTO_NAME = os.getenv("PROTO_NAME")
 VANITY_STRING = os.getenv("VANITY_STRING")
+NUM_NONCE_DIGITS = int(os.getenv("NUM_NONCE_DIGITS"))
 BUCKET_NAME = os.getenv("BUCKET_NAME")
 BUCKET_ENDPOINT_URL = os.getenv("BUCKET_ENDPOINT_URL")
 BUCKET_REGION = os.getenv("BUCKET_REGION")
+
+if not VANITY_STRING:
+    raise ValueError("VANITY_STRING env var must be set")
+if not NUM_NONCE_DIGITS:
+    NUM_NONCE_DIGITS = 16
 
 if BUCKET_NAME:
     import boto3
@@ -49,8 +55,9 @@ print(f"Original proto nonce: {original_nonce} and hash: {get_hash(original_nonc
 
 while True:
     # Warning - assuming the nonce is 16 chars in the original proto.
-    # If it is not, set the current number below, otherwise you will get bad nonces.
-    new_nonce_digits = ''.join(random.choice(string.digits) for _ in range(16))
+    # If it is not, make sure to set NUM_NONCE_DIGITS to the right number
+    # otherwise you will get bad nonces.
+    new_nonce_digits = ''.join(random.choice(string.digits) for _ in range(NUM_NONCE_DIGITS))
     new_nonce = b'(* Vanity nonce: ' + bytes(new_nonce_digits, 'utf-8') + b' *)\n'
 
     new_hash = get_hash(new_nonce, proto_hash.copy())

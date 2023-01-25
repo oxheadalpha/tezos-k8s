@@ -1,20 +1,27 @@
 # tezos-proto-cruncher downloads a protocol in binary format
 # from a S3 bucket, and writes the results in the same bucket.
 # Put the credentials for access to your bucket below.
-s3_access_key_id: ''
-s3_secret_access_key: ''
-bucket_endpoint_url: 'ams3.digitaloceanspaces.com'
-bucket_region: 'ams'
+s3AccessKeyId: ''
+s3SecretAccessKey: ''
+bucketEndpointUrl: 'ams3.digitaloceanspaces.com'
+bucketRegion: 'ams'
 
 # name of the bucket
-bucket_name: "tezos-proto-cruncher"
+bucketName: "tezos-proto-cruncher"
 
 # name of the protocol file in the bucket
-proto_name: "mumbai-f"
+protoName: "mumbai-f"
 #
 # vanity string we are looking for.
 # Must start with Pr, Ps, or Pt, but probably Pt as it is the convention.
-vanity_string: "PtMumbai"
+vanityString: "PtMumbai"
+
+# number of nonce digits in original proto - normally 16
+numNonceDigits: 16
+
+# number of parallel Python processes per k8s node
+# When unset, defaults to number of cores
+# numParallelProcesses: 8
 
 tezos_k8s_images:
   utils: ghcr.io/oxheadalpha/tezos-k8s-utils:master
