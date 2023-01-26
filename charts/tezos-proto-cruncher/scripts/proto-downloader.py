@@ -1,10 +1,10 @@
 import os
 
-BUCKET_NAME = os.getenv("BUCKET_NAME")
-BUCKET_ENDPOINT_URL = os.getenv("BUCKET_ENDPOINT_URL")
-BUCKET_REGION = os.getenv("BUCKET_REGION")
+BUCKET_NAME = os.environ["BUCKET_NAME"]
+BUCKET_ENDPOINT_URL = os.environ["BUCKET_ENDPOINT_URL"]
+BUCKET_REGION = os.environ["BUCKET_REGION"]
 
-PROTO_NAME = os.getenv("PROTO_NAME")
+PROTO_NAME = os.environ["PROTO_NAME"]
 
 import boto3
 
