@@ -18,14 +18,16 @@ proto_prefix = tb([2, 170])
 
 PROTO_NAME = os.getenv("PROTO_NAME")
 VANITY_STRING = os.getenv("VANITY_STRING")
-NUM_NONCE_DIGITS = int(os.getenv("NUM_NONCE_DIGITS"))
+NUM_NONCE_DIGITS = os.getenv("NUM_NONCE_DIGITS")
 BUCKET_NAME = os.getenv("BUCKET_NAME")
 BUCKET_ENDPOINT_URL = os.getenv("BUCKET_ENDPOINT_URL")
 BUCKET_REGION = os.getenv("BUCKET_REGION")
 
 if not VANITY_STRING:
     raise ValueError("VANITY_STRING env var must be set")
-if not NUM_NONCE_DIGITS:
+if NUM_NONCE_DIGITS:
+    NUM_NONCE_DIGITS = int(NUM_NONCE_DIGITS)
+else:
     NUM_NONCE_DIGITS = 16
 
 if BUCKET_NAME:
