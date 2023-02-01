@@ -56,7 +56,7 @@ spec:
         app: {{ .Values.bcd_indexer_statefulset.name }}
     spec:
       containers:
-        - image: ghcr.io/baking-bad/bcdhub-api:4.3.0
+        - image: {{ .Values.bcdIndexer.images.api }}
           name: api
           ports:
             - containerPort: 14000
@@ -66,7 +66,7 @@ spec:
                 name: bcd-env
             - secretRef:
                 name: db-creds
-        - image: ghcr.io/baking-bad/bcdhub-indexer:4.3.0
+        - image: {{ .Values.bcdIndexer.images.indexer }}
           name: indexer
           envFrom:
             - configMapRef:
