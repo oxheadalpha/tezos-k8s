@@ -494,8 +494,8 @@ protocols:
 
 bcdIndexer:
   images:
-    api: ghcr.io/baking-bad/bcdhub-api:4.3.0
-    indexer: ghcr.io/baking-bad/bcdhub-indexer:4.3.0
+    api: ghcr.io/baking-bad/bcdhub-api:4.4.0
+    indexer: ghcr.io/baking-bad/bcdhub-indexer:4.4.0
   # dbName: bcd
   # dbPassword: bcd-password
   # dbUser: bcd
