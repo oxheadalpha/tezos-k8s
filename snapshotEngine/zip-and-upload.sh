@@ -3,12 +3,17 @@
 BLOCK_HEIGHT=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HEIGHT)
 BLOCK_HASH=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH)
 BLOCK_TIMESTAMP=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_TIMESTAMP)
-TEZOS_VERSION=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_VERSION)
+#TEZOS_VERSION=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_VERSION)
+SNAPSHOT_HEADER=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/SNAPSHOT_)
 NETWORK="${NAMESPACE%%-*}"
 export S3_BUCKET="${NAMESPACE%-*}.${SNAPSHOT_WEBSITE_DOMAIN_NAME}"
-TEZOS_RPC_VERSION_INFO="$(wget -qO-  snapshot-"${HISTORY_MODE}"-node."${NAMESPACE}":8732/version)"
-
+TEZOS_RPC_VERSION_INFO="$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_RPC_VERSION_INFO)"
+SCHEMA_FILE=""
 cd /
+
+validate_metadata () {
+    check-jsonschema --schemafile "${SCHEMA_FILE}" "${1}" 
+}
 
 # If block_height is not set than init container failed, exit this container
 [ -z "${BLOCK_HEIGHT}" ] && exit 1
@@ -79,34 +84,49 @@ if [ "${HISTORY_MODE}" = archive ]; then
         --arg TEZOS_VERSION_MAJOR "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.major)" \
         --arg TEZOS_VERSION_MINOR "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.minor)" \
         --arg TEZOS_VERSION_ADDITIONAL_INFO "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.additional_info)" \
+        --arg TEZOS_NETWORK_VERSION_CHAIN_NAME "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.chain_name)" \
+        --arg TEZOS_NETWORK_VERSION_DISTRIBUTED_DB_VERSION "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.distributed_db_version)" \
+        --arg TEZOS_NETWORK_VERSION_P2P_VERSION "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.p2p_version)" \
         --arg TEZOS_VERSION_COMMIT_HASH "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_hash)" \
         --arg TEZOS_VERSION_COMMIT_DATE "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_date)" \
         '{
-            "block_hash": $BLOCK_HASH, 
-            "block_height": $BLOCK_HEIGHT, 
+            "block_hash": $BLOCK_HASH,
+            "block_height": $BLOCK_HEIGHT,
             "block_timestamp": $BLOCK_TIMESTAMP,
             "filename": $ARCHIVE_TARBALL_FILENAME,
             "sha256": $SHA256,
             "url": $URL,
             "filesize_bytes": $FILESIZE_BYTES,
-            "filesize": $FILESIZE, 
+            "filesize": $FILESIZE,
             "chain_name": $NETWORK,
             "history_mode": $HISTORY_MODE,
-            "artifact_type": $ARTIFACT_TYPE
-            "tezos_version":{
+            "artifact_type": $ARTIFACT_TYPE,
+            "tezos_version": {
                 "implementation": "octez",
                 "version": {
-                "major": $TEZOS_VERSION_MAJOR,
-                "minor": $TEZOS_VERSION_MINOR,
-                "additional_info": $TEZOS_VERSION_ADDITIONAL_INFO
-            },
-            "commit_info": {
-                "commit_hash": $TEZOS_VERSION_COMMIT_HASH,
-                "commit_date": $TEZOS_VERSION_COMMIT_DATE
+                    "major": $TEZOS_VERSION_MAJOR,
+                    "minor": $TEZOS_VERSION_MINOR,
+                    "additional_info": $TEZOS_VERSION_ADDITIONAL_INFO
+                },
+                "network_version": {
+                    "chain_name": $TEZOS_NETWORK_VERSION_CHAIN_NAME,
+                    "distributed_db_version": $TEZOS_NETWORK_VERSION_DISTRIBUTED_DB_VERSION,
+                    "p2p_version": $TEZOS_NETWORK_VERSION_P2P_VERSION
+                },
+                "commit_info": {
+                    "commit_hash": $TEZOS_VERSION_COMMIT_HASH,
+                    "commit_date": $TEZOS_VERSION_COMMIT_DATE
+                }
             }
         }' \
         > "${ARCHIVE_TARBALL_FILENAME}".json
 
+        # Optional schema validation
+        if [ ${SCHEMA_FILE+x} ]; then 
+            validate_metadata "${ARCHIVE_TARBALL_FILENAME}".json
+        fi
+
+        validate_metadata "${ARCHIVE_TARBALL_FILENAME}".json
         # Check metadata json exists
         if [ -f "${ARCHIVE_TARBALL_FILENAME}".json ]; then
             printf "%s Archive Tarball : ${ARCHIVE_TARBALL_FILENAME}.json created.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -257,6 +277,9 @@ if [ "${HISTORY_MODE}" = rolling ]; then
         --arg TEZOS_VERSION_MAJOR "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.major)" \
         --arg TEZOS_VERSION_MINOR "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.minor)" \
         --arg TEZOS_VERSION_ADDITIONAL_INFO "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.additional_info)" \
+        --arg TEZOS_NETWORK_VERSION_CHAIN_NAME "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.chain_name)" \
+        --arg TEZOS_NETWORK_VERSION_DISTRIBUTED_DB_VERSION "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.distributed_db_version)" \
+        --arg TEZOS_NETWORK_VERSION_P2P_VERSION "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.p2p_version)" \
         --arg TEZOS_VERSION_COMMIT_HASH "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_hash)" \
         --arg TEZOS_VERSION_COMMIT_DATE "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_date)" \
         '{
@@ -275,16 +298,26 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             "tezos_version":{
                 "implementation": "octez",
                 "version": {
-                "major": $TEZOS_VERSION_MAJOR,
-                "minor": $TEZOS_VERSION_MINOR,
-                "additional_info": $TEZOS_VERSION_ADDITIONAL_INFO
-            },
-            "commit_info": {
-                "commit_hash": $TEZOS_VERSION_COMMIT_HASH,
-                "commit_date": $TEZOS_VERSION_COMMIT_DATE
-            }
+                    "major": $TEZOS_VERSION_MAJOR,
+                    "minor": $TEZOS_VERSION_MINOR,
+                    "additional_info": $TEZOS_VERSION_ADDITIONAL_INFO
+                },
+                "network_version": {
+                    "chain_name": $TEZOS_NETWORK_VERSION_CHAIN_NAME,
+                    "distributed_db_version": $TEZOS_NETWORK_VERSION_DISTRIBUTED_DB_VERSION,
+                    "p2p_version": $TEZOS_NETWORK_VERSION_P2P_VERSION
+                },
+                "commit_info": {
+                    "commit_hash": $TEZOS_VERSION_COMMIT_HASH,
+                    "commit_date": $TEZOS_VERSION_COMMIT_DATE
+                }
         }' \
         > "${ROLLING_TARBALL_FILENAME}".json
+
+        # Optional schema validation
+        if [ ${SCHEMA_FILE+x} ]; then 
+            validate_metadata "${ROLLING_TARBALL_FILENAME}".json
+        fi
         
         if [ -f "${ROLLING_TARBALL_FILENAME}".json ]; then
             printf "%s Rolling Tarball : ${ROLLING_TARBALL_FILENAME}.json created.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -364,8 +397,15 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             --arg TEZOS_VERSION_MAJOR "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.major)" \
             --arg TEZOS_VERSION_MINOR "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.minor)" \
             --arg TEZOS_VERSION_ADDITIONAL_INFO "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.additional_info)" \
+            --arg TEZOS_NETWORK_VERSION_CHAIN_NAME "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.chain_name)" \
+            --arg TEZOS_NETWORK_VERSION_DISTRIBUTED_DB_VERSION "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.distributed_db_version)" \
+            --arg TEZOS_NETWORK_VERSION_P2P_VERSION "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.p2p_version)" \
             --arg TEZOS_VERSION_COMMIT_HASH "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_hash)" \
             --arg TEZOS_VERSION_COMMIT_DATE "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_date)" \
+            --arg CONTEXT_ELEMENTS "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_hash)" \
+            --arg TEZOS_SNAPSHOT_VESION "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_hash)" \
+            --arg SNAPSHOT_VERSION "$(echo "${SNAPSHOT_HEADER}" | jq .snapshot_header.version)" \
+            --arg CONTEXT_ELEMENTS "$(echo "${SNAPSHOT_HEADER}" | jq .snapshot_header.context_elements)" \
             '{
                 "block_hash": $BLOCK_HASH, 
                 "block_height": $BLOCK_HEIGHT, 
@@ -382,16 +422,28 @@ if [ "${HISTORY_MODE}" = rolling ]; then
                 "tezos_version":{
                     "implementation": "octez",
                     "version": {
-                    "major": $TEZOS_VERSION_MAJOR,
-                    "minor": $TEZOS_VERSION_MINOR,
-                    "additional_info": $TEZOS_VERSION_ADDITIONAL_INFO
+                        "major": $TEZOS_VERSION_MAJOR,
+                        "minor": $TEZOS_VERSION_MINOR,
+                        "additional_info": $TEZOS_VERSION_ADDITIONAL_INFO
+                    },
+                "network_version": {
+                    "chain_name": $TEZOS_NETWORK_VERSION_CHAIN_NAME,
+                    "distributed_db_version": $TEZOS_NETWORK_VERSION_DISTRIBUTED_DB_VERSION,
+                    "p2p_version": $TEZOS_NETWORK_VERSION_P2P_VERSION
                 },
                 "commit_info": {
                     "commit_hash": $TEZOS_VERSION_COMMIT_HASH,
                     "commit_date": $TEZOS_VERSION_COMMIT_DATE
-                }
+                },
+                "snapshot_version": $SNAPSHOT_VERSION,
+                "context_elements": $CONTEXT_ELEMENTS
             }' \
             > "${ROLLING_SNAPSHOT_FILENAME}".json
+
+            # Optional schema validation
+            if [ ${SCHEMA_FILE+x} ]; then 
+                validate_metadata "${ROLLING_SNAPSHOT_FILENAME}".json
+            fi
             
             printf "%s Rolling Tezos : Metadata JSON created.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 

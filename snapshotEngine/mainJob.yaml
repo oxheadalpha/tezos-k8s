@@ -119,8 +119,11 @@ spec:
               # Get BLOCK_TIMESTAMP from RPC
               wget -qO-  http://localhost:8732/chains/main/blocks/head/header | sed -E 's/.*"timestamp":"?([^,"]*)"?.*/\1/' > /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_TIMESTAMP
 
-              # Get Tezos Version from octez-node command
-              /usr/local/bin/octez-node --version > /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_VERSION
+              # Old version string
+              #/usr/local/bin/octez-node --version > /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_VERSION
+
+              # Get new version object from RPC
+              wget -qO-  http://localhost:8732/version  > /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_TIMESTAMP
 
               # Print variables for debug
               printf "%s BLOCK_HASH is...$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH))\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -184,6 +187,9 @@ spec:
                 --block "${BLOCK_HASH}" \
                 --config-file /home/tezos/.tezos-node/config.json \
                 --data-dir /rolling-tarball-restore/var/tezos/node/data
+
+                # Get context elements and octez snapshot version
+                /usr/local/bin/octez-node SNAPSHOT INFO /"${HISTORY_MODE}"-snapshot-cache-volume/"${ROLLING_SNAPSHOT_NAME}".rolling --json > /"${HISTORY_MODE}"-snapshot-cache-volume/SNAPSHOT_HEADER
 
                 rm /rolling-tarball-restore/snapshot-import-in-progress
               else

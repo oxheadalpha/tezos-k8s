@@ -96,3 +96,6 @@ allSubdomains: ""
 artifactDelay:
   rolling: 0m
   archive: 0m
+
+# URL to schema.json file to validate generated metadata against
+schemaUrl: ""
