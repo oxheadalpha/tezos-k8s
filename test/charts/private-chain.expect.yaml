@@ -103,6 +103,9 @@ data:
   ROLLING_SNAPSHOT_URL: ""
   ROLLING_TARBALL_URL: ""
   ARCHIVE_TARBALL_URL: ""
+  PREFER_TARBALLS: "false"
+  SNAPSHOT_SOURCE: ""
+  OCTEZ_VERSION: "tezos/tezos:v15-release"
   NODE_GLOBALS: |
     {
       "env": {}
@@ -110,18 +113,6 @@ data:
 
   NODES: |
     {
-      "af": {
-        "instances": [
-          {}
-        ],
-        "runs": [
-          "tezedge_node",
-          "baker",
-          "logger",
-          "metrics"
-        ],
-        "storage_size": "15Gi"
-      },
       "as": {
         "instances": [
           {}
@@ -132,7 +123,7 @@ data:
       },
       "eu": {
         "images": {
-          "octez": "tezos/tezos:v14-release"
+          "octez": "tezos/tezos:v15-release"
         },
         "instances": [
           {
@@ -161,7 +152,6 @@ data:
         "runs": [
           "octez_node",
           "baker",
-          "endorser",
           "logger",
           "metrics"
         ],
@@ -174,8 +164,7 @@ data:
         ],
         "runs": [
           "octez_node",
-          "baker",
-          "endorser"
+          "baker"
         ],
         "storage_size": "15Gi"
       }
@@ -228,26 +217,8 @@ spec:
     - port: 8732
       name: rpc
   selector:
-    appType: tezos-node
+    appType: octez-node
   type: NodePort
----
-# Source: tezos-chain/templates/static.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: af
-  labels:
-    appType: tezos-node
-spec:
-  ports:
-    - port: 9732
-      name: p2p
-    - port: 9932
-      name: metrics
-  publishNotReadyAddresses: true
-  clusterIP: None
-  selector:
-    node_class: af
 ---
 # Source: tezos-chain/templates/static.yaml
 apiVersion: v1
@@ -255,9 +226,11 @@ kind: Service
 metadata:
   name: as
   labels:
-    appType: tezos-node
+    appType: octez-node
 spec:
   ports:
+    - port: 8732
+      name: rpc
     - port: 9732
       name: p2p
     - port: 9932
@@ -273,9 +246,11 @@ kind: Service
 metadata:
   name: eu
   labels:
-    appType: tezos-node
+    appType: octez-node
 spec:
   ports:
+    - port: 8732
+      name: rpc
     - port: 9732
       name: p2p
     - port: 9932
@@ -291,9 +266,11 @@ kind: Service
 metadata:
   name: us
   labels:
-    appType: tezos-node
+    appType: octez-node
 spec:
   ports:
+    - port: 8732
+      name: rpc
     - port: 9732
       name: p2p
     - port: 9932
@@ -302,271 +279,6 @@ spec:
   clusterIP: None
   selector:
     node_class: us
----
-# Source: tezos-chain/templates/nodes.yaml
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: af
-  namespace: testing
-spec:
-  podManagementPolicy: Parallel
-  replicas: 1
-  serviceName: af
-  selector:
-    matchLabels:
-      node_class: af
-  template:
-    metadata:
-      labels:
-        appType: tezos-node
-        node_class: af
-        baking_node: "true"
-    spec:
-      containers:                
-        - name: tezedge-node
-          image: "tezedge/tezedge:v1.6.8"
-          imagePullPolicy: IfNotPresent
-          command:
-            - /light-node
-          args:
-            - --config-file=/etc/tezos/tezedge.conf
-          envFrom:
-          env:
-            - name: DAEMON
-              value: tezedge-node
-          volumeMounts:
-            - mountPath: /etc/tezos
-              name: config-volume
-            - mountPath: /var/tezos
-              name: var-volume
-          ports:
-            - containerPort: 8732
-              name: tezos-rpc
-            - containerPort: 9732
-              name: tezos-net
-            - containerPort: 9932
-              name: metrics
-          readinessProbe:
-            httpGet:
-              path: /is_synced
-              port: 31732                
-        - name: baker-013-ptjakart
-          image: "tezos/tezos:v14-release"
-          imagePullPolicy: IfNotPresent
-          command:
-            - /bin/sh
-          args:
-            - "-c"
-            - |
-              set -ex
-              
-              TEZ_VAR=/var/tezos
-              TEZ_BIN=/usr/local/bin
-              CLIENT_DIR="$TEZ_VAR/client"
-              NODE_DIR="$TEZ_VAR/node"
-              NODE_DATA_DIR="$TEZ_VAR/node/data"
-              BAKER_EXTRA_ARGS_FROM_ENV=${BAKER_EXTRA_ARGS}
-              
-              proto_command="013-PtJakart"
-              
-              per_block_vote_file=/etc/tezos/per-block-votes/${proto_command}-per-block-votes.json
-              if [ $(cat $per_block_vote_file) == "null" ]; then
-                cat << EOF
-              You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
-              protocols:
-              - command: ${proto_command}
-                vote:
-                  liquidity_baking_toggle_vote: "on"
-              EOF
-                exit 1
-              fi
-              extra_args="--votefile ${per_block_vote_file}"
-              
-              tezos_version=$(tezos-client --version | sed -e 's/ //g')
-              if [[ "$tezos_version" == *"13.0"* ]]; then
-                # version 13 of octez mandates CLI flag as well as vote file
-                extra_args="$extra_args --liquidity-baking-toggle-vote on"
-              fi
-              
-              my_baker_account="$(cat /etc/tezos/baker-account )"
-              
-              CLIENT="$TEZ_BIN/tezos-client -d $CLIENT_DIR"
-              CMD="$TEZ_BIN/tezos-baker-$proto_command -d $CLIENT_DIR"
-              
-              # ensure we can run tezos-client commands without specifying client dir
-              ln -s /var/tezos/client /home/tezos/.tezos-client
-              
-              while ! $CLIENT rpc get chains/main/blocks/head; do
-                  sleep 5
-              done
-              
-              exec $CMD run with local node $NODE_DATA_DIR ${extra_args} ${BAKER_EXTRA_ARGS_FROM_ENV} ${my_baker_account}
-              
-          envFrom:
-          env:
-            - name: DAEMON
-              value: baker
-          volumeMounts:
-            - mountPath: /etc/tezos
-              name: config-volume
-            - mountPath: /var/tezos
-              name: var-volume
-            - mountPath: /etc/tezos/per-block-votes
-              name: per-block-votes        
-        - name: logger
-          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
-          imagePullPolicy: IfNotPresent
-          args:
-            - logger
-          envFrom:
-            - configMapRef:
-                name: tezos-config
-          env:    
-            - name: MY_POD_IP
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.podIP
-            - name: MY_POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-            - name: MY_POD_TYPE
-              value: node
-            - name: MY_NODE_CLASS
-              value: af
-            - name: DAEMON
-              value: logger
-          volumeMounts:
-            - mountPath: /etc/tezos
-              name: config-volume
-            - mountPath: /var/tezos
-              name: var-volume                
-        - name: sidecar
-          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
-          imagePullPolicy: IfNotPresent
-          args:
-            - sidecar
-          envFrom:
-            - configMapRef:
-                name: tezos-config
-          env:    
-            - name: MY_POD_IP
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.podIP
-            - name: MY_POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-            - name: MY_POD_TYPE
-              value: node
-            - name: MY_NODE_CLASS
-              value: af
-            - name: DAEMON
-              value: sidecar
-          volumeMounts:
-            - mountPath: /etc/tezos
-              name: config-volume
-            - mountPath: /var/tezos
-              name: var-volume        
-      initContainers:                        
-        - name: config-generator
-          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
-          imagePullPolicy: IfNotPresent
-          args:
-            - config-generator
-          envFrom:
-            - configMapRef:
-                name: tezos-config
-          env:    
-            - name: MY_POD_IP
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.podIP
-            - name: MY_POD_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
-            - name: MY_POD_TYPE
-              value: node
-            - name: MY_NODE_CLASS
-              value: af
-            - name: DAEMON
-              value: config-generator
-          volumeMounts:
-            - mountPath: /etc/tezos
-              name: config-volume
-            - mountPath: /var/tezos
-              name: var-volume
-            - mountPath: /etc/secret-volume
-              name: tezos-accounts                        
-        - name: wait-for-dns
-          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
-          imagePullPolicy: IfNotPresent
-          args:
-            - wait-for-dns
-          envFrom:
-            - configMapRef:
-                name: tezos-config
-          env:
-            - name: DAEMON
-              value: wait-for-dns
-          volumeMounts:
-            - mountPath: /etc/tezos
-              name: config-volume
-            - mountPath: /var/tezos
-              name: var-volume        
-        - name: upgrade-storage
-          image: "tezos/tezos:v14-release"
-          imagePullPolicy: IfNotPresent
-          command:
-            - /bin/sh
-          args:
-            - "-c"
-            - |
-              set -ex
-              
-              if [ ! -e /var/tezos/node/data/context ]
-              then
-                printf "No context in data dir found, probably initial start, doing nothing."
-                exit 0
-              fi
-              tezos-node upgrade storage --data-dir /var/tezos/node/data
-              
-          envFrom:
-          env:
-            - name: DAEMON
-              value: upgrade-storage
-          volumeMounts:
-            - mountPath: /etc/tezos
-              name: config-volume
-            - mountPath: /var/tezos
-              name: var-volume
-      securityContext:
-        fsGroup: 1000      
-      volumes:
-        - hostPath:
-            path: /dev/net/tun
-          name: dev-net-tun
-        - emptyDir: {}
-          name: config-volume
-        - name: tezos-accounts
-          secret:
-            secretName: tezos-secret
-        - name: per-block-votes
-          configMap:
-            name: per-block-votes
-  volumeClaimTemplates:
-    - metadata:
-        name: var-volume
-        namespace: testing
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        resources:
-          requests:
-            storage: 15Gi
 ---
 # Source: tezos-chain/templates/nodes.yaml
 apiVersion: apps/v1
@@ -584,12 +296,12 @@ spec:
   template:
     metadata:
       labels:
-        appType: tezos-node
+        appType: octez-node
         node_class: as
     spec:
       containers:        
         - name: octez-node
-          image: "tezos/tezos:v14-release"
+          image: "tezos/tezos:v15-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -600,15 +312,15 @@ spec:
               
               set
               
-              # ensure we can run tezos-client commands without specifying client dir
+              # ensure we can run octez-client commands without specifying client dir
               ln -s /var/tezos/client /home/tezos/.tezos-client
               #
               # Not every error is fatal on start.  In particular, with zerotier,
-              # the listen-addr may not yet be bound causing tezos-node to fail.
+              # the listen-addr may not yet be bound causing octez-node to fail.
               # So, we try a few times with increasing delays:
               
               for d in 1 1 5 10 20 60 120; do
-              	/usr/local/bin/tezos-node run				\
+              	/usr/local/bin/octez-node run				\
               			--bootstrap-threshold 0			\
               			--config-file /etc/tezos/config.json
               	sleep $d
@@ -638,7 +350,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /is_synced
-              port: 31732                                                
+              port: 31732                                        
         - name: sidecar
           image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
@@ -666,7 +378,12 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume
+          resources:
+            limits:
+              memory: 100Mi
+            requests:
+              memory: 80Mi        
       initContainers:                        
         - name: config-generator
           image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
@@ -715,7 +432,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume        
         - name: upgrade-storage
-          image: "tezos/tezos:v14-release"
+          image: "tezos/tezos:v15-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -729,7 +446,7 @@ spec:
                 printf "No context in data dir found, probably initial start, doing nothing."
                 exit 0
               fi
-              tezos-node upgrade storage --data-dir /var/tezos/node/data
+              octez-node upgrade storage --data-dir /var/tezos/node/data
               
           envFrom:
           env:
@@ -781,14 +498,14 @@ spec:
   template:
     metadata:
       labels:
-        appType: tezos-node
+        appType: octez-node
         node_class: eu
         baking_node: "true"
         rpc_node: "true"
     spec:
       containers:        
         - name: octez-node
-          image: "tezos/tezos:v14-release"
+          image: "tezos/tezos:v15-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -799,15 +516,15 @@ spec:
               
               set
               
-              # ensure we can run tezos-client commands without specifying client dir
+              # ensure we can run octez-client commands without specifying client dir
               ln -s /var/tezos/client /home/tezos/.tezos-client
               #
               # Not every error is fatal on start.  In particular, with zerotier,
-              # the listen-addr may not yet be bound causing tezos-node to fail.
+              # the listen-addr may not yet be bound causing octez-node to fail.
               # So, we try a few times with increasing delays:
               
               for d in 1 1 5 10 20 60 120; do
-              	/usr/local/bin/tezos-node run				\
+              	/usr/local/bin/octez-node run				\
               			--bootstrap-threshold 0			\
               			--config-file /etc/tezos/config.json
               	sleep $d
@@ -837,9 +554,10 @@ spec:
           readinessProbe:
             httpGet:
               path: /is_synced
-              port: 31732                        
-        - name: baker-013-ptjakart
-          image: "tezos/tezos:v14-release"
+              port: 31732                
+            
+        - name: baker-0-013-ptjakart
+          image: "tezos/tezos:v15-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -870,18 +588,20 @@ spec:
               fi
               extra_args="--votefile ${per_block_vote_file}"
               
-              tezos_version=$(tezos-client --version | sed -e 's/ //g')
-              if [[ "$tezos_version" == *"13.0"* ]]; then
-                # version 13 of octez mandates CLI flag as well as vote file
-                extra_args="$extra_args --liquidity-baking-toggle-vote on"
+              my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
+              
+              if [ "${my_baker_account}" == "" ]; then
+                while true; do
+                  printf "This container is not baking, but exists "
+                  printf "due to uneven numer of bakers within the statefulset\n"
+                  sleep 300
+                done
               fi
               
-              my_baker_account="$(cat /etc/tezos/baker-account )"
-              
-              CLIENT="$TEZ_BIN/tezos-client -d $CLIENT_DIR"
+              CLIENT="$TEZ_BIN/octez-client -d $CLIENT_DIR"
               CMD="$TEZ_BIN/tezos-baker-$proto_command -d $CLIENT_DIR"
               
-              # ensure we can run tezos-client commands without specifying client dir
+              # ensure we can run octez-client commands without specifying client dir
               ln -s /var/tezos/client /home/tezos/.tezos-client
               
               while ! $CLIENT rpc get chains/main/blocks/head; do
@@ -894,6 +614,276 @@ spec:
           env:
             - name: DAEMON
               value: baker
+            - name: BAKER_INDEX
+              value: "0"
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+            - mountPath: /etc/tezos/per-block-votes
+              name: per-block-votes
+        - name: baker-1-013-ptjakart
+          image: "tezos/tezos:v15-release"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              set -ex
+              
+              TEZ_VAR=/var/tezos
+              TEZ_BIN=/usr/local/bin
+              CLIENT_DIR="$TEZ_VAR/client"
+              NODE_DIR="$TEZ_VAR/node"
+              NODE_DATA_DIR="$TEZ_VAR/node/data"
+              BAKER_EXTRA_ARGS_FROM_ENV=${BAKER_EXTRA_ARGS}
+              
+              proto_command="013-PtJakart"
+              
+              per_block_vote_file=/etc/tezos/per-block-votes/${proto_command}-per-block-votes.json
+              if [ $(cat $per_block_vote_file) == "null" ]; then
+                cat << EOF
+              You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
+              protocols:
+              - command: ${proto_command}
+                vote:
+                  liquidity_baking_toggle_vote: "on"
+              EOF
+                exit 1
+              fi
+              extra_args="--votefile ${per_block_vote_file}"
+              
+              my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
+              
+              if [ "${my_baker_account}" == "" ]; then
+                while true; do
+                  printf "This container is not baking, but exists "
+                  printf "due to uneven numer of bakers within the statefulset\n"
+                  sleep 300
+                done
+              fi
+              
+              CLIENT="$TEZ_BIN/octez-client -d $CLIENT_DIR"
+              CMD="$TEZ_BIN/tezos-baker-$proto_command -d $CLIENT_DIR"
+              
+              # ensure we can run octez-client commands without specifying client dir
+              ln -s /var/tezos/client /home/tezos/.tezos-client
+              
+              while ! $CLIENT rpc get chains/main/blocks/head; do
+                  sleep 5
+              done
+              
+              exec $CMD run with local node $NODE_DATA_DIR ${extra_args} ${BAKER_EXTRA_ARGS_FROM_ENV} ${my_baker_account}
+              
+          envFrom:
+          env:
+            - name: DAEMON
+              value: baker
+            - name: BAKER_INDEX
+              value: "1"
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+            - mountPath: /etc/tezos/per-block-votes
+              name: per-block-votes
+        - name: baker-2-013-ptjakart
+          image: "tezos/tezos:v15-release"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              set -ex
+              
+              TEZ_VAR=/var/tezos
+              TEZ_BIN=/usr/local/bin
+              CLIENT_DIR="$TEZ_VAR/client"
+              NODE_DIR="$TEZ_VAR/node"
+              NODE_DATA_DIR="$TEZ_VAR/node/data"
+              BAKER_EXTRA_ARGS_FROM_ENV=${BAKER_EXTRA_ARGS}
+              
+              proto_command="013-PtJakart"
+              
+              per_block_vote_file=/etc/tezos/per-block-votes/${proto_command}-per-block-votes.json
+              if [ $(cat $per_block_vote_file) == "null" ]; then
+                cat << EOF
+              You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
+              protocols:
+              - command: ${proto_command}
+                vote:
+                  liquidity_baking_toggle_vote: "on"
+              EOF
+                exit 1
+              fi
+              extra_args="--votefile ${per_block_vote_file}"
+              
+              my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
+              
+              if [ "${my_baker_account}" == "" ]; then
+                while true; do
+                  printf "This container is not baking, but exists "
+                  printf "due to uneven numer of bakers within the statefulset\n"
+                  sleep 300
+                done
+              fi
+              
+              CLIENT="$TEZ_BIN/octez-client -d $CLIENT_DIR"
+              CMD="$TEZ_BIN/tezos-baker-$proto_command -d $CLIENT_DIR"
+              
+              # ensure we can run octez-client commands without specifying client dir
+              ln -s /var/tezos/client /home/tezos/.tezos-client
+              
+              while ! $CLIENT rpc get chains/main/blocks/head; do
+                  sleep 5
+              done
+              
+              exec $CMD run with local node $NODE_DATA_DIR ${extra_args} ${BAKER_EXTRA_ARGS_FROM_ENV} ${my_baker_account}
+              
+          envFrom:
+          env:
+            - name: DAEMON
+              value: baker
+            - name: BAKER_INDEX
+              value: "2"
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+            - mountPath: /etc/tezos/per-block-votes
+              name: per-block-votes
+        - name: baker-3-013-ptjakart
+          image: "tezos/tezos:v15-release"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              set -ex
+              
+              TEZ_VAR=/var/tezos
+              TEZ_BIN=/usr/local/bin
+              CLIENT_DIR="$TEZ_VAR/client"
+              NODE_DIR="$TEZ_VAR/node"
+              NODE_DATA_DIR="$TEZ_VAR/node/data"
+              BAKER_EXTRA_ARGS_FROM_ENV=${BAKER_EXTRA_ARGS}
+              
+              proto_command="013-PtJakart"
+              
+              per_block_vote_file=/etc/tezos/per-block-votes/${proto_command}-per-block-votes.json
+              if [ $(cat $per_block_vote_file) == "null" ]; then
+                cat << EOF
+              You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
+              protocols:
+              - command: ${proto_command}
+                vote:
+                  liquidity_baking_toggle_vote: "on"
+              EOF
+                exit 1
+              fi
+              extra_args="--votefile ${per_block_vote_file}"
+              
+              my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
+              
+              if [ "${my_baker_account}" == "" ]; then
+                while true; do
+                  printf "This container is not baking, but exists "
+                  printf "due to uneven numer of bakers within the statefulset\n"
+                  sleep 300
+                done
+              fi
+              
+              CLIENT="$TEZ_BIN/octez-client -d $CLIENT_DIR"
+              CMD="$TEZ_BIN/tezos-baker-$proto_command -d $CLIENT_DIR"
+              
+              # ensure we can run octez-client commands without specifying client dir
+              ln -s /var/tezos/client /home/tezos/.tezos-client
+              
+              while ! $CLIENT rpc get chains/main/blocks/head; do
+                  sleep 5
+              done
+              
+              exec $CMD run with local node $NODE_DATA_DIR ${extra_args} ${BAKER_EXTRA_ARGS_FROM_ENV} ${my_baker_account}
+              
+          envFrom:
+          env:
+            - name: DAEMON
+              value: baker
+            - name: BAKER_INDEX
+              value: "3"
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+            - mountPath: /etc/tezos/per-block-votes
+              name: per-block-votes
+        - name: baker-4-013-ptjakart
+          image: "tezos/tezos:v15-release"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              set -ex
+              
+              TEZ_VAR=/var/tezos
+              TEZ_BIN=/usr/local/bin
+              CLIENT_DIR="$TEZ_VAR/client"
+              NODE_DIR="$TEZ_VAR/node"
+              NODE_DATA_DIR="$TEZ_VAR/node/data"
+              BAKER_EXTRA_ARGS_FROM_ENV=${BAKER_EXTRA_ARGS}
+              
+              proto_command="013-PtJakart"
+              
+              per_block_vote_file=/etc/tezos/per-block-votes/${proto_command}-per-block-votes.json
+              if [ $(cat $per_block_vote_file) == "null" ]; then
+                cat << EOF
+              You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
+              protocols:
+              - command: ${proto_command}
+                vote:
+                  liquidity_baking_toggle_vote: "on"
+              EOF
+                exit 1
+              fi
+              extra_args="--votefile ${per_block_vote_file}"
+              
+              my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
+              
+              if [ "${my_baker_account}" == "" ]; then
+                while true; do
+                  printf "This container is not baking, but exists "
+                  printf "due to uneven numer of bakers within the statefulset\n"
+                  sleep 300
+                done
+              fi
+              
+              CLIENT="$TEZ_BIN/octez-client -d $CLIENT_DIR"
+              CMD="$TEZ_BIN/tezos-baker-$proto_command -d $CLIENT_DIR"
+              
+              # ensure we can run octez-client commands without specifying client dir
+              ln -s /var/tezos/client /home/tezos/.tezos-client
+              
+              while ! $CLIENT rpc get chains/main/blocks/head; do
+                  sleep 5
+              done
+              
+              exec $CMD run with local node $NODE_DATA_DIR ${extra_args} ${BAKER_EXTRA_ARGS_FROM_ENV} ${my_baker_account}
+              
+          envFrom:
+          env:
+            - name: DAEMON
+              value: baker
+            - name: BAKER_INDEX
+              value: "4"
           volumeMounts:
             - mountPath: /etc/tezos
               name: config-volume
@@ -956,7 +946,12 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume
+          resources:
+            limits:
+              memory: 100Mi
+            requests:
+              memory: 80Mi        
       initContainers:                        
         - name: config-generator
           image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
@@ -1005,7 +1000,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume        
         - name: upgrade-storage
-          image: "tezos/tezos:v14-release"
+          image: "tezos/tezos:v15-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -1019,7 +1014,7 @@ spec:
                 printf "No context in data dir found, probably initial start, doing nothing."
                 exit 0
               fi
-              tezos-node upgrade storage --data-dir /var/tezos/node/data
+              octez-node upgrade storage --data-dir /var/tezos/node/data
               
           envFrom:
           env:
@@ -1071,13 +1066,13 @@ spec:
   template:
     metadata:
       labels:
-        appType: tezos-node
+        appType: octez-node
         node_class: us
         baking_node: "true"
     spec:
       containers:        
         - name: octez-node
-          image: "tezos/tezos:v14-release"
+          image: "tezos/tezos:v15-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -1088,15 +1083,15 @@ spec:
               
               set
               
-              # ensure we can run tezos-client commands without specifying client dir
+              # ensure we can run octez-client commands without specifying client dir
               ln -s /var/tezos/client /home/tezos/.tezos-client
               #
               # Not every error is fatal on start.  In particular, with zerotier,
-              # the listen-addr may not yet be bound causing tezos-node to fail.
+              # the listen-addr may not yet be bound causing octez-node to fail.
               # So, we try a few times with increasing delays:
               
               for d in 1 1 5 10 20 60 120; do
-              	/usr/local/bin/tezos-node run				\
+              	/usr/local/bin/octez-node run				\
               			--bootstrap-threshold 0			\
               			--config-file /etc/tezos/config.json
               	sleep $d
@@ -1126,70 +1121,8 @@ spec:
           readinessProbe:
             httpGet:
               path: /is_synced
-              port: 31732                        
-        - name: baker-013-ptjakart
-          image: "tezos/tezos:v14-release"
-          imagePullPolicy: IfNotPresent
-          command:
-            - /bin/sh
-          args:
-            - "-c"
-            - |
-              set -ex
-              
-              TEZ_VAR=/var/tezos
-              TEZ_BIN=/usr/local/bin
-              CLIENT_DIR="$TEZ_VAR/client"
-              NODE_DIR="$TEZ_VAR/node"
-              NODE_DATA_DIR="$TEZ_VAR/node/data"
-              BAKER_EXTRA_ARGS_FROM_ENV=${BAKER_EXTRA_ARGS}
-              
-              proto_command="013-PtJakart"
-              
-              per_block_vote_file=/etc/tezos/per-block-votes/${proto_command}-per-block-votes.json
-              if [ $(cat $per_block_vote_file) == "null" ]; then
-                cat << EOF
-              You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
-              protocols:
-              - command: ${proto_command}
-                vote:
-                  liquidity_baking_toggle_vote: "on"
-              EOF
-                exit 1
-              fi
-              extra_args="--votefile ${per_block_vote_file}"
-              
-              tezos_version=$(tezos-client --version | sed -e 's/ //g')
-              if [[ "$tezos_version" == *"13.0"* ]]; then
-                # version 13 of octez mandates CLI flag as well as vote file
-                extra_args="$extra_args --liquidity-baking-toggle-vote on"
-              fi
-              
-              my_baker_account="$(cat /etc/tezos/baker-account )"
-              
-              CLIENT="$TEZ_BIN/tezos-client -d $CLIENT_DIR"
-              CMD="$TEZ_BIN/tezos-baker-$proto_command -d $CLIENT_DIR"
-              
-              # ensure we can run tezos-client commands without specifying client dir
-              ln -s /var/tezos/client /home/tezos/.tezos-client
-              
-              while ! $CLIENT rpc get chains/main/blocks/head; do
-                  sleep 5
-              done
-              
-              exec $CMD run with local node $NODE_DATA_DIR ${extra_args} ${BAKER_EXTRA_ARGS_FROM_ENV} ${my_baker_account}
-              
-          envFrom:
-          env:
-            - name: DAEMON
-              value: baker
-          volumeMounts:
-            - mountPath: /etc/tezos
-              name: config-volume
-            - mountPath: /var/tezos
-              name: var-volume
-            - mountPath: /etc/tezos/per-block-votes
-              name: per-block-votes                        
+              port: 31732                
+                                    
         - name: sidecar
           image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
@@ -1217,7 +1150,12 @@ spec:
             - mountPath: /etc/tezos
               name: config-volume
             - mountPath: /var/tezos
-              name: var-volume        
+              name: var-volume
+          resources:
+            limits:
+              memory: 100Mi
+            requests:
+              memory: 80Mi        
       initContainers:                        
         - name: config-generator
           image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
@@ -1266,7 +1204,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume        
         - name: upgrade-storage
-          image: "tezos/tezos:v14-release"
+          image: "tezos/tezos:v15-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -1280,7 +1218,7 @@ spec:
                 printf "No context in data dir found, probably initial start, doing nothing."
                 exit 0
               fi
-              tezos-node upgrade storage --data-dir /var/tezos/node/data
+              octez-node upgrade storage --data-dir /var/tezos/node/data
               
           envFrom:
           env:
@@ -1336,7 +1274,7 @@ spec:
     spec:
       containers:
       - name: tezos-signer
-        image: "tezos/tezos:v14-release"
+        image: "tezos/tezos:v15-release"
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 6732
@@ -1407,14 +1345,14 @@ spec:
     spec:
       containers:        
         - name: chain-initiator
-          image: "tezos/tezos:v14-release"
+          image: "tezos/tezos:v15-release"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
           args:
             - "-c"
             - |
-              CLIENT="/usr/local/bin/tezos-client --endpoint http://tezos-node-rpc:8732"
+              CLIENT="/usr/local/bin/octez-client --endpoint http://tezos-node-rpc:8732"
               
               until $CLIENT rpc get /chains/main/blocks/head/header | grep '"level":'; do
                   sleep 2
@@ -1431,7 +1369,7 @@ spec:
               $CLIENT -d /var/tezos/client --block					\
               	genesis activate protocol					\
               	PtJakart2xVj7pYXJBXrqHgd82rdkLey5ZeeGwDgPp9rhQUbSqY				\
-              	with fitness -1 and key						\
+              	with fitness 1 and key						\
               	$( cat /etc/tezos/activation_account_name )			\
               	and parameters /etc/tezos/parameters.json 2>&1 | head -200
               

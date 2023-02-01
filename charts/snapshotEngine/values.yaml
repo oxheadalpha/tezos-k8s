@@ -1,9 +1,9 @@
 tezos_k8s_images:
   snapshotEngine: ghcr.io/oxheadalpha/tezos-k8s-snapshotengine:master
 
-# the tezos version used to run `tezos-node snapshot import/export`
+# the tezos version used to run `octez-node snapshot import/export`
 images:
-  octez: tezos/tezos:v14-release
+  octez: tezos/tezos:v15-release
 
 # snapshotEngine containers interact with the kubernetes control
 # plane to create volume snapshots. This requires a special IAM role
@@ -88,3 +88,11 @@ networkOverride: ""
 # List of all xtz-shots subdomains
 allSubdomains: ""
 
+# If you find aftifacts are being created too frequently whether it be compute/storage cost reduction, or difficulty in managing
+# the quantity of files generated, a sleep value can be updated here to delay the creation of artifacts. This can be expecially 
+# useful with small/test networks that are small in size and create every 20 minutes or so.
+# Valid values include an integer followed by a single-character time unit denoting days, minutes hours seconds- d, h, m, s
+# Ex: 1d, 2h, 25m, 59s, etc.
+artifactDelay:
+  rolling: 0m
+  archive: 0m
