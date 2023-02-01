@@ -187,7 +187,7 @@ def main():
         },
         "protocols": [
             {
-                "command": "PtLimaPt",
+                "command": "PtMumbai",
                 "vote": {"liquidity_baking_toggle_vote": "pass"},
             }
         ],
@@ -293,7 +293,7 @@ def main():
         parametersYaml = yaml.safe_load(yaml_file)
         activation = {
             "activation": {
-                "protocol_hash": "PtLimaPtLMwfNinJi9rCfDPWea8dFgTZ1MeJ9f1m2SRic6ayiwW",
+                "protocol_hash": "PtMumbaiiFFEGbew1rRjzSPyzRbA51Tm3RVZL5suHPxSZYDhCEc",
                 "protocol_parameters": parametersYaml,
             },
         }
