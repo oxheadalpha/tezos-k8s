@@ -43,7 +43,7 @@ RUN apk --no-cache add \
     && apk --no-cache del \
         binutils \
     && rm -rf /var/cache/apk/* \
-    && apk add --update --no-cache python3 && ln -sf python3 /usr/bin/python \
+    && apk add --update --no-cache python3-dev && ln -sf python3 /usr/bin/python \
     && python3 -m ensurepip \
     && pip3 install --no-cache-dir --upgrade pip && \
        pip3 install --no-cache-dir setuptools boto3 datefinder datetime pytz check-jsonschema
