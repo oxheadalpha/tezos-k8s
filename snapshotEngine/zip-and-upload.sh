@@ -8,21 +8,42 @@ SNAPSHOT_HEADER=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/SNAPSHOT_)
 NETWORK="${NAMESPACE%%-*}"
 export S3_BUCKET="${NAMESPACE%-*}.${SNAPSHOT_WEBSITE_DOMAIN_NAME}"
 TEZOS_RPC_VERSION_INFO="$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_RPC_VERSION_INFO)"
-SCHEMA_FILE=""
+
 cd /
 
+# Validate generated metadata $1 against $SCHEMA_URL if its set.
+# $1 must be a local JSON file.
 validate_metadata () {
-    check-jsonschema --schemafile "${SCHEMA_FILE}" "${1}"
-    if [[ $? > 1 ]]; then
-        printf "%s ************************\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-        printf "%s Metadata sucessfully validated against schema." "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-        printf "%s ************************\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    if [[ -f $1 ]]; then
+        if [[ -n $1 ]]; then
+            # $SCHEMA_URL comes from the snapshotEngine configmap mounted to this job container.
+            if [[ -n ${SCHEMA_URL} ]]; then 
+                check-jsonschema --schemafile "${SCHEMA_URL}" "${1}"
+                if [[ $? -lt 1 ]]; then
+                    printf "%s ************************\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+                    printf "%s SUCCESS Metadata sucessfully validated against schema.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+                    printf "%s ************************\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+                else
+                    printf "%s !!!!!!!!!!!!!!!!!!!!!!!! \n" "$(date "+%Y-%m-%d %H:%M:%S")"
+                    printf "%s FAILED Metadata failed to validate against schema!  \n" "$(date "+%Y-%m-%d %H:%M:%S")"
+                    printf "%s !!!!!!!!!!!!!!!!!!!!!!!! \n" "$(date "+%Y-%m-%d %H:%M:%S")"
+                fi
+            else
+                printf "%s !!!!!!!!!!!!!!!!!!!!!!!! \n" "$(date "+%Y-%m-%d %H:%M:%S")"
+                printf "%s No schema URL to validate against. Skipping validation.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+                printf "%s !!!!!!!!!!!!!!!!!!!!!!!! \n" "$(date "+%Y-%m-%d %H:%M:%S")"
+            fi
+        else
+            printf "%s !!!!!!!!!!!!!!!!!!!!!!!! \n" "$(date "+%Y-%m-%d %H:%M:%S")"
+            printf "%s Missing input metadata file. A JSON file was not fed in. \$1 was unset or blank! Skipping validation.  \n" "$(date "+%Y-%m-%d %H:%M:%S")"
+            printf "%s !!!!!!!!!!!!!!!!!!!!!!!! \n" "$(date "+%Y-%m-%d %H:%M:%S")"
+        fi
     else
-        printf "%s !!!!!!!!!!!!!!!!!!!!!!!!!\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-        printf "%s Metadata NOT valid against schema.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-        printf "%s !!!!!!!!!!!!!!!!!!!!!!!!!\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+        printf "%s !!!!!!!!!!!!!!!!!!!!!!!! \n" "$(date "+%Y-%m-%d %H:%M:%S")"
+        printf "%s Input metadata file does not exist. Skipping validation.  \n" "$(date "+%Y-%m-%d %H:%M:%S")"
+        printf "%s !!!!!!!!!!!!!!!!!!!!!!!! \n" "$(date "+%Y-%m-%d %H:%M:%S")"
     fi
-
+}   
 
 # If block_height is not set than init container failed, exit this container
 [ -z "${BLOCK_HEIGHT}" ] && exit 1
@@ -131,11 +152,8 @@ if [ "${HISTORY_MODE}" = archive ]; then
         > "${ARCHIVE_TARBALL_FILENAME}".json
 
         # Optional schema validation
-        if [ ${SCHEMA_FILE+x} ]; then 
-            validate_metadata "${ARCHIVE_TARBALL_FILENAME}".json
-        fi
-
         validate_metadata "${ARCHIVE_TARBALL_FILENAME}".json
+
         # Check metadata json exists
         if [ -f "${ARCHIVE_TARBALL_FILENAME}".json ]; then
             printf "%s Archive Tarball : ${ARCHIVE_TARBALL_FILENAME}.json created.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -324,9 +342,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
         > "${ROLLING_TARBALL_FILENAME}".json
 
         # Optional schema validation
-        if [ ${SCHEMA_FILE+x} ]; then 
-            validate_metadata "${ROLLING_TARBALL_FILENAME}".json
-        fi
+        validate_metadata "${ROLLING_TARBALL_FILENAME}".json
         
         if [ -f "${ROLLING_TARBALL_FILENAME}".json ]; then
             printf "%s Rolling Tarball : ${ROLLING_TARBALL_FILENAME}.json created.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -450,9 +466,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             > "${ROLLING_SNAPSHOT_FILENAME}".json
 
             # Optional schema validation
-            if [ ${SCHEMA_FILE+x} ]; then 
-                validate_metadata "${ROLLING_SNAPSHOT_FILENAME}".json
-            fi
+            validate_metadata "${ROLLING_SNAPSHOT_FILENAME}".json
             
             printf "%s Rolling Tezos : Metadata JSON created.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
