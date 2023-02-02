@@ -12,8 +12,17 @@ SCHEMA_FILE=""
 cd /
 
 validate_metadata () {
-    check-jsonschema --schemafile "${SCHEMA_FILE}" "${1}" 
-}
+    check-jsonschema --schemafile "${SCHEMA_FILE}" "${1}"
+    if [[ $? > 1 ]]; then
+        printf "%s ************************\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+        printf "%s Metadata sucessfully validated against schema." "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+        printf "%s ************************\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    else
+        printf "%s !!!!!!!!!!!!!!!!!!!!!!!!!\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+        printf "%s Metadata NOT valid against schema.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+        printf "%s !!!!!!!!!!!!!!!!!!!!!!!!!\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    fi
+
 
 # If block_height is not set than init container failed, exit this container
 [ -z "${BLOCK_HEIGHT}" ] && exit 1
