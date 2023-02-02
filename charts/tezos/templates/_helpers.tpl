@@ -113,10 +113,20 @@ metadata:
 {{- end }}
 
 {{/*
+  Has per-block votes defined?
+*/}}
+{{- define "tezos.hasPerBlockVotes" }}
+  {{- range .Values.protocols }}
+    {{- if .vote }}
+      {{- "true" }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+
+{{/*
   Should deploy TZKT indexer?
 */}}
 {{- define "tezos.shouldDeployTzktIndexer" -}}
-
   {{- $indexers := .Values.indexers | default dict }}
   {{- if $indexers.tzkt }}
     {{- $tzkt_config := $indexers.tzkt.config | default dict }}
@@ -126,16 +136,17 @@ metadata:
       {{- "" }}
     {{- end }}
   {{- end }}
-
 {{- end }}
 
 {{/*
-  Has per-block votes defined?
+  Checks if `bcdIndexer` has `rpcUrl` and `dbPassword` set.
+  Returns the true type or empty string which is falsey.
 */}}
-{{- define "tezos.hasPerBlockVotes" }}
-  {{- range .Values.protocols }}
-    {{- if .vote }}
-      {{- "true" }}
-    {{- end }}
+{{- define "tezos.shouldDeployBcdIndexer" -}}
+  {{- $indexConfig := .Values.bcdIndexer | default dict }}
+  {{- if and $indexConfig.indexerRpcUrl $indexConfig.dbPassword }}
+    {{- "true" }}
+  {{- else }}
+    {{- "" }}
   {{- end }}
 {{- end }}
