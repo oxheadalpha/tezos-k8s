@@ -274,8 +274,6 @@ if [ "${HISTORY_MODE}" = rolling ]; then
     --output text)
     FILESIZE=$(echo "${FILESIZE_BYTES}" | awk '{ suffix="KMGT"; for(i=0; $1>1024 && i < length(suffix); i++) $1/=1024; print int($1) substr(suffix, i, 1), $3; }' | xargs)
 
-    SNAPSHOT_HEADER=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/SNAPSHOT_HEADER)
-
     # Check if rolling-tarball exists and process redirect
     if ! aws s3api head-object --bucket "${S3_BUCKET}" --key "${ROLLING_TARBALL_FILENAME}" > /dev/null; then
         printf "%s Rolling Tarball : Error uploading ${ROLLING_TARBALL_FILENAME} to S3 Bucket ${S3_BUCKET}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -391,6 +389,17 @@ if [ "${HISTORY_MODE}" = rolling ]; then
 
             FILESIZE=$(echo "${FILESIZE_BYTES}" | awk '{ suffix="KMGT"; for(i=0; $1>1024 && i < length(suffix); i++) $1/=1024; print int($1) substr(suffix, i, 1), $3; }' | xargs )
             SHA256=$(sha256sum "${ROLLING_SNAPSHOT}" | awk '{print $1}')
+            
+            TEZOS_VERSION_MAJOR "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.major)"
+
+            if [[ $TEZOS_VERSION_MAJOR -lt 16 ]]; then
+                SNAPSHOT_VERSION=2
+                CONTEXT_ELEMENTS=""
+            else
+                SNAPSHOT_HEADER=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/SNAPSHOT_HEADER)
+                SNAPSHOT_VERSION "$(echo "${SNAPSHOT_HEADER}" | jq .snapshot_header.version)"
+                CONTEXT_ELEMENTS "$(echo "${SNAPSHOT_HEADER}" | jq .snapshot_header.context_elements)"
+            fi
 
             jq -n \
             --arg BLOCK_HASH "$BLOCK_HASH" \
@@ -411,8 +420,8 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             --arg TEZOS_VERSION_COMMIT_DATE "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_date)" \
             --arg CONTEXT_ELEMENTS "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_hash)" \
             --arg TEZOS_SNAPSHOT_VESION "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_hash)" \
-            --arg SNAPSHOT_VERSION "$(echo "${SNAPSHOT_HEADER}" | jq .snapshot_header.version)" \
-            --arg CONTEXT_ELEMENTS "$(echo "${SNAPSHOT_HEADER}" | jq .snapshot_header.context_elements)" \
+            --arg SNAPSHOT_VERSION "$SNAPSHOT_VERSION" \
+            --arg CONTEXT_ELEMENTS "$CONTEXT_ELEMENTS" \
             '{
                 "block_hash": $BLOCK_HASH,
                 "block_height": ($BLOCK_HEIGHT|fromjson),
