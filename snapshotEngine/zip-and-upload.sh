@@ -121,23 +121,23 @@ if [ "${HISTORY_MODE}" = archive ]; then
             "block_height": ($BLOCK_HEIGHT|fromjson),
             "block_timestamp": $BLOCK_TIMESTAMP,
             "filename": $ARCHIVE_TARBALL_FILENAME,
-            "sha256": $SHA256,
             "url": $URL,
+            "sha256": $SHA256,
             "filesize_bytes": ($FILESIZE_BYTES|fromjson),
             "filesize": $FILESIZE,
             "chain_name": $NETWORK,
             "history_mode": $HISTORY_MODE,
             "artifact_type": $ARTIFACT_TYPE,
-            "tezos_version": {
+            "tezos_version":{
                 "implementation": "octez",
                 "version": {
                     "major": ($TEZOS_VERSION_MAJOR|fromjson),
                     "minor": ($TEZOS_VERSION_MINOR|fromjson),
-                    "additional_info": ($TEZOS_VERSION_ADDITIONAL_INFO|fromjson)
+                    "additional_info": $TEZOS_VERSION_ADDITIONAL_INFO
                 },
                 "commit_info": {
-                    "commit_hash": ($TEZOS_VERSION_COMMIT_HASH|fromjson),
-                    "commit_date": ($TEZOS_VERSION_COMMIT_DATE|fromjson)
+                    "commit_hash": $TEZOS_VERSION_COMMIT_HASH,
+                    "commit_date": $TEZOS_VERSION_COMMIT_DATE
                 }
             }
         }' \
@@ -299,29 +299,29 @@ if [ "${HISTORY_MODE}" = rolling ]; then
         --arg TEZOS_VERSION_COMMIT_HASH "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_hash)" \
         --arg TEZOS_VERSION_COMMIT_DATE "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_date)" \
         '{
-            "block_hash": $BLOCK_HASH, 
-            "block_height": ($BLOCK_HEIGHT|fromjson), 
+            "block_hash": $BLOCK_HASH,
+            "block_height": ($BLOCK_HEIGHT|fromjson),
             "block_timestamp": $BLOCK_TIMESTAMP,
             "filename": $ROLLING_TARBALL_FILENAME,
             "url": $URL,
             "sha256": $SHA256,
             "filesize_bytes": ($FILESIZE_BYTES|fromjson),
-            "filesize": $FILESIZE, 
-            "tezos_version": $TEZOS_VERSION,
+            "filesize": $FILESIZE,
             "chain_name": $NETWORK,
             "history_mode": $HISTORY_MODE,
-            "artifact_type": $ARTIFACT_TYPE
-            "tezos_version":{
+            "artifact_type": $ARTIFACT_TYPE,
+            "tezos_version": {
                 "implementation": "octez",
                 "version": {
                     "major": ($TEZOS_VERSION_MAJOR|fromjson),
                     "minor": ($TEZOS_VERSION_MINOR|fromjson),
-                    "additional_info": ($TEZOS_VERSION_ADDITIONAL_INFO|fromjson)
+                    "additional_info": $TEZOS_VERSION_ADDITIONAL_INFO
                 },
                 "commit_info": {
-                    "commit_hash": ($TEZOS_VERSION_COMMIT_HASH|fromjson),
-                    "commit_date": ($TEZOS_VERSION_COMMIT_DATE|fromjson)
+                    "commit_hash": $TEZOS_VERSION_COMMIT_HASH,
+                    "commit_date": $TEZOS_VERSION_COMMIT_DATE
                 }
+            }
         }' \
         > "${ROLLING_TARBALL_FILENAME}".json
 
@@ -413,28 +413,28 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             --arg SNAPSHOT_VERSION "$(echo "${SNAPSHOT_HEADER}" | jq .snapshot_header.version)" \
             --arg CONTEXT_ELEMENTS "$(echo "${SNAPSHOT_HEADER}" | jq .snapshot_header.context_elements)" \
             '{
-                "block_hash": $BLOCK_HASH, 
-                "block_height": ($BLOCK_HEIGHT|fromjson), 
+                "block_hash": $BLOCK_HASH,
+                "block_height": ($BLOCK_HEIGHT|fromjson),
                 "block_timestamp": $BLOCK_TIMESTAMP,
                 "filename": $ROLLING_SNAPSHOT_FILENAME,
                 "url": $URL,
+                "sha256": $SHA256,
                 "filesize_bytes": ($FILESIZE_BYTES|fromjson),
                 "filesize": $FILESIZE,
-                "sha256": $SHA256,
-                "tezos_version": $TEZOS_VERSION,
                 "chain_name": $NETWORK,
                 "history_mode": $HISTORY_MODE,
-                "artifact_type": $ARTIFACT_TYPE
+                "artifact_type": $ARTIFACT_TYPE,
                 "tezos_version":{
                     "implementation": "octez",
                     "version": {
                         "major": ($TEZOS_VERSION_MAJOR|fromjson),
                         "minor": ($TEZOS_VERSION_MINOR|fromjson),
-                        "additional_info": ($TEZOS_VERSION_ADDITIONAL_INFO|fromjson)
+                        "additional_info": $TEZOS_VERSION_ADDITIONAL_INFO
                     },
-                "commit_info": {
-                    "commit_hash": ($TEZOS_VERSION_COMMIT_HASH|fromjson),
-                    "commit_date": ($TEZOS_VERSION_COMMIT_DATE|fromjson)
+                    "commit_info": {
+                        "commit_hash": $TEZOS_VERSION_COMMIT_HASH,
+                        "commit_date": $TEZOS_VERSION_COMMIT_DATE
+                    }
                 },
                 "snapshot_version": ($SNAPSHOT_VERSION|fromjson),
                 "context_elements": ($CONTEXT_ELEMENTS|fromjson)
