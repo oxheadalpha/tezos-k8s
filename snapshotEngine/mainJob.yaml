@@ -130,7 +130,7 @@ spec:
               printf "%s BLOCK_HEIGHT is...$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HEIGHT)\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
               printf "%s BLOCK_TIMESTAMP is...$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_TIMESTAMP)\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
               printf "%s TEZOS_VERSION is...$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_VERSION)\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-              printf "%s TEZOS_RPC_VESION_INFO is...$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_RPC_VERSION_INFO)\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+              printf "%s TEZOS_RPC_VERSION_INFO is...$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_RPC_VERSION_INFO)\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
               # Blow open permissions for next job to write to volume
               sudo chmod -R 755 /"${HISTORY_MODE}"-snapshot-cache-volume
