@@ -191,7 +191,7 @@ spec:
                 --data-dir /rolling-tarball-restore/var/tezos/node/data
 
                 # Get context elements and octez snapshot version
-                if [[ $TEZOS_VERSION != "63259c5 (2022-12-01 10:20:58 +0000) (15.1)" ]]; then
+                if [[ "$TEZOS_VERSION" != '63259c5 (2022-12-01 10:20:58 +0000) (15.1)' ]]; then
                   /usr/local/bin/octez-node snapshot info /"${HISTORY_MODE}"-snapshot-cache-volume/"${ROLLING_SNAPSHOT_NAME}".rolling --json > /"${HISTORY_MODE}"-snapshot-cache-volume/SNAPSHOT_HEADER
                 fi
 
