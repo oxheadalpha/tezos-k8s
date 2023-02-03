@@ -190,6 +190,9 @@ spec:
                 --config-file /home/tezos/.tezos-node/config.json \
                 --data-dir /rolling-tarball-restore/var/tezos/node/data
 
+                # Version check for v15 vs v16 conditional
+                TEZOS_VERSION=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_VERSION)
+                
                 # Get context elements and octez snapshot version
                 if [[ "$TEZOS_VERSION" != '63259c5 (2022-12-01 10:20:58 +0000) (15.1)' ]]; then
                   /usr/local/bin/octez-node snapshot info /"${HISTORY_MODE}"-snapshot-cache-volume/"${ROLLING_SNAPSHOT_NAME}".rolling --json > /"${HISTORY_MODE}"-snapshot-cache-volume/SNAPSHOT_HEADER
