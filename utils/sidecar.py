@@ -27,7 +27,7 @@ def sync_checker():
         r = requests.get("http://127.0.0.1:8732/chains/main/blocks/head/header")
     except requests.exceptions.RequestException as e:
         err = "Could not connect to node, %s" % repr(e), 500
-        print(err)
+        application.logger.error(err)
         return err
     header = r.json()
     if header["level"] == 0:
@@ -46,7 +46,7 @@ def sync_checker():
             % (age_in_secs, AGE_LIMIT_IN_SECS),
             500,
         )
-        print(err)
+        application.logger.error(err)
         return err
     return "Chain is bootstrapped"
 
