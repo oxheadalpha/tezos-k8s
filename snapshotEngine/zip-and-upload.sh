@@ -393,7 +393,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             TEZOS_VERSION_MAJOR "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.major)"
 
             if [[ $TEZOS_VERSION_MAJOR -lt 16 ]]; then
-                SNAPSHOT_VERSION=2
+                SNAPSHOT_VERSION=4
                 CONTEXT_ELEMENTS=""
             else
                 SNAPSHOT_HEADER=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/SNAPSHOT_HEADER)
