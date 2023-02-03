@@ -114,9 +114,6 @@ if [ "${HISTORY_MODE}" = archive ]; then
         --arg TEZOS_VERSION_MAJOR "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.major)" \
         --arg TEZOS_VERSION_MINOR "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.minor)" \
         --arg TEZOS_VERSION_ADDITIONAL_INFO "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.additional_info)" \
-        --arg TEZOS_NETWORK_VERSION_CHAIN_NAME "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.chain_name)" \
-        --arg TEZOS_NETWORK_VERSION_DISTRIBUTED_DB_VERSION "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.distributed_db_version)" \
-        --arg TEZOS_NETWORK_VERSION_P2P_VERSION "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.p2p_version)" \
         --arg TEZOS_VERSION_COMMIT_HASH "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_hash)" \
         --arg TEZOS_VERSION_COMMIT_DATE "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_date)" \
         '{
@@ -137,11 +134,6 @@ if [ "${HISTORY_MODE}" = archive ]; then
                     "major": $TEZOS_VERSION_MAJOR,
                     "minor": $TEZOS_VERSION_MINOR,
                     "additional_info": $TEZOS_VERSION_ADDITIONAL_INFO
-                },
-                "network_version": {
-                    "chain_name": $TEZOS_NETWORK_VERSION_CHAIN_NAME,
-                    "distributed_db_version": $TEZOS_NETWORK_VERSION_DISTRIBUTED_DB_VERSION,
-                    "p2p_version": $TEZOS_NETWORK_VERSION_P2P_VERSION
                 },
                 "commit_info": {
                     "commit_hash": $TEZOS_VERSION_COMMIT_HASH,
@@ -304,9 +296,6 @@ if [ "${HISTORY_MODE}" = rolling ]; then
         --arg TEZOS_VERSION_MAJOR "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.major)" \
         --arg TEZOS_VERSION_MINOR "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.minor)" \
         --arg TEZOS_VERSION_ADDITIONAL_INFO "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.additional_info)" \
-        --arg TEZOS_NETWORK_VERSION_CHAIN_NAME "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.chain_name)" \
-        --arg TEZOS_NETWORK_VERSION_DISTRIBUTED_DB_VERSION "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.distributed_db_version)" \
-        --arg TEZOS_NETWORK_VERSION_P2P_VERSION "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.p2p_version)" \
         --arg TEZOS_VERSION_COMMIT_HASH "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_hash)" \
         --arg TEZOS_VERSION_COMMIT_DATE "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_date)" \
         '{
@@ -328,11 +317,6 @@ if [ "${HISTORY_MODE}" = rolling ]; then
                     "major": $TEZOS_VERSION_MAJOR,
                     "minor": $TEZOS_VERSION_MINOR,
                     "additional_info": $TEZOS_VERSION_ADDITIONAL_INFO
-                },
-                "network_version": {
-                    "chain_name": $TEZOS_NETWORK_VERSION_CHAIN_NAME,
-                    "distributed_db_version": $TEZOS_NETWORK_VERSION_DISTRIBUTED_DB_VERSION,
-                    "p2p_version": $TEZOS_NETWORK_VERSION_P2P_VERSION
                 },
                 "commit_info": {
                     "commit_hash": $TEZOS_VERSION_COMMIT_HASH,
@@ -422,9 +406,6 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             --arg TEZOS_VERSION_MAJOR "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.major)" \
             --arg TEZOS_VERSION_MINOR "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.minor)" \
             --arg TEZOS_VERSION_ADDITIONAL_INFO "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.additional_info)" \
-            --arg TEZOS_NETWORK_VERSION_CHAIN_NAME "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.chain_name)" \
-            --arg TEZOS_NETWORK_VERSION_DISTRIBUTED_DB_VERSION "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.distributed_db_version)" \
-            --arg TEZOS_NETWORK_VERSION_P2P_VERSION "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.p2p_version)" \
             --arg TEZOS_VERSION_COMMIT_HASH "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_hash)" \
             --arg TEZOS_VERSION_COMMIT_DATE "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_date)" \
             --arg CONTEXT_ELEMENTS "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_hash)" \
@@ -451,11 +432,6 @@ if [ "${HISTORY_MODE}" = rolling ]; then
                         "minor": $TEZOS_VERSION_MINOR,
                         "additional_info": $TEZOS_VERSION_ADDITIONAL_INFO
                     },
-                "network_version": {
-                    "chain_name": $TEZOS_NETWORK_VERSION_CHAIN_NAME,
-                    "distributed_db_version": $TEZOS_NETWORK_VERSION_DISTRIBUTED_DB_VERSION,
-                    "p2p_version": $TEZOS_NETWORK_VERSION_P2P_VERSION
-                },
                 "commit_info": {
                     "commit_hash": $TEZOS_VERSION_COMMIT_HASH,
                     "commit_date": $TEZOS_VERSION_COMMIT_DATE
