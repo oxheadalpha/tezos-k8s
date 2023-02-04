@@ -11,6 +11,7 @@ filename = "tezos-snapshots.json"
 # Write empty top-level array to initialize json
 json_object = []
 
+print("Assembling global metadata file for all subdomains:")
 print(allSubDomains)
 
 # Get each subdomain's base.json and combine all artifacts into 1 metadata file
@@ -30,3 +31,5 @@ for subDomain in allSubDomains:
 with open(filename, "w") as json_file:
     json_string = json.dumps(json_object, indent=4)
     json_file.write(json_string)
+
+print(f"Done assembling global metadata file {filename}")

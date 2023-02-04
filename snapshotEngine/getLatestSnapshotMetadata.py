@@ -41,27 +41,20 @@ for network, snapshots in snapshots_per_network.items():
         typed_snapshots = [s for s in snapshots if s["artifact_type"] == artifact_type and s["history_mode"] == history_mode]
 
         # Lowest version is the top item (int) of a sorted unique list of all the versions for this particular artifact type and history mode
-        try:
-            # New metadata format
-            lowest_octez_version = sorted(list(set([ s['tezos_version']['version']['major'] for s in typed_snapshots ])))[0]
-        except:
-            # old metadata style will not be added to latest snapshots
+        octez_versions = sorted(list(set([ s['tezos_version']['version']['major'] for s in typed_snapshots if 'version' in s['tezos_version'] ])))
+        if octez_versions:
+            lowest_octez_version = octez_versions[0]
+        else:
+            # no metadata yet for this namespace, ignoring
             continue
 
-        try:
-            # Keep list of all snapshots for this particular chain later used to build the all_snapshots lists
-            network_snapshots[path] = typed_snapshots
-        except IndexError:
-            continue
+        network_snapshots[path] = typed_snapshots
 
         # Latest offered should only show oldest supported build so let's filter by the oldest supported version we found above
-        typed_snapshots = [d for d in typed_snapshots if d['tezos_version']['version']['major'] == lowest_octez_version]
+        typed_snapshots = [d for d in typed_snapshots if 'version' in d['tezos_version'] and d['tezos_version']['version']['major'] == lowest_octez_version ]
 
-        try:
             # Latest snapshot of type is the first item in typed_snapshots which we just filtered by the latest supported tezos build
-            network_latest_snapshots[path] = typed_snapshots[0]
-        except IndexError:
-            continue
+        network_latest_snapshots[path] = typed_snapshots[0]
 
     # This becomes the list of snapshots
     latest_snapshots.append(
@@ -70,5 +63,7 @@ for network, snapshots in snapshots_per_network.items():
         { "name": network, "permalink": network+"/list.html", "snapshots": network_snapshots })
 
 Path("_data").mkdir(parents=True, exist_ok=True)
-with open(f"_data/snapshot_jekyll_data.json", 'w') as f:
+filename = "_data/snapshot_jekyll_data.json"
+with open(filename, 'w') as f:
     json.dump({"latest_snapshots": latest_snapshots, "all_snapshots": all_snapshots}, f, indent=2)
+print(f"Done writing structured list of snapshots for Jekyll to render webpage: {filename}")
