@@ -397,8 +397,8 @@ if [ "${HISTORY_MODE}" = rolling ]; then
                 CONTEXT_ELEMENTS=""
             else
                 SNAPSHOT_HEADER=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/SNAPSHOT_HEADER)
-                SNAPSHOT_VERSION "$(echo "${SNAPSHOT_HEADER}" | jq .snapshot_header.version)"
-                CONTEXT_ELEMENTS "$(echo "${SNAPSHOT_HEADER}" | jq .snapshot_header.context_elements)"
+                SNAPSHOT_VERSION="$(echo "${SNAPSHOT_HEADER}" | jq .snapshot_header.version)"
+                CONTEXT_ELEMENTS="$(echo "${SNAPSHOT_HEADER}" | jq .snapshot_header.context_elements)"
             fi
 
             jq -n \
