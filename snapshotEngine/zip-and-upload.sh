@@ -390,7 +390,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             FILESIZE=$(echo "${FILESIZE_BYTES}" | awk '{ suffix="KMGT"; for(i=0; $1>1024 && i < length(suffix); i++) $1/=1024; print int($1) substr(suffix, i, 1), $3; }' | xargs )
             SHA256=$(sha256sum "${ROLLING_SNAPSHOT}" | awk '{print $1}')
             
-            TEZOS_VERSION_MAJOR "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.major)"
+            TEZOS_VERSION_MAJOR="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.major)"
 
             if [[ $TEZOS_VERSION_MAJOR -lt 16 ]]; then
                 SNAPSHOT_VERSION=4
