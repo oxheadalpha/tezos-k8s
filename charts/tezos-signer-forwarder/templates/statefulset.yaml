@@ -1,13 +1,18 @@
-{{- range .Values.endpoints }}
+{{- range .Values.signers }}
+{{- $name := .name }}
+{{- $readiness_probe_path := .readiness_probe_path }}
+{{- $signers := . }}
+{{- range $i := until (len .endpoints) }}
+{{- $endpoint := index $signers.endpoints $i }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: tezos-signer-forwarder-{{ .name}}
+  name: tezos-signer-forwarder-{{ $name}}-{{ $i }}
   annotations:
     "pulumi.com/skipAwait": "true"
 spec:
   replicas: 1
-  serviceName: tezos-remote-signer-{{ .name }}
+  serviceName: tezos-remote-signer-{{ $name }}
   selector:
     matchLabels:
       app.kubernetes.io/name: tezos-signer-forwarder
@@ -19,12 +24,12 @@ spec:
       {{- end }}
       labels:
         app.kubernetes.io/name: tezos-signer-forwarder
-        app.kubernetes.io/baker-name: {{ .name }}
+        app.kubernetes.io/baker-name: {{ $name }}
     spec:
       volumes:
       - name: config-volume
         configMap:
-           name: tezos-signer-forwarder-config-{{ .name }}
+           name: tezos-signer-forwarder-config-{{ $name }}-{{ $i }}
       - name: secret-volume
         secret:
            secretName: tezos-signer-forwarder-secret-{{ $.Values.name }}
@@ -50,7 +55,7 @@ spec:
         - name: TUNNEL_ENDPOINT_PORT
           valueFrom:
             configMapKeyRef:
-              name: tezos-signer-forwarder-config-{{ .name }}
+              name: tezos-signer-forwarder-config-{{ $name }}-{{ $i }}
               key: tunnel_endpoint_port
         ports:
         - name: signer
@@ -58,7 +63,7 @@ spec:
           protocol: TCP
         readinessProbe:
           httpGet:
-            path: {{ .readiness_probe_path }}
+            path: {{ $readiness_probe_path }}
             port: 8443
       - name: prom-exporter
         image: {{ $.Values.tezos_k8s_images.utils }}
@@ -68,7 +73,7 @@ spec:
             protocol: TCP
         env:
         - name: READINESS_PROBE_PATH
-          value: {{ .readiness_probe_path | quote }}
+          value: {{ $readiness_probe_path | quote }}
         command:
           - /usr/local/bin/python
         args:
@@ -78,4 +83,5 @@ spec:
       nodeSelector:
  {{ toYaml $.Values.node_selector | indent 8 }}
 ---
+{{- end }}
 {{- end }}

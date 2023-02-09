@@ -1,10 +1,15 @@
-{{- range .Values.endpoints }}
+{{- range .Values.signers }}
+{{- $name := .name }}
+{{- $signers := . }}
+{{- range $i := until (len .endpoints) }}
+{{- $endpoint := index $signers.endpoints $i }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: tezos-signer-forwarder-config-{{ .name }}
+  name: tezos-signer-forwarder-config-{{ $name }}-{{ $i }}
 data:
-  authorized_keys: "{{ .ssh_pubkey }} signer"
-  tunnel_endpoint_port: "{{ .tunnel_endpoint_port }}"
+  authorized_keys: "{{ $endpoint.ssh_pubkey }} signer"
+  tunnel_endpoint_port: "{{ $endpoint.tunnel_endpoint_port }}"
 ---
+{{- end }}
 {{- end }}

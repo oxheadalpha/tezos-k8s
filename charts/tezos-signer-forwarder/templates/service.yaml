@@ -9,14 +9,19 @@ spec:
   selector:
     app.kubernetes.io/name: tezos-signer-forwarder
   ports:
-{{- range .Values.endpoints }}
-  - port: {{ .tunnel_endpoint_port }}
-    name: tunnel-{{ .name }}
+{{- range .Values.signers }}
+{{- $name := .name }}
+{{- $signers := . }}
+{{- range $i := until (len .endpoints) }}
+{{- $endpoint := index $signers.endpoints $i }}
+  - port: {{ $endpoint.tunnel_endpoint_port }}
+    name: tunnel-{{ $name }}-{{ $i }}
+{{- end }}
 {{- end }}
   # ensures that remote signers can always ssh
   publishNotReadyAddresses: true
 ---
-{{- range .Values.endpoints }}
+{{- range .Values.signers }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -33,5 +38,7 @@ spec:
     name: signer
   - port: 31732
     name: metrics
+  # make sure that the service always targets the same signer, when HA is in use.
+  sessionAffinity: ClientIP
 ---
 {{- end }}

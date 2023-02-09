@@ -12,21 +12,24 @@ tezos_k8s_images:
 # Since this chart instantiates a service of type Loadbalancer,
 # it may be the case that each such service comes with its own
 # auto-assigned IP, increasing costs.
-# Listing several endpoints below will put all
+# Listing several signers below will put all
 # associated pods behind the same LoadBalancer service.
 # Consequenty, the same IP will be re-used between signers.
 # If you prefer to have one IP per signer, instantiate this chart
 # several times.
-endpoints:
-  # the public key that the server is expecting.
-  # The signer should authenticate with the corresponding secret key.
-- ssh_pubkey: "ssh-rsa AAAA...."
-  
-  # ssh tunnel connection establishes to this port
-  tunnel_endpoint_port: 50000
+signers:
+  # signer name - to disambiguate them
+- name: mysigner
 
-  # endpoint name - to disambiguate them
-  name: myendpoint
+  # Signer may have several endpoints: signer replicas signing for the same key.
+  # This is useful for a highly-available setup.
+  endpoints:
+    # the public key that the server is expecting.
+    # The signer should authenticate with the corresponding secret key.
+  - ssh_pubkey: "ssh-rsa AAAA...."
+
+    # ssh tunnel connection establishes to this port
+    tunnel_endpoint_port: 50000
 
   # Set a readiness probe path for your signer.
   # By default, it is the known path implemented by every signer "/authorized_keys"

@@ -1,5 +1,5 @@
 {{- if .Values.alertmanagerConfig.enabled }}
-{{- range .Values.endpoints }}
+{{- range .Values.signers }}
 {{- if .monitoring_email }}
 apiVersion: monitoring.coreos.com/v1alpha1
 kind: AlertmanagerConfig
