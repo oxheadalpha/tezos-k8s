@@ -27,10 +27,10 @@ spec:
           volumes:
             - name: storage
               persistentVolumeClaim:
-                claimName: tezos-reward-distributor-volume
+                claimName: {{ include "tezos-reward-distributor.fullname" . }}-volume
             - name: config-volume
               configMap:
-                 name: tezos-reward-distributor-config
+                name: {{ include "tezos-reward-distributor.fullname" . }}-config
           initContainers:
             # Work around a bug where fsGroup is ignored
             - name: change-ownership-container
