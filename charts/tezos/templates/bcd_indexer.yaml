@@ -10,6 +10,11 @@ spec:
     - port: 14000
       name: bcd
       targetPort: bcd
+  {{- if .Values.bcdIndexer.gui.enabled }}
+    - port: 8080
+      name: gui
+      targetPort: gui
+  {{- end }}
   selector:
     app: {{ .Values.bcd_indexer_statefulset.name }}
   type: NodePort
