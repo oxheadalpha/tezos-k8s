@@ -39,6 +39,48 @@ data:
   PGDATA: {{ b64enc "/var/lib/postgresql/data/pgdata" }}
 
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sandbox-config
+  namespace: {{ .Release.Namespace }}
+data:
+  # https://github.com/baking-bad/bcdhub/commit/fa7e36f6c890d543d72a3d494f7a2509cd41871a
+  sandbox.yml: |
+    rpc:
+      sandboxnet:
+        uri: ${SANDBOX_NODE_URI}
+        timeout: 10
+        requests_per_second: 10
+    storage:
+      pg:
+        host: ${DB_HOSTNAME:-db}
+        port: 5432
+        user: ${POSTGRES_USER}
+        dbname: ${POSTGRES_DB:-bcd}
+        password: ${POSTGRES_PASSWORD}
+        sslmode: disable
+      timeout: 10
+    share_path: /etc/bcd
+    base_url: http://localhost:8000
+    api:
+      project_name: api
+      bind: ":14000"
+      swagger_host: "localhost:8000"
+      cors_enabled: true
+      sentry_enabled: false
+      seed_enabled: true
+      page_size: ${PAGE_SIZE:-10}
+      frontend:
+        ga_enabled: false
+        mempool_enabled: false
+        sandbox_mode: true
+        rpc:
+          sandboxnet: {{ .Values.bcdIndexer.gui.rpcUrl }}
+      networks:
+        - sandboxnet
+
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -55,6 +97,10 @@ spec:
       labels:
         app: {{ .Values.bcd_indexer_statefulset.name }}
     spec:
+      volumes:
+        - name: sandbox-config
+          configMap:
+            name: sandbox-config
       containers:
         - image: {{ .Values.bcdIndexer.images.api }}
           name: api
@@ -66,6 +112,10 @@ spec:
                 name: bcd-env
             - secretRef:
                 name: db-creds
+          volumeMounts:
+            - name: sandbox-config
+              mountPath: /app/api/sandbox.yml
+              subPath: sandbox.yml
         - image: {{ .Values.bcdIndexer.images.indexer }}
           name: indexer
           envFrom:
@@ -73,6 +123,29 @@ spec:
                 name: bcd-env
             - secretRef:
                 name: db-creds
+      {{- if .Values.bcdIndexer.gui.enabled }}
+        - image: {{ .Values.bcdIndexer.images.gui }}
+          name: gui
+          ports:
+            - containerPort: 80
+              name: gui
+          command: ["/bin/sh"]
+          args:
+            - -c
+            - |
+              set -ex
+
+              api_url="{{ .Values.bcdIndexer.gui.apiUrl }}/v1"
+
+              for file in js/*; do
+                echo $file
+                sed -i -E \
+                  "s~http://localhost:14000/v1~$api_url~g; s~process\.env.VUE_APP_API_URI~\"$api_url\"~g" \
+                  "$file"
+              done
+
+              /docker-entrypoint.sh nginx -g "daemon off;"
+      {{- end }}
         - image: postgres:14
           name: db
           imagePullPolicy: IfNotPresent
