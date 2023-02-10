@@ -53,8 +53,8 @@ for network, snapshots in snapshots_per_network.items():
         # Latest offered should only show oldest supported build so let's filter by the oldest supported version we found above
         typed_snapshots = [d for d in typed_snapshots if 'version' in d['tezos_version'] and d['tezos_version']['version']['major'] == lowest_octez_version ]
 
-            # Latest snapshot of type is the first item in typed_snapshots which we just filtered by the latest supported tezos build
-        network_latest_snapshots[path] = typed_snapshots[0]
+            # Latest snapshot of type is the last item in typed_snapshots which we just filtered by the latest supported tezos build
+        network_latest_snapshots[path] = typed_snapshots[-1]
 
     # This becomes the list of snapshots
     latest_snapshots.append(
