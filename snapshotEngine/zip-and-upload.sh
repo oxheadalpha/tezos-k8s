@@ -418,7 +418,6 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             --arg TEZOS_VERSION_ADDITIONAL_INFO "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.additional_info)" \
             --arg TEZOS_VERSION_COMMIT_HASH "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_hash)" \
             --arg TEZOS_VERSION_COMMIT_DATE "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_date)" \
-            --arg CONTEXT_ELEMENTS "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_hash)" \
             --arg TEZOS_SNAPSHOT_VESION "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_hash)" \
             --arg SNAPSHOT_VERSION "$SNAPSHOT_VERSION" \
             --arg CONTEXT_ELEMENTS "$CONTEXT_ELEMENTS" \
