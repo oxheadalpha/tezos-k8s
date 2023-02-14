@@ -8,6 +8,12 @@ NETWORK="${NAMESPACE%%-*}"
 export S3_BUCKET="${NAMESPACE%-*}.${SNAPSHOT_WEBSITE_DOMAIN_NAME}"
 TEZOS_RPC_VERSION_INFO="$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_RPC_VERSION_INFO)"
 
+TEZOS_VERSION_MAJOR="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .version.major)"
+TEZOS_VERSION_MINOR="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .version.minor)"
+TEZOS_VERSION_ADDITIONAL_INFO="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .version.additional_info)"
+TEZOS_VERSION_COMMIT_HASH="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .commit_info.commit_hash)"
+TEZOS_VERSION_COMMIT_DATE="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .commit_info.commit_date)"
+
 cd /
 
 # Validate generated metadata $1 against $SCHEMA_URL if its set.
@@ -110,11 +116,11 @@ if [ "${HISTORY_MODE}" = archive ]; then
         --arg NETWORK "${NETWORK}" \
         --arg HISTORY_MODE "archive" \
         --arg ARTIFACT_TYPE "tarball" \
-        --arg TEZOS_VERSION_MAJOR "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.major)" \
-        --arg TEZOS_VERSION_MINOR "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.minor)" \
-        --arg TEZOS_VERSION_ADDITIONAL_INFO "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.additional_info)" \
-        --arg TEZOS_VERSION_COMMIT_HASH "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_hash)" \
-        --arg TEZOS_VERSION_COMMIT_DATE "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_date)" \
+        --arg TEZOS_VERSION_MAJOR "${TEZOS_VERSION_MAJOR}" \
+        --arg TEZOS_VERSION_MINOR "${TEZOS_VERSION_MINOR}" \
+        --arg TEZOS_VERSION_ADDITIONAL_INFO "${TEZOS_VERSION_ADDITIONAL_INFO}" \
+        --arg TEZOS_VERSION_COMMIT_HASH "${TEZOS_VERSION_COMMIT_HASH}" \
+        --arg TEZOS_VERSION_COMMIT_DATE "${TEZOS_VERSION_COMMIT_DATE}" \
         '{
             "block_hash": $BLOCK_HASH,
             "block_height": ($BLOCK_HEIGHT|fromjson),
@@ -292,11 +298,11 @@ if [ "${HISTORY_MODE}" = rolling ]; then
         --arg NETWORK "$NETWORK" \
         --arg HISTORY_MODE "rolling" \
         --arg ARTIFACT_TYPE "tarball" \
-        --arg TEZOS_VERSION_MAJOR "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.major)" \
-        --arg TEZOS_VERSION_MINOR "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.minor)" \
-        --arg TEZOS_VERSION_ADDITIONAL_INFO "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.additional_info)" \
-        --arg TEZOS_VERSION_COMMIT_HASH "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_hash)" \
-        --arg TEZOS_VERSION_COMMIT_DATE "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_date)" \
+        --arg TEZOS_VERSION_MAJOR "${TEZOS_VERSION_MAJOR}" \
+        --arg TEZOS_VERSION_MINOR "${TEZOS_VERSION_MINOR}" \
+        --arg TEZOS_VERSION_ADDITIONAL_INFO "${TEZOS_VERSION_ADDITIONAL_INFO}" \
+        --arg TEZOS_VERSION_COMMIT_HASH "${TEZOS_VERSION_COMMIT_HASH}" \
+        --arg TEZOS_VERSION_COMMIT_DATE "${TEZOS_VERSION_COMMIT_DATE}" \
         '{
             "block_hash": $BLOCK_HASH,
             "block_height": ($BLOCK_HEIGHT|fromjson),
@@ -413,12 +419,11 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             --arg NETWORK "$NETWORK" \
             --arg HISTORY_MODE "rolling" \
             --arg ARTIFACT_TYPE "tezos-snapshot" \
-            --arg TEZOS_VERSION_MAJOR "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.major)" \
-            --arg TEZOS_VERSION_MINOR "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.minor)" \
-            --arg TEZOS_VERSION_ADDITIONAL_INFO "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.additional_info)" \
-            --arg TEZOS_VERSION_COMMIT_HASH "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_hash)" \
-            --arg TEZOS_VERSION_COMMIT_DATE "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_date)" \
-            --arg TEZOS_SNAPSHOT_VESION "$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .commit_info.commit_hash)" \
+            --arg TEZOS_VERSION_MAJOR "${TEZOS_VERSION_MAJOR}" \
+            --arg TEZOS_VERSION_MINOR "${TEZOS_VERSION_MINOR}" \
+            --arg TEZOS_VERSION_ADDITIONAL_INFO "${TEZOS_VERSION_ADDITIONAL_INFO}" \
+            --arg TEZOS_VERSION_COMMIT_HASH "${TEZOS_VERSION_COMMIT_HASH}" \
+            --arg TEZOS_VERSION_COMMIT_DATE "${TEZOS_VERSION_COMMIT_DATE}" \
             --arg SNAPSHOT_VERSION "$SNAPSHOT_VERSION" \
             --arg CONTEXT_ELEMENTS "$CONTEXT_ELEMENTS" \
             '{
