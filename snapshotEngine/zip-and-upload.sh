@@ -144,21 +144,21 @@ if [ "${HISTORY_MODE}" = archive ]; then
         tmp=$(mktemp)
         jq --arg version "$TEZOS_VERSION" '.tezos_version.version = ($version|fromjson)' "${ARCHIVE_TARBALL_FILENAME}".json > "$tmp" && mv "$tmp" "${ARCHIVE_TARBALL_FILENAME}".json
 
-        # Optional schema validation
-        validate_metadata "${ARCHIVE_TARBALL_FILENAME}".json
-
         # Check metadata json exists
-        if [ -f "${ARCHIVE_TARBALL_FILENAME}".json ]; then
+        if [[ -s "${ARCHIVE_TARBALL_FILENAME}".json ]]; then
             printf "%s Archive Tarball : ${ARCHIVE_TARBALL_FILENAME}.json created.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+
+            # Optional schema validation
+            validate_metadata "${ARCHIVE_TARBALL_FILENAME}".json
+
+            # Upload archive tarball metadata json
+            if ! aws s3 cp "${ARCHIVE_TARBALL_FILENAME}".json s3://"${S3_BUCKET}"/"${ARCHIVE_TARBALL_FILENAME}".json; then
+                printf "%s Archive Tarball : Error uploading ${ARCHIVE_TARBALL_FILENAME}.json to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+            else
+                printf "%s Archive Tarball : Artifact JSON ${ARCHIVE_TARBALL_FILENAME}.json uploaded to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+            fi
         else
             printf "%s Archive Tarball : Error creating ${ARCHIVE_TARBALL_FILENAME}.json.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-        fi
-
-        # Upload archive tarball metadata json
-        if ! aws s3 cp "${ARCHIVE_TARBALL_FILENAME}".json s3://"${S3_BUCKET}"/"${ARCHIVE_TARBALL_FILENAME}".json; then
-            printf "%s Archive Tarball : Error uploading ${ARCHIVE_TARBALL_FILENAME}.json to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-        else
-            printf "%s Archive Tarball : Artifact JSON ${ARCHIVE_TARBALL_FILENAME}.json uploaded to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         fi
 
         # Create archive tarball redirect file
@@ -323,21 +323,22 @@ if [ "${HISTORY_MODE}" = rolling ]; then
         # JQ has trouble inserting a key into a file this is the way we opted to insert it
         tmp=$(mktemp)
         jq --arg version "$TEZOS_VERSION" '.tezos_version.version = ($version|fromjson)' "${ROLLING_TARBALL_FILENAME}".json > "$tmp" && mv "$tmp" "${ROLLING_TARBALL_FILENAME}".json
-
-        # Optional schema validation
-        validate_metadata "${ROLLING_TARBALL_FILENAME}".json
         
-        if [ -f "${ROLLING_TARBALL_FILENAME}".json ]; then
+        # Check metadata exists
+        if [[ -s "${ROLLING_TARBALL_FILENAME}".json ]]; then
             printf "%s Rolling Tarball : ${ROLLING_TARBALL_FILENAME}.json created.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+
+            # Optional schema validation
+            validate_metadata "${ROLLING_TARBALL_FILENAME}".json
+            
+            # upload metadata json
+            if ! aws s3 cp "${ROLLING_TARBALL_FILENAME}".json s3://"${S3_BUCKET}"/"${ROLLING_TARBALL_FILENAME}".json; then
+                printf "%s Rolling Tarball : Error uploading ${ROLLING_TARBALL_FILENAME}.json to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+            else
+                printf "%s Rolling Tarball : Metadata JSON ${ROLLING_TARBALL_FILENAME}.json uploaded to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+            fi
         else
             printf "%s Rolling Tarball : Error creating ${ROLLING_TARBALL_FILENAME}.json locally.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-        fi
-
-        # upload metadata json
-        if ! aws s3 cp "${ROLLING_TARBALL_FILENAME}".json s3://"${S3_BUCKET}"/"${ROLLING_TARBALL_FILENAME}".json; then
-            printf "%s Rolling Tarball : Error uploading ${ROLLING_TARBALL_FILENAME}.json to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-        else
-            printf "%s Rolling Tarball : Metadata JSON ${ROLLING_TARBALL_FILENAME}.json uploaded to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         fi
         
         # Tarball redirect file
@@ -446,15 +447,23 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             # JQ has trouble inserting a key into a file this is the way we opted to insert it
             tmp=$(mktemp)
             jq --arg version "$TEZOS_VERSION" '.tezos_version.version = ($version|fromjson)' "${ROLLING_SNAPSHOT_FILENAME}".json > "$tmp" && mv "$tmp" "${ROLLING_SNAPSHOT_FILENAME}".json
-
-            # Optional schema validation
-            validate_metadata "${ROLLING_SNAPSHOT_FILENAME}".json
             
-            printf "%s Rolling Tezos : Metadata JSON created.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+            # Check metadata json exists
+            if [[ -s "${ROLLING_SNAPSHOT_FILENAME}".json ]]; then
+                printf "%s Rolling Snapshot : ${ROLLING_SNAPSHOT_FILENAME}.json created.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
-            # upload metadata json
-            aws s3 cp "${ROLLING_SNAPSHOT_FILENAME}".json s3://"${S3_BUCKET}"/"${ROLLING_SNAPSHOT_FILENAME}".json
-            printf "%s Rolling Tezos : Metadata JSON ${ROLLING_SNAPSHOT_FILENAME}.json uploaded to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+                # Optional schema validation
+                validate_metadata "${ROLLING_SNAPSHOT_FILENAME}".json
+
+                # Upload Rolling Snapshot metadata json
+                if ! aws s3 cp "${ROLLING_SNAPSHOT_FILENAME}".json s3://"${S3_BUCKET}"/"${ROLLING_SNAPSHOT_FILENAME}".json; then
+                    printf "%s Rolling Snapshot : Error uploading ${ROLLING_SNAPSHOT_FILENAME}.json to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+                else
+                    printf "%s Rolling Snapshot : Artifact JSON ${ROLLING_SNAPSHOT_FILENAME}.json uploaded to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+                fi
+            else
+                printf "%s Rolling Snapshot : Error creating ${ROLLING_SNAPSHOT_FILENAME}.json.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+            fi
 
             # Rolling snapshot redirect object
             touch rolling
