@@ -8,9 +8,7 @@ NETWORK="${NAMESPACE%%-*}"
 export S3_BUCKET="${NAMESPACE%-*}.${SNAPSHOT_WEBSITE_DOMAIN_NAME}"
 TEZOS_RPC_VERSION_INFO="$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_RPC_VERSION_INFO)"
 
-TEZOS_VERSION_MAJOR="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .version.major)"
-TEZOS_VERSION_MINOR="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .version.minor)"
-TEZOS_VERSION_ADDITIONAL_INFO="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .version.additional_info)"
+TEZOS_VERSION="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .version)"
 TEZOS_VERSION_COMMIT_HASH="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .commit_info.commit_hash)"
 TEZOS_VERSION_COMMIT_DATE="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .commit_info.commit_date)"
 
@@ -22,7 +20,7 @@ validate_metadata () {
     if [[ -f $1 ]]; then
         if [[ -n $1 ]]; then
             # $SCHEMA_URL comes from the snapshotEngine configmap mounted to this job container.
-            if [[ -n ${SCHEMA_URL} ]]; then 
+            if [[ -n "${SCHEMA_URL}" ]]; then 
                 check-jsonschema --schemafile "${SCHEMA_URL}" "${1}"
                 if [[ $? -lt 1 ]]; then
                     printf "%s ************************\n" "$(date "+%Y-%m-%d %H:%M:%S")"
@@ -116,9 +114,6 @@ if [ "${HISTORY_MODE}" = archive ]; then
         --arg NETWORK "${NETWORK}" \
         --arg HISTORY_MODE "archive" \
         --arg ARTIFACT_TYPE "tarball" \
-        --arg TEZOS_VERSION_MAJOR "${TEZOS_VERSION_MAJOR}" \
-        --arg TEZOS_VERSION_MINOR "${TEZOS_VERSION_MINOR}" \
-        --arg TEZOS_VERSION_ADDITIONAL_INFO "${TEZOS_VERSION_ADDITIONAL_INFO}" \
         --arg TEZOS_VERSION_COMMIT_HASH "${TEZOS_VERSION_COMMIT_HASH}" \
         --arg TEZOS_VERSION_COMMIT_DATE "${TEZOS_VERSION_COMMIT_DATE}" \
         '{
@@ -133,13 +128,9 @@ if [ "${HISTORY_MODE}" = archive ]; then
             "chain_name": $NETWORK,
             "history_mode": $HISTORY_MODE,
             "artifact_type": $ARTIFACT_TYPE,
-            "tezos_version":{
+            "tezos_version": {
                 "implementation": "octez",
-                "version": {
-                    "major": ($TEZOS_VERSION_MAJOR|fromjson),
-                    "minor": ($TEZOS_VERSION_MINOR|fromjson),
-                    "additional_info": $TEZOS_VERSION_ADDITIONAL_INFO
-                },
+                "version": "",
                 "commit_info": {
                     "commit_hash": $TEZOS_VERSION_COMMIT_HASH,
                     "commit_date": $TEZOS_VERSION_COMMIT_DATE
@@ -147,6 +138,11 @@ if [ "${HISTORY_MODE}" = archive ]; then
             }
         }' \
         > "${ARCHIVE_TARBALL_FILENAME}".json
+
+        # Since version.additional_info will either be another object or "release" we just overwrite it from whatever we got above
+        # JQ has trouble inserting a key into a file this is the way we opted to insert it
+        tmp=$(mktemp)
+        jq --arg version "$TEZOS_VERSION" '.tezos_version.version = ($version|fromjson)' "${ARCHIVE_TARBALL_FILENAME}".json > "$tmp" && mv "$tmp" "${ARCHIVE_TARBALL_FILENAME}".json
 
         # Optional schema validation
         validate_metadata "${ARCHIVE_TARBALL_FILENAME}".json
@@ -298,9 +294,6 @@ if [ "${HISTORY_MODE}" = rolling ]; then
         --arg NETWORK "$NETWORK" \
         --arg HISTORY_MODE "rolling" \
         --arg ARTIFACT_TYPE "tarball" \
-        --arg TEZOS_VERSION_MAJOR "${TEZOS_VERSION_MAJOR}" \
-        --arg TEZOS_VERSION_MINOR "${TEZOS_VERSION_MINOR}" \
-        --arg TEZOS_VERSION_ADDITIONAL_INFO "${TEZOS_VERSION_ADDITIONAL_INFO}" \
         --arg TEZOS_VERSION_COMMIT_HASH "${TEZOS_VERSION_COMMIT_HASH}" \
         --arg TEZOS_VERSION_COMMIT_DATE "${TEZOS_VERSION_COMMIT_DATE}" \
         '{
@@ -317,11 +310,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             "artifact_type": $ARTIFACT_TYPE,
             "tezos_version": {
                 "implementation": "octez",
-                "version": {
-                    "major": ($TEZOS_VERSION_MAJOR|fromjson),
-                    "minor": ($TEZOS_VERSION_MINOR|fromjson),
-                    "additional_info": $TEZOS_VERSION_ADDITIONAL_INFO
-                },
+                "version": "",
                 "commit_info": {
                     "commit_hash": $TEZOS_VERSION_COMMIT_HASH,
                     "commit_date": $TEZOS_VERSION_COMMIT_DATE
@@ -329,6 +318,11 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             }
         }' \
         > "${ROLLING_TARBALL_FILENAME}".json
+
+        # Since version.additional_info will either be another object or "release" we just overwrite it from whatever we got above
+        # JQ has trouble inserting a key into a file this is the way we opted to insert it
+        tmp=$(mktemp)
+        jq --arg version "$TEZOS_VERSION" '.tezos_version.version = ($version|fromjson)' "${ROLLING_TARBALL_FILENAME}".json > "$tmp" && mv "$tmp" "${ROLLING_TARBALL_FILENAME}".json
 
         # Optional schema validation
         validate_metadata "${ROLLING_TARBALL_FILENAME}".json
@@ -419,9 +413,6 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             --arg NETWORK "$NETWORK" \
             --arg HISTORY_MODE "rolling" \
             --arg ARTIFACT_TYPE "tezos-snapshot" \
-            --arg TEZOS_VERSION_MAJOR "${TEZOS_VERSION_MAJOR}" \
-            --arg TEZOS_VERSION_MINOR "${TEZOS_VERSION_MINOR}" \
-            --arg TEZOS_VERSION_ADDITIONAL_INFO "${TEZOS_VERSION_ADDITIONAL_INFO}" \
             --arg TEZOS_VERSION_COMMIT_HASH "${TEZOS_VERSION_COMMIT_HASH}" \
             --arg TEZOS_VERSION_COMMIT_DATE "${TEZOS_VERSION_COMMIT_DATE}" \
             --arg SNAPSHOT_VERSION "$SNAPSHOT_VERSION" \
@@ -440,11 +431,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
                 "artifact_type": $ARTIFACT_TYPE,
                 "tezos_version":{
                     "implementation": "octez",
-                    "version": {
-                        "major": ($TEZOS_VERSION_MAJOR|fromjson),
-                        "minor": ($TEZOS_VERSION_MINOR|fromjson),
-                        "additional_info": $TEZOS_VERSION_ADDITIONAL_INFO
-                    },
+                    "version": "",
                     "commit_info": {
                         "commit_hash": $TEZOS_VERSION_COMMIT_HASH,
                         "commit_date": $TEZOS_VERSION_COMMIT_DATE
@@ -454,6 +441,11 @@ if [ "${HISTORY_MODE}" = rolling ]; then
                 "context_elements": ($CONTEXT_ELEMENTS|fromjson)
             }' \
             > "${ROLLING_SNAPSHOT_FILENAME}".json
+
+            # Since version.additional_info will either be another object or "release" we just overwrite it from whatever we got above
+            # JQ has trouble inserting a key into a file this is the way we opted to insert it
+            tmp=$(mktemp)
+            jq --arg version "$TEZOS_VERSION" '.tezos_version.version = ($version|fromjson)' "${ROLLING_SNAPSHOT_FILENAME}".json > "$tmp" && mv "$tmp" "${ROLLING_SNAPSHOT_FILENAME}".json
 
             # Optional schema validation
             validate_metadata "${ROLLING_SNAPSHOT_FILENAME}".json
