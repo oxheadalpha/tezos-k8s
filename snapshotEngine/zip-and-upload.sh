@@ -395,11 +395,9 @@ if [ "${HISTORY_MODE}" = rolling ]; then
 
             if [[ $TEZOS_VERSION_MAJOR -lt 16 ]]; then
                 SNAPSHOT_VERSION=4
-                CONTEXT_ELEMENTS=""
             else
                 SNAPSHOT_HEADER=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/SNAPSHOT_HEADER)
                 SNAPSHOT_VERSION="$(echo "${SNAPSHOT_HEADER}" | jq .snapshot_header.version)"
-                CONTEXT_ELEMENTS="$(echo "${SNAPSHOT_HEADER}" | jq .snapshot_header.context_elements)"
             fi
 
             jq -n \
@@ -417,7 +415,6 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             --arg TEZOS_VERSION_COMMIT_HASH "${TEZOS_VERSION_COMMIT_HASH}" \
             --arg TEZOS_VERSION_COMMIT_DATE "${TEZOS_VERSION_COMMIT_DATE}" \
             --arg SNAPSHOT_VERSION "$SNAPSHOT_VERSION" \
-            --arg CONTEXT_ELEMENTS "$CONTEXT_ELEMENTS" \
             '{
                 "block_hash": $BLOCK_HASH,
                 "block_height": ($BLOCK_HEIGHT|fromjson),
@@ -439,7 +436,6 @@ if [ "${HISTORY_MODE}" = rolling ]; then
                     }
                 },
                 "snapshot_version": ($SNAPSHOT_VERSION|fromjson),
-                "context_elements": ($CONTEXT_ELEMENTS|fromjson)
             }' \
             > "${ROLLING_SNAPSHOT_FILENAME}".json
 
