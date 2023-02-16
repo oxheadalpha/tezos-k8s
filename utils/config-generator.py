@@ -702,7 +702,7 @@ and octez version {octez_version}.
     # find snapshot matching all the requested fields
     matching_snapshots = [
         s
-        for s in all_snapshots
+        for s in all_snapshots['data']
         if s.get("history_mode") == history_mode
         and s.get("artifact_type") == artifact_type
         and s.get("chain_name") == network_name
