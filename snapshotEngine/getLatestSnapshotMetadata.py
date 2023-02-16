@@ -25,7 +25,7 @@ latest_snapshots = [{ "name": "example", "latest_snapshots" : {}}]
 
 all_snapshots = [{ "name": "example", "all_snapshots" : {}}]
 
-for snapshot in snapshots:
+for snapshot in snapshots['data']:
     network = snapshot["chain_name"]
     if network not in snapshots_per_network:
         snapshots_per_network[network] = []
