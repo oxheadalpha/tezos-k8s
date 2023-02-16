@@ -44,7 +44,7 @@ dt_string = now.strftime('%Y-%m-%dT%H:%M:%SZ')
 metadata_document = json.dumps({
     "date_generated": dt_string,
     "org": "Oxhead Alpha",
-    "schema_version": 1.0,
+    "$schema": schemaURL,
     "data": artifact_metadata,
 }, indent=4)
 
