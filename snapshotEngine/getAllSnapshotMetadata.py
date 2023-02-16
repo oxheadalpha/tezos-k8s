@@ -5,7 +5,6 @@ import urllib.request
 from jsonschema import validate
 import urllib.request
 from datetime import datetime
-import fastjsonschema
 
 
 
@@ -56,12 +55,11 @@ with open("schema.json","r") as f:
 if not validate(metadata_document, json.loads(schema)):
     print("Metadata sucessfully validated against schema!")
 else:
-    print("Metadata NOT validated against schema!")
+    raise Exception("Metadata NOT validated against schema!")
 
 
 # Write to file
 with open(filename, "w") as json_file:
-    metadata_document = metadata_document.replace('\\"',"") # Clean up output until old data is gone
     json_file.write(metadata_document)
 
 print(f"Done assembling global metadata file {filename}")

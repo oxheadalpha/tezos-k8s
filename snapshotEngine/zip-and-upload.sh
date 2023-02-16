@@ -504,6 +504,14 @@ fi
 # build site pages
 python /getAllSnapshotMetadata.py
 
+# Fail if python raised exception (validation failure)
+ret=$?
+if [[ "${ret}" -ne 0 ]]; then
+    printf "%s Metadata did not validate sucessfully. Exiting...  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    sleep 20
+    exit 1
+fi
+
 # Check if tezos-snapshots.json exists
 # tezos-snapshots.json is a list of all snapshots in all buckets
 if [[ ! -f tezos-snapshots.json ]]; then

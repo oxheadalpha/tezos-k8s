@@ -46,7 +46,7 @@ RUN apk --no-cache add \
     && apk add --update --no-cache python3-dev && ln -sf python3 /usr/bin/python \
     && python3 -m ensurepip \
     && pip3 install --no-cache-dir --upgrade pip && \
-       pip3 install --no-cache-dir setuptools boto3 datefinder datetime pytz check-jsonschema
+       pip3 install --no-cache-dir setuptools boto3 datefinder datetime pytz jsonschema
 
 RUN chown jekyll:jekyll -R /usr/gem
 
