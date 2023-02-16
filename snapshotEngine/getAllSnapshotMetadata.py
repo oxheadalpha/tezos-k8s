@@ -1,12 +1,8 @@
 from genericpath import exists
 import os
 import urllib, json
-import urllib.request
 from jsonschema import validate
-import urllib.request
 from datetime import datetime
-
-
 
 schemaURL = os.environ["SCHEMA_URL"]
 allSubDomains = os.environ["ALL_SUBDOMAINS"].split(",")
