@@ -39,7 +39,7 @@ for network, snapshots in snapshots_per_network.items():
     for (artifact_type, history_mode, path) in [("tarball", "rolling", "rolling-tarball"), ("tarball", "archive", "archive-tarball"), ("tezos-snapshot", "rolling", "rolling")]:
         # List of snapshot metadata for this particular artifact type and history mode
         typed_snapshots = [s for s in snapshots if s["artifact_type"] == artifact_type and s["history_mode"] == history_mode]
-
+        
         # Lowest version is the top item (int) of a sorted unique list of all the versions for this particular artifact type and history mode
         octez_versions = sorted(list(set([ s['tezos_version']['version']['major'] for s in typed_snapshots if 'version' in s['tezos_version'] ])))
         if octez_versions:

@@ -14,40 +14,6 @@ TEZOS_VERSION_COMMIT_DATE="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .commit_in
 
 cd /
 
-# Validate generated metadata $1 against $SCHEMA_URL if its set.
-# $1 must be a local JSON file.
-validate_metadata () {
-    if [[ -f $1 ]]; then
-        if [[ -n $1 ]]; then
-            # $SCHEMA_URL comes from the snapshotEngine configmap mounted to this job container.
-            if [[ -n "${SCHEMA_URL}" ]]; then 
-                check-jsonschema --schemafile "${SCHEMA_URL}" "${1}"
-                if [[ $? -lt 1 ]]; then
-                    printf "%s ************************\n" "$(date "+%Y-%m-%d %H:%M:%S")"
-                    printf "%s SUCCESS Metadata sucessfully validated against schema.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
-                    printf "%s ************************\n" "$(date "+%Y-%m-%d %H:%M:%S")"
-                else
-                    printf "%s !!!!!!!!!!!!!!!!!!!!!!!! \n" "$(date "+%Y-%m-%d %H:%M:%S")"
-                    printf "%s FAILED Metadata failed to validate against schema!  \n" "$(date "+%Y-%m-%d %H:%M:%S")"
-                    printf "%s !!!!!!!!!!!!!!!!!!!!!!!! \n" "$(date "+%Y-%m-%d %H:%M:%S")"
-                fi
-            else
-                printf "%s !!!!!!!!!!!!!!!!!!!!!!!! \n" "$(date "+%Y-%m-%d %H:%M:%S")"
-                printf "%s No schema URL to validate against. Skipping validation.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
-                printf "%s !!!!!!!!!!!!!!!!!!!!!!!! \n" "$(date "+%Y-%m-%d %H:%M:%S")"
-            fi
-        else
-            printf "%s !!!!!!!!!!!!!!!!!!!!!!!! \n" "$(date "+%Y-%m-%d %H:%M:%S")"
-            printf "%s Missing input metadata file. A JSON file was not fed in. \$1 was unset or blank! Skipping validation.  \n" "$(date "+%Y-%m-%d %H:%M:%S")"
-            printf "%s !!!!!!!!!!!!!!!!!!!!!!!! \n" "$(date "+%Y-%m-%d %H:%M:%S")"
-        fi
-    else
-        printf "%s !!!!!!!!!!!!!!!!!!!!!!!! \n" "$(date "+%Y-%m-%d %H:%M:%S")"
-        printf "%s Input metadata file does not exist. Skipping validation.  \n" "$(date "+%Y-%m-%d %H:%M:%S")"
-        printf "%s !!!!!!!!!!!!!!!!!!!!!!!! \n" "$(date "+%Y-%m-%d %H:%M:%S")"
-    fi
-}   
-
 # If block_height is not set than init container failed, exit this container
 [ -z "${BLOCK_HEIGHT}" ] && exit 1
 
