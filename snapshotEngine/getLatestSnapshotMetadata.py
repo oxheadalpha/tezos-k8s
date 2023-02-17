@@ -9,11 +9,11 @@ pp = pprint.PrettyPrinter(indent=4)
 filename='tezos-snapshots.json'
 
 if exists(filename):
-    print('SUCCESS tezos-snapshots.json exists locally!')
-    with open(filename,'r') as localJson:
+    print("SUCCESS tezos-snapshots.json exists locally!")
+    with open(filename, "r") as localJson:
         snapshots = json.load(localJson)
 else:
-    print('ERROR tezos-snapshots.json does not exist locally!')
+    print("ERROR tezos-snapshots.json does not exist locally!")
 
 # sort per network
 snapshots_per_network = {}
@@ -21,9 +21,9 @@ snapshots_per_network = {}
 # for some reason, the first page is empty, so we initialize the map with dummy data to generate a first page
 # The error is:
 #   Error reading file /home/nochem/workspace/xtz-shots-website/_layouts/latest_snapshots.md/latest_snapshots.md: Not a directory @ rb_sysopen - /home/nochem/workspace/xtz-shots-website/_layouts/latest_snapshots.md/latest_snapshots.md
-latest_snapshots = [{ "name": "example", "latest_snapshots" : {}}]
+latest_snapshots = [{"name": "example", "latest_snapshots": {}}]
 
-all_snapshots = [{ "name": "example", "all_snapshots" : {}}]
+all_snapshots = [{"name": "example", "all_snapshots": {}}]
 
 for snapshot in snapshots['data']:
     network = snapshot["chain_name"]
@@ -58,9 +58,19 @@ for network, snapshots in snapshots_per_network.items():
 
     # This becomes the list of snapshots
     latest_snapshots.append(
-        { "name": network, "permalink": network+"/index.html", "latest_snapshots": network_latest_snapshots })
+        {
+            "name": network,
+            "permalink": network + "/index.html",
+            "latest_snapshots": network_latest_snapshots,
+        }
+    )
     all_snapshots.append(
-        { "name": network, "permalink": network+"/list.html", "snapshots": network_snapshots })
+        {
+            "name": network,
+            "permalink": network + "/list.html",
+            "snapshots": network_snapshots,
+        }
+    )
 
 Path("_data").mkdir(parents=True, exist_ok=True)
 filename = "_data/snapshot_jekyll_data.json"

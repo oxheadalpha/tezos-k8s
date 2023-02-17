@@ -1369,7 +1369,7 @@ spec:
               $CLIENT -d /var/tezos/client --block					\
               	genesis activate protocol					\
               	PtJakart2xVj7pYXJBXrqHgd82rdkLey5ZeeGwDgPp9rhQUbSqY				\
-              	with fitness -1 and key						\
+              	with fitness 1 and key						\
               	$( cat /etc/tezos/activation_account_name )			\
               	and parameters /etc/tezos/parameters.json 2>&1 | head -200
               

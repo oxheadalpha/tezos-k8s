@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "tezos-proto-cruncher.fullname" . }}
+  labels:
+    {{- include "tezos-proto-cruncher.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "tezos-proto-cruncher.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "tezos-proto-cruncher.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.tezos_k8s_images.utils }}"
+          volumeMounts:
+            - mountPath: /proto-cruncher.py
+              name: scripts
+              subPath: proto-cruncher.py
+            - mountPath: /proto-downloader.py
+              name: scripts
+              subPath: proto-downloader.py
+          envFrom:
+          - secretRef:
+              name: s3-secrets
+          - configMapRef:
+              name: s3-env
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+{{ tpl ($.Files.Get (print "scripts/tezos-proto-cruncher.sh")) $ | indent 14 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: scripts
+          configMap:
+             name: scripts
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -1,0 +1,96 @@
+{{- if (include "tezos.shouldDeployBcdIndexer" .) }}
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: bcd
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+    - port: 14000
+      name: bcd
+      targetPort: bcd
+  selector:
+    app: {{ .Values.bcd_indexer_statefulset.name }}
+  type: NodePort
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bcd-env
+  namespace: {{ .Release.Namespace }}
+data:
+  BCD_ENV: sandbox
+  GIN_MODE: debug
+  DB_HOSTNAME: localhost
+  SANDBOX_NODE_URI: {{ .Values.bcdIndexer.indexerRpcUrl }}
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: db-creds
+  namespace: {{ .Release.Namespace }}
+data:
+  POSTGRES_USER: {{ b64enc .Values.bcdIndexer.dbUser }}
+  POSTGRES_PASSWORD: {{ b64enc .Values.bcdIndexer.dbPassword }}
+  POSTGRES_DB: {{ b64enc .Values.bcdIndexer.dbName }}
+  PGDATA: {{ b64enc "/var/lib/postgresql/data/pgdata" }}
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.bcd_indexer_statefulset.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app: {{ .Values.bcd_indexer_statefulset.name }}
+  serviceName: ""
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.bcd_indexer_statefulset.name }}
+    spec:
+      containers:
+        - image: {{ .Values.bcdIndexer.images.api }}
+          name: api
+          ports:
+            - containerPort: 14000
+              name: bcd
+          envFrom:
+            - configMapRef:
+                name: bcd-env
+            - secretRef:
+                name: db-creds
+        - image: {{ .Values.bcdIndexer.images.indexer }}
+          name: indexer
+          envFrom:
+            - configMapRef:
+                name: bcd-env
+            - secretRef:
+                name: db-creds
+        - image: postgres:14
+          name: db
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: indexer-db
+          envFrom:
+            - secretRef:
+                name: db-creds
+  volumeClaimTemplates:
+    - metadata:
+        name: indexer-db
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: {{ .Values.bcdIndexer.storageClassName }}
+        resources:
+          requests:
+            storage: "300Gi"
+
+{{- end }}

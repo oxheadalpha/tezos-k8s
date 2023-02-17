@@ -18,6 +18,8 @@ tezos_k8s_images:
 ## scripts that will look up some of these values. They should not be modified.
 tzkt_indexer_statefulset:
   name: tzkt-indexer
+bcd_indexer_statefulset:
+  name: bcd-indexer
 signer_statefulset:
   name: tezos-signer
   pod_type: signing
@@ -264,7 +266,7 @@ serviceMonitor:
 #
 # By default no signer is configured:
 signers: {}
-# Here is an example of octez signer config. When set, the 
+# Here is an example of octez signer config. When set, the
 # ```
 # signers:
 #  tezos-signer-0:
@@ -449,8 +451,8 @@ protocols:
 ## Deploy an indexer with the chain. An indexer puts the chain
 ## contents in a database for efficient indexing. Most dapps need it.
 ## Supported indexers:
-## * tzkt https://github.com/baking-bad/tzkt
-#
+## * tzkt: https://github.com/baking-bad/tzkt
+## * bcd: https://github.com/baking-bad/bcdhub
 ## Templatized indexer configuration values go in the config field.
 ##
 # indexers:
@@ -489,3 +491,14 @@ protocols:
 #       db_password: bar
 #       # api_log_level: Debug
 #       # indexer_log_level: Debug
+
+bcdIndexer:
+  images:
+    api: ghcr.io/baking-bad/bcdhub-api:4.4.0
+    indexer: ghcr.io/baking-bad/bcdhub-indexer:4.4.0
+  # dbName: bcd
+  # dbPassword: bcd-password
+  # dbUser: bcd
+  # storageClassName: ""
+  # indexerRpcUrl: http://archive-baking-node-0.archive-baking-node:8732
+
