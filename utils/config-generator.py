@@ -151,22 +151,24 @@ def main():
             node_config,
             indent=2,
         )
-        node_snapshot_config = create_node_snapshot_config_json(
-            node_config["shell"]["history_mode"]
-        )
-        node_snapshot_config_json = json.dumps(
-            node_snapshot_config,
-            indent=2,
-        )
         print("Generated config.json :")
         print(node_config_json)
         with open("/etc/tezos/config.json", "w") as json_file:
             print(node_config_json, file=json_file)
-        if node_snapshot_config:
-            print("Generated snapshot_config.json :")
-            print(node_snapshot_config_json)
-            with open("/var/tezos/snapshot_config.json", "w") as json_file:
-                print(node_snapshot_config_json, file=json_file)
+
+        if not os.path.isdir(f"${DATA_DIR}/context"):
+            node_snapshot_config = create_node_snapshot_config_json(
+                node_config["shell"]["history_mode"]
+            )
+            node_snapshot_config_json = json.dumps(
+                node_snapshot_config,
+                indent=2,
+            )
+            if node_snapshot_config:
+                print("Generated snapshot_config.json :")
+                print(node_snapshot_config_json)
+                with open("/var/tezos/snapshot_config.json", "w") as json_file:
+                    print(node_snapshot_config_json, file=json_file)
 
 
 # If NETWORK_CONFIG["genesis"]["block"] hasn't been specified, we generate a
@@ -676,11 +678,7 @@ def create_node_snapshot_config_json(history_mode):
         octez_container_version = os.environ.get("OCTEZ_VERSION")
     snapshot_source = os.environ.get("SNAPSHOT_SOURCE")
     if snapshot_source:
-        try:
-            all_snapshots = requests.get(snapshot_source).json()
-        except Exception as e:
-            print(f"Error while fetching {snapshot_source}: {e}")
-            return
+        all_snapshots = requests.get(snapshot_source).json()
     else:
         return
     try:
@@ -702,14 +700,14 @@ and octez version {octez_version}.
     # find snapshot matching all the requested fields
     matching_snapshots = [
         s
-        for s in all_snapshots['data']
+        for s in all_snapshots.get("data", [])
         if s.get("history_mode") == history_mode
         and s.get("artifact_type") == artifact_type
         and s.get("chain_name") == network_name
     ]
     if octez_version:
         matching_snapshots = [
-            s for s in matching_snapshots if octez_version in s.get("tezos_version", "")
+            s for s in matching_snapshots if int(octez_version) == s.get("tezos_version").get("version").get("major")
         ]
     matching_snapshots = sorted(matching_snapshots, key=lambda s: s.get("block_height"))
 
