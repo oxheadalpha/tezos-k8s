@@ -12,7 +12,7 @@ if [ ! -f ${snapshot_file} ]; then
     exit 0
 fi
 
-if [ -d ${node_data_dir}/context ]; then
+if [ -d ${node_data_dir}/context/store.dict ]; then
     echo "Blockchain has already been imported. If a tarball"
     echo "instead of a regular tezos snapshot was used, it was"
     echo "imported in the snapshot-downloader container."

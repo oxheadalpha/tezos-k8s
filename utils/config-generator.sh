@@ -6,6 +6,7 @@ cat /etc/tezos/data/config.json
 echo ------------------------------------------------------------
 
 mkdir -p /var/tezos/client
+mkdir -p /var/tezos/node/data
 chmod -R 777 /var/tezos
 set -e
 python3 /config-generator.py "$@"
@@ -17,6 +18,17 @@ set +e
 # tezos docker image.
 
 MY_CLASS=$(echo $NODES | jq -r ".\"${MY_NODE_CLASS}\"")
+
+# Set up symlinks for local storage
+local_storage=$(echo $MY_CLASS | jq -r ".local_storage")
+if [ "${local_storage}" == "true" ]; then
+  echo '{ "version": "2.0" }' > /var/tezos/node/data/version.json
+  ln -s /var/persistent/peers.json /var/tezos/node/data/peers.json
+  ln -s /var/persistent/identity.json /var/tezos/node/data/identity.json
+  chmod -R 777 /var/tezos/node/data
+  chmod -R 777 /var/persistent
+fi
+
 AM_I_BAKER=0
 if [ "$MY_CLASS" != null ]; then
     AM_I_BAKER=$(echo $MY_CLASS | \
