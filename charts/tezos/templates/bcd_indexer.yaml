@@ -84,6 +84,18 @@ data:
           sandboxnet: {{ .Values.bcdIndexer.gui.rpcUrl }}
       networks:
         - sandboxnet
+      connections:
+        max: 20
+        idle: 10
+    indexer:
+      project_name: indexer
+      sentry_enabled: false
+      networks:
+        sandboxnet:
+          receiver_threads: 5
+      connections:
+        max: 5
+        idle: 5
 
 ---
 apiVersion: apps/v1
@@ -128,6 +140,10 @@ spec:
                 name: bcd-env
             - secretRef:
                 name: db-creds
+          volumeMounts:
+            - name: sandbox-config
+              mountPath: /app/indexer/sandbox.yml
+              subPath: sandbox.yml
       {{- if .Values.bcdIndexer.gui.enabled }}
         - image: {{ .Values.bcdIndexer.images.gui }}
           name: gui
