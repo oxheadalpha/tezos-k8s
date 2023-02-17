@@ -12,6 +12,7 @@ data:
   ALL_SUBDOMAINS: {{ $.Values.allSubdomains }}
   ARCHIVE_SLEEP_DELAY: {{ $.Values.artifactDelay.archive }}
   ROLLING_SLEEP_DELAY: {{ $.Values.artifactDelay.rolling }}
+  SCHEMA_URL: {{ $.Values.schemaUrl }}
 kind: ConfigMap
 metadata:
   name: snapshot-configmap
