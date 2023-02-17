@@ -235,7 +235,7 @@ nodes:
         config:
           shell:
             history_mode: rolling
-          metrics_addr: [ "0.0.0.0:9932" ]
+          metrics_addr: ["0.0.0.0:9932"]
 # End nodes
 
 ## Configuration for K8s Service resources. Configuring the labels selector of a
@@ -498,18 +498,20 @@ bcdIndexer:
     indexer: ghcr.io/baking-bad/bcdhub-indexer:4.4.0
     gui: ghcr.io/baking-bad/bcdhub-gui:4.4.0
 
-  # dbName: bcd
-  # dbPassword: bcd-password
-  # dbUser: bcd
-
-  # storageClassName: ""
-
-  ## RPC url of the node to be indexed
-  # indexerRpcUrl: http://archive-baking-node-0.archive-baking-node:8732
-
   gui:
     enabled: false
     ## Url of the BCD api for the frontend to hit
     apiUrl: http://localhost:14000
     ## Url to the RPC backend for the frontend to hit
     rpcUrl: http://localhost:8732
+
+  ## RPC url of the node to be indexed
+  # indexerRpcUrl: http://archive-baking-node-0.archive-baking-node:8732
+
+  # dbName: bcd
+  # dbPassword: bcd-password
+  # dbUser: bcd
+
+  # For the postgres volume
+  storageClassName: ""
+  storage: "300Gi"

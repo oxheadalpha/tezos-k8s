@@ -185,6 +185,6 @@ spec:
         storageClassName: {{ .Values.bcdIndexer.storageClassName }}
         resources:
           requests:
-            storage: "300Gi"
+            storage: {{ .Values.bcdIndexer.storage | default "300Gi" }}
 
 {{- end }}
