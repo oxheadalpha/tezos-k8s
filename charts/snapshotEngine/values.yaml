@@ -98,4 +98,4 @@ artifactDelay:
   archive: 0m
 
 # URL to schema.json file to validate generated metadata against
-schemaUrl: "http://oxheadalpha.com/tezos-snapshot-metadata.schema.1.0.json"
+schemaUrl: "https://oxheadalpha.com/tezos-snapshot-metadata.schema.1.0.json"
