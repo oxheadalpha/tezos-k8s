@@ -156,7 +156,7 @@ def main():
         with open("/etc/tezos/config.json", "w") as json_file:
             print(node_config_json, file=json_file)
 
-        if not os.path.isdir(f"${DATA_DIR}/context"):
+        if not os.path.isdir(f"{DATA_DIR}/context"):
             node_snapshot_config = create_node_snapshot_config_json(
                 node_config["shell"]["history_mode"]
             )
