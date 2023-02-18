@@ -20,6 +20,9 @@ spec:
 {{- end }}
   # ensures that remote signers can always ssh
   publishNotReadyAddresses: true
+{{ if .Values.load_balancer_ip }}
+  loadBalancerIP: {{ .Values.load_balancer_ip }}
+{{ end }}
 ---
 {{- range .Values.signers }}
 apiVersion: v1
