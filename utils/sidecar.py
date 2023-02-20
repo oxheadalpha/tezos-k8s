@@ -46,7 +46,7 @@ def sync_checker():
             % (age_in_secs, AGE_LIMIT_IN_SECS),
             500,
         )
-        print(err)
+        application.logger.error(err)
         return err
     return "Chain is bootstrapped"
 
