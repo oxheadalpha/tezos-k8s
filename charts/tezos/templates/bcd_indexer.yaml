@@ -43,7 +43,9 @@ data:
   POSTGRES_USER: {{ b64enc $indexerConfig.db.user }}
   POSTGRES_PASSWORD: {{ b64enc $indexerConfig.db.password }}
   POSTGRES_DB: {{ b64enc $indexerConfig.db.name }}
+{{- if not $indexerConfig.db.isExternal }}
   PGDATA: {{ b64enc "/var/lib/postgresql/data/pgdata" }}
+{{- end }}
 
 ---
 apiVersion: v1
