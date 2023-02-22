@@ -195,7 +195,7 @@ spec:
                 
                 # Get context elements and octez snapshot version
                 if [[ "$TEZOS_VERSION" != '763259c5 (2022-12-01 10:20:58 +0000) (15.1)' ]]; then
-                  /usr/local/bin/octez-node snapshot info --json /"${HISTORY_MODE}"-snapshot-cache-volume/"${ROLLING_SNAPSHOT_NAME}".rolling --json > /"${HISTORY_MODE}"-snapshot-cache-volume/SNAPSHOT_HEADER
+                  /usr/local/bin/octez-node snapshot info /"${HISTORY_MODE}"-snapshot-cache-volume/"${ROLLING_SNAPSHOT_NAME}".rolling --json > /"${HISTORY_MODE}"-snapshot-cache-volume/SNAPSHOT_HEADER
                 fi
 
                 rm /rolling-tarball-restore/snapshot-import-in-progress

@@ -41,7 +41,16 @@ for network, snapshots in snapshots_per_network.items():
         typed_snapshots = [s for s in snapshots if s["artifact_type"] == artifact_type and s["history_mode"] == history_mode]
         
         # Lowest version is the top item (int) of a sorted unique list of all the versions for this particular artifact type and history mode
-        octez_versions = sorted(list(set([ s['tezos_version']['version']['major'] for s in typed_snapshots if 'version' in s['tezos_version'] ])))
+                                # newlist = [item for item in list if "value" in list]
+        #octez_versions = sorted(list(set([ s['tezos_version']['version']['major'] for s in typed_snapshots if 'version' in s['tezos_version'] ])))
+
+        octez_versions = []
+        for s in typed_snapshots:
+            if 'version' in s['tezos_version']:
+                octez_versions.append(s['tezos_version']['version']['major'])
+
+        octez_versions = sorted(list(set(octez_versions)))
+
         if octez_versions:
             lowest_octez_version = octez_versions[0]
         else:
