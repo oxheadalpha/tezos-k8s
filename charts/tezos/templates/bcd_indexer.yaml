@@ -176,7 +176,7 @@ spec:
               /docker-entrypoint.sh nginx -g "daemon off;"
       {{- end }}
 {{- if not $indexerConfig.db.isExternal }}
-        - image: postgres:14
+        - image: {{ $indexerConfig.images.postgres }}
           name: db
           imagePullPolicy: IfNotPresent
           volumeMounts:

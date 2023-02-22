@@ -498,6 +498,7 @@ bcdIndexer:
     api: ghcr.io/baking-bad/bcdhub-api:4.4.0
     indexer: ghcr.io/baking-bad/bcdhub-indexer:4.4.0
     gui: ghcr.io/baking-bad/bcdhub-gui:4.4.0
+    postgres: postgres:14
 
   gui:
     enabled: false
@@ -510,9 +511,8 @@ bcdIndexer:
   # indexerRpcUrl: http://archive-baking-node-0.archive-baking-node:8732
 
   db:
-    # By default creates a postgres v14 db container. Setting to true won't
-    # create it and instead expects credentials for an external postgres
-    # database.
+    # By default creates a postgres db container. Setting to true won't create
+    # it and instead expects credentials for an external postgres database.
     isExternal: false
     hostname: localhost
     name: bcd
