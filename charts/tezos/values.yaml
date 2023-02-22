@@ -492,6 +492,7 @@ protocols:
 #       # api_log_level: Debug
 #       # indexer_log_level: Debug
 
+## Set values `indexerRpcUrl` and `db.password` for an indexer to be created.
 bcdIndexer:
   images:
     api: ghcr.io/baking-bad/bcdhub-api:4.4.0
@@ -508,10 +509,16 @@ bcdIndexer:
   ## RPC url of the node to be indexed
   # indexerRpcUrl: http://archive-baking-node-0.archive-baking-node:8732
 
-  # dbName: bcd
-  # dbPassword: bcd-password
-  # dbUser: bcd
+  db:
+    # By default creates a postgres v14 db container. Setting to true won't
+    # create it and instead expects credentials for an external postgres
+    # database.
+    isExternal: false
+    hostname: localhost
+    name: bcd
+    password: bcd-password
+    user: bcd
 
-  # For the postgres volume
+  # For the pv for the optional postgres container
   storageClassName: ""
   storage: "300Gi"

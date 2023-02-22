@@ -29,8 +29,7 @@ metadata:
 data:
   BCD_ENV: sandbox
   GIN_MODE: debug
-  DB_HOSTNAME: localhost
-  SANDBOX_NODE_URI: {{ .Values.bcdIndexer.indexerRpcUrl }}
+  SANDBOX_NODE_URI: {{ $indexerConfig.indexerRpcUrl }}
 
 ---
 apiVersion: v1
@@ -39,9 +38,11 @@ metadata:
   name: db-creds
   namespace: {{ .Release.Namespace }}
 data:
-  POSTGRES_USER: {{ b64enc .Values.bcdIndexer.dbUser }}
-  POSTGRES_PASSWORD: {{ b64enc .Values.bcdIndexer.dbPassword }}
-  POSTGRES_DB: {{ b64enc .Values.bcdIndexer.dbName }}
+  # `DB_HOSTNAME` is the env var looked up by the app
+  DB_HOSTNAME: {{ $indexerConfig.db.hostname | default "localhost" }}
+  POSTGRES_USER: {{ b64enc $indexerConfig.db.user }}
+  POSTGRES_PASSWORD: {{ b64enc $indexerConfig.db.password }}
+  POSTGRES_DB: {{ b64enc $indexerConfig.db.name }}
   PGDATA: {{ b64enc "/var/lib/postgresql/data/pgdata" }}
 
 ---
@@ -174,6 +175,7 @@ spec:
 
               /docker-entrypoint.sh nginx -g "daemon off;"
       {{- end }}
+{{- if not $indexerConfig.db.isExternal }}
         - image: postgres:14
           name: db
           imagePullPolicy: IfNotPresent
@@ -189,9 +191,10 @@ spec:
       spec:
         accessModes:
           - ReadWriteOnce
-        storageClassName: {{ .Values.bcdIndexer.storageClassName }}
+        storageClassName: {{ $indexerConfig.storageClassName }}
         resources:
           requests:
-            storage: {{ .Values.bcdIndexer.storage | default "300Gi" }}
+            storage: {{ $indexerConfig.storage | default "300Gi" }}
+{{- end }}
 
 {{- end }}
