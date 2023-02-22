@@ -186,7 +186,6 @@ metadata:
 # Source: tezos-chain/templates/configs.yaml
 apiVersion: v1
 data:
-  013-PtJakart-per-block-votes.json: "{\"liquidity_baking_toggle_vote\":\"pass\"}"
 kind: ConfigMap
 metadata:
   name: per-block-votes
@@ -575,7 +574,10 @@ spec:
               
               proto_command="013-PtJakart"
               
-              per_block_vote_file=/etc/tezos/per-block-votes/${proto_command}-per-block-votes.json
+              my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
+              
+              per_block_vote_file=/etc/tezos/per-block-votes/${my_baker_account}-${proto_command}-per-block-votes.json
+              
               if [ $(cat $per_block_vote_file) == "null" ]; then
                 cat << EOF
               You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
@@ -587,8 +589,6 @@ spec:
                 exit 1
               fi
               extra_args="--votefile ${per_block_vote_file}"
-              
-              my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
               
               if [ "${my_baker_account}" == "" ]; then
                 while true; do
@@ -642,7 +642,10 @@ spec:
               
               proto_command="013-PtJakart"
               
-              per_block_vote_file=/etc/tezos/per-block-votes/${proto_command}-per-block-votes.json
+              my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
+              
+              per_block_vote_file=/etc/tezos/per-block-votes/${my_baker_account}-${proto_command}-per-block-votes.json
+              
               if [ $(cat $per_block_vote_file) == "null" ]; then
                 cat << EOF
               You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
@@ -654,8 +657,6 @@ spec:
                 exit 1
               fi
               extra_args="--votefile ${per_block_vote_file}"
-              
-              my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
               
               if [ "${my_baker_account}" == "" ]; then
                 while true; do
@@ -709,7 +710,10 @@ spec:
               
               proto_command="013-PtJakart"
               
-              per_block_vote_file=/etc/tezos/per-block-votes/${proto_command}-per-block-votes.json
+              my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
+              
+              per_block_vote_file=/etc/tezos/per-block-votes/${my_baker_account}-${proto_command}-per-block-votes.json
+              
               if [ $(cat $per_block_vote_file) == "null" ]; then
                 cat << EOF
               You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
@@ -721,8 +725,6 @@ spec:
                 exit 1
               fi
               extra_args="--votefile ${per_block_vote_file}"
-              
-              my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
               
               if [ "${my_baker_account}" == "" ]; then
                 while true; do
@@ -776,7 +778,10 @@ spec:
               
               proto_command="013-PtJakart"
               
-              per_block_vote_file=/etc/tezos/per-block-votes/${proto_command}-per-block-votes.json
+              my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
+              
+              per_block_vote_file=/etc/tezos/per-block-votes/${my_baker_account}-${proto_command}-per-block-votes.json
+              
               if [ $(cat $per_block_vote_file) == "null" ]; then
                 cat << EOF
               You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
@@ -788,8 +793,6 @@ spec:
                 exit 1
               fi
               extra_args="--votefile ${per_block_vote_file}"
-              
-              my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
               
               if [ "${my_baker_account}" == "" ]; then
                 while true; do
@@ -843,7 +846,10 @@ spec:
               
               proto_command="013-PtJakart"
               
-              per_block_vote_file=/etc/tezos/per-block-votes/${proto_command}-per-block-votes.json
+              my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
+              
+              per_block_vote_file=/etc/tezos/per-block-votes/${my_baker_account}-${proto_command}-per-block-votes.json
+              
               if [ $(cat $per_block_vote_file) == "null" ]; then
                 cat << EOF
               You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
@@ -855,8 +861,6 @@ spec:
                 exit 1
               fi
               extra_args="--votefile ${per_block_vote_file}"
-              
-              my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
               
               if [ "${my_baker_account}" == "" ]; then
                 while true; do

@@ -9,7 +9,10 @@ BAKER_EXTRA_ARGS_FROM_ENV=${BAKER_EXTRA_ARGS}
 
 proto_command="{{ .command_in_tpl }}"
 
-per_block_vote_file=/etc/tezos/per-block-votes/${proto_command}-per-block-votes.json
+my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
+
+per_block_vote_file=/etc/tezos/per-block-votes/${my_baker_account}-${proto_command}-per-block-votes.json
+
 if [ $(cat $per_block_vote_file) == "null" ]; then
   cat << EOF
 You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
@@ -21,8 +24,6 @@ EOF
   exit 1
 fi
 extra_args="--votefile ${per_block_vote_file}"
-
-my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
 
 if [ "${my_baker_account}" == "" ]; then
   while true; do

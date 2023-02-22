@@ -38,7 +38,8 @@ bootstrap_mutez: "4000000000000"
 accounts: {}
 #
 # `accounts` is a map where keys are account aliases and values are maps of
-# fields `key`, `is_bootstrap_baker_account`, `bootstrap_balance` and `signer_url`.
+# fields `key`, `is_bootstrap_baker_account`, `bootstrap_balance`, `signer_url`
+# and `protocols`.
 #
 # The `key` field can be set to a public or private key. For a bootstrap baker,
 # it must be set to a private key. The key type will be recognized automatically,
@@ -53,6 +54,10 @@ accounts: {}
 #   node but they will not be bootstrap accounts. If you don't set a bootstrap
 #   balance, it will default to the `bootstrap_mutez` field above.
 #
+# The `protocols` fields overrides the top-level `protocols` field described
+# below and has the same syntax. This allows to set specific per-block votes per
+# baker.
+#
 # Example:
 #
 # ```
@@ -66,6 +71,10 @@ accounts: {}
 #     key: edpk...
 #     is_bootstrap_baker_account: false
 #     bootstrap_balance: "4000000000000"
+#     protocols:
+#     - command: PtLimaPt
+#       vote:
+#         liquidity_baking_toggle_vote: "on"
 # ```
 #
 # A public key account can contain a url to a remote signer that signs with the
