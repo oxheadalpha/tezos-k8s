@@ -1,4 +1,5 @@
-{{- if (include "tezos.shouldDeployBcdIndexer" .) }}
+{{- $indexerConfig := .Values.bcdIndexer | default dict }}
+{{- if (include "tezos.shouldDeployBcdIndexer" $indexerConfig) }}
 
 apiVersion: v1
 kind: Service
@@ -10,7 +11,7 @@ spec:
     - port: 14000
       name: bcd
       targetPort: bcd
-  {{- if .Values.bcdIndexer.gui.enabled }}
+  {{- if $indexerConfig.gui.enabled }}
     - port: 8080
       name: gui
       targetPort: gui
@@ -82,7 +83,7 @@ data:
         mempool_enabled: false
         sandbox_mode: true
         rpc:
-          sandboxnet: {{ .Values.bcdIndexer.gui.rpcUrl | default "" }}
+          sandboxnet: {{ $indexerConfig.gui.rpcUrl | default "" }}
       networks:
         - sandboxnet
       connections:
@@ -123,7 +124,7 @@ spec:
           configMap:
             name: sandbox-config
       containers:
-        - image: {{ .Values.bcdIndexer.images.api }}
+        - image: {{ $indexerConfig.images.api }}
           name: api
           ports:
             - containerPort: 14000
@@ -137,7 +138,7 @@ spec:
             - name: sandbox-config
               mountPath: /app/api/sandbox.yml
               subPath: sandbox.yml
-        - image: {{ .Values.bcdIndexer.images.indexer }}
+        - image: {{ $indexerConfig.images.indexer }}
           name: indexer
           envFrom:
             - configMapRef:
@@ -148,10 +149,10 @@ spec:
             - name: sandbox-config
               mountPath: /app/indexer/sandbox.yml
               subPath: sandbox.yml
-      {{- if .Values.bcdIndexer.gui.enabled }}
-        {{- required "apiUrl is required" .Values.bcdIndexer.gui.apiUrl }}
-        {{- required "rpcUrl is required" .Values.bcdIndexer.gui.rpcUrl }}
-        - image: {{ .Values.bcdIndexer.images.gui }}
+      {{- if $indexerConfig.gui.enabled }}
+        {{- required "apiUrl is required" $indexerConfig.gui.apiUrl }}
+        {{- required "rpcUrl is required" $indexerConfig.gui.rpcUrl }}
+        - image: {{ $indexerConfig.images.gui }}
           name: gui
           ports:
             - containerPort: 80
@@ -162,7 +163,7 @@ spec:
             - |
               set -ex
 
-              api_url="{{ .Values.bcdIndexer.gui.apiUrl }}/v1"
+              api_url="{{ $indexerConfig.gui.apiUrl }}/v1"
 
               for file in js/*; do
                 echo $file
