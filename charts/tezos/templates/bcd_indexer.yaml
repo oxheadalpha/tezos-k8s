@@ -50,7 +50,8 @@ metadata:
   name: sandbox-config
   namespace: {{ .Release.Namespace }}
 data:
-  # https://github.com/baking-bad/bcdhub/commit/fa7e36f6c890d543d72a3d494f7a2509cd41871a
+  # Based on:
+  # https://github.com/baking-bad/bcdhub/blob/fa7e36f6c890d543d72a3d494f7a2509cd41871a/configs/sandbox.yml
   sandbox.yml: |
     rpc:
       sandboxnet:
@@ -96,6 +97,9 @@ data:
       connections:
         max: 5
         idle: 5
+    scripts:
+      networks:
+        - sandboxnet
 
 ---
 apiVersion: apps/v1
