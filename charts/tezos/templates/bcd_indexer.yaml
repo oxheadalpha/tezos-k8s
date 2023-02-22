@@ -82,7 +82,7 @@ data:
         mempool_enabled: false
         sandbox_mode: true
         rpc:
-          sandboxnet: {{ .Values.bcdIndexer.gui.rpcUrl }}
+          sandboxnet: {{ .Values.bcdIndexer.gui.rpcUrl | default "" }}
       networks:
         - sandboxnet
       connections:
@@ -149,6 +149,8 @@ spec:
               mountPath: /app/indexer/sandbox.yml
               subPath: sandbox.yml
       {{- if .Values.bcdIndexer.gui.enabled }}
+        {{- required "apiUrl is required" .Values.bcdIndexer.gui.apiUrl }}
+        {{- required "rpcUrl is required" .Values.bcdIndexer.gui.rpcUrl }}
         - image: {{ .Values.bcdIndexer.images.gui }}
           name: gui
           ports:
