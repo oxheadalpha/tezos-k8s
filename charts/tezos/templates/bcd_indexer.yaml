@@ -39,7 +39,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 data:
   # `DB_HOSTNAME` is the env var looked up by the app
-  DB_HOSTNAME: {{ $indexerConfig.db.hostname | default "localhost" }}
+  DB_HOSTNAME: {{ b64enc ($indexerConfig.db.hostname | default "localhost") }}
   POSTGRES_USER: {{ b64enc $indexerConfig.db.user }}
   POSTGRES_PASSWORD: {{ b64enc $indexerConfig.db.password }}
   POSTGRES_DB: {{ b64enc $indexerConfig.db.name }}
