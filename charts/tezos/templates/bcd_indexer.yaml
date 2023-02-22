@@ -153,8 +153,8 @@ spec:
               mountPath: /app/indexer/sandbox.yml
               subPath: sandbox.yml
       {{- if $indexerConfig.gui.enabled }}
-        {{- required "gui.apiUrl is required" $indexerConfig.gui.apiUrl }}
-        {{- required "gui.rpcUrl is required" $indexerConfig.gui.rpcUrl }}
+        {{- $_ := required "gui.apiUrl is required" $indexerConfig.gui.apiUrl }}
+        {{- $_ := required "gui.rpcUrl is required" $indexerConfig.gui.rpcUrl }}
         - image: {{ $indexerConfig.images.gui }}
           name: gui
           ports:
