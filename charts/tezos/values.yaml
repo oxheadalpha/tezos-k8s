@@ -235,7 +235,7 @@ nodes:
         config:
           shell:
             history_mode: rolling
-          metrics_addr: [ "0.0.0.0:9932" ]
+          metrics_addr: ["0.0.0.0:9932"]
 # End nodes
 
 ## Configuration for K8s Service resources. Configuring the labels selector of a
@@ -492,13 +492,33 @@ protocols:
 #       # api_log_level: Debug
 #       # indexer_log_level: Debug
 
+## Set values `indexerRpcUrl` and `db.password` for an indexer to be created.
 bcdIndexer:
   images:
     api: ghcr.io/baking-bad/bcdhub-api:4.4.0
     indexer: ghcr.io/baking-bad/bcdhub-indexer:4.4.0
-  # dbName: bcd
-  # dbPassword: bcd-password
-  # dbUser: bcd
-  # storageClassName: ""
+    gui: ghcr.io/baking-bad/bcdhub-gui:4.4.0
+    postgres: postgres:14
+
+  gui:
+    enabled: false
+    ## Url of the BCD api for the frontend to hit
+    apiUrl: http://localhost:14000
+    ## Url to the RPC backend for the frontend to hit
+    rpcUrl: http://localhost:8732
+
+  ## RPC url of the node to be indexed
   # indexerRpcUrl: http://archive-baking-node-0.archive-baking-node:8732
 
+  db:
+    # By default creates a postgres db container. Setting to true won't create
+    # it and instead expects credentials for an external postgres database.
+    isExternal: false
+    hostname: localhost
+    name: bcd
+    password: bcd-password
+    user: bcd
+
+  # For the pv for the optional postgres container
+  storageClassName: ""
+  storage: "300Gi"
