@@ -5,4 +5,4 @@ then
   printf "No context in data dir found, probably initial start, doing nothing."
   exit 0
 fi
-octez-node upgrade storage --data-dir /var/tezos/node/data
+octez-node upgrade storage --config /etc/tezos/config.json
