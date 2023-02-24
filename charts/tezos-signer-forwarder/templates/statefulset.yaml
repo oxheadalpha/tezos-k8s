@@ -65,6 +65,7 @@ spec:
           httpGet:
             path: {{ $readiness_probe_path }}
             port: 8443
+          timeoutSeconds: 5
       - name: prom-exporter
         image: {{ $.Values.tezos_k8s_images.utils }}
         ports:
@@ -74,6 +75,10 @@ spec:
         env:
         - name: READINESS_PROBE_PATH
           value: {{ $readiness_probe_path | quote }}
+        - name: ENDPOINT_ALIAS
+          value: {{ $endpoint.alias | quote }}
+        - name: BAKER_ALIAS
+          value: {{ $name | quote }}
         command:
           - /usr/local/bin/python
         args:

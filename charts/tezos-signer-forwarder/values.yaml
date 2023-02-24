@@ -31,6 +31,12 @@ signers:
     # ssh tunnel connection establishes to this port
     tunnel_endpoint_port: 50000
 
+    # Alias to distinguish the endpoints from one another
+    alias: "my home signer"
+
+    # Whether to send alerts when down. set to false for cold standbys.
+    alert_when_down: true
+
   # Set a readiness probe path for your signer.
   # By default, it is the known path implemented by every signer "/authorized_keys"
   # When using tezos-remote-signer-os, you can set it to a path that performs more
