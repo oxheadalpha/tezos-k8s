@@ -25,7 +25,7 @@ spec:
       containers:
         - name: {{ include "snapshot-scheduler.name" $ }}
           image: {{ $.Values.tezos_k8s_images.snapshotEngine }}
-          imagePullPolicy: Always
+          imagePullPolicy: Never
           args:
               - "snapshot-scheduler"
           env:

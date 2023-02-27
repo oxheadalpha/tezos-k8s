@@ -13,7 +13,7 @@ spec:
       containers:
         - name: snapshot-maker
           image: ""
-          imagePullPolicy: Always
+          imagePullPolicy: Never
           args:
               - "snapshot-maker"
           env:

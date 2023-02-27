@@ -4,7 +4,7 @@ metadata:
   name: snapshot-cache-volume
   namespace: ""
 spec:
-  storageClassName: ebs-sc
+  storageClassName: csi-hostpath-sc
   accessModes:
     - ReadWriteOnce
   resources:

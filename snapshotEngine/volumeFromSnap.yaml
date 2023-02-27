@@ -4,7 +4,7 @@ metadata:
   name: ""
   namespace: ""
 spec:
-  storageClassName: ebs-sc
+  storageClassName: csi-hostpath-sc
   dataSource:
     name: ""
     kind: VolumeSnapshot

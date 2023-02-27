@@ -27,7 +27,7 @@ spec:
       containers:
         - name: {{ include "snapshot-warmer.name" $ }}
           image: {{ $.Values.tezos_k8s_images.snapshotEngine }}
-          imagePullPolicy: Always
+          imagePullPolicy: Never
           command: ["/bin/bash"]
           args:
             - "-c"
