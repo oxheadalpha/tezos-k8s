@@ -33,7 +33,7 @@ if [ "${my_baker_account}" == "" ]; then
 fi
 
 CLIENT="$TEZ_BIN/octez-client -d $CLIENT_DIR"
-CMD="$TEZ_BIN/tezos-baker-$proto_command -d $CLIENT_DIR"
+CMD="$TEZ_BIN/octez-baker-$proto_command -d $CLIENT_DIR"
 
 # ensure we can run octez-client commands without specifying client dir
 ln -s /var/tezos/client /home/tezos/.tezos-client

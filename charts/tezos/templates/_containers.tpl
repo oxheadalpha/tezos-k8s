@@ -324,7 +324,7 @@
   image: "{{ or $node_vals_images.octez $.Values.images.octez }}"
   imagePullPolicy: IfNotPresent
   command:
-    - /usr/local/bin/tezos-baker-{{ .command }}
+    - /usr/local/bin/octez-baker-{{ .command }}
   args:
     - run
     - vdf
