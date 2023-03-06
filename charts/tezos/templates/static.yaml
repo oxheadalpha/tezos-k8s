@@ -11,7 +11,7 @@ spec:
   selector:
     {{- toYaml . | nindent 4 }}
   {{- end }}
-  type: NodePort
+  type: LoadBalancer
 ---
 {{- range $key, $val := .Values.nodes }}
 apiVersion: v1

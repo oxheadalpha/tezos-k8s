@@ -1,0 +1,27 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: link
+  namespace: {{ .Values.namespace }}
+{{if .Values.link.ingress.annotations}}
+  annotations: 
+{{toYaml .Values.link.ingress.annotations | indent 4 }}
+{{end}}
+spec:
+  {{if .Values.link.ingress.tls.enabled }}
+  tls:
+  - hosts: {{ .Values.link.ingress.tls.hosts }}
+    secretName: {{ .Values.link.ingress.tls.secretName }}
+  {{end}}
+  rules:
+  - host: {{ .Values.link.ingress.host }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: tezos-node-rpc
+            port:
+              number: 8732

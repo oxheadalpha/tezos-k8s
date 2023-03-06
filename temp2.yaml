@@ -1,0 +1,819 @@
+---
+# Source: tezos-chain/templates/configs.yaml
+---
+apiVersion: v1
+data:
+  ACCOUNTS: |
+    e30=
+kind: Secret
+metadata:
+  name: tezos-secret
+  namespace: poc-tzk8s
+---
+# Source: tezos-chain/templates/configs.yaml
+apiVersion: v1
+data:
+  CHAIN_NAME: "limanet"
+  CHAIN_PARAMS: |
+    {
+      "bootstrap_peers": [],
+      "default_bootstrap_mutez": "4000000000000",
+      "expected-proof-of-work": 26,
+
+      "should_generate_unsafe_deterministic_data": false,
+      "network": {
+          "chain_name": "limanet"
+        },
+      "protocol_activation": null
+    }
+  FULL_SNAPSHOT_URL: ""
+  FULL_TARBALL_URL: ""
+  ROLLING_SNAPSHOT_URL: "https://limanet.xtz-shots.io/rolling"
+  ROLLING_TARBALL_URL: ""
+  ARCHIVE_TARBALL_URL: "https://limanet.xtz-shots.io/archive-tarball"
+  PREFER_TARBALLS: "false"
+  SNAPSHOT_SOURCE: "https://xtz-shots.io/tezos-snapshots.json"
+  OCTEZ_VERSION: "tezos/tezos:v15-release"
+  NODE_GLOBALS: |
+    {
+      "env": {}
+    }
+
+  NODES: |
+    {
+      "archive-node": {
+        "instances": [
+          {
+            "config": {
+              "metrics_addr": [
+                "0.0.0.0:9932"
+              ],
+              "shell": {
+                "history_mode": "archive"
+              }
+            },
+            "is_bootstrap_node": false
+          }
+        ],
+        "runs": [
+          "octez_node"
+        ],
+        "storage_size": "1000Gi"
+      },
+      "rolling-node": {
+        "instances": [
+          {
+            "config": {
+              "metrics_addr": [
+                "0.0.0.0:9932"
+              ],
+              "shell": {
+                "history_mode": "rolling"
+              }
+            },
+            "is_bootstrap_node": false
+          }
+        ],
+        "runs": [
+          "octez_node"
+        ],
+        "storage_size": "100Gi"
+      }
+    }
+
+  SIGNERS: |
+    {}
+kind: ConfigMap
+metadata:
+  name: tezos-config
+  namespace: poc-tzk8s
+---
+# Source: tezos-chain/templates/static.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: tezos-node-rpc
+  namespace: poc-tzk8s
+spec:
+  ports:
+    - port: 8732
+      name: rpc
+  selector:
+    appType: octez-node
+  type: LoadBalancer
+---
+# Source: tezos-chain/templates/static.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: archive-node
+  labels:
+    appType: octez-node
+spec:
+  ports:
+    - port: 8732
+      name: rpc
+    - port: 9732
+      name: p2p
+    - port: 9932
+      name: metrics
+  publishNotReadyAddresses: true
+  clusterIP: None
+  selector:
+    node_class: archive-node
+---
+# Source: tezos-chain/templates/static.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: rolling-node
+  labels:
+    appType: octez-node
+spec:
+  ports:
+    - port: 8732
+      name: rpc
+    - port: 9732
+      name: p2p
+    - port: 9932
+      name: metrics
+  publishNotReadyAddresses: true
+  clusterIP: None
+  selector:
+    node_class: rolling-node
+---
+# Source: tezos-chain/templates/nodes.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: archive-node
+  namespace: poc-tzk8s
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  serviceName: archive-node
+  selector:
+    matchLabels:
+      node_class: archive-node
+  template:
+    metadata:
+      labels:
+        appType: octez-node
+        node_class: archive-node
+    spec:
+      containers:        
+        - name: octez-node
+          image: "tezos/tezos:v15-release"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              set -x
+              
+              set
+              
+              # ensure we can run octez-client commands without specifying client dir
+              ln -s /var/tezos/client /home/tezos/.tezos-client
+              #
+              # Not every error is fatal on start.  In particular, with zerotier,
+              # the listen-addr may not yet be bound causing octez-node to fail.
+              # So, we try a few times with increasing delays:
+              
+              for d in 1 1 5 10 20 60 120; do
+              	/usr/local/bin/octez-node run				\
+              			--bootstrap-threshold 0			\
+              			--config-file /etc/tezos/config.json
+              	sleep $d
+              done
+              
+              #
+              # Keep the container alive for troubleshooting on failures:
+              
+              sleep 3600
+              
+          envFrom:
+          env:
+            - name: DAEMON
+              value: octez-node
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+          ports:
+            - containerPort: 8732
+              name: tezos-rpc
+            - containerPort: 9732
+              name: tezos-net
+            - containerPort: 9932
+              name: metrics
+          readinessProbe:
+            httpGet:
+              path: /is_synced
+              port: 31732                                        
+        - name: sidecar
+          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
+          imagePullPolicy: IfNotPresent
+          args:
+            - sidecar
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: archive-node
+            - name: DAEMON
+              value: sidecar
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+          resources:
+            limits:
+              memory: 100Mi
+            requests:
+              memory: 80Mi        
+      initContainers:        
+        - name: config-init
+          image: "tezos/tezos:v15-release"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              echo "Writing custom configuration for public node"
+              mkdir -p /etc/tezos/data
+              
+              #
+              # This is my comment.
+              
+              /usr/local/bin/octez-node config init		\
+                  --config-file /etc/tezos/data/config.json	\
+                  --data-dir /etc/tezos/data			\
+                  --network $CHAIN_NAME
+              
+              cat /etc/tezos/data/config.json
+              
+              printf "\n\n\n\n\n\n\n"
+              
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: archive-node
+            - name: DAEMON
+              value: config-init
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume                
+        - name: config-generator
+          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
+          imagePullPolicy: IfNotPresent
+          args:
+            - config-generator
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: archive-node
+            - name: DAEMON
+              value: config-generator
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+            - mountPath: /etc/secret-volume
+              name: tezos-accounts        
+        - name: snapshot-downloader
+          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
+          imagePullPolicy: IfNotPresent
+          args:
+            - snapshot-downloader
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: archive-node
+            - name: DAEMON
+              value: snapshot-downloader
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume        
+        - name: snapshot-importer
+          image: "tezos/tezos:v15-release"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              set -e
+              
+              bin_dir="/usr/local/bin"
+              data_dir="/var/tezos"
+              node_dir="$data_dir/node"
+              node_data_dir="$node_dir/data"
+              node="$bin_dir/octez-node"
+              snapshot_file=${node_dir}/chain.snapshot
+              
+              if [ ! -f ${snapshot_file} ]; then
+                  echo "No snapshot to import."
+                  exit 0
+              fi
+              
+              if [ -d ${node_data_dir}/context ]; then
+                  echo "Blockchain has already been imported. If a tarball"
+                  echo "instead of a regular tezos snapshot was used, it was"
+                  echo "imported in the snapshot-downloader container."
+                  exit 0
+              fi
+              
+              cp -v /etc/tezos/config.json ${node_data_dir}
+              
+              if [ -f ${node_dir}/chain.snapshot.block_hash ]; then
+                  block_hash_arg="--block $(cat ${node_dir}/chain.snapshot.block_hash)"
+              fi
+              
+              ${node} snapshot import ${snapshot_file} --data-dir ${node_data_dir} \
+                  --network $CHAIN_NAME ${block_hash_arg}
+              find ${node_dir}
+              
+              rm -rvf ${snapshot_file}
+              
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: archive-node
+            - name: DAEMON
+              value: snapshot-importer
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume                
+        - name: upgrade-storage
+          image: "tezos/tezos:v15-release"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              set -ex
+              
+              if [ ! -e /var/tezos/node/data/context ]
+              then
+                printf "No context in data dir found, probably initial start, doing nothing."
+                exit 0
+              fi
+              octez-node upgrade storage --data-dir /var/tezos/node/data
+              
+          envFrom:
+          env:
+            - name: DAEMON
+              value: upgrade-storage
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+      securityContext:
+        fsGroup: 1000      
+      volumes:
+        - hostPath:
+            path: /dev/net/tun
+          name: dev-net-tun
+        - emptyDir: {}
+          name: config-volume
+        - name: tezos-accounts
+          secret:
+            secretName: tezos-secret
+  volumeClaimTemplates:
+    - metadata:
+        name: var-volume
+        namespace: poc-tzk8s
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1000Gi
+---
+# Source: tezos-chain/templates/nodes.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: rolling-node
+  namespace: poc-tzk8s
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  serviceName: rolling-node
+  selector:
+    matchLabels:
+      node_class: rolling-node
+  template:
+    metadata:
+      labels:
+        appType: octez-node
+        node_class: rolling-node
+    spec:
+      containers:        
+        - name: octez-node
+          image: "tezos/tezos:v15-release"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              set -x
+              
+              set
+              
+              # ensure we can run octez-client commands without specifying client dir
+              ln -s /var/tezos/client /home/tezos/.tezos-client
+              #
+              # Not every error is fatal on start.  In particular, with zerotier,
+              # the listen-addr may not yet be bound causing octez-node to fail.
+              # So, we try a few times with increasing delays:
+              
+              for d in 1 1 5 10 20 60 120; do
+              	/usr/local/bin/octez-node run				\
+              			--bootstrap-threshold 0			\
+              			--config-file /etc/tezos/config.json
+              	sleep $d
+              done
+              
+              #
+              # Keep the container alive for troubleshooting on failures:
+              
+              sleep 3600
+              
+          envFrom:
+          env:
+            - name: DAEMON
+              value: octez-node
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+          ports:
+            - containerPort: 8732
+              name: tezos-rpc
+            - containerPort: 9732
+              name: tezos-net
+            - containerPort: 9932
+              name: metrics
+          readinessProbe:
+            httpGet:
+              path: /is_synced
+              port: 31732                                        
+        - name: sidecar
+          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
+          imagePullPolicy: IfNotPresent
+          args:
+            - sidecar
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: rolling-node
+            - name: DAEMON
+              value: sidecar
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+          resources:
+            limits:
+              memory: 100Mi
+            requests:
+              memory: 80Mi        
+      initContainers:        
+        - name: config-init
+          image: "tezos/tezos:v15-release"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              echo "Writing custom configuration for public node"
+              mkdir -p /etc/tezos/data
+              
+              #
+              # This is my comment.
+              
+              /usr/local/bin/octez-node config init		\
+                  --config-file /etc/tezos/data/config.json	\
+                  --data-dir /etc/tezos/data			\
+                  --network $CHAIN_NAME
+              
+              cat /etc/tezos/data/config.json
+              
+              printf "\n\n\n\n\n\n\n"
+              
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: rolling-node
+            - name: DAEMON
+              value: config-init
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume                
+        - name: config-generator
+          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
+          imagePullPolicy: IfNotPresent
+          args:
+            - config-generator
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: rolling-node
+            - name: DAEMON
+              value: config-generator
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+            - mountPath: /etc/secret-volume
+              name: tezos-accounts        
+        - name: snapshot-downloader
+          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
+          imagePullPolicy: IfNotPresent
+          args:
+            - snapshot-downloader
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: rolling-node
+            - name: DAEMON
+              value: snapshot-downloader
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume        
+        - name: snapshot-importer
+          image: "tezos/tezos:v15-release"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              set -e
+              
+              bin_dir="/usr/local/bin"
+              data_dir="/var/tezos"
+              node_dir="$data_dir/node"
+              node_data_dir="$node_dir/data"
+              node="$bin_dir/octez-node"
+              snapshot_file=${node_dir}/chain.snapshot
+              
+              if [ ! -f ${snapshot_file} ]; then
+                  echo "No snapshot to import."
+                  exit 0
+              fi
+              
+              if [ -d ${node_data_dir}/context ]; then
+                  echo "Blockchain has already been imported. If a tarball"
+                  echo "instead of a regular tezos snapshot was used, it was"
+                  echo "imported in the snapshot-downloader container."
+                  exit 0
+              fi
+              
+              cp -v /etc/tezos/config.json ${node_data_dir}
+              
+              if [ -f ${node_dir}/chain.snapshot.block_hash ]; then
+                  block_hash_arg="--block $(cat ${node_dir}/chain.snapshot.block_hash)"
+              fi
+              
+              ${node} snapshot import ${snapshot_file} --data-dir ${node_data_dir} \
+                  --network $CHAIN_NAME ${block_hash_arg}
+              find ${node_dir}
+              
+              rm -rvf ${snapshot_file}
+              
+          envFrom:
+            - configMapRef:
+                name: tezos-config
+          env:    
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: MY_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MY_POD_TYPE
+              value: node
+            - name: MY_NODE_CLASS
+              value: rolling-node
+            - name: DAEMON
+              value: snapshot-importer
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume                
+        - name: upgrade-storage
+          image: "tezos/tezos:v15-release"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+          args:
+            - "-c"
+            - |
+              set -ex
+              
+              if [ ! -e /var/tezos/node/data/context ]
+              then
+                printf "No context in data dir found, probably initial start, doing nothing."
+                exit 0
+              fi
+              octez-node upgrade storage --data-dir /var/tezos/node/data
+              
+          envFrom:
+          env:
+            - name: DAEMON
+              value: upgrade-storage
+          volumeMounts:
+            - mountPath: /etc/tezos
+              name: config-volume
+            - mountPath: /var/tezos
+              name: var-volume
+      securityContext:
+        fsGroup: 1000      
+      volumes:
+        - hostPath:
+            path: /dev/net/tun
+          name: dev-net-tun
+        - emptyDir: {}
+          name: config-volume
+        - name: tezos-accounts
+          secret:
+            secretName: tezos-secret
+  volumeClaimTemplates:
+    - metadata:
+        name: var-volume
+        namespace: poc-tzk8s
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 100Gi
+---
+# Source: tezos-chain/templates/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: link
+  namespace: poc-tzk8s-limanet
+
+  annotations: 
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/client-body-buffer-size: 2M
+    nginx.ingress.kubernetes.io/client_max_body_size: 200m
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/from-to-www-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: 200m
+
+spec:
+  
+  tls:
+  - hosts: [testnet-link.smart-node.com]
+    secretName: link-tls
+  
+  rules:
+  - host: testnet-link.smart-node.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: tezos-node-rpc
+            port:
+              number: 8732

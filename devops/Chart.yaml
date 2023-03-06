@@ -1,0 +1,8 @@
+apiVersion: v2
+name: tezos-ingress
+description: A Helm chart for Tezos nodes on Kubernetes
+type: application
+version: 0.0.0
+keywords:
+  - tezos
+  - blockchain
