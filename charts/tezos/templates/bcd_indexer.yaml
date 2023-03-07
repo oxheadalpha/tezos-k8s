@@ -177,6 +177,19 @@ spec:
 
               /docker-entrypoint.sh nginx -g "daemon off;"
       {{- end }}
+      {{- with $indexerConfig.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $indexerConfig.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $indexerConfig.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
 {{- if not $indexerConfig.db.isExternal }}
         - image: {{ $indexerConfig.images.postgres }}
           name: db
