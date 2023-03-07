@@ -18,6 +18,8 @@ tezos_k8s_images:
 ## scripts that will look up some of these values. They should not be modified.
 tzkt_indexer_statefulset:
   name: tzkt-indexer
+bcd_indexer_statefulset:
+  name: bcd-indexer
 signer_statefulset:
   name: tezos-signer
   pod_type: signing
@@ -233,7 +235,7 @@ nodes:
         config:
           shell:
             history_mode: rolling
-          metrics_addr: [ "0.0.0.0:9932" ]
+          metrics_addr: ["0.0.0.0:9932"]
 # End nodes
 
 ## Configuration for K8s Service resources. Configuring the labels selector of a
@@ -264,7 +266,7 @@ serviceMonitor:
 #
 # By default no signer is configured:
 signers: {}
-# Here is an example of octez signer config. When set, the 
+# Here is an example of octez signer config. When set, the
 # ```
 # signers:
 #  tezos-signer-0:
@@ -449,8 +451,8 @@ protocols:
 ## Deploy an indexer with the chain. An indexer puts the chain
 ## contents in a database for efficient indexing. Most dapps need it.
 ## Supported indexers:
-## * tzkt https://github.com/baking-bad/tzkt
-#
+## * tzkt: https://github.com/baking-bad/tzkt
+## * bcd: https://github.com/baking-bad/bcdhub
 ## Templatized indexer configuration values go in the config field.
 ##
 # indexers:
@@ -489,3 +491,34 @@ protocols:
 #       db_password: bar
 #       # api_log_level: Debug
 #       # indexer_log_level: Debug
+
+## Set values `indexerRpcUrl` and `db.password` for an indexer to be created.
+bcdIndexer:
+  images:
+    api: ghcr.io/baking-bad/bcdhub-api:4.4.0
+    indexer: ghcr.io/baking-bad/bcdhub-indexer:4.4.0
+    gui: ghcr.io/baking-bad/bcdhub-gui:4.4.0
+    postgres: postgres:14
+
+  gui:
+    enabled: false
+    ## Url of the BCD api for the frontend to hit
+    apiUrl: http://localhost:14000
+    ## Url to the RPC backend for the frontend to hit
+    rpcUrl: http://localhost:8732
+
+  ## RPC url of the node to be indexed
+  # indexerRpcUrl: http://archive-baking-node-0.archive-baking-node:8732
+
+  db:
+    # By default creates a postgres db container. Setting to true won't create
+    # it and instead expects credentials for an external postgres database.
+    isExternal: false
+    hostname: localhost
+    name: bcd
+    password: bcd-password
+    user: bcd
+
+  # For the pv for the optional postgres container
+  storageClassName: ""
+  storage: "300Gi"

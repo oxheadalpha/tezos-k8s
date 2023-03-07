@@ -1,0 +1,202 @@
+{{- $indexerConfig := .Values.bcdIndexer | default dict }}
+{{- if (include "tezos.shouldDeployBcdIndexer" $indexerConfig) }}
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: bcd
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+    - port: 14000
+      name: bcd
+      targetPort: bcd
+  {{- if $indexerConfig.gui.enabled }}
+    - port: 8080
+      name: gui
+      targetPort: gui
+  {{- end }}
+  selector:
+    app: {{ .Values.bcd_indexer_statefulset.name }}
+  type: NodePort
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bcd-env
+  namespace: {{ .Release.Namespace }}
+data:
+  BCD_ENV: sandbox
+  GIN_MODE: debug
+  SANDBOX_NODE_URI: {{ $indexerConfig.indexerRpcUrl }}
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: db-creds
+  namespace: {{ .Release.Namespace }}
+data:
+  # `DB_HOSTNAME` is the env var looked up by the app
+  DB_HOSTNAME: {{ b64enc ($indexerConfig.db.hostname | default "localhost") }}
+  POSTGRES_USER: {{ b64enc $indexerConfig.db.user }}
+  POSTGRES_PASSWORD: {{ b64enc $indexerConfig.db.password }}
+  POSTGRES_DB: {{ b64enc $indexerConfig.db.name }}
+{{- if not $indexerConfig.db.isExternal }}
+  PGDATA: {{ b64enc "/var/lib/postgresql/data/pgdata" }}
+{{- end }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sandbox-config
+  namespace: {{ .Release.Namespace }}
+data:
+  # Based on:
+  # https://github.com/baking-bad/bcdhub/blob/fa7e36f6c890d543d72a3d494f7a2509cd41871a/configs/sandbox.yml
+  sandbox.yml: |
+    rpc:
+      sandboxnet:
+        uri: ${SANDBOX_NODE_URI}
+        timeout: 10
+        requests_per_second: 10
+    storage:
+      pg:
+        host: ${DB_HOSTNAME:-db}
+        port: 5432
+        user: ${POSTGRES_USER}
+        dbname: ${POSTGRES_DB:-bcd}
+        password: ${POSTGRES_PASSWORD}
+        sslmode: disable
+      timeout: 10
+    share_path: /etc/bcd
+    base_url: http://localhost:8000
+    api:
+      project_name: api
+      bind: ":14000"
+      swagger_host: "localhost:8000"
+      cors_enabled: true
+      sentry_enabled: false
+      seed_enabled: true
+      page_size: ${PAGE_SIZE:-10}
+      frontend:
+        ga_enabled: false
+        mempool_enabled: false
+        sandbox_mode: true
+        rpc:
+          sandboxnet: {{ $indexerConfig.gui.rpcUrl | default "" }}
+      networks:
+        - sandboxnet
+      connections:
+        max: 20
+        idle: 10
+    indexer:
+      project_name: indexer
+      sentry_enabled: false
+      networks:
+        sandboxnet:
+          receiver_threads: 5
+      connections:
+        max: 5
+        idle: 5
+    scripts:
+      networks:
+        - sandboxnet
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.bcd_indexer_statefulset.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app: {{ .Values.bcd_indexer_statefulset.name }}
+  serviceName: ""
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.bcd_indexer_statefulset.name }}
+    spec:
+      volumes:
+        - name: sandbox-config
+          configMap:
+            name: sandbox-config
+      containers:
+        - image: {{ $indexerConfig.images.api }}
+          name: api
+          ports:
+            - containerPort: 14000
+              name: bcd
+          envFrom:
+            - configMapRef:
+                name: bcd-env
+            - secretRef:
+                name: db-creds
+          volumeMounts:
+            - name: sandbox-config
+              mountPath: /app/api/sandbox.yml
+              subPath: sandbox.yml
+        - image: {{ $indexerConfig.images.indexer }}
+          name: indexer
+          envFrom:
+            - configMapRef:
+                name: bcd-env
+            - secretRef:
+                name: db-creds
+          volumeMounts:
+            - name: sandbox-config
+              mountPath: /app/indexer/sandbox.yml
+              subPath: sandbox.yml
+      {{- if $indexerConfig.gui.enabled }}
+        {{- $_ := required "gui.apiUrl is required" $indexerConfig.gui.apiUrl }}
+        {{- $_ := required "gui.rpcUrl is required" $indexerConfig.gui.rpcUrl }}
+        - image: {{ $indexerConfig.images.gui }}
+          name: gui
+          ports:
+            - containerPort: 80
+              name: gui
+          command: ["/bin/sh"]
+          args:
+            - -c
+            - |
+              set -ex
+
+              api_url="{{ $indexerConfig.gui.apiUrl }}/v1"
+
+              for file in js/*; do
+                echo $file
+                sed -i -E \
+                  "s~http://localhost:14000/v1~$api_url~g; s~process\.env.VUE_APP_API_URI~\"$api_url\"~g" \
+                  "$file"
+              done
+
+              /docker-entrypoint.sh nginx -g "daemon off;"
+      {{- end }}
+{{- if not $indexerConfig.db.isExternal }}
+        - image: {{ $indexerConfig.images.postgres }}
+          name: db
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: indexer-db
+          envFrom:
+            - secretRef:
+                name: db-creds
+  volumeClaimTemplates:
+    - metadata:
+        name: indexer-db
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: {{ $indexerConfig.storageClassName }}
+        resources:
+          requests:
+            storage: {{ $indexerConfig.storage | default "300Gi" }}
+{{- end }}
+
+{{- end }}
