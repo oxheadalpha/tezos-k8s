@@ -467,10 +467,10 @@ protocols:
 ##
 # indexers:
 #   tzkt:
-#     api_image: "bakingbad/tzkt-api"
-#     api_image_tag: "1.6.4"
-#     indexer_image: "bakingbad/tzkt-sync"
-#     indexer_image_tag: "1.6.4"
+#     images:
+#       api: "bakingbad/tzkt-api:1.11.1"
+#       indexer: "bakingbad/tzkt-sync:1.11.1"
+#       postgres: "postgres:13"
 #
 #     ## Database volumeClaimTemplates config
 #     storageClassName: ""
@@ -481,21 +481,25 @@ protocols:
 #     ## Indexer replicas
 #     replicas: 1
 #
-#     ## Tzkt provides new snapshots as they update their code. Update your
-#     ## indexers by specifying new docker image tags and by using the matching
-#     ## db_snapshot_url. Spin up an additional replica if you only have one to
-#     ## avoid downtime. See tzkt's readme for public networks' db snapshot urls.
-#     ## If you want to index a brand new archive node you are spinning up, just
-#     ## let the indexer start syncing with it from scratch.
-#     ## https://github.com/baking-bad/tzkt
-#     db_snapshot_url: https://tzkt.fra1.digitaloceanspaces.com/snapshots/tzkt_v1.6_mainnet.backup
+#     db:
+#       # By default creates a postgres db container. Setting to true won't create
+#       # it and instead expects credentials for an external postgres database.
+#       isExternal: false
+#       ## Tzkt provides new snapshots as they update their code. Update your
+#       ## indexers by specifying new docker image tags and by using the matching
+#       ## snapshot_url. Spin up an additional replica if you only have one to
+#       ## avoid downtime. See tzkt's readme for public networks' db snapshot urls.
+#       ## If you want to index a brand new archive node you are spinning up, just
+#       ## let the indexer start syncing with it from scratch.
+#       ## https://github.com/baking-bad/tzkt
+#       snapshot_url: https://snapshots.tzkt.io/tzkt_v1.11_mainnet.backup
 #
 #     ## Configurable tzkt fields
 #     config:
-#       ## Url of the archive node to index. You will need to create an archive node up
-#       ## above in the `nodes` section. The `rpc_url` field is looking for a node named
-#       ## `archive-node`.
+#       ## Url of the rpc node to index. No archive node is needed if the instance is bootstrapped
+#       ## from a snapshot
 #       rpc_url: http://archive-node-0.archive-node:8732
+#       db_host: localhost
 #       db_name: db
 #       db_user: foo
 #       db_password: bar
