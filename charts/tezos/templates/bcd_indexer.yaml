@@ -121,13 +121,17 @@ spec:
     metadata:
       labels:
         app: {{ .Values.bcd_indexer_statefulset.name }}
+    {{- with $indexerConfig.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
     spec:
-      {{- with $tzkt_indexer.imagePullSecrets }}
+    {{- with $indexerConfig.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+    {{- end }}
       securityContext:
-        {{- toYaml $tzkt_indexer.podSecurityContext | nindent 8 }}
+        {{- toYaml $indexerConfig.podSecurityContext | nindent 8 }}
       volumes:
         - name: sandbox-config
           configMap:
