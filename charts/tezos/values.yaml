@@ -522,3 +522,10 @@ bcdIndexer:
   # For the pv for the optional postgres container
   storageClassName: ""
   storage: "300Gi"
+
+  imagePullSecrets: {}
+  podAnnotations: {}
+  podSecurityContext: {}
+  affinity: {}
+  nodeSelector: {}
+  tolerations: {}
