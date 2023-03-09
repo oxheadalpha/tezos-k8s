@@ -3,6 +3,7 @@
 from flask import Flask, escape, request
 import requests
 import datetime
+from multiprocessing import Lock
 
 import logging
 
@@ -13,6 +14,7 @@ application = Flask(__name__)
 
 AGE_LIMIT_IN_SECS = 600
 
+lock = Lock()
 
 @application.route("/is_synced")
 def sync_checker():
@@ -22,33 +24,37 @@ def sync_checker():
     in a bad state (for example, some crashed threads)
     Instead, we query the head block and verify timestamp is
     not too old.
+    Any request locks the sidecar: when there is contention on
+    the node, we do not want to open a large number of http
+    connections to it.
     """
-    try:
-        r = requests.get("http://127.0.0.1:8732/chains/main/blocks/head/header")
-    except requests.exceptions.RequestException as e:
-        err = "Could not connect to node, %s" % repr(e), 500
-        application.logger.error(err)
-        return err
-    header = r.json()
-    if header["level"] == 0:
-        # when chain has not been activated, bypass age check
-        # and return successfully to mark as ready
-        # otherwise it will never activate (activation uses rpc service)
-        return "Chain has not been activated yet"
-    timestamp = r.json()["timestamp"]
-    block_age = datetime.datetime.utcnow() - datetime.datetime.strptime(
-        timestamp, "%Y-%m-%dT%H:%M:%SZ"
-    )
-    age_in_secs = block_age.total_seconds()
-    if age_in_secs > AGE_LIMIT_IN_SECS:
-        err = (
-            "Error: Chain head is %s secs old, older than %s"
-            % (age_in_secs, AGE_LIMIT_IN_SECS),
-            500,
+    with lock:
+        try:
+            r = requests.get("http://127.0.0.1:8732/chains/main/blocks/head/header")
+        except requests.exceptions.RequestException as e:
+            err = "Could not connect to node, %s" % repr(e), 500
+            application.logger.error(err)
+            return err
+        header = r.json()
+        if header["level"] == 0:
+            # when chain has not been activated, bypass age check
+            # and return successfully to mark as ready
+            # otherwise it will never activate (activation uses rpc service)
+            return "Chain has not been activated yet"
+        timestamp = r.json()["timestamp"]
+        block_age = datetime.datetime.utcnow() - datetime.datetime.strptime(
+            timestamp, "%Y-%m-%dT%H:%M:%SZ"
         )
-        application.logger.error(err)
-        return err
-    return "Chain is bootstrapped"
+        age_in_secs = block_age.total_seconds()
+        if age_in_secs > AGE_LIMIT_IN_SECS:
+            err = (
+                "Error: Chain head is %s secs old, older than %s"
+                % (age_in_secs, AGE_LIMIT_IN_SECS),
+                500,
+            )
+            application.logger.error(err)
+            return err
+        return "Chain is bootstrapped"
 
 
 if __name__ == "__main__":
