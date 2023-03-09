@@ -122,6 +122,12 @@ spec:
       labels:
         app: {{ .Values.bcd_indexer_statefulset.name }}
     spec:
+      {{- with $tzkt_indexer.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml $tzkt_indexer.podSecurityContext | nindent 8 }}
       volumes:
         - name: sandbox-config
           configMap:
