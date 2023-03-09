@@ -132,6 +132,19 @@ spec:
     {{- end }}
       securityContext:
         {{- toYaml $indexerConfig.podSecurityContext | nindent 8 }}
+
+    {{- with $indexerConfig.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with $indexerConfig.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with $indexerConfig.tolerations }}
+      tolerations:
+      {{- toYaml . | nindent 8 }}
+  {{- end }}
       volumes:
         - name: sandbox-config
           configMap:
@@ -186,18 +199,6 @@ spec:
               done
 
               /docker-entrypoint.sh nginx -g "daemon off;"
-      {{- end }}
-      {{- with $indexerConfig.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with $indexerConfig.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with $indexerConfig.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
       {{- end }}
 
 {{- if not $indexerConfig.db.isExternal }}
