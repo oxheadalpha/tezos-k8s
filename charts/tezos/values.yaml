@@ -493,16 +493,16 @@ protocols:
 #       ## let the indexer start syncing with it from scratch.
 #       ## https://github.com/baking-bad/tzkt
 #       snapshot_url: https://snapshots.tzkt.io/tzkt_v1.11_mainnet.backup
+#       host: localhost
+#       name: db
+#       user: foo
+#       password: bar
 #
 #     ## Configurable tzkt fields
 #     config:
 #       ## Url of the rpc node to index. No archive node is needed if the instance is bootstrapped
 #       ## from a snapshot
 #       rpc_url: http://archive-node-0.archive-node:8732
-#       db_host: localhost
-#       db_name: db
-#       db_user: foo
-#       db_password: bar
 #       # api_log_level: Debug
 #       # indexer_log_level: Debug
 

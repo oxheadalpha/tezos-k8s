@@ -11,7 +11,7 @@
 */}}
 {{- /* Extract tzkt version from tzkt image */}}
 {{- $indexer_image:= split ":" $tzkt_indexer.images.indexer }}
-{{- $snapshot_file := print "/etc/db-snapshot/" $tzkt_indexer.config.db_name "-" $indexer_image._1 ".backup" }}
+{{- $snapshot_file := print "/etc/db-snapshot/" $tzkt_indexer.db.name "-" $indexer_image._1 ".backup" }}
 {{- /*
  A file every pod uses to remember its imported snapshot.
  By keeping track, pods won't try to re-upgrade their db on restarts.
@@ -23,10 +23,10 @@ kind: Secret
 metadata:
   name: db-creds
 data:
-  POSTGRES_HOST: {{ b64enc ($tzkt_indexer.config.db_host | default "localhost") }}
-  POSTGRES_USER: {{ b64enc $tzkt_indexer.config.db_user }}
-  POSTGRES_PASSWORD: {{ b64enc $tzkt_indexer.config.db_password }}
-  POSTGRES_DB: {{ b64enc $tzkt_indexer.config.db_name }}
+  POSTGRES_HOST: {{ b64enc ($tzkt_indexer.db.host | default "localhost") }}
+  POSTGRES_USER: {{ b64enc $tzkt_indexer.db.user }}
+  POSTGRES_PASSWORD: {{ b64enc $tzkt_indexer.db.password }}
+  POSTGRES_DB: {{ b64enc $tzkt_indexer.db.name }}
 
 {{- if $tzkt_indexer.db.snapshot_url }}
 ---
