@@ -109,7 +109,7 @@ Said names are traditionally kebab case.
 At the statefulset level, the following parameters are allowed:
 
    - storage_size: the size of the PV
-   - runs: a list of containers to run, e.g. "baker", "tezedge"
+   - runs: a list of containers to run, e.g. "baker", "accuser"
    - instances: a list of nodes to fire up, each is a dictionary
      defining:
      - `bake_using_account`: The name of the account that should be used
@@ -120,11 +120,6 @@ At the statefulset level, the following parameters are allowed:
                Run `tezos-node config --help` for more info.
 
 defaults are filled in for most values.
-
-Each statefulset can run either Nomadic Lab's `tezos-node` or TezEdge's
-`tezedge` node.  Either can support all of the other containers.  If you
-specify `tezedge` as one of the containers to run, then it will be run
-in preference to `tezos-node`.
 
 E.g.:
 
@@ -145,29 +140,16 @@ nodes:
     instances:
       - {}
       - {}
-  tezedge-full-node:
-    runs:
-      - baker
-      - logger
-      - tezedge
-    instances:
-      - {}
-      - {}
-      - {}
 ```
 
 This will run the following nodes:
    - `baking-node-0`
    - `full-node-0`
    - `full-node-1`
-   - `tezedge-full-node-0`
-   - `tezedge-full-node-1`
-   - `tezedge-full-node-2`
 
 `baking-node-0` will run baker and logger containers
 and will be the only bootstrap node.  `full-node-*` are just nodes
-with no extras.  `tezedge-full-node-*` will be tezedge nodes running baker
-and logger containers.
+with no extras. 
 
 To upgrade your Helm release run:
 
@@ -217,7 +199,7 @@ On each computer, run this command to check that the nodes have matching heads b
 ```shell
 kubectl get pod -n oxheadalpha -l appType=octez-node -o name |
 while read line;
-  do kubectl -n oxheadalpha exec $line -c octez-node -- /usr/local/bin/tezos-client rpc get /chains/main/blocks/head/hash;
+  do kubectl -n oxheadalpha exec $line -c octez-node -- /usr/local/bin/octez-client rpc get /chains/main/blocks/head/hash;
 done
 ```
 

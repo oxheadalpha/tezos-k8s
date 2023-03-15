@@ -21,7 +21,7 @@ spec:
   template:
     metadata:
       labels:
-        appType: tezos-node
+        appType: octez-node
         node_class: {{ $.node_class }}
       {{- if has "baker" $.node_vals.runs }}
         baking_node: "true"
@@ -32,11 +32,9 @@ spec:
     spec:
       containers:
         {{- include "tezos.container.node"      $ | indent 8 }}
-        {{- include "tezos.container.tezedge"   $ | indent 8 }}
         {{- include "tezos.container.accusers"  $ | indent 8 }}
         {{- include "tezos.container.bakers"    $ | indent 8 }}
         {{- include "tezos.container.logger"    $ | indent 8 }}
-        {{- include "tezos.container.metrics"   $ | indent 8 }}
         {{- include "tezos.container.zerotier"  $ | indent 8 }}
         {{- include "tezos.container.sidecar"   $ | indent 8 }}
         {{- include "tezos.container.vdf"       $ | indent 8 }}
@@ -47,8 +45,9 @@ spec:
         {{- include "tezos.init_container.snapshot_downloader" $ | indent 8 }}
         {{- include "tezos.init_container.snapshot_importer"   $ | indent 8 }}
         {{- include "tezos.init_container.wait_for_dns"        $ | indent 8 }}
+        {{- include "tezos.init_container.upgrade_storage"     $ | indent 8 }}
       securityContext:
-        fsGroup: 100
+        fsGroup: 1000
 {{- include "tezos.nodeSelectorConfig" $ | indent 6 }}
       volumes:
         - hostPath:
@@ -59,6 +58,11 @@ spec:
         - name: tezos-accounts
           secret:
             secretName: tezos-secret
+{{- if (include "tezos.hasPerBlockVotes" $) }}
+        - name: per-block-votes
+          configMap:
+            name: per-block-votes
+{{- end }}
 {{- if $.node_vals.local_storage | default false }}
         - emptyDir: {}
           name: var-volume

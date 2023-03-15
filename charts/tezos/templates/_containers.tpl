@@ -28,7 +28,7 @@
      *    name           the name of the container, defaults to type, this
      *                   is used for containers like baker which can have
      *                   multiple instances of the same type
-     *    image          one of: octez, tezedge, utils
+     *    image          one of: octez, utils
      *    command        the command
      *    args           the list of arguments to the command, will default
      *                   to the type if using a "utils" image
@@ -38,11 +38,13 @@
      *                   scripts/wait-for-dns.sh and pass it as a single
      *                   argument to /bin/sh -c.  For image == octez, this
      *                   is the default.
-     *    script_command overide the name of the script.  We still look
+     *    script_command override the name of the script.  We still look
      *                   in the scripts directory and postpend ".sh"
      *    with_config    bring in the configMap defaults true only on utils.
      *    with_secret    bring in the secrets map including the identities.
      *    localvars      set env vars MY_* Defaults to true only on utils.
+     *    resources      set container resources management, i.e. request
+     *                   and limit, default value is an empty dict.
      */ -}}
 
 {{- define "tezos.generic_container" }}
@@ -75,6 +77,9 @@
     {{- $_ := set . "args" (list .type) }}
   {{- end }}
 {{- end }}
+{{- if not (hasKey . "resources") }}
+    {{- $_ := set . "resources" dict }}
+{{- end }}
 
 {{- /*
      * And, now, we generate the YAML:
@@ -83,8 +88,6 @@
 {{- $node_vals_images := $.node_vals.images | default dict }}
 {{- if eq .image "octez" }}
   image: "{{ or $node_vals_images.octez $.Values.images.octez }}"
-{{- else if eq .image "tezedge" }}
-  image: "{{ or $node_vals_images.tezedge $.Values.images.tezedge }}"
 {{- else }}
   image: "{{ $.Values.tezos_k8s_images.utils }}"
 {{- end }}
@@ -123,6 +126,10 @@
   {{- end }}
     - name: DAEMON
       value: {{ .type }}
+  {{- if .baker_index }}
+    - name: BAKER_INDEX
+      value: "{{ .baker_index }}"
+  {{- end }}
 {{- $envdict := dict }}
 {{- $lenv := $.node_vals.env           | default dict }}
 {{- $genv := $.Values.node_globals.env | default dict }}
@@ -147,13 +154,18 @@
     - mountPath: /etc/secret-volume
       name: tezos-accounts
     {{- end }}
-  {{- if (or (eq .type "octez-node")
-             (eq .type "tezedge-node")) }}
+  {{- if eq .type "baker" }}
+    - mountPath: /etc/tezos/per-block-votes
+      name: per-block-votes
+  {{- end }}
+  {{- if (eq .type "octez-node") }}
   ports:
     - containerPort: 8732
       name: tezos-rpc
     - containerPort: 9732
       name: tezos-net
+    - containerPort: 9932
+      name: metrics
     {{- if or (not (hasKey $.node_vals "readiness_probe")) $.node_vals.readiness_probe }}
   readinessProbe:
     httpGet:
@@ -161,6 +173,10 @@
       port: 31732
     {{- end }}
   {{- end }}
+{{- if .resources }}
+  resources:
+{{ toYaml .resources | indent 4 }}
+{{- end }}
 {{- end }}
 
 
@@ -225,62 +241,61 @@
   {{- end }}
 {{- end }}
 
-{{- define "tezos.container.sidecar" }}
-  {{- if or (not (hasKey $.node_vals "readiness_probe")) $.node_vals.readiness_probe }}
-    {{- include "tezos.generic_container" (dict "root"  $
-                                                "type"  "sidecar"
-                                                "image" "utils"
-    ) | nindent 0 }}
-  {{- end }}
+{{- define "tezos.init_container.upgrade_storage" }}
+    {{- include "tezos.generic_container" (dict "root"   $
+                                           "type"        "upgrade-storage"
+                                           "image"       "octez"
+    )  | nindent 0 }}
 {{- end }}
 
-{{- define "tezos.getNodeImplementation" }}
-  {{- $containers := $.node_vals.runs }}
-  {{- if and (has "tezedge_node" $containers) (has "octez_node" $containers) }}
-    {{- fail "Only either tezedge_node or octez_node container can be specified in 'runs' field " }}
-  {{- else if (has "octez_node" $containers) }}
-    {{- "octez" }}
-  {{- else if (has "tezedge_node" $containers) }}
-    {{- "tezedge" }}
-  {{- else }}
-    {{- fail "No Tezos node container was specified in 'runs' field. Must specify tezedge_node or octez_node" }}
+{{- define "tezos.container.sidecar" }}
+  {{- if or (not (hasKey $.node_vals "readiness_probe")) $.node_vals.readiness_probe }}
+    {{- $sidecarResources := dict "requests" (dict "memory" "80Mi") "limits" (dict "memory" "100Mi") -}}
+    {{- include "tezos.generic_container" (dict "root"      $
+                                                "type"      "sidecar"
+                                                "image"     "utils"
+                                                "resources" $sidecarResources
+    ) | nindent 0 }}
   {{- end }}
 {{- end }}
 
 {{- define "tezos.container.node" }}
-{{- if eq (include "tezos.getNodeImplementation" $) "octez" }}
     {{- include "tezos.generic_container" (dict "root"        $
                                                 "type"        "octez-node"
                                                 "image"       "octez"
                                                 "with_config" 0
+                                                "resources"   $.node_vals.resources
     ) | nindent 0 }}
-{{- end }}
-{{- end }}
-
-{{- define "tezos.container.tezedge" }}
-  {{- if eq (include "tezos.getNodeImplementation" $) "tezedge" }}
-    {{- include "tezos.generic_container" (
-            dict "root"        $
-                 "type"        "tezedge-node"
-                 "image"       "tezedge"
-                 "with_config" 0
-                 "command"     "/light-node"
-                 "args"        (list "--config-file=/etc/tezos/tezedge.conf")
-    ) | nindent 0 }}
-  {{- end }}
 {{- end }}
 
 {{- define "tezos.container.bakers" }}
   {{- if has "baker" $.node_vals.runs }}
     {{- $node_vals_images := $.node_vals.images | default dict }}
-    {{- range .Values.protocols }}
-      {{- $_ := set $ "command_in_tpl" .command }}
-      {{- include "tezos.generic_container" (dict "root" $
-                                                  "name" (print "baker-"
-                                                          (lower .command))
-                                                  "type"        "baker"
-                                                  "image"       "octez"
-      ) | nindent 0 }}
+    {{/* calculate the max number of bakers accross instances */}}
+    {{- $max_baker_num := 0 }}
+    {{- range $i := $.node_vals.instances }}
+      {{- if hasKey $i "bake_using_account" }}
+        {{- $max_baker_num = max 1 $max_baker_num }}
+      {{- else }}
+        {{- $max_baker_num = max (len (get $i "bake_using_accounts")) $max_baker_num }}
+      {{- end }}
+    {{- end }}
+    {{- range $n := until (int $max_baker_num) }}
+      {{- range $.Values.protocols }}
+        {{- if (not .vote) }}
+          {{ fail (print "You did not specify the liquidity baking toggle vote in 'protocols' for protocol " .command ".") }}
+        {{- end -}}
+        {{- $_ := set $ "command_in_tpl" .command }}
+        {{- include "tezos.generic_container" (dict "root" $
+                                                    "name" (print "baker-"
+                                                            print $n
+                                                            print "-"
+                                                            (lower .command))
+                                                    "type"        "baker"
+                                                    "image"       "octez"
+                                                    "baker_index"   (print $n)
+        ) | nindent 0 }}
+      {{- end }}
     {{- end }}
   {{- end }}
 {{- end }}
@@ -305,19 +320,14 @@
   {{- if has "vdf" $.node_vals.runs }}
   {{ $node_vals_images := $.node_vals.images | default dict }}
     {{- range .Values.protocols }}
-      {{- if regexFind "Kathma" .command }}
-      {{- /*
-      Only protos higher than Kathmandu support VDF
-      */}}
 - name: vdf-{{ lower .command }}
   image: "{{ or $node_vals_images.octez $.Values.images.octez }}"
   imagePullPolicy: IfNotPresent
   command:
-    - /usr/local/bin/tezos-baker-{{ .command }}
+    - /usr/local/bin/octez-baker-{{ .command }}
   args:
     - run
     - vdf
-      {{- end }}
     {{- end }}
   {{- end }}
 {{- end }}
@@ -330,34 +340,6 @@
                                                 "image"       "utils"
     ) | nindent 0 }}
   {{- end }}
-{{- end }}
-
-{{- define "tezos.container.metrics" }}
-{{- if has "metrics" $.node_vals.runs }}
-- image: "registry.gitlab.com/nomadic-labs/tezos-metrics"
-  args:
-    - "--listen-prometheus=6666"
-    - "--data-dir=/var/tezos/node/data"
-  imagePullPolicy: IfNotPresent
-  name: metrics
-  ports:
-    - containerPort: 6666
-      name: tezos-metrics
-  volumeMounts:
-    - mountPath: /etc/tezos
-      name: config-volume
-    - mountPath: /var/tezos
-      name: var-volume
-    - mountPath: /etc/secret-volume
-      name: tezos-accounts
-  envFrom:
-    - configMapRef:
-        name: tezos-config
-  env:
-{{- include "tezos.localvars.pod_envvars" . | indent 4 }}
-    - name: DAEMON
-      value: tezos-metrics
-{{- end }}
 {{- end }}
 
 {{/*

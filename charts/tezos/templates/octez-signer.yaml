@@ -70,7 +70,7 @@ spec:
           - mountPath: /etc/secret-volume
             name: tezos-accounts
       securityContext:
-        fsGroup: 100
+        fsGroup: 1000
       volumes:
         - emptyDir: {}
           name: var-volume

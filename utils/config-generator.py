@@ -2,7 +2,10 @@ import argparse
 import collections
 import json
 import os
+import re
+import requests
 import socket
+import sys
 from grp import getgrnam
 from hashlib import blake2b
 from pathlib import Path
@@ -44,6 +47,13 @@ for cl, val in NODES.items():
                 if "baker" in val["runs"]:
                     BAKING_NODES[name] = inst
 
+# MY_POD_CLASS is not set after iterating nodes configurations,
+# this can happen when the pod is one which scaled out by autoscaler.
+# Set this value to the value mapped by MY_NODE_CLASS to read possible config specified in at NODES
+if not MY_POD_CLASS and "MY_NODE_CLASS" in os.environ:
+    my_node_class = os.environ["MY_NODE_CLASS"]
+    MY_POD_CLASS = NODES[my_node_class]
+
 if MY_POD_TYPE == "signing":
     MY_POD_CONFIG = OCTEZ_SIGNERS[MY_POD_NAME]
 
@@ -67,8 +77,10 @@ if not THIS_IS_A_PUBLIC_NET and JOIN_PUBLIC_NETWORK:
 def main():
     all_accounts = ACCOUNTS
 
-    if SHOULD_GENERATE_UNSAFE_DETERMINISTIC_DATA:
+    if not THIS_IS_A_PUBLIC_NET:
         fill_in_missing_genesis_block()
+
+    if SHOULD_GENERATE_UNSAFE_DETERMINISTIC_DATA:
         all_accounts = fill_in_missing_accounts()
         fill_in_missing_keys(all_accounts)
 
@@ -133,32 +145,43 @@ def main():
                 "ERROR: No bootstrap peers found for this non-bootstrap node"
             )
 
-        config_json = json.dumps(
-            create_node_config_json(
-                bootstrap_peers,
-                my_zerotier_ip,
-            ),
+        node_config = create_node_config_json(
+            bootstrap_peers,
+            my_zerotier_ip,
+        )
+        node_config_json = json.dumps(
+            node_config,
             indent=2,
         )
         print("Generated config.json :")
-        print(config_json)
+        print(node_config_json)
         with open("/etc/tezos/config.json", "w") as json_file:
-            print(config_json, file=json_file)
+            print(node_config_json, file=json_file)
+
+        if not os.path.isdir(f"{DATA_DIR}/context"):
+            node_snapshot_config = create_node_snapshot_config_json(
+                node_config["shell"]["history_mode"]
+            )
+            node_snapshot_config_json = json.dumps(
+                node_snapshot_config,
+                indent=2,
+            )
+            if node_snapshot_config:
+                print("Generated snapshot_config.json :")
+                print(node_snapshot_config_json)
+                with open("/var/tezos/snapshot_config.json", "w") as json_file:
+                    print(node_snapshot_config_json, file=json_file)
 
 
 # If NETWORK_CONFIG["genesis"]["block"] hasn't been specified, we generate a
 # deterministic one.
 def fill_in_missing_genesis_block():
-    print("\nEnsure that we have genesis_block")
     genesis_config = NETWORK_CONFIG["genesis"]
-    genesis_block_placeholder = "YOUR_GENESIS_BLOCK_HASH_HERE"
-
-    if (
-        genesis_config.get("block", genesis_block_placeholder)
-        == genesis_block_placeholder
-    ):
+    if not genesis_config.get("block"):
         print("Deterministically generating missing genesis_block")
-        seed = "foo"
+        if not NETWORK_CONFIG.get("chain_name"):
+            raise Exception("Genesis config is missing 'chain_name'.")
+        seed = NETWORK_CONFIG["chain_name"]
         gbk = blake2b(seed.encode(), digest_size=32).digest()
         gbk_b58 = b58encode_check(b"\x01\x34" + gbk).decode("utf-8")
         genesis_config["block"] = gbk_b58
@@ -193,7 +216,7 @@ def get_baking_accounts(baker_values):
 # Secret and public keys are matches and need be processed together. Neither key
 # must be specified, as later code will fill in the details if they are not.
 #
-# We create any missing accounts that are refered to by a node at
+# We create any missing accounts that are referred to by a node at
 # BAKING_NODES to ensure that all named accounts exist.
 def fill_in_missing_accounts():
     print("\nFilling in any missing accounts...")
@@ -470,8 +493,8 @@ def create_node_identity_json():
         print(json.dumps(NODE_IDENTITIES.get(MY_POD_NAME)), file=identity_file)
 
     nogroup = getgrnam("nogroup").gr_gid
-    chown(DATA_DIR, user=100, group=nogroup)
-    chown(identity_file_path, user=100, group=nogroup)
+    chown(DATA_DIR, user=1000, group=nogroup)
+    chown(identity_file_path, user=1000, group=nogroup)
     print(f"Identity file written at {identity_file_path}")
 
 
@@ -520,14 +543,6 @@ def create_protocol_parameters_json(accounts):
         for url in protocol_activation["bootstrap_contract_urls"]:
             print(f"Injecting bootstrap contract from {url}")
             protocol_params["bootstrap_contracts"].append(requests.get(url).json())
-
-    if protocol_activation.get("faucet"):
-        with open("/faucet-commitments/commitments.json", "r") as f:
-            commitments = json.load(f)
-        print(
-            f"Faucet commitment file found, adding faucet commitments to protocol parameters"
-        )
-        protocol_params["commitments"] = commitments
 
     return protocol_params
 
@@ -608,7 +623,7 @@ def create_node_config_json(
     node_config = recursive_update(node_config, computed_node_config)
 
     if THIS_IS_A_PUBLIC_NET:
-        # `tezos-node config --network ...` will have been run in config-init.sh
+        # `octez-node config --network ...` will have been run in config-init.sh
         #  producing a config.json. The value passed to the `--network` flag may
         #  have been the chain name or a url to the config.json of the chain.
         #  Either way, set the `network` field here as the `network` object of the
@@ -640,6 +655,95 @@ def create_node_config_json(
         }
 
     return node_config
+
+
+def create_node_snapshot_config_json(history_mode):
+    """Create this node's snapshot config"""
+
+    network_name = NETWORK_CONFIG.get("chain_name")
+    prefer_tarballs = os.environ.get("PREFER_TARBALLS", "").lower() in (
+        "true",
+        "1",
+        "t",
+    )
+    artifact_type = "tarball" if prefer_tarballs else "tezos-snapshot"
+    rolling_tarball_url = os.environ.get("ROLLING_TARBALL_URL")
+    full_tarball_url = os.environ.get("FULL_TARBALL_URL")
+    archive_tarball_url = os.environ.get("ARCHIVE_TARBALL_URL")
+    rolling_snapshot_url = os.environ.get("ROLLING_SNAPSHOT_URL")
+    full_snapshot_url = os.environ.get("FULL_SNAPSHOT_URL")
+    if (
+        rolling_tarball_url
+        or full_tarball_url
+        or rolling_snapshot_url
+        or full_snapshot_url
+        or archive_tarball_url
+    ):
+        print("Snapshot or tarball URL found, will ignore snapshot_source")
+        match history_mode:
+            case "rolling":
+                if rolling_tarball_url:
+                    return {"url": rolling_tarball_url, "artifact_type": "tarball"}
+                elif rolling_snapshot_url:
+                    return {
+                        "url": rolling_snapshot_url,
+                        "artifact_type": "tezos-snapshot",
+                    }
+                return
+            case "full":
+                if full_tarball_url:
+                    return {"url": full_tarball_url, "artifact_type": "tarball"}
+                elif full_snapshot_url:
+                    return {"url": full_snapshot_url, "artifact_type": "tezos-snapshot"}
+                return
+            case "archive":
+                if archive_tarball_url:
+                    return {"url": archive_tarball_url, "artifact_type": "tarball"}
+                return
+            case _:
+                print(f"Error: history mode {history_mode} is not known.")
+                sys.exit(1)
+
+    if "images" in MY_POD_CLASS and "octez" in MY_POD_CLASS["images"]:
+        octez_container_version = MY_POD_CLASS["images"]["octez"]
+    else:
+        octez_container_version = os.environ.get("OCTEZ_VERSION")
+    snapshot_source = os.environ.get("SNAPSHOT_SOURCE")
+    if snapshot_source:
+        all_snapshots = requests.get(snapshot_source).json()
+    else:
+        return
+    try:
+        octez_long_version = octez_container_version.split(":")[1]
+        octez_version_re = re.search(r"v(\d+)", octez_long_version)
+        octez_version = octez_version_re and octez_version_re.group(1)
+    except Exception:
+        octez_version = None
+
+    print(
+        f"""
+Searching for snapshots from {snapshot_source}
+with history mode {history_mode}
+and artifact type {artifact_type}
+and chain name {network_name}
+and octez version {octez_version}.
+    """
+    )
+    # find snapshot matching all the requested fields
+    matching_snapshots = [
+        s
+        for s in all_snapshots.get("data", [])
+        if s.get("history_mode") == history_mode
+        and s.get("artifact_type") == artifact_type
+        and s.get("chain_name") == network_name
+    ]
+    if octez_version:
+        matching_snapshots = [
+            s for s in matching_snapshots if int(octez_version) == s.get("tezos_version").get("version").get("major")
+        ]
+    matching_snapshots = sorted(matching_snapshots, key=lambda s: s.get("block_height"))
+
+    return matching_snapshots[-1] if len(matching_snapshots) else None
 
 
 if __name__ == "__main__":

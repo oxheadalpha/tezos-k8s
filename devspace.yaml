@@ -16,10 +16,6 @@ images:
     image: tezos-k8s-utils
     dockerfile: ./utils/Dockerfile
     context: ./utils
-  faucet:
-    image: tezos-k8s-faucet
-    dockerfile: ./faucet/Dockerfile
-    context: ./faucet
 
 dev:
   ports:

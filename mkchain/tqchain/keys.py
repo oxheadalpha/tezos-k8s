@@ -1,14 +1,9 @@
-import random
-import string
 import subprocess
 
 use_docker = False
 
 try:
-    from secrets import token_bytes
-
     from pytezos import pytezos
-    from pytezos.crypto.encoding import base58_encode
 except (ImportError, NotImplementedError):
     use_docker = True
 
@@ -62,37 +57,10 @@ def gen_key(image):
         image,
         "sh",
         "-c",
-        "'/usr/local/bin/tezos-client "
+        "'/usr/local/bin/octez-client "
         + "--protocol PsDELPH1Kxsx gen keys mykey && "
-        + "/usr/local/bin/tezos-client "
+        + "/usr/local/bin/octez-client "
         + "--protocol PsDELPH1Kxsx show address mykey -S'",
     ).split(b"\n")
 
     return {"public": extract_key(keys, 1), "secret": extract_key(keys, 2)}
-
-
-def get_genesis_vanity_chain_id(seed_len=16):
-    print("Generating vanity chain id")
-
-    if not use_docker:
-        return base58_encode(token_bytes(32), b"B").decode("utf-8")
-
-    seed = "".join(
-        random.choice(string.ascii_uppercase + string.digits) for _ in range(seed_len)
-    )
-
-    return (
-        run_docker(
-            "oxheadalpha/flextesa:20220127",
-            "flextesa",
-            "vani",
-            '""',
-            "--seed",
-            seed,
-            "--first",
-            "--machine-readable",
-            "csv",
-        )
-        .decode("utf-8")
-        .split(",")[1]
-    )

@@ -3,13 +3,16 @@ data:
   NAMESPACE: {{ $.Release.Namespace }}
   IMAGE_NAME: {{ $.Values.tezos_k8s_images.snapshotEngine }}
   TEZOS_IMAGE: {{ $.Values.images.octez }}
-  SNAPSHOT_MARKDOWN_TEMPLATE: {{ $.Values.snapshotMarkdownTemplate }}
-  JEKYLL_CONFIG: {{ $.Values.jekyllConfig }}
   JEKYLL_REMOTE_THEME_REPOSITORY: {{ $.Values.jekyllRemoteThemeRepository }}
   SNAPSHOT_WEBSITE_DOMAIN_NAME: {{ $.Values.snapshotWebsiteDomainName }}
   SERVICE_ACCOUNT: {{ $.Values.service_account }}
   RESTORED_STORAGE_INIT_TIME: {{ $.Values.restoredStorageInitTime }}
   DISABLE_STORAGE_INIT_TIME: {{ $.Values.disableStorageInitTime | quote }}
+  NETWORK_OVERRIDE: {{ $.Values.networkOverride | default "" | quote }}
+  ALL_SUBDOMAINS: {{ $.Values.allSubdomains }}
+  ARCHIVE_SLEEP_DELAY: {{ $.Values.artifactDelay.archive }}
+  ROLLING_SLEEP_DELAY: {{ $.Values.artifactDelay.rolling }}
+  SCHEMA_URL: {{ $.Values.schemaUrl }}
 kind: ConfigMap
 metadata:
   name: snapshot-configmap

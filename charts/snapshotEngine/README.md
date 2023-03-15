@@ -320,12 +320,12 @@ Overview of functionality of containers in Kubernetes Job Pods.
 
 ##### init-tezos-filesystem Container
 
-In order for the storage to be imported sucessfully to a new node, the storage needs to be initialized by the `tezos-node` application.
+In order for the storage to be imported successfully to a new node, the storage needs to be initialized by the `octez-node` application.
 
 This container performs the following steps -
 
 1. Chowns the history-mode-snapshot-cache-volume to 100 so subsequent containers can access files created in them.
-2. Sets a trap so that we can exit this container after 2 minutes.  `tezos-node` does not provide exit criteria if there is an error. Around 20%-40% of the time there will be an error because the EC2 instance would normally need to be shut down before an EBS snapshot is taken. With Kubernetes this is not possible, so we time the filesystem initialization and kill it if it takes longer than 2 minutes.
+2. Sets a trap so that we can exit this container after 2 minutes.  `octez-node` does not provide exit criteria if there is an error. Around 20%-40% of the time there will be an error because the EC2 instance would normally need to be shut down before an EBS snapshot is taken. With Kubernetes this is not possible, so we time the filesystem initialization and kill it if it takes longer than 2 minutes.
 3. Runs a headless Tezos RPC endpoint to initialize the storage.
 4. Waits until RPC is available.
 5. Writes `BLOCK_HASH`, `BLOCK_HEIGHT`, and `BLOCK_TIME` for later use to snapshot cache.
@@ -338,8 +338,8 @@ This container performs the following steps -
 
 1. Chowns the history-mode-snapshot-cache-volume and rolling-tarball-restore volume to 100 so subsequent containers can access files created in them.
 2. Gets network name from the namespace.
-3. Performs a `tezos-node config init` on our restored snapshot storage.
-4. Performs a `tezos-node snapshot export` to create the `.rolling` file to be uploaded later.
+3. Performs a `octez-node config init` on our restored snapshot storage.
+4. Performs a `octez-node snapshot export` to create the `.rolling` file to be uploaded later.
 5. Restores this new snapshot to the `rolling-tarball-restore` PVC to later create the rolling tarball.
 6. Creates a file to alert the next job that the rolling snapshot is currently being created and tells it to wait.
 

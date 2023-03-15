@@ -9,20 +9,34 @@ BAKER_EXTRA_ARGS_FROM_ENV=${BAKER_EXTRA_ARGS}
 
 proto_command="{{ .command_in_tpl }}"
 
-if [ "${proto_command}" == "012-Psithaca" ]; then
-    extra_args=""
-else
-    echo '{"liquidity_baking_toggle_vote": "pass"}' > /etc/tezos/per_block_votes.json
-    # we pass both a vote argument and a votefile argument; vote argument is mandatory as a fallback
-    extra_args="--liquidity-baking-toggle-vote on --votefile /etc/tezos/per_block_votes.json"
+my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
+
+per_block_vote_file=/etc/tezos/per-block-votes/${my_baker_account}-${proto_command}-per-block-votes.json
+
+if [ $(cat $per_block_vote_file) == "null" ]; then
+  cat << EOF
+You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
+protocols:
+- command: ${proto_command}
+  vote:
+    liquidity_baking_toggle_vote: "on"
+EOF
+  exit 1
+fi
+extra_args="--votefile ${per_block_vote_file}"
+
+if [ "${my_baker_account}" == "" ]; then
+  while true; do
+    printf "This container is not baking, but exists "
+    printf "due to uneven numer of bakers within the statefulset\n"
+    sleep 300
+  done
 fi
 
-my_baker_account="$(cat /etc/tezos/baker-account )"
+CLIENT="$TEZ_BIN/octez-client -d $CLIENT_DIR"
+CMD="$TEZ_BIN/octez-baker-$proto_command -d $CLIENT_DIR"
 
-CLIENT="$TEZ_BIN/tezos-client -d $CLIENT_DIR"
-CMD="$TEZ_BIN/tezos-baker-$proto_command -d $CLIENT_DIR"
-
-# ensure we can run tezos-client commands without specifying client dir
+# ensure we can run octez-client commands without specifying client dir
 ln -s /var/tezos/client /home/tezos/.tezos-client
 
 while ! $CLIENT rpc get chains/main/blocks/head; do

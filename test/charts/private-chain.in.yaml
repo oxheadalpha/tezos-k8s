@@ -3,7 +3,7 @@
 #
 # Please note that we are trying to exercise as many features as
 # we can in a single chart.  In nodes:, e.g., we are ensuring that:
-# we are using both octez and tezedge; each runs list is different;
+# each runs list is different;
 # that we have some regular nodes; we use the config sections;
 # multiple baking accounts; etc.
 
@@ -72,11 +72,9 @@ activation:
     sc_rollup_max_available_messages: 1000000
 bootstrap_peers: []
 expected_proof_of_work: 0
-full_snapshot_url: null
-rolling_snapshot_url: null
-archive_tarball_url: null
+snapshot_source: null
 images:
-  octez: 'tezos/tezos:v12-release'
+  octez: 'tezos/tezos:v15-release'
 is_invitation: false
 node_config_network:
   activation_account_name: tezos-baking-node-0
@@ -88,7 +86,7 @@ node_config_network:
 nodes:
   eu:
     images:
-      octez: tezos/tezos:v10-release
+      octez: tezos/tezos:v15-release
     labels:
       rpc_node: "true"
     instances:
@@ -99,18 +97,13 @@ nodes:
     - is_bootstrap_node: true
       bake_using_account: tacoinfraSigner
     - {}
-    runs: [octez_node, baker, endorser, logger, metrics]
+    runs: [octez_node, baker, logger, metrics]
     storage_size: 15Gi
   us:
     instances:
     - {}
     - {}
-    runs: [octez_node, baker, endorser]
-    storage_size: 15Gi
-  af:
-    instances:
-    - {}
-    runs: [tezedge_node, baker, logger, metrics]
+    runs: [octez_node, baker]
     storage_size: 15Gi
   as:
     runs: [octez_node]
@@ -133,3 +126,8 @@ tacoinfraSigners:
   tacoinfra-signer:
     accounts:
       - tacoinfraSigner
+
+protocols:
+  - command: 013-PtJakart
+    vote:
+      liquidity_baking_toggle_vote: "pass"

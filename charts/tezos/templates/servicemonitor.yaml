@@ -1,0 +1,17 @@
+{{- if .Values.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+{{- toYaml .Values.serviceMonitor.labels | nindent 4 }}
+  name: tezos-service-monitor
+  namespace: {{ .Release.Namespace }}
+spec:
+  endpoints:
+  - interval: 15s
+    port: metrics
+    path: /metrics
+  selector:
+    matchLabels:
+      appType: octez-node
+{{- end }}

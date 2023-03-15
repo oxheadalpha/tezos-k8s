@@ -12,7 +12,7 @@
 
 ### For deployment on a cloud platform (AWS)
 
-- we recommmend [pulumi](https://www.pulumi.com/docs/get-started/install/), an infrastructure-as-code platform, for cloud deployments
+- we recommend [pulumi](https://www.pulumi.com/docs/get-started/install/), an infrastructure-as-code platform, for cloud deployments
 
 ## Installing prerequisites
 
@@ -115,7 +115,7 @@ Or, if you prefer, you can build the image using:
 ./scripts/create_docker_image.sh
 ```
 
-This will create an image with a name like `tezos/tezos:v13-rc1`.
+This will create an image with a name like `tezos/tezos:v15.0`.
 Then you install it thus:
 ```shell
 docker image save <image> | ( eval $(minikube docker-env); docker image load )

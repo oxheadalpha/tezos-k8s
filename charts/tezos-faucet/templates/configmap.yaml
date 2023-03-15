@@ -1,0 +1,21 @@
+apiVersion: v1
+data:
+  config.json: |
+{{ .Values.config | mustToPrettyJson | indent 4 }}
+kind: ConfigMap
+metadata:
+  name: faucet-config
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: faucet-backend-config
+  namespace: {{ .Release.Namespace }}
+data:
+  FAUCET_ADDRESS: {{ .Values.config.network.faucetAddress }}
+  RPC_URL: {{ .Values.config.network.rpcUrl }}
+  AUTHORIZED_HOST: {{ .Values.authorizedHost }}
+  FAUCET_AMOUNT_USER: "{{ .Values.config.application.profiles.user.amount}}"
+  FAUCET_AMOUNT_BAKER: "{{ .Values.config.application.profiles.baker.amount}}"
+  MAX_BALANCE: "{{ .Values.maxBalance }}"
