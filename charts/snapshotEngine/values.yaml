@@ -99,3 +99,6 @@ artifactDelay:
 
 # URL to schema.json file to validate generated metadata against
 schemaUrl: "https://oxheadalpha.com/tezos-snapshot-metadata.schema.1.0.json"
+
+# Skips website build and upload during job
+skipWebsite: "false"
