@@ -14,6 +14,7 @@ readiness_probe_path = os.getenv("READINESS_PROBE_PATH")
 signer_port = os.getenv("SIGNER_PORT")
 endpoint_alias = os.getenv("ENDPOINT_ALIAS")
 baker_alias = os.getenv("BAKER_ALIAS")
+signer_metrics = os.getenv("SIGNER_METRICS") == "true"
 
 def relabel(prometheus_metrics,extra_labels):
     '''
@@ -45,7 +46,7 @@ def prometheus_metrics():
         probe = requests.get(f"http://localhost:{signer_port}{readiness_probe_path}")
     except requests.exceptions.RequestException:
         probe = None
-    if probe:
+    if probe and signer_metrics:
         try:
             healthz = relabel(requests.get(f"http://localhost:{signer_port}/healthz").text, extra_labels)
         except requests.exceptions.RequestException:

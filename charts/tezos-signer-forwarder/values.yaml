@@ -48,6 +48,12 @@ signers:
   # When using HA signer, must be identical for all.
   signer_port: 6732
 
+  # Whether the remote signer exposes prometheus metrics.
+  # Typically these will be hardware metrics of the signer.
+  # If true, these metrics will be labeled and scraped into
+  # the cluster's prometheus.
+  signer_metrics: false
+
   # Enter email address to send alerts to.
   # monitoring_email:
 

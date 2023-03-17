@@ -2,6 +2,7 @@
 {{- $name := .name }}
 {{- $readiness_probe_path := .readiness_probe_path }}
 {{- $signer_port := .signer_port }}
+{{- $signer_metrics := .signer_metrics }}
 {{- $signers := . }}
 {{- range $i := until (len .endpoints) }}
 {{- $endpoint := index $signers.endpoints $i }}
@@ -78,6 +79,8 @@ spec:
           value: {{ $readiness_probe_path | quote }}
         - name: SIGNER_PORT
           value: {{ $signer_port | quote }}
+        - name: SIGNER_METRICS
+          value: {{ $signer_metrics | quote }}
         - name: ENDPOINT_ALIAS
           value: {{ $endpoint.alias | quote }}
         - name: BAKER_ALIAS
