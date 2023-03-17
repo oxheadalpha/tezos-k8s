@@ -11,6 +11,8 @@ spec:
   endpoints:
   - port: metrics
     path: /metrics
+    # default scrape timeout of 10 can be too small for remote raspberry pis
+    scrapeTimeout: "20s"
   selector:
     matchLabels:
       app.kubernetes.io/name: tezos-signer-forwarder
