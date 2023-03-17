@@ -44,6 +44,10 @@ signers:
   #  "/statusz/${PUBLIC_BAKING_KEY_HASH}?ledger_url=${LEDGER_AUTHORIZED_PATH_ENCODED}"
   readiness_probe_path: /authorized_keys
 
+  # The signer port that is being tunneled by the remote signer.
+  # When using HA signer, must be identical for all.
+  signer_port: 6732
+
   # Enter email address to send alerts to.
   # monitoring_email:
 

@@ -11,6 +11,7 @@ log.setLevel(logging.ERROR)
 application = Flask(__name__)
 
 readiness_probe_path = os.getenv("READINESS_PROBE_PATH")
+signer_port = os.getenv("SIGNER_PORT")
 endpoint_alias = os.getenv("ENDPOINT_ALIAS")
 baker_alias = os.getenv("BAKER_ALIAS")
 
@@ -41,12 +42,12 @@ def prometheus_metrics():
     extra_labels = 'midl_endpoint_alias="%s",midl_baker_alias="%s"' % (endpoint_alias, baker_alias)
 
     try:
-        probe = requests.get(f"http://localhost:8443{readiness_probe_path}")
+        probe = requests.get(f"http://localhost:{signer_port}{readiness_probe_path}")
     except requests.exceptions.RequestException:
         probe = None
     if probe:
         try:
-            healthz = relabel(requests.get(f"http://localhost:8443/healthz").text, extra_labels)
+            healthz = relabel(requests.get(f"http://localhost:{signer_port}/healthz").text, extra_labels)
         except requests.exceptions.RequestException:
             healthz = None
     else:
