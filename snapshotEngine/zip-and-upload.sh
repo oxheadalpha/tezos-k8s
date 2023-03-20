@@ -467,7 +467,7 @@ else
     printf "%s Successfully uploaded network site redirect.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 fi
 
-if [[ "${SKIP_WEBSITE}" == "false" ]]; then
+if [[ -n "${SNAPSHOT_WEBSITE_DOMAIN_NAME}" ]]; then
 
     # Need to be in this dir for jekyll to run.
     # Container-specific requirement

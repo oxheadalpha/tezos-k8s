@@ -13,7 +13,6 @@ data:
   ARCHIVE_SLEEP_DELAY: {{ $.Values.artifactDelay.archive }}
   ROLLING_SLEEP_DELAY: {{ $.Values.artifactDelay.rolling }}
   SCHEMA_URL: {{ $.Values.schemaUrl }}
-  SKIP_WEBSITE: {{ $.Values.skipWebsite}}
 kind: ConfigMap
 metadata:
   name: snapshot-configmap
