@@ -12,10 +12,15 @@ spec:
 {{- range .Values.signers }}
 {{- $name := .name }}
 {{- $signers := . }}
+  # undocumented k8s feature to make a service route to different pods
+  # based on the port - allows to reuse the same public ip in all cloud
+  # providers. For it to work, ports need to have names.
+  # https://github.com/kubernetes/kubernetes/issues/24875#issuecomment-794596576
 {{- range $i := until (len .endpoints) }}
 {{- $endpoint := index $signers.endpoints $i }}
   - port: {{ $endpoint.tunnel_endpoint_port }}
-    name: tunnel-{{ $name }}-{{ $i }}
+    name: ssh-{{ trunc 9 $name }}-{{ $i }}
+    targetPort: ssh-{{ trunc 9 $name }}-{{ $i }}
 {{- end }}
 {{- end }}
   # ensures that remote signers can always ssh

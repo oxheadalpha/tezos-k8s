@@ -63,6 +63,9 @@ spec:
         - name: signer
           containerPort: {{ $signer_port }}
           protocol: TCP
+        - name: ssh-{{ trunc 9 $name }}-{{ $i }}
+          containerPort: {{ $endpoint.tunnel_endpoint_port }}
+          protocol: TCP
         readinessProbe:
           httpGet:
             path: {{ $readiness_probe_path }}
