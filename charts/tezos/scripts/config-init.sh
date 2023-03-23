@@ -5,9 +5,9 @@ mkdir -p /etc/tezos/data
 
 # if config already exists (container is rebooting), dump and delete it.
 if [ -e /etc/tezos/data/config.json ]; then
-  printf("Found pre-existing config.json:\r")
+  printf "Found pre-existing config.json:\n"
   cat /etc/tezos/data/config.json
-  printf("Deleting")
+  printf "Deleting\n"
   rm -rvf /etc/tezos/data/config.json
 fi
 
