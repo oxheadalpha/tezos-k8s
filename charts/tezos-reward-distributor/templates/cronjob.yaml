@@ -86,9 +86,9 @@ spec:
               volumeMounts:
               - mountPath: /trd
                 name: storage
-              - mountPath: /trd/cfg/aws_secret_access_key
+              - mountPath: /trd/cfg/bucket_upload_secrets
                 name: secret-volume
-                subPath: aws_secret_access_key
+                subPath: bucket_upload_secrets
               command:
               - /bin/sh
               args:
@@ -96,12 +96,6 @@ spec:
               - |
 {{ tpl ($.Files.Get (print "scripts/bucket_upload.sh")) $ | indent 16 }}
               env:
-              - name: AWS_ACCESS_KEY_ID
-                value: "{{ .Values.bucket_upload.access_key_id }}"
-              - name: AWS_SECRET_ACCESS_KEY
-                value: "{{ .Values.bucket_upload.secret_access_key }}"
-              - name: AWS_DEFAULT_REGION
-                value: "{{ .Values.bucket_upload.default_region }}"
               - name: BUCKET_ENDPOINT_URL
                 value: "{{ .Values.bucket_upload.bucket_endpoint_url }}"
               - name: BUCKET_NAME

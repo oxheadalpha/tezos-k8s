@@ -116,9 +116,9 @@ trd_config:
 # optionally upload all TRD state to a bucket. This allows all data to be examined
 # when the cronjob is not running.
 bucket_upload:
-  access_key_id:
-  default_region:
   bucket_endpoint_url:
   bucket_name: 
 bucket_upload_secrets:
+  access_key_id:
+  default_region:
   secret_access_key:
