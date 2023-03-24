@@ -7,7 +7,6 @@ echo ------------------------------------------------------------
 
 mkdir -p /var/tezos/client
 mkdir -p /var/tezos/node/data
-chmod -R 777 /var/tezos
 set -e
 python3 /config-generator.py "$@"
 set +e
@@ -25,8 +24,6 @@ if [ "${local_storage}" == "true" ]; then
   echo '{ "version": "2.0" }' > /var/tezos/node/data/version.json
   ln -s /var/persistent/peers.json /var/tezos/node/data/peers.json
   ln -s /var/persistent/identity.json /var/tezos/node/data/identity.json
-  chmod -R 777 /var/tezos/node/data
-  chmod -R 777 /var/persistent
 fi
 
 AM_I_BAKER=0
