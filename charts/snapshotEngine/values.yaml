@@ -3,7 +3,7 @@ tezos_k8s_images:
 
 # the tezos version used to run `octez-node snapshot import/export`
 images:
-  octez: tezos/tezos:v15-release
+  octez: tezos/tezos:v16-release
 
 # snapshotEngine containers interact with the kubernetes control
 # plane to create volume snapshots. This requires a special IAM role
