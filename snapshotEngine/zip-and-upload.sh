@@ -467,79 +467,82 @@ else
     printf "%s Successfully uploaded network site redirect.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 fi
 
-# Need to be in this dir for jekyll to run.
-# Container-specific requirement
-cd /srv/jekyll || exit
+if [[ -n "${SNAPSHOT_WEBSITE_DOMAIN_NAME}" ]]; then
 
-# Copy Gemfile and Gemfile.lock to current dir
-cp /snapshot-website-base/* .
+    # Need to be in this dir for jekyll to run.
+    # Container-specific requirement
+    cd /srv/jekyll || exit
 
-# Remote theme does not work
-# Using git instead
-REPO="${JEKYLL_REMOTE_THEME_REPOSITORY%@*}"
-BRANCH="${JEKYLL_REMOTE_THEME_REPOSITORY#*@}"
-LOCAL_DIR=monosite
-git clone https://github.com/"${REPO}".git --branch "${BRANCH}" "${LOCAL_DIR}"
-cp -r "${LOCAL_DIR}"/* .
-rm -rf "${LOCAL_DIR}"
+    # Copy Gemfile and Gemfile.lock to current dir
+    cp /snapshot-website-base/* .
 
-# Create new base.json locally
-touch base.json
-echo '[]' > "base.json"
+    # Remote theme does not work
+    # Using git instead
+    REPO="${JEKYLL_REMOTE_THEME_REPOSITORY%@*}"
+    BRANCH="${JEKYLL_REMOTE_THEME_REPOSITORY#*@}"
+    LOCAL_DIR=monosite
+    git clone https://github.com/"${REPO}".git --branch "${BRANCH}" "${LOCAL_DIR}"
+    cp -r "${LOCAL_DIR}"/* .
+    rm -rf "${LOCAL_DIR}"
 
-printf "%s Building base.json... this may take a while.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-aws s3 ls s3://"${S3_BUCKET}" |  grep '\.json'| sort | awk '{print $4}' | awk -F '\\\\n' '{print $1}' | tr ' ' '\n' | grep -v -e base.json -e tezos-snapshots.json | while read ITEM; do
-    tmp=$(mktemp) && cp base.json "${tmp}" && jq --argjson file "$(curl -s https://"${S3_BUCKET}"/$ITEM)" '. += [$file]' "${tmp}" > base.json
-done
+    # Create new base.json locally
+    touch base.json
+    echo '[]' > "base.json"
 
-#Upload base.json
-if ! aws s3 cp base.json s3://"${S3_BUCKET}"/base.json; then
-    printf "%s Upload base.json : Error uploading file base.json to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-else
-    printf "%s Upload base.json : File base.json successfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-fi
+    printf "%s Building base.json... this may take a while.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    aws s3 ls s3://"${S3_BUCKET}" |  grep '\.json'| sort | awk '{print $4}' | awk -F '\\\\n' '{print $1}' | tr ' ' '\n' | grep -v -e base.json -e tezos-snapshots.json | while read ITEM; do
+        tmp=$(mktemp) && cp base.json "${tmp}" && jq --argjson file "$(curl -s https://"${S3_BUCKET}"/$ITEM)" '. += [$file]' "${tmp}" > base.json
+    done
 
-# Create snapshot.json
-# List of all snapshot metadata across all subdomains
-# build site pages
-python /getAllSnapshotMetadata.py
+    #Upload base.json
+    if ! aws s3 cp base.json s3://"${S3_BUCKET}"/base.json; then
+        printf "%s Upload base.json : Error uploading file base.json to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    else
+        printf "%s Upload base.json : File base.json successfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    fi
 
-# Fail if python raised exception (validation failure)
-ret=$?
-if [[ "${ret}" -ne 0 ]]; then
-    printf "%s Metadata did not validate sucessfully. Exiting...  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    sleep 20
-    exit 1
-fi
+    # Create snapshot.json
+    # List of all snapshot metadata across all subdomains
+    # build site pages
+    python /getAllSnapshotMetadata.py
 
-# Check if tezos-snapshots.json exists
-# tezos-snapshots.json is a list of all snapshots in all buckets
-if [[ ! -f tezos-snapshots.json ]]; then
-    printf "%s ERROR tezos-snapshots.json does not exist locally.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    sleep 5
-    exit 1
-fi
+    # Fail if python raised exception (validation failure)
+    ret=$?
+    if [[ "${ret}" -ne 0 ]]; then
+        printf "%s Metadata did not validate sucessfully. Exiting...  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+        sleep 20
+        exit 1
+    fi
 
-# Upload tezos-snapshots.json
-if ! aws s3 cp tezos-snapshots.json s3://"${SNAPSHOT_WEBSITE_DOMAIN_NAME}"/tezos-snapshots.json; then
-    printf "%s Upload tezos-snapshots.json : Error uploading file tezos-snapshots.json to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-else
-    printf "%s Upload tezos-snapshots.json : File tezos-snapshots.json successfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-fi
+    # Check if tezos-snapshots.json exists
+    # tezos-snapshots.json is a list of all snapshots in all buckets
+    if [[ ! -f tezos-snapshots.json ]]; then
+        printf "%s ERROR tezos-snapshots.json does not exist locally.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+        sleep 5
+        exit 1
+    fi
 
-# Separate python for web page build
-# Needs tezos-snapshots.json to exist before pages are built
-python /getLatestSnapshotMetadata.py
+    # Upload tezos-snapshots.json
+    if ! aws s3 cp tezos-snapshots.json s3://"${SNAPSHOT_WEBSITE_DOMAIN_NAME}"/tezos-snapshots.json; then
+        printf "%s Upload tezos-snapshots.json : Error uploading file tezos-snapshots.json to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    else
+        printf "%s Upload tezos-snapshots.json : File tezos-snapshots.json successfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    fi
 
-# Generate HTML from markdown and metadata
-chown -R jekyll:jekyll ./*
-bundle exec jekyll build
+    # Separate python for web page build
+    # Needs tezos-snapshots.json to exist before pages are built
+    python /getLatestSnapshotMetadata.py
 
-# Upload chain page (index.html and assets) to root of website bucket
-if ! aws s3 cp _site/ s3://"${SNAPSHOT_WEBSITE_DOMAIN_NAME}" --recursive --include "*"; then
-    printf "%s Website Build & Deploy : Error uploading site to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-else
-    printf "%s Website Build & Deploy  : Successful uploaded website to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    # Generate HTML from markdown and metadata
+    chown -R jekyll:jekyll ./*
+    bundle exec jekyll build
+
+    # Upload chain page (index.html and assets) to root of website bucket
+    if ! aws s3 cp _site/ s3://"${SNAPSHOT_WEBSITE_DOMAIN_NAME}" --recursive --include "*"; then
+        printf "%s Website Build & Deploy : Error uploading site to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    else
+        printf "%s Website Build & Deploy  : Successful uploaded website to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    fi
 fi
 
 SLEEP_TIME=0m
