@@ -70,6 +70,8 @@ spec:
   volumeClaimTemplates:
     - metadata:
 {{- if $.node_vals.local_storage | default false }}
+        # since we are using local storage, deploy a small persistent voluem
+        # to store identity.json and peers.json
         name: persistent-volume
 {{- else }}
         name: var-volume
