@@ -113,6 +113,7 @@ spec:
         */}}
         - name: copy-configmap
           image: {{ $signerImageName }}
+          imagePullPolicy: {{ default "IfNotPresent" $signerImage.pullPolicy }}
           securityContext:
             runAsNonRoot: false
             runAsUser: 0
@@ -140,6 +141,7 @@ spec:
               mountPath: /etc/file_ratchets
         - name: create-keys-json
           image: {{ $signerImageName }}
+          imagePullPolicy: {{ default "IfNotPresent" $signerImage.pullPolicy }}
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
