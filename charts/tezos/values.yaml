@@ -9,7 +9,7 @@ is_invitation: false
 # Images not part of the tezos-k8s repo go here
 images:
   octez: tezos/tezos:v15-release
-  tacoinfraRemoteSigner: oxheadalpha/tacoinfra-remote-signer
+  tacoinfraRemoteSigner: ghcr.io/oxheadalpha/tacoinfra-remote-signer:0.1.0
 # Images that are part of the tezos-k8s repo go here with 'dev' tag
 tezos_k8s_images:
   utils: ghcr.io/oxheadalpha/tezos-k8s-utils:master
