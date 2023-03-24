@@ -3,9 +3,14 @@
 BLOCK_HEIGHT=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HEIGHT)
 BLOCK_HASH=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH)
 BLOCK_TIMESTAMP=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_TIMESTAMP)
-TEZOS_VERSION=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_VERSION)
+#TEZOS_VERSION=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_VERSION)
 NETWORK="${NAMESPACE%%-*}"
 export S3_BUCKET="${NAMESPACE%-*}.${SNAPSHOT_WEBSITE_DOMAIN_NAME}"
+TEZOS_RPC_VERSION_INFO="$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_RPC_VERSION_INFO)"
+
+TEZOS_VERSION="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .version)"
+TEZOS_VERSION_COMMIT_HASH="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .commit_info.commit_hash)"
+TEZOS_VERSION_COMMIT_DATE="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .commit_info.commit_date)"
 
 cd /
 
@@ -72,38 +77,54 @@ if [ "${HISTORY_MODE}" = archive ]; then
         --arg SHA256 "${SHA256}" \
         --arg FILESIZE_BYTES "${FILESIZE_BYTES}" \
         --arg FILESIZE "${FILESIZE}" \
-        --arg TEZOS_VERSION "${TEZOS_VERSION}" \
         --arg NETWORK "${NETWORK}" \
         --arg HISTORY_MODE "archive" \
         --arg ARTIFACT_TYPE "tarball" \
+        --arg TEZOS_VERSION_COMMIT_HASH "${TEZOS_VERSION_COMMIT_HASH}" \
+        --arg TEZOS_VERSION_COMMIT_DATE "${TEZOS_VERSION_COMMIT_DATE}" \
         '{
-            "block_hash": $BLOCK_HASH, 
-            "block_height": $BLOCK_HEIGHT, 
+            "block_hash": $BLOCK_HASH,
+            "block_height": ($BLOCK_HEIGHT|fromjson),
             "block_timestamp": $BLOCK_TIMESTAMP,
             "filename": $ARCHIVE_TARBALL_FILENAME,
-            "sha256": $SHA256,
             "url": $URL,
-            "filesize_bytes": $FILESIZE_BYTES,
-            "filesize": $FILESIZE, 
-            "tezos_version": $TEZOS_VERSION,
+            "sha256": $SHA256,
+            "filesize_bytes": ($FILESIZE_BYTES|fromjson),
+            "filesize": $FILESIZE,
             "chain_name": $NETWORK,
             "history_mode": $HISTORY_MODE,
-            "artifact_type": $ARTIFACT_TYPE
+            "artifact_type": $ARTIFACT_TYPE,
+            "tezos_version": {
+                "implementation": "octez",
+                "version": "",
+                "commit_info": {
+                    "commit_hash": $TEZOS_VERSION_COMMIT_HASH,
+                    "commit_date": $TEZOS_VERSION_COMMIT_DATE
+                }
+            }
         }' \
         > "${ARCHIVE_TARBALL_FILENAME}".json
 
+        # Since version.additional_info will either be another object or "release" we just overwrite it from whatever we got above
+        # JQ has trouble inserting a key into a file this is the way we opted to insert it
+        tmp=$(mktemp)
+        jq --arg version "$TEZOS_VERSION" '.tezos_version.version = ($version|fromjson)' "${ARCHIVE_TARBALL_FILENAME}".json > "$tmp" && mv "$tmp" "${ARCHIVE_TARBALL_FILENAME}".json
+
         # Check metadata json exists
-        if [ -f "${ARCHIVE_TARBALL_FILENAME}".json ]; then
+        if [[ -s "${ARCHIVE_TARBALL_FILENAME}".json ]]; then
             printf "%s Archive Tarball : ${ARCHIVE_TARBALL_FILENAME}.json created.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+
+            # Optional schema validation
+            validate_metadata "${ARCHIVE_TARBALL_FILENAME}".json
+
+            # Upload archive tarball metadata json
+            if ! aws s3 cp "${ARCHIVE_TARBALL_FILENAME}".json s3://"${S3_BUCKET}"/"${ARCHIVE_TARBALL_FILENAME}".json; then
+                printf "%s Archive Tarball : Error uploading ${ARCHIVE_TARBALL_FILENAME}.json to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+            else
+                printf "%s Archive Tarball : Artifact JSON ${ARCHIVE_TARBALL_FILENAME}.json uploaded to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+            fi
         else
             printf "%s Archive Tarball : Error creating ${ARCHIVE_TARBALL_FILENAME}.json.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-        fi
-
-        # Upload archive tarball metadata json
-        if ! aws s3 cp "${ARCHIVE_TARBALL_FILENAME}".json s3://"${S3_BUCKET}"/"${ARCHIVE_TARBALL_FILENAME}".json; then
-            printf "%s Archive Tarball : Error uploading ${ARCHIVE_TARBALL_FILENAME}.json to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-        else
-            printf "%s Archive Tarball : Artifact JSON ${ARCHIVE_TARBALL_FILENAME}.json uploaded to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         fi
 
         # Create archive tarball redirect file
@@ -236,37 +257,54 @@ if [ "${HISTORY_MODE}" = rolling ]; then
         --arg SHA256 "$SHA256" \
         --arg FILESIZE_BYTES "$FILESIZE_BYTES" \
         --arg FILESIZE "$FILESIZE" \
-        --arg TEZOS_VERSION "$TEZOS_VERSION" \
         --arg NETWORK "$NETWORK" \
         --arg HISTORY_MODE "rolling" \
         --arg ARTIFACT_TYPE "tarball" \
+        --arg TEZOS_VERSION_COMMIT_HASH "${TEZOS_VERSION_COMMIT_HASH}" \
+        --arg TEZOS_VERSION_COMMIT_DATE "${TEZOS_VERSION_COMMIT_DATE}" \
         '{
-            "block_hash": $BLOCK_HASH, 
-            "block_height": $BLOCK_HEIGHT, 
+            "block_hash": $BLOCK_HASH,
+            "block_height": ($BLOCK_HEIGHT|fromjson),
             "block_timestamp": $BLOCK_TIMESTAMP,
             "filename": $ROLLING_TARBALL_FILENAME,
             "url": $URL,
             "sha256": $SHA256,
-            "filesize_bytes": $FILESIZE_BYTES,
-            "filesize": $FILESIZE, 
-            "tezos_version": $TEZOS_VERSION,
+            "filesize_bytes": ($FILESIZE_BYTES|fromjson),
+            "filesize": $FILESIZE,
             "chain_name": $NETWORK,
             "history_mode": $HISTORY_MODE,
-            "artifact_type": $ARTIFACT_TYPE
+            "artifact_type": $ARTIFACT_TYPE,
+            "tezos_version": {
+                "implementation": "octez",
+                "version": "",
+                "commit_info": {
+                    "commit_hash": $TEZOS_VERSION_COMMIT_HASH,
+                    "commit_date": $TEZOS_VERSION_COMMIT_DATE
+                }
+            }
         }' \
         > "${ROLLING_TARBALL_FILENAME}".json
+
+        # Since version.additional_info will either be another object or "release" we just overwrite it from whatever we got above
+        # JQ has trouble inserting a key into a file this is the way we opted to insert it
+        tmp=$(mktemp)
+        jq --arg version "$TEZOS_VERSION" '.tezos_version.version = ($version|fromjson)' "${ROLLING_TARBALL_FILENAME}".json > "$tmp" && mv "$tmp" "${ROLLING_TARBALL_FILENAME}".json
         
-        if [ -f "${ROLLING_TARBALL_FILENAME}".json ]; then
+        # Check metadata exists
+        if [[ -s "${ROLLING_TARBALL_FILENAME}".json ]]; then
             printf "%s Rolling Tarball : ${ROLLING_TARBALL_FILENAME}.json created.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+
+            # Optional schema validation
+            validate_metadata "${ROLLING_TARBALL_FILENAME}".json
+            
+            # upload metadata json
+            if ! aws s3 cp "${ROLLING_TARBALL_FILENAME}".json s3://"${S3_BUCKET}"/"${ROLLING_TARBALL_FILENAME}".json; then
+                printf "%s Rolling Tarball : Error uploading ${ROLLING_TARBALL_FILENAME}.json to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+            else
+                printf "%s Rolling Tarball : Metadata JSON ${ROLLING_TARBALL_FILENAME}.json uploaded to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+            fi
         else
             printf "%s Rolling Tarball : Error creating ${ROLLING_TARBALL_FILENAME}.json locally.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-        fi
-
-        # upload metadata json
-        if ! aws s3 cp "${ROLLING_TARBALL_FILENAME}".json s3://"${S3_BUCKET}"/"${ROLLING_TARBALL_FILENAME}".json; then
-            printf "%s Rolling Tarball : Error uploading ${ROLLING_TARBALL_FILENAME}.json to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-        else
-            printf "%s Rolling Tarball : Metadata JSON ${ROLLING_TARBALL_FILENAME}.json uploaded to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         fi
         
         # Tarball redirect file
@@ -318,6 +356,15 @@ if [ "${HISTORY_MODE}" = rolling ]; then
 
             FILESIZE=$(echo "${FILESIZE_BYTES}" | awk '{ suffix="KMGT"; for(i=0; $1>1024 && i < length(suffix); i++) $1/=1024; print int($1) substr(suffix, i, 1), $3; }' | xargs )
             SHA256=$(sha256sum "${ROLLING_SNAPSHOT}" | awk '{print $1}')
+            
+            TEZOS_VERSION_MAJOR="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.major)"
+
+            if [[ $TEZOS_VERSION_MAJOR -lt 16 ]]; then
+                SNAPSHOT_VERSION=4
+            else
+                SNAPSHOT_HEADER=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/SNAPSHOT_HEADER)
+                SNAPSHOT_VERSION="$(echo "${SNAPSHOT_HEADER}" | jq .snapshot_header.version)"
+            fi
 
             jq -n \
             --arg BLOCK_HASH "$BLOCK_HASH" \
@@ -328,31 +375,57 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             --arg SHA256 "$SHA256" \
             --arg FILESIZE_BYTES "$FILESIZE_BYTES" \
             --arg FILESIZE "$FILESIZE" \
-            --arg TEZOS_VERSION "$TEZOS_VERSION" \
             --arg NETWORK "$NETWORK" \
             --arg HISTORY_MODE "rolling" \
             --arg ARTIFACT_TYPE "tezos-snapshot" \
+            --arg TEZOS_VERSION_COMMIT_HASH "${TEZOS_VERSION_COMMIT_HASH}" \
+            --arg TEZOS_VERSION_COMMIT_DATE "${TEZOS_VERSION_COMMIT_DATE}" \
+            --arg SNAPSHOT_VERSION "$SNAPSHOT_VERSION" \
             '{
-                "block_hash": $BLOCK_HASH, 
-                "block_height": $BLOCK_HEIGHT, 
+                "block_hash": $BLOCK_HASH,
+                "block_height": ($BLOCK_HEIGHT|fromjson),
                 "block_timestamp": $BLOCK_TIMESTAMP,
                 "filename": $ROLLING_SNAPSHOT_FILENAME,
                 "url": $URL,
-                "filesize_bytes": $FILESIZE_BYTES,
-                "filesize": $FILESIZE,
                 "sha256": $SHA256,
-                "tezos_version": $TEZOS_VERSION,
+                "filesize_bytes": ($FILESIZE_BYTES|fromjson),
+                "filesize": $FILESIZE,
                 "chain_name": $NETWORK,
                 "history_mode": $HISTORY_MODE,
-                "artifact_type": $ARTIFACT_TYPE
+                "artifact_type": $ARTIFACT_TYPE,
+                "tezos_version":{
+                    "implementation": "octez",
+                    "version": "",
+                    "commit_info": {
+                        "commit_hash": $TEZOS_VERSION_COMMIT_HASH,
+                        "commit_date": $TEZOS_VERSION_COMMIT_DATE
+                    }
+                },
+                "snapshot_version": ($SNAPSHOT_VERSION|fromjson),
             }' \
             > "${ROLLING_SNAPSHOT_FILENAME}".json
-            
-            printf "%s Rolling Tezos : Metadata JSON created.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
-            # upload metadata json
-            aws s3 cp "${ROLLING_SNAPSHOT_FILENAME}".json s3://"${S3_BUCKET}"/"${ROLLING_SNAPSHOT_FILENAME}".json
-            printf "%s Rolling Tezos : Metadata JSON ${ROLLING_SNAPSHOT_FILENAME}.json uploaded to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+            # Since version.additional_info will either be another object or "release" we just overwrite it from whatever we got above
+            # JQ has trouble inserting a key into a file this is the way we opted to insert it
+            tmp=$(mktemp)
+            jq --arg version "$TEZOS_VERSION" '.tezos_version.version = ($version|fromjson)' "${ROLLING_SNAPSHOT_FILENAME}".json > "$tmp" && mv "$tmp" "${ROLLING_SNAPSHOT_FILENAME}".json
+            
+            # Check metadata json exists
+            if [[ -s "${ROLLING_SNAPSHOT_FILENAME}".json ]]; then
+                printf "%s Rolling Snapshot : ${ROLLING_SNAPSHOT_FILENAME}.json created.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+
+                # Optional schema validation
+                validate_metadata "${ROLLING_SNAPSHOT_FILENAME}".json
+
+                # Upload Rolling Snapshot metadata json
+                if ! aws s3 cp "${ROLLING_SNAPSHOT_FILENAME}".json s3://"${S3_BUCKET}"/"${ROLLING_SNAPSHOT_FILENAME}".json; then
+                    printf "%s Rolling Snapshot : Error uploading ${ROLLING_SNAPSHOT_FILENAME}.json to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+                else
+                    printf "%s Rolling Snapshot : Artifact JSON ${ROLLING_SNAPSHOT_FILENAME}.json uploaded to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+                fi
+            else
+                printf "%s Rolling Snapshot : Error creating ${ROLLING_SNAPSHOT_FILENAME}.json.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+            fi
 
             # Rolling snapshot redirect object
             touch rolling
@@ -394,71 +467,82 @@ else
     printf "%s Successfully uploaded network site redirect.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 fi
 
-# Need to be in this dir for jekyll to run.
-# Container-specific requirement
-cd /srv/jekyll || exit
+if [[ -n "${SNAPSHOT_WEBSITE_DOMAIN_NAME}" ]]; then
 
-# Copy Gemfile and Gemfile.lock to current dir
-cp /snapshot-website-base/* .
+    # Need to be in this dir for jekyll to run.
+    # Container-specific requirement
+    cd /srv/jekyll || exit
 
-# Remote theme does not work
-# Using git instead
-REPO="${JEKYLL_REMOTE_THEME_REPOSITORY%@*}"
-BRANCH="${JEKYLL_REMOTE_THEME_REPOSITORY#*@}"
-LOCAL_DIR=monosite
-git clone https://github.com/"${REPO}".git --branch "${BRANCH}" "${LOCAL_DIR}"
-cp -r "${LOCAL_DIR}"/* .
-rm -rf "${LOCAL_DIR}"
+    # Copy Gemfile and Gemfile.lock to current dir
+    cp /snapshot-website-base/* .
 
-# Create new base.json locally
-touch base.json
-echo '[]' > "base.json"
+    # Remote theme does not work
+    # Using git instead
+    REPO="${JEKYLL_REMOTE_THEME_REPOSITORY%@*}"
+    BRANCH="${JEKYLL_REMOTE_THEME_REPOSITORY#*@}"
+    LOCAL_DIR=monosite
+    git clone https://github.com/"${REPO}".git --branch "${BRANCH}" "${LOCAL_DIR}"
+    cp -r "${LOCAL_DIR}"/* .
+    rm -rf "${LOCAL_DIR}"
 
-printf "%s Building base.json... this may take a while.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-aws s3 ls s3://"${S3_BUCKET}" |  grep '\.json'| sort | awk '{print $4}' | awk -F '\\\\n' '{print $1}' | tr ' ' '\n' | grep -v -e base.json -e tezos-snapshots.json | while read ITEM; do
-    tmp=$(mktemp) && cp base.json "${tmp}" && jq --argjson file "$(curl -s https://"${S3_BUCKET}"/$ITEM)" '. += [$file]' "${tmp}" > base.json
-done
+    # Create new base.json locally
+    touch base.json
+    echo '[]' > "base.json"
 
-#Upload base.json
-if ! aws s3 cp base.json s3://"${S3_BUCKET}"/base.json; then
-    printf "%s Upload base.json : Error uploading file base.json to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-else
-    printf "%s Upload base.json : File base.json successfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-fi
+    printf "%s Building base.json... this may take a while.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    aws s3 ls s3://"${S3_BUCKET}" |  grep '\.json'| sort | awk '{print $4}' | awk -F '\\\\n' '{print $1}' | tr ' ' '\n' | grep -v -e base.json -e tezos-snapshots.json | while read ITEM; do
+        tmp=$(mktemp) && cp base.json "${tmp}" && jq --argjson file "$(curl -s https://"${S3_BUCKET}"/$ITEM)" '. += [$file]' "${tmp}" > base.json
+    done
 
-# Create snapshot.json
-# List of all snapshot metadata across all subdomains
-# build site pages
-python /getAllSnapshotMetadata.py
+    #Upload base.json
+    if ! aws s3 cp base.json s3://"${S3_BUCKET}"/base.json; then
+        printf "%s Upload base.json : Error uploading file base.json to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    else
+        printf "%s Upload base.json : File base.json successfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    fi
 
-# Check if tezos-snapshots.json exists
-# tezos-snapshots.json is a list of all snapshots in all buckets
-if [[ ! -f tezos-snapshots.json ]]; then
-    printf "%s ERROR tezos-snapshots.json does not exist locally.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    sleep 5
-    exit 1
-fi
+    # Create snapshot.json
+    # List of all snapshot metadata across all subdomains
+    # build site pages
+    python /getAllSnapshotMetadata.py
 
-# Upload tezos-snapshots.json
-if ! aws s3 cp tezos-snapshots.json s3://"${SNAPSHOT_WEBSITE_DOMAIN_NAME}"/tezos-snapshots.json; then
-    printf "%s Upload tezos-snapshots.json : Error uploading file tezos-snapshots.json to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-else
-    printf "%s Upload tezos-snapshots.json : File tezos-snapshots.json successfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-fi
+    # Fail if python raised exception (validation failure)
+    ret=$?
+    if [[ "${ret}" -ne 0 ]]; then
+        printf "%s Metadata did not validate sucessfully. Exiting...  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+        sleep 20
+        exit 1
+    fi
 
-# Separate python for web page build
-# Needs tezos-snapshots.json to exist before pages are built
-python /getLatestSnapshotMetadata.py
+    # Check if tezos-snapshots.json exists
+    # tezos-snapshots.json is a list of all snapshots in all buckets
+    if [[ ! -f tezos-snapshots.json ]]; then
+        printf "%s ERROR tezos-snapshots.json does not exist locally.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+        sleep 5
+        exit 1
+    fi
 
-# Generate HTML from markdown and metadata
-chown -R jekyll:jekyll ./*
-bundle exec jekyll build
+    # Upload tezos-snapshots.json
+    if ! aws s3 cp tezos-snapshots.json s3://"${SNAPSHOT_WEBSITE_DOMAIN_NAME}"/tezos-snapshots.json; then
+        printf "%s Upload tezos-snapshots.json : Error uploading file tezos-snapshots.json to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    else
+        printf "%s Upload tezos-snapshots.json : File tezos-snapshots.json successfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    fi
 
-# Upload chain page (index.html and assets) to root of website bucket
-if ! aws s3 cp _site/ s3://"${SNAPSHOT_WEBSITE_DOMAIN_NAME}" --recursive --include "*"; then
-    printf "%s Website Build & Deploy : Error uploading site to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-else
-    printf "%s Website Build & Deploy  : Successful uploaded website to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    # Separate python for web page build
+    # Needs tezos-snapshots.json to exist before pages are built
+    python /getLatestSnapshotMetadata.py
+
+    # Generate HTML from markdown and metadata
+    chown -R jekyll:jekyll ./*
+    bundle exec jekyll build
+
+    # Upload chain page (index.html and assets) to root of website bucket
+    if ! aws s3 cp _site/ s3://"${SNAPSHOT_WEBSITE_DOMAIN_NAME}" --recursive --include "*"; then
+        printf "%s Website Build & Deploy : Error uploading site to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    else
+        printf "%s Website Build & Deploy  : Successful uploaded website to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    fi
 fi
 
 SLEEP_TIME=0m

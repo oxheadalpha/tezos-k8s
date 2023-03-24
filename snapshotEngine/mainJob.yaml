@@ -34,7 +34,7 @@ spec:
               # Set up config for headless RPC using new restored storage
               octez-node config init \
               --config-file /home/tezos/.tezos-node/config.json \
-              --network "${NETWORK}" \
+              --network "${CHAIN_NAME}" \
               --data-dir /var/tezos/node/data
 
               # Run headless tezos node to validate storage on restored volume
@@ -117,16 +117,20 @@ spec:
               fi
 
               # Get BLOCK_TIMESTAMP from RPC
-              wget -qO-  http://localhost:8732/chains/main/blocks/head/header | sed -E 's/.*"timestamp":"?([^,"]*)"?.*/\1/' > /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_TIMESTAMP
+              wget -qO- http://localhost:8732/chains/main/blocks/head/header | sed -E 's/.*"timestamp":"?([^,"]*)"?.*/\1/' > /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_TIMESTAMP
 
-              # Get Tezos Version from octez-node command
+              # Old version string
               /usr/local/bin/octez-node --version > /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_VERSION
+
+              # Get new version object from RPC
+              wget -qO- http://localhost:8732/version > /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_RPC_VERSION_INFO
 
               # Print variables for debug
               printf "%s BLOCK_HASH is...$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH))\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
               printf "%s BLOCK_HEIGHT is...$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HEIGHT)\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
               printf "%s BLOCK_TIMESTAMP is...$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_TIMESTAMP)\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
               printf "%s TEZOS_VERSION is...$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_VERSION)\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+              printf "%s TEZOS_RPC_VERSION_INFO is...$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_RPC_VERSION_INFO)\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
               # Blow open permissions for next job to write to volume
               sudo chmod -R 755 /"${HISTORY_MODE}"-snapshot-cache-volume
@@ -142,6 +146,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: snapshot-configmap
+            - configMapRef:
+                name: tezos-config
       containers:
         - name: create-tezos-rolling-snapshot
           image: ""
@@ -164,7 +170,7 @@ spec:
 
               octez-node config init \
               --config-file /home/tezos/.tezos-node/config.json \
-              --network "${NETWORK}" \
+              --network "${CHAIN_NAME}" \
               --data-dir /var/tezos/node/data
 
               if [ "${HISTORY_MODE}" = rolling ]; then
@@ -180,10 +186,17 @@ spec:
 
                 octez-node snapshot import \
                 /"${HISTORY_MODE}"-snapshot-cache-volume/"${ROLLING_SNAPSHOT_NAME}".rolling \
-                --in-memory \
                 --block "${BLOCK_HASH}" \
                 --config-file /home/tezos/.tezos-node/config.json \
                 --data-dir /rolling-tarball-restore/var/tezos/node/data
+
+                # Version check for v15 vs v16 conditional
+                TEZOS_VERSION=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_VERSION)
+                
+                # Get context elements and octez snapshot version
+                if [[ "$TEZOS_VERSION" != '763259c5 (2022-12-01 10:20:58 +0000) (15.1)' ]]; then
+                  /usr/local/bin/octez-node snapshot info /"${HISTORY_MODE}"-snapshot-cache-volume/"${ROLLING_SNAPSHOT_NAME}".rolling --json > /"${HISTORY_MODE}"-snapshot-cache-volume/SNAPSHOT_HEADER
+                fi
 
                 rm /rolling-tarball-restore/snapshot-import-in-progress
               else
@@ -199,16 +212,11 @@ spec:
           env:
             - name: HISTORY_MODE
               value: ""
-            - name: NAMESPACE
-              valueFrom:
-                configMapKeyRef:
-                  name: snapshot-configmap
-                  key: NAMESPACE
-            - name: NETWORK_OVERRIDE
-              valueFrom:
-                configMapKeyRef:
-                  name: snapshot-configmap
-                  key: NETWORK_OVERRIDE
+          envFrom:
+            - configMapRef:
+                name: snapshot-configmap
+            - configMapRef:
+                name: tezos-config
         - name: zip-and-upload
           image: ""
           imagePullPolicy: Always

@@ -324,6 +324,14 @@ spec:
               echo "Writing custom configuration for public node"
               mkdir -p /etc/tezos/data
               
+              # if config already exists (container is rebooting), dump and delete it.
+              if [ -e /etc/tezos/data/config.json ]; then
+                printf "Found pre-existing config.json:\n"
+                cat /etc/tezos/data/config.json
+                printf "Deleting\n"
+                rm -rvf /etc/tezos/data/config.json
+              fi
+              
               /usr/local/bin/octez-node config init		\
                   --config-file /etc/tezos/data/config.json	\
                   --data-dir /etc/tezos/data			\
@@ -455,8 +463,7 @@ spec:
                   block_hash_arg="--block $(cat ${node_dir}/chain.snapshot.block_hash)"
               fi
               
-              ${node} snapshot import ${snapshot_file} --data-dir ${node_data_dir} \
-                  --network $CHAIN_NAME ${block_hash_arg}
+              ${node} snapshot import ${snapshot_file} --data-dir ${node_data_dir}
               find ${node_dir}
               
               rm -rvf ${snapshot_file}
@@ -501,7 +508,7 @@ spec:
                 printf "No context in data dir found, probably initial start, doing nothing."
                 exit 0
               fi
-              octez-node upgrade storage --data-dir /var/tezos/node/data
+              octez-node upgrade storage --config /etc/tezos/config.json
               
           envFrom:
           env:
@@ -695,6 +702,14 @@ spec:
               echo "Writing custom configuration for public node"
               mkdir -p /etc/tezos/data
               
+              # if config already exists (container is rebooting), dump and delete it.
+              if [ -e /etc/tezos/data/config.json ]; then
+                printf "Found pre-existing config.json:\n"
+                cat /etc/tezos/data/config.json
+                printf "Deleting\n"
+                rm -rvf /etc/tezos/data/config.json
+              fi
+              
               /usr/local/bin/octez-node config init		\
                   --config-file /etc/tezos/data/config.json	\
                   --data-dir /etc/tezos/data			\
@@ -826,8 +841,7 @@ spec:
                   block_hash_arg="--block $(cat ${node_dir}/chain.snapshot.block_hash)"
               fi
               
-              ${node} snapshot import ${snapshot_file} --data-dir ${node_data_dir} \
-                  --network $CHAIN_NAME ${block_hash_arg}
+              ${node} snapshot import ${snapshot_file} --data-dir ${node_data_dir}
               find ${node_dir}
               
               rm -rvf ${snapshot_file}
@@ -872,7 +886,7 @@ spec:
                 printf "No context in data dir found, probably initial start, doing nothing."
                 exit 0
               fi
-              octez-node upgrade storage --data-dir /var/tezos/node/data
+              octez-node upgrade storage --config /etc/tezos/config.json
               
           envFrom:
           env:
