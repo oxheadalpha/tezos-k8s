@@ -12,7 +12,7 @@ if [ ! -d "$data_dir" ]; then
   exit 1
 fi
 
-if [ -d "$node_data_dir/context/store.dict" ]; then
+if [ -e "$node_data_dir/context/store.dict" ]; then
   echo "Blockchain has already been imported. Exiting."
   exit 0
 fi
