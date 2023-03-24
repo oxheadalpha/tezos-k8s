@@ -3,9 +3,14 @@
 BLOCK_HEIGHT=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HEIGHT)
 BLOCK_HASH=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH)
 BLOCK_TIMESTAMP=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_TIMESTAMP)
-TEZOS_VERSION=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_VERSION)
+#TEZOS_VERSION=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_VERSION)
 NETWORK="${NAMESPACE%%-*}"
 export S3_BUCKET="${NAMESPACE%-*}.${SNAPSHOT_WEBSITE_DOMAIN_NAME}"
+TEZOS_RPC_VERSION_INFO="$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_RPC_VERSION_INFO)"
+
+TEZOS_VERSION="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .version)"
+TEZOS_VERSION_COMMIT_HASH="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .commit_info.commit_hash)"
+TEZOS_VERSION_COMMIT_DATE="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .commit_info.commit_date)"
 
 cd /
 
@@ -72,38 +77,54 @@ if [ "${HISTORY_MODE}" = archive ]; then
         --arg SHA256 "${SHA256}" \
         --arg FILESIZE_BYTES "${FILESIZE_BYTES}" \
         --arg FILESIZE "${FILESIZE}" \
-        --arg TEZOS_VERSION "${TEZOS_VERSION}" \
         --arg NETWORK "${NETWORK}" \
         --arg HISTORY_MODE "archive" \
         --arg ARTIFACT_TYPE "tarball" \
+        --arg TEZOS_VERSION_COMMIT_HASH "${TEZOS_VERSION_COMMIT_HASH}" \
+        --arg TEZOS_VERSION_COMMIT_DATE "${TEZOS_VERSION_COMMIT_DATE}" \
         '{
-            "block_hash": $BLOCK_HASH, 
-            "block_height": $BLOCK_HEIGHT, 
+            "block_hash": $BLOCK_HASH,
+            "block_height": ($BLOCK_HEIGHT|fromjson),
             "block_timestamp": $BLOCK_TIMESTAMP,
             "filename": $ARCHIVE_TARBALL_FILENAME,
-            "sha256": $SHA256,
             "url": $URL,
-            "filesize_bytes": $FILESIZE_BYTES,
-            "filesize": $FILESIZE, 
-            "tezos_version": $TEZOS_VERSION,
+            "sha256": $SHA256,
+            "filesize_bytes": ($FILESIZE_BYTES|fromjson),
+            "filesize": $FILESIZE,
             "chain_name": $NETWORK,
             "history_mode": $HISTORY_MODE,
-            "artifact_type": $ARTIFACT_TYPE
+            "artifact_type": $ARTIFACT_TYPE,
+            "tezos_version": {
+                "implementation": "octez",
+                "version": "",
+                "commit_info": {
+                    "commit_hash": $TEZOS_VERSION_COMMIT_HASH,
+                    "commit_date": $TEZOS_VERSION_COMMIT_DATE
+                }
+            }
         }' \
         > "${ARCHIVE_TARBALL_FILENAME}".json
 
+        # Since version.additional_info will either be another object or "release" we just overwrite it from whatever we got above
+        # JQ has trouble inserting a key into a file this is the way we opted to insert it
+        tmp=$(mktemp)
+        jq --arg version "$TEZOS_VERSION" '.tezos_version.version = ($version|fromjson)' "${ARCHIVE_TARBALL_FILENAME}".json > "$tmp" && mv "$tmp" "${ARCHIVE_TARBALL_FILENAME}".json
+
         # Check metadata json exists
-        if [ -f "${ARCHIVE_TARBALL_FILENAME}".json ]; then
+        if [[ -s "${ARCHIVE_TARBALL_FILENAME}".json ]]; then
             printf "%s Archive Tarball : ${ARCHIVE_TARBALL_FILENAME}.json created.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+
+            # Optional schema validation
+            validate_metadata "${ARCHIVE_TARBALL_FILENAME}".json
+
+            # Upload archive tarball metadata json
+            if ! aws s3 cp "${ARCHIVE_TARBALL_FILENAME}".json s3://"${S3_BUCKET}"/"${ARCHIVE_TARBALL_FILENAME}".json; then
+                printf "%s Archive Tarball : Error uploading ${ARCHIVE_TARBALL_FILENAME}.json to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+            else
+                printf "%s Archive Tarball : Artifact JSON ${ARCHIVE_TARBALL_FILENAME}.json uploaded to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+            fi
         else
             printf "%s Archive Tarball : Error creating ${ARCHIVE_TARBALL_FILENAME}.json.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-        fi
-
-        # Upload archive tarball metadata json
-        if ! aws s3 cp "${ARCHIVE_TARBALL_FILENAME}".json s3://"${S3_BUCKET}"/"${ARCHIVE_TARBALL_FILENAME}".json; then
-            printf "%s Archive Tarball : Error uploading ${ARCHIVE_TARBALL_FILENAME}.json to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-        else
-            printf "%s Archive Tarball : Artifact JSON ${ARCHIVE_TARBALL_FILENAME}.json uploaded to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         fi
 
         # Create archive tarball redirect file
@@ -236,37 +257,54 @@ if [ "${HISTORY_MODE}" = rolling ]; then
         --arg SHA256 "$SHA256" \
         --arg FILESIZE_BYTES "$FILESIZE_BYTES" \
         --arg FILESIZE "$FILESIZE" \
-        --arg TEZOS_VERSION "$TEZOS_VERSION" \
         --arg NETWORK "$NETWORK" \
         --arg HISTORY_MODE "rolling" \
         --arg ARTIFACT_TYPE "tarball" \
+        --arg TEZOS_VERSION_COMMIT_HASH "${TEZOS_VERSION_COMMIT_HASH}" \
+        --arg TEZOS_VERSION_COMMIT_DATE "${TEZOS_VERSION_COMMIT_DATE}" \
         '{
-            "block_hash": $BLOCK_HASH, 
-            "block_height": $BLOCK_HEIGHT, 
+            "block_hash": $BLOCK_HASH,
+            "block_height": ($BLOCK_HEIGHT|fromjson),
             "block_timestamp": $BLOCK_TIMESTAMP,
             "filename": $ROLLING_TARBALL_FILENAME,
             "url": $URL,
             "sha256": $SHA256,
-            "filesize_bytes": $FILESIZE_BYTES,
-            "filesize": $FILESIZE, 
-            "tezos_version": $TEZOS_VERSION,
+            "filesize_bytes": ($FILESIZE_BYTES|fromjson),
+            "filesize": $FILESIZE,
             "chain_name": $NETWORK,
             "history_mode": $HISTORY_MODE,
-            "artifact_type": $ARTIFACT_TYPE
+            "artifact_type": $ARTIFACT_TYPE,
+            "tezos_version": {
+                "implementation": "octez",
+                "version": "",
+                "commit_info": {
+                    "commit_hash": $TEZOS_VERSION_COMMIT_HASH,
+                    "commit_date": $TEZOS_VERSION_COMMIT_DATE
+                }
+            }
         }' \
         > "${ROLLING_TARBALL_FILENAME}".json
+
+        # Since version.additional_info will either be another object or "release" we just overwrite it from whatever we got above
+        # JQ has trouble inserting a key into a file this is the way we opted to insert it
+        tmp=$(mktemp)
+        jq --arg version "$TEZOS_VERSION" '.tezos_version.version = ($version|fromjson)' "${ROLLING_TARBALL_FILENAME}".json > "$tmp" && mv "$tmp" "${ROLLING_TARBALL_FILENAME}".json
         
-        if [ -f "${ROLLING_TARBALL_FILENAME}".json ]; then
+        # Check metadata exists
+        if [[ -s "${ROLLING_TARBALL_FILENAME}".json ]]; then
             printf "%s Rolling Tarball : ${ROLLING_TARBALL_FILENAME}.json created.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+
+            # Optional schema validation
+            validate_metadata "${ROLLING_TARBALL_FILENAME}".json
+            
+            # upload metadata json
+            if ! aws s3 cp "${ROLLING_TARBALL_FILENAME}".json s3://"${S3_BUCKET}"/"${ROLLING_TARBALL_FILENAME}".json; then
+                printf "%s Rolling Tarball : Error uploading ${ROLLING_TARBALL_FILENAME}.json to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+            else
+                printf "%s Rolling Tarball : Metadata JSON ${ROLLING_TARBALL_FILENAME}.json uploaded to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+            fi
         else
             printf "%s Rolling Tarball : Error creating ${ROLLING_TARBALL_FILENAME}.json locally.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-        fi
-
-        # upload metadata json
-        if ! aws s3 cp "${ROLLING_TARBALL_FILENAME}".json s3://"${S3_BUCKET}"/"${ROLLING_TARBALL_FILENAME}".json; then
-            printf "%s Rolling Tarball : Error uploading ${ROLLING_TARBALL_FILENAME}.json to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-        else
-            printf "%s Rolling Tarball : Metadata JSON ${ROLLING_TARBALL_FILENAME}.json uploaded to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         fi
         
         # Tarball redirect file
@@ -318,6 +356,15 @@ if [ "${HISTORY_MODE}" = rolling ]; then
 
             FILESIZE=$(echo "${FILESIZE_BYTES}" | awk '{ suffix="KMGT"; for(i=0; $1>1024 && i < length(suffix); i++) $1/=1024; print int($1) substr(suffix, i, 1), $3; }' | xargs )
             SHA256=$(sha256sum "${ROLLING_SNAPSHOT}" | awk '{print $1}')
+            
+            TEZOS_VERSION_MAJOR="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq .version.major)"
+
+            if [[ $TEZOS_VERSION_MAJOR -lt 16 ]]; then
+                SNAPSHOT_VERSION=4
+            else
+                SNAPSHOT_HEADER=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/SNAPSHOT_HEADER)
+                SNAPSHOT_VERSION="$(echo "${SNAPSHOT_HEADER}" | jq .snapshot_header.version)"
+            fi
 
             jq -n \
             --arg BLOCK_HASH "$BLOCK_HASH" \
@@ -328,31 +375,57 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             --arg SHA256 "$SHA256" \
             --arg FILESIZE_BYTES "$FILESIZE_BYTES" \
             --arg FILESIZE "$FILESIZE" \
-            --arg TEZOS_VERSION "$TEZOS_VERSION" \
             --arg NETWORK "$NETWORK" \
             --arg HISTORY_MODE "rolling" \
             --arg ARTIFACT_TYPE "tezos-snapshot" \
+            --arg TEZOS_VERSION_COMMIT_HASH "${TEZOS_VERSION_COMMIT_HASH}" \
+            --arg TEZOS_VERSION_COMMIT_DATE "${TEZOS_VERSION_COMMIT_DATE}" \
+            --arg SNAPSHOT_VERSION "$SNAPSHOT_VERSION" \
             '{
-                "block_hash": $BLOCK_HASH, 
-                "block_height": $BLOCK_HEIGHT, 
+                "block_hash": $BLOCK_HASH,
+                "block_height": ($BLOCK_HEIGHT|fromjson),
                 "block_timestamp": $BLOCK_TIMESTAMP,
                 "filename": $ROLLING_SNAPSHOT_FILENAME,
                 "url": $URL,
-                "filesize_bytes": $FILESIZE_BYTES,
-                "filesize": $FILESIZE,
                 "sha256": $SHA256,
-                "tezos_version": $TEZOS_VERSION,
+                "filesize_bytes": ($FILESIZE_BYTES|fromjson),
+                "filesize": $FILESIZE,
                 "chain_name": $NETWORK,
                 "history_mode": $HISTORY_MODE,
-                "artifact_type": $ARTIFACT_TYPE
+                "artifact_type": $ARTIFACT_TYPE,
+                "tezos_version":{
+                    "implementation": "octez",
+                    "version": "",
+                    "commit_info": {
+                        "commit_hash": $TEZOS_VERSION_COMMIT_HASH,
+                        "commit_date": $TEZOS_VERSION_COMMIT_DATE
+                    }
+                },
+                "snapshot_version": ($SNAPSHOT_VERSION|fromjson),
             }' \
             > "${ROLLING_SNAPSHOT_FILENAME}".json
-            
-            printf "%s Rolling Tezos : Metadata JSON created.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
-            # upload metadata json
-            aws s3 cp "${ROLLING_SNAPSHOT_FILENAME}".json s3://"${S3_BUCKET}"/"${ROLLING_SNAPSHOT_FILENAME}".json
-            printf "%s Rolling Tezos : Metadata JSON ${ROLLING_SNAPSHOT_FILENAME}.json uploaded to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+            # Since version.additional_info will either be another object or "release" we just overwrite it from whatever we got above
+            # JQ has trouble inserting a key into a file this is the way we opted to insert it
+            tmp=$(mktemp)
+            jq --arg version "$TEZOS_VERSION" '.tezos_version.version = ($version|fromjson)' "${ROLLING_SNAPSHOT_FILENAME}".json > "$tmp" && mv "$tmp" "${ROLLING_SNAPSHOT_FILENAME}".json
+            
+            # Check metadata json exists
+            if [[ -s "${ROLLING_SNAPSHOT_FILENAME}".json ]]; then
+                printf "%s Rolling Snapshot : ${ROLLING_SNAPSHOT_FILENAME}.json created.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+
+                # Optional schema validation
+                validate_metadata "${ROLLING_SNAPSHOT_FILENAME}".json
+
+                # Upload Rolling Snapshot metadata json
+                if ! aws s3 cp "${ROLLING_SNAPSHOT_FILENAME}".json s3://"${S3_BUCKET}"/"${ROLLING_SNAPSHOT_FILENAME}".json; then
+                    printf "%s Rolling Snapshot : Error uploading ${ROLLING_SNAPSHOT_FILENAME}.json to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+                else
+                    printf "%s Rolling Snapshot : Artifact JSON ${ROLLING_SNAPSHOT_FILENAME}.json uploaded to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+                fi
+            else
+                printf "%s Rolling Snapshot : Error creating ${ROLLING_SNAPSHOT_FILENAME}.json.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+            fi
 
             # Rolling snapshot redirect object
             touch rolling
@@ -430,6 +503,14 @@ fi
 # List of all snapshot metadata across all subdomains
 # build site pages
 python /getAllSnapshotMetadata.py
+
+# Fail if python raised exception (validation failure)
+ret=$?
+if [[ "${ret}" -ne 0 ]]; then
+    printf "%s Metadata did not validate sucessfully. Exiting...  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    sleep 20
+    exit 1
+fi
 
 # Check if tezos-snapshots.json exists
 # tezos-snapshots.json is a list of all snapshots in all buckets
