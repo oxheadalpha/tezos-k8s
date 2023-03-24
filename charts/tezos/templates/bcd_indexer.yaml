@@ -121,7 +121,30 @@ spec:
     metadata:
       labels:
         app: {{ .Values.bcd_indexer_statefulset.name }}
+    {{- with $indexerConfig.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
     spec:
+    {{- with $indexerConfig.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      securityContext:
+        {{- toYaml $indexerConfig.podSecurityContext | nindent 8 }}
+
+    {{- with $indexerConfig.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with $indexerConfig.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with $indexerConfig.tolerations }}
+      tolerations:
+      {{- toYaml . | nindent 8 }}
+  {{- end }}
       volumes:
         - name: sandbox-config
           configMap:
@@ -177,6 +200,7 @@ spec:
 
               /docker-entrypoint.sh nginx -g "daemon off;"
       {{- end }}
+
 {{- if not $indexerConfig.db.isExternal }}
         - image: {{ $indexerConfig.images.postgres }}
           name: db

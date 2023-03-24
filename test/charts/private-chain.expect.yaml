@@ -186,7 +186,6 @@ metadata:
 # Source: tezos-chain/templates/configs.yaml
 apiVersion: v1
 data:
-  013-PtJakart-per-block-votes.json: "{\"liquidity_baking_toggle_vote\":\"pass\"}"
 kind: ConfigMap
 metadata:
   name: per-block-votes
@@ -575,7 +574,10 @@ spec:
               
               proto_command="013-PtJakart"
               
-              per_block_vote_file=/etc/tezos/per-block-votes/${proto_command}-per-block-votes.json
+              my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
+              
+              per_block_vote_file=/etc/tezos/per-block-votes/${my_baker_account}-${proto_command}-per-block-votes.json
+              
               if [ $(cat $per_block_vote_file) == "null" ]; then
                 cat << EOF
               You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
@@ -588,8 +590,6 @@ spec:
               fi
               extra_args="--votefile ${per_block_vote_file}"
               
-              my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
-              
               if [ "${my_baker_account}" == "" ]; then
                 while true; do
                   printf "This container is not baking, but exists "
@@ -599,7 +599,7 @@ spec:
               fi
               
               CLIENT="$TEZ_BIN/octez-client -d $CLIENT_DIR"
-              CMD="$TEZ_BIN/tezos-baker-$proto_command -d $CLIENT_DIR"
+              CMD="$TEZ_BIN/octez-baker-$proto_command -d $CLIENT_DIR"
               
               # ensure we can run octez-client commands without specifying client dir
               ln -s /var/tezos/client /home/tezos/.tezos-client
@@ -642,7 +642,10 @@ spec:
               
               proto_command="013-PtJakart"
               
-              per_block_vote_file=/etc/tezos/per-block-votes/${proto_command}-per-block-votes.json
+              my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
+              
+              per_block_vote_file=/etc/tezos/per-block-votes/${my_baker_account}-${proto_command}-per-block-votes.json
+              
               if [ $(cat $per_block_vote_file) == "null" ]; then
                 cat << EOF
               You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
@@ -655,8 +658,6 @@ spec:
               fi
               extra_args="--votefile ${per_block_vote_file}"
               
-              my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
-              
               if [ "${my_baker_account}" == "" ]; then
                 while true; do
                   printf "This container is not baking, but exists "
@@ -666,7 +667,7 @@ spec:
               fi
               
               CLIENT="$TEZ_BIN/octez-client -d $CLIENT_DIR"
-              CMD="$TEZ_BIN/tezos-baker-$proto_command -d $CLIENT_DIR"
+              CMD="$TEZ_BIN/octez-baker-$proto_command -d $CLIENT_DIR"
               
               # ensure we can run octez-client commands without specifying client dir
               ln -s /var/tezos/client /home/tezos/.tezos-client
@@ -709,7 +710,10 @@ spec:
               
               proto_command="013-PtJakart"
               
-              per_block_vote_file=/etc/tezos/per-block-votes/${proto_command}-per-block-votes.json
+              my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
+              
+              per_block_vote_file=/etc/tezos/per-block-votes/${my_baker_account}-${proto_command}-per-block-votes.json
+              
               if [ $(cat $per_block_vote_file) == "null" ]; then
                 cat << EOF
               You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
@@ -722,8 +726,6 @@ spec:
               fi
               extra_args="--votefile ${per_block_vote_file}"
               
-              my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
-              
               if [ "${my_baker_account}" == "" ]; then
                 while true; do
                   printf "This container is not baking, but exists "
@@ -733,7 +735,7 @@ spec:
               fi
               
               CLIENT="$TEZ_BIN/octez-client -d $CLIENT_DIR"
-              CMD="$TEZ_BIN/tezos-baker-$proto_command -d $CLIENT_DIR"
+              CMD="$TEZ_BIN/octez-baker-$proto_command -d $CLIENT_DIR"
               
               # ensure we can run octez-client commands without specifying client dir
               ln -s /var/tezos/client /home/tezos/.tezos-client
@@ -776,7 +778,10 @@ spec:
               
               proto_command="013-PtJakart"
               
-              per_block_vote_file=/etc/tezos/per-block-votes/${proto_command}-per-block-votes.json
+              my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
+              
+              per_block_vote_file=/etc/tezos/per-block-votes/${my_baker_account}-${proto_command}-per-block-votes.json
+              
               if [ $(cat $per_block_vote_file) == "null" ]; then
                 cat << EOF
               You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
@@ -789,8 +794,6 @@ spec:
               fi
               extra_args="--votefile ${per_block_vote_file}"
               
-              my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
-              
               if [ "${my_baker_account}" == "" ]; then
                 while true; do
                   printf "This container is not baking, but exists "
@@ -800,7 +803,7 @@ spec:
               fi
               
               CLIENT="$TEZ_BIN/octez-client -d $CLIENT_DIR"
-              CMD="$TEZ_BIN/tezos-baker-$proto_command -d $CLIENT_DIR"
+              CMD="$TEZ_BIN/octez-baker-$proto_command -d $CLIENT_DIR"
               
               # ensure we can run octez-client commands without specifying client dir
               ln -s /var/tezos/client /home/tezos/.tezos-client
@@ -843,7 +846,10 @@ spec:
               
               proto_command="013-PtJakart"
               
-              per_block_vote_file=/etc/tezos/per-block-votes/${proto_command}-per-block-votes.json
+              my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
+              
+              per_block_vote_file=/etc/tezos/per-block-votes/${my_baker_account}-${proto_command}-per-block-votes.json
+              
               if [ $(cat $per_block_vote_file) == "null" ]; then
                 cat << EOF
               You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
@@ -856,8 +862,6 @@ spec:
               fi
               extra_args="--votefile ${per_block_vote_file}"
               
-              my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
-              
               if [ "${my_baker_account}" == "" ]; then
                 while true; do
                   printf "This container is not baking, but exists "
@@ -867,7 +871,7 @@ spec:
               fi
               
               CLIENT="$TEZ_BIN/octez-client -d $CLIENT_DIR"
-              CMD="$TEZ_BIN/tezos-baker-$proto_command -d $CLIENT_DIR"
+              CMD="$TEZ_BIN/octez-baker-$proto_command -d $CLIENT_DIR"
               
               # ensure we can run octez-client commands without specifying client dir
               ln -s /var/tezos/client /home/tezos/.tezos-client
@@ -1295,7 +1299,7 @@ spec:
             NODE_DIR="$TEZ_VAR/node"
             NODE_DATA_DIR="$TEZ_VAR/node/data"
             
-            CMD="$TEZ_BIN/tezos-signer -d $CLIENT_DIR launch http signer --magic-bytes 0x11,0x12,0x13 --check-high-watermark -a 0.0.0.0 -p 6732"
+            CMD="$TEZ_BIN/octez-signer -d $CLIENT_DIR launch http signer --magic-bytes 0x11,0x12,0x13 --check-high-watermark -a 0.0.0.0 -p 6732"
             
             # ensure we can run tezos-signer commands without specifying client dir
             ln -s /var/tezos/client /home/tezos/.tezos-signer
