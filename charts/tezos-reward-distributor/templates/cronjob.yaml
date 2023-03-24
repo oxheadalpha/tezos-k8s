@@ -31,6 +31,9 @@ spec:
             - name: config-volume
               configMap:
                 name: {{ include "tezos-reward-distributor.fullname" . }}-config
+            - name: secret-volume
+              secret:
+                secretName: {{ include "tezos-reward-distributor.fullname" . }}-secret
           initContainers:
             # Work around a bug where fsGroup is ignored
             - name: change-ownership-container
@@ -83,6 +86,9 @@ spec:
               volumeMounts:
               - mountPath: /trd
                 name: storage
+              - mountPath: /trd/cfg/aws_secret_access_key
+                name: secret-volume
+                subPath: aws_secret_access_key
               command:
               - /bin/sh
               args:

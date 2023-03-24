@@ -117,7 +117,8 @@ trd_config:
 # when the cronjob is not running.
 bucket_upload:
   access_key_id:
-  secret_access_key:
   default_region:
   bucket_endpoint_url:
   bucket_name: 
+bucket_upload_secrets:
+  secret_access_key:
