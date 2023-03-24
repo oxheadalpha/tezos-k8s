@@ -297,8 +297,8 @@ octezSigners: {}
 # ```
 #
 # Deploys a signer using AWS KMS to sign operations.
-# TODO NOTE: Link to the file to see all config values and give examples.
-# https://github.com/tacoinfra/remote-signer
+# The `AWS_REGION` env var must be set.
+# https://github.com/oxheadalpha/tacoinfra-remote-signer
 tacoinfraSigners: {}
 # Example:
 # ```
@@ -306,6 +306,13 @@ tacoinfraSigners: {}
 #   tacoinfra-signer:
 #     accounts:
 #       - tacoinfraSigner
+#     env:
+#       AWS_REGION: us-east-2
+#     serviceAccount:
+#       create: true
+#       ## EKS example for setting the role-arn
+#       annotations:
+#         eks.amazonaws.com/role-arn: <SIGNER_ROLE_ARN>
 # ```
 # End Signers
 
