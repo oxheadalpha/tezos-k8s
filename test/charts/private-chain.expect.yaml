@@ -378,7 +378,8 @@ spec:
         fsGroup: 999
       initContainers:
         - name: copy-configmap
-          image: oxheadalpha/tacoinfra-remote-signer
+          image: ghcr.io/oxheadalpha/tacoinfra-remote-signer:0.1.0
+          imagePullPolicy: IfNotPresent
           securityContext:
             runAsNonRoot: false
             runAsUser: 0
@@ -405,7 +406,8 @@ spec:
             - name: file-ratchet
               mountPath: /etc/file_ratchets
         - name: create-keys-json
-          image: oxheadalpha/tacoinfra-remote-signer
+          image: ghcr.io/oxheadalpha/tacoinfra-remote-signer:0.1.0
+          imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -461,7 +463,7 @@ spec:
               mountPath: /app/signer-config
       containers:
         - name: remote-signer
-          image: oxheadalpha/tacoinfra-remote-signer
+          image: ghcr.io/oxheadalpha/tacoinfra-remote-signer:0.1.0
           imagePullPolicy: IfNotPresent
           args: ["kms"]
           securityContext:
