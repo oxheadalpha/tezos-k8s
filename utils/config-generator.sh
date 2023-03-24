@@ -6,7 +6,6 @@ cat /etc/tezos/data/config.json
 echo ------------------------------------------------------------
 
 mkdir -p /var/tezos/client
-chmod -R 777 /var/tezos
 set -e
 python3 /config-generator.py "$@"
 set +e
