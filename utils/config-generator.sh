@@ -48,3 +48,6 @@ if [ "$AM_I_BAKER" -eq 1 ]; then
 
     echo "$my_baker_account" > /etc/tezos/baker-account
 fi
+
+# make sure tezos user owns everything in /var/tezos
+chown -R 1000:1000 /var/tezos
