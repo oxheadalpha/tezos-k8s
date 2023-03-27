@@ -8,7 +8,7 @@ is_invitation: false
 
 # Images not part of the tezos-k8s repo go here
 images:
-  octez: tezos/tezos:v16-release
+  octez: tezos/tezos:v16.1
 # Images that are part of the tezos-k8s repo go here with 'dev' tag
 tezos_k8s_images:
   utils: ghcr.io/oxheadalpha/tezos-k8s-utils:master
