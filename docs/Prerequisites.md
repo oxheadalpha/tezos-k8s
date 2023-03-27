@@ -115,7 +115,7 @@ Or, if you prefer, you can build the image using:
 ./scripts/create_docker_image.sh
 ```
 
-This will create an image with a name like `tezos/tezos:v15.0`.
+This will create an image with a name like `tezos/tezos:v16.0`.
 Then you install it thus:
 ```shell
 docker image save <image> | ( eval $(minikube docker-env); docker image load )
