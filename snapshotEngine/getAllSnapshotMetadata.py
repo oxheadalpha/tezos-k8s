@@ -48,7 +48,7 @@ with open("schema.json","r") as f:
     schema = f.read()
 
 # json.validate() returns None if successful
-if not validate(metadata_document, json.loads(schema)):
+if not validate(json.loads(metadata_document), json.loads(schema)):
     print("Metadata sucessfully validated against schema!")
 else:
     raise Exception("Metadata NOT validated against schema!")
