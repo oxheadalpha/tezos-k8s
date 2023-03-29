@@ -300,6 +300,7 @@ spec:
             {{- /* Execute permissions */}}
             defaultMode: 111
         {{- end }}
+  {{- if not $tzkt_indexer.db.isExternal }}
   volumeClaimTemplates:
     - metadata:
         name: indexer-db
@@ -310,5 +311,5 @@ spec:
         resources:
           requests:
             storage: {{ required "DB storage size must be specified" $tzkt_indexer.storage  }}
-
+  {{- end }}
 {{- end }}
