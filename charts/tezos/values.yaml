@@ -468,8 +468,8 @@ protocols:
 # indexers:
 #   tzkt:
 #     images:
-#       api: "bakingbad/tzkt-api:1.11.1"
-#       indexer: "bakingbad/tzkt-sync:1.11.1"
+#       api: "bakingbad/tzkt-api:1.12.0"
+#       indexer: "bakingbad/tzkt-sync:1.12.0"
 #       postgres: "postgres:13"
 #
 #     ## Database volumeClaimTemplates config
@@ -492,7 +492,7 @@ protocols:
 #       ## If you want to index a brand new archive node you are spinning up, just
 #       ## let the indexer start syncing with it from scratch.
 #       ## https://github.com/baking-bad/tzkt
-#       snapshot_url: https://snapshots.tzkt.io/tzkt_v1.11_mainnet.backup
+#       snapshot_url: https://snapshots.tzkt.io/tzkt_v1.12_mainnet.backup
 #       host: localhost
 #       name: db
 #       user: foo
@@ -504,11 +504,6 @@ protocols:
 #       ## from a snapshot
 #       ## You can find more info from tzket documentation here
 #       ## https://github.com/baking-bad/tzkt
-#       ## No archive node needed.
-#       ## There is no need to use an archive node (running in "archive" mode).
-#       ## If you bootstrap the indexer from the most recent snapshot,
-#       ## using a simple rolling node will be enough.
-#       ##
 #       rpc_url: http://rolling-node-0.rolling-node:8732
 #       # api_log_level: Debug
 #       # indexer_log_level: Debug
