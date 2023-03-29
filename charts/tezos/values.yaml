@@ -500,10 +500,9 @@ protocols:
 #
 #     ## Configurable tzkt fields
 #     config:
-#       ## Url of the rpc node to index. No archive node is needed if the instance is bootstrapped
-#       ## from a snapshot
-#       ## You can find more info from tzket documentation here
-#       ## https://github.com/baking-bad/tzkt
+#       ## RPC url of the node to index. A rolling node is sufficient if the
+#       ## indexer is bootstrapped from the most recent snapshot. Otherwise an
+#       ## archive node is needed.
 #       rpc_url: http://rolling-node-0.rolling-node:8732
 #       # api_log_level: Debug
 #       # indexer_log_level: Debug
