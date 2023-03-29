@@ -1,5 +1,5 @@
 {{- define "tezos.tzkt.setDbConnectionEnvVar" -}}
-{{ print " " "server=$(POSTGRES_HOST);port=5432;database=$(POSTGRES_DB);username=$(POSTGRES_USER);password=$(POSTGRES_PASSWORD);" }}
+{{ print " " "server=$(POSTGRES_HOST);port=5432;database=$(POSTGRES_DB);username=$(POSTGRES_USER);password=$(POSTGRES_PASSWORD);command timeout=600;" }}
 {{- end -}}
 
 
