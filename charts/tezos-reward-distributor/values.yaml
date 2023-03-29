@@ -32,8 +32,8 @@ reward_data_provider: "rpc"
 # Tezos Network. Can be MAINNET or GHOSTNET
 network: MAINNET
 
-# Release override: set to -5 to pay just finished cycle
-release_override: -5
+# Enable adjusted early payouts. Pay out 6-9 days after delegation instead of 18-21 days.
+adjusted_early_payouts: false
 
 # Set initial cycle to pay rewards from. Set to -1 to start from just finished cycle.
 initial_cycle: -1

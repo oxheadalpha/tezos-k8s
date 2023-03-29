@@ -74,8 +74,8 @@ spec:
                 value: "{{ .Values.extra_trd_args }}"
               - name: NETWORK
                 value: "{{ .Values.network }}"
-              - name: RELEASE_OVERRIDE
-                value: "{{ .Values.release_override }}"
+              - name: ADJUSTED_EARLY_PAYOUTS
+                value: "{{ .Values.adjusted_early_payouts }}"
               - name: INITIAL_CYCLE
                 value: "{{ .Values.initial_cycle }}"
               - name: DRY_RUN
