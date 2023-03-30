@@ -494,9 +494,11 @@ protocols:
 #       ## https://github.com/baking-bad/tzkt
 #       snapshot_url: https://snapshots.tzkt.io/tzkt_v1.12_mainnet.backup
 #       host: localhost
+#       port: 5432
 #       name: db
 #       user: foo
 #       password: bar
+#       command_timeout: 600
 #
 #     ## Configurable tzkt fields
 #     config:

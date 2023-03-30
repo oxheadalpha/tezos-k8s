@@ -1,10 +1,11 @@
 {{- define "tezos.tzkt.setDbConnectionEnvVar" -}}
-{{ print " " "server=$(POSTGRES_HOST);port=5432;database=$(POSTGRES_DB);username=$(POSTGRES_USER);password=$(POSTGRES_PASSWORD);command timeout=600;" }}
+{{ print " " "server=$(POSTGRES_HOST);port=$(POSTGRES_PORT);database=$(POSTGRES_DB);username=$(POSTGRES_USER);password=$(POSTGRES_PASSWORD);command timeout=$(POSTGRES_COMMAND_TIMEOUT);" }}
 {{- end -}}
-
 
 {{- if (include "tezos.shouldDeployTzktIndexer" .) }}
 {{- $tzkt_indexer := get (.Values.indexers | default dict) "tzkt" }}
+{{- $postgres_port := $tzkt_indexer.db.port | default 5432 -}}
+{{- $postgres_command_timeout := $tzkt_indexer.db.command_timeout | default 600 -}}
 {{- /*
  The path of a downloaded snapshot.
  The file's name format is "{CHAIN_NAME}-{indexer_image_tag}.backup"
@@ -233,6 +234,10 @@ spec:
           env:
           - name: Logging__LogLevel__Default
             value: {{ $tzkt_indexer.config.api_log_level }}
+          - name: POSTGRES_PORT
+            value: {{ $postgres_port }}
+          - name: POSTGRES_COMMAND_TIMEOUT
+            value: {{ $postgres_command_timeout }}
           - name: ConnectionStrings__DefaultConnection
             value: {{- include "tezos.tzkt.setDbConnectionEnvVar" . }}
           {{- /* https://github.com/baking-bad/tzkt/blob/198e3879d4/docker-compose.yml#L26 */}}
@@ -251,6 +256,10 @@ spec:
             value: {{ $tzkt_indexer.config.rpc_url }}
           - name: Logging__LogLevel__Default
             value: {{ $tzkt_indexer.config.indexer_log_level }}
+          - name: POSTGRES_PORT
+            value: {{ $postgres_port }}
+          - name: POSTGRES_COMMAND_TIMEOUT
+            value: {{ $postgres_command_timeout }}
           - name: ConnectionStrings__DefaultConnection
             value: {{- include "tezos.tzkt.setDbConnectionEnvVar" . }}
           envFrom:
