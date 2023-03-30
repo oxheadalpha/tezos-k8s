@@ -4,8 +4,8 @@
 
 {{- if (include "tezos.shouldDeployTzktIndexer" .) }}
 {{- $tzkt_indexer := get (.Values.indexers | default dict) "tzkt" }}
-{{- $postgres_port := $tzkt_indexer.db.port | default "5432" -}}
-{{- $postgres_command_timeout := $tzkt_indexer.db.command_timeout | default "600" -}}
+{{- $postgres_port := $tzkt_indexer.db.port | default 5432 | quote -}}
+{{- $postgres_command_timeout := $tzkt_indexer.db.command_timeout | default 600 | quote -}}
 {{- /*
  The path of a downloaded snapshot.
  The file's name format is "{CHAIN_NAME}-{indexer_image_tag}.backup"
