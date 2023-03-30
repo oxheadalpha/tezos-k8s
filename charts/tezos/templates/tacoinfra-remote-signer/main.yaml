@@ -74,6 +74,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ $signerName }}
+  namespace: {{ $.Release.Namespace }}
   labels:
     {{- include "tacoinfra-remote-signer.labels" $ | nindent 4 }}
 spec:
