@@ -29,7 +29,7 @@ data:
   POSTGRES_PASSWORD: {{ b64enc $tzkt_indexer.db.password }}
   POSTGRES_DB: {{ b64enc $tzkt_indexer.db.name }}
 
-{{- if $tzkt_indexer.db.snapshot_url }}
+{{- if and (not $tzkt_indexer.db.isExternal) $tzkt_indexer.db.snapshot_url }}
 ---
 {{/*
 This script is mounted into postgres's /docker-entrypoint-initdb.d directory
@@ -95,9 +95,8 @@ spec:
       labels:
         app: {{ .Values.tzkt_indexer_statefulset.name }}
     spec:
-    {{- if not $tzkt_indexer.db.isExternal }}
+    {{- if and (not $tzkt_indexer.db.isExternal) $tzkt_indexer.db.snapshot_url }}
       initContainers:
-      {{- if $tzkt_indexer.db.snapshot_url }}
         - image: {{ .Values.tezos_k8s_images.utils }}
           name: download-db-snapshot
           volumeMounts:
@@ -195,7 +194,6 @@ spec:
 
               pg_ctl stop
               [ "$import_exit_code" != 0 ] && exit 1 || exit 0
-      {{- end }}
     {{- end }}
       containers:
         - image: {{ .Values.tezos_k8s_images.utils }}
