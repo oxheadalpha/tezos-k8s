@@ -103,17 +103,6 @@ metadata:
 {{- end }}
 
 {{/*
-  Has per-block votes defined?
-*/}}
-{{- define "tezos.hasPerBlockVotes" }}
-  {{- range .Values.protocols }}
-    {{- if .vote }}
-      {{- "true" }}
-    {{- end }}
-  {{- end }}
-{{- end }}
-
-{{/*
   Should deploy TZKT indexer?
 */}}
 {{- define "tezos.shouldDeployTzktIndexer" -}}

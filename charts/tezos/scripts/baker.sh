@@ -11,7 +11,15 @@ proto_command="{{ .command_in_tpl }}"
 
 my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
 
-per_block_vote_file=/etc/tezos/per-block-votes/${my_baker_account}-${proto_command}-per-block-votes.json
+if [ "${my_baker_account}" == "" ]; then
+  while true; do
+    printf "This container is not baking, but exists "
+    printf "due to uneven numer of bakers within the statefulset\n"
+    sleep 300
+  done
+fi
+
+per_block_vote_file=/etc/tezos/baker-config/${my_baker_account}-${proto_command}-per-block-votes.json
 
 if [ $(cat $per_block_vote_file) == "null" ]; then
   cat << EOF
@@ -25,12 +33,8 @@ EOF
 fi
 extra_args="--votefile ${per_block_vote_file}"
 
-if [ "${my_baker_account}" == "" ]; then
-  while true; do
-    printf "This container is not baking, but exists "
-    printf "due to uneven numer of bakers within the statefulset\n"
-    sleep 300
-  done
+if [ -f /etc/tezos/baker-config/${my_baker_account}_operations_pool ]; then
+  extra_args="${extra_args} --operations-pool $(cat /etc/tezos/baker-config/${my_baker_account}_operations_pool)"
 fi
 
 CLIENT="$TEZ_BIN/octez-client -d $CLIENT_DIR"

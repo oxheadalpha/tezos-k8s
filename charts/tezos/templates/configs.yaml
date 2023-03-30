@@ -88,17 +88,18 @@ metadata:
   name: tezos-secret
   namespace: {{ .Release.Namespace }}
 ---
-{{- if (include "tezos.hasPerBlockVotes" .) }}
 apiVersion: v1
 data:
 {{- range $k, $v := .Values.accounts }}
 {{- range ( $v.protocols | default $.Values.protocols ) }}
   {{ $k }}-{{ .command }}-per-block-votes.json: {{ .vote | toJson | quote }}
 {{- end }}
+{{- if $v.operations_pool }}
+  {{ $k }}_operations_pool: {{ $v.operations_pool | quote }}
+{{- end }}
 {{- end }}
 kind: ConfigMap
 metadata:
-  name: per-block-votes
+  name: baker-config
   namespace: {{ .Release.Namespace }}
 ---
-{{- end }}
