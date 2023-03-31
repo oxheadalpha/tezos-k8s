@@ -175,10 +175,12 @@ fi
 # Switch alternate cloud provider secret name based on actual cloud provider
 if [[ -n "${CLOUD_PROVIDER}" ]]; then
     # Need to account for dynamic volumes removed above. For example if not rolling node then rolling volume is deleted.
+    SECRET_NAME="${CLOUD_PROVIDER}-secret"
     NUM_JOB_VOLUMES=$(yq e '.spec.template.spec.volumes | length' mainJob.yaml )
     NUM_CONTAINER_MOUNTS=$(yq e '.spec.template.spec.containers[1].volumeMounts | length' mainJob.yaml )
-    CLOUD_PROVIDER="${CLOUD_PROVIDER}" yq e -i ".spec.template.spec.containers[1].volumeMounts[$(( NUM_CONTAINER_MOUNTS - 1 ))].name=strenv(CLOUD_PROVIDER)" mainJob.yaml
-    CLOUD_PROVIDER="${CLOUD_PROVIDER}" yq e -i ".spec.template.spec.volumes[$(( NUM_JOB_VOLUMES - 1 ))].name=strenv(CLOUD_PROVIDER)" mainJob.yaml
+    SECRET_NAME="${SECRET_NAME}" yq e -i ".spec.template.spec.containers[1].volumeMounts[$(( NUM_CONTAINER_MOUNTS - 1 ))].name=strenv(SECRET_NAME)" mainJob.yaml
+    SECRET_NAME="${SECRET_NAME}" yq e -i ".spec.template.spec.volumes[$(( NUM_JOB_VOLUMES - 1 ))].name=strenv(SECRET_NAME)" mainJob.yaml
+    SECRET_NAME="${SECRET_NAME}" yq e -i ".spec.template.spec.volumes[$(( NUM_JOB_VOLUMES - 1 ))].secret.secretName=strenv(SECRET_NAME)" mainJob.yaml
 fi
 
 # Service account to be used by entire zip-and-upload job.
