@@ -1,15 +1,18 @@
 {{- define "tezos.tzkt.setDbConnectionEnvVar" -}}
-{{ print " " "server=localhost;port=5432;database=$(POSTGRES_DB);username=$(POSTGRES_USER);password=$(POSTGRES_PASSWORD);" }}
+{{ print " " "server=$(POSTGRES_HOST);port=$(POSTGRES_PORT);database=$(POSTGRES_DB);username=$(POSTGRES_USER);password=$(POSTGRES_PASSWORD);command timeout=$(POSTGRES_COMMAND_TIMEOUT);" }}
 {{- end -}}
-
 
 {{- if (include "tezos.shouldDeployTzktIndexer" .) }}
 {{- $tzkt_indexer := get (.Values.indexers | default dict) "tzkt" }}
+{{- $postgres_port := $tzkt_indexer.db.port | default 5432 | quote -}}
+{{- $postgres_command_timeout := $tzkt_indexer.db.command_timeout | default 600 | quote -}}
 {{- /*
  The path of a downloaded snapshot.
  The file's name format is "{CHAIN_NAME}-{indexer_image_tag}.backup"
 */}}
-{{- $snapshot_file := print "/etc/db-snapshot/" $tzkt_indexer.config.db_name "-" $tzkt_indexer.indexer_image_tag ".backup" }}
+{{- /* Extract tzkt version from tzkt image */}}
+{{- $indexer_image:= split ":" $tzkt_indexer.images.indexer }}
+{{- $snapshot_file := print "/etc/db-snapshot/" $tzkt_indexer.db.name "-" $indexer_image._1 ".backup" }}
 {{- /*
  A file every pod uses to remember its imported snapshot.
  By keeping track, pods won't try to re-upgrade their db on restarts.
@@ -21,11 +24,12 @@ kind: Secret
 metadata:
   name: db-creds
 data:
-  POSTGRES_USER: {{ b64enc $tzkt_indexer.config.db_user }}
-  POSTGRES_PASSWORD: {{ b64enc $tzkt_indexer.config.db_password }}
-  POSTGRES_DB: {{ b64enc $tzkt_indexer.config.db_name }}
+  POSTGRES_HOST: {{ b64enc ($tzkt_indexer.db.host | default "localhost") }}
+  POSTGRES_USER: {{ b64enc $tzkt_indexer.db.user }}
+  POSTGRES_PASSWORD: {{ b64enc $tzkt_indexer.db.password }}
+  POSTGRES_DB: {{ b64enc $tzkt_indexer.db.name }}
 
-{{- if $tzkt_indexer.db_snapshot_url }}
+{{- if and (not $tzkt_indexer.db.isExternal) $tzkt_indexer.db.snapshot_url }}
 ---
 {{/*
 This script is mounted into postgres's /docker-entrypoint-initdb.d directory
@@ -91,8 +95,8 @@ spec:
       labels:
         app: {{ .Values.tzkt_indexer_statefulset.name }}
     spec:
+    {{- if and (not $tzkt_indexer.db.isExternal) $tzkt_indexer.db.snapshot_url }}
       initContainers:
-      {{- if $tzkt_indexer.db_snapshot_url }}
         - image: {{ .Values.tezos_k8s_images.utils }}
           name: download-db-snapshot
           volumeMounts:
@@ -101,7 +105,7 @@ spec:
               subPath: db-snapshot
           env:
             - name: SNAPSHOT_URL
-              value: {{ .Values.indexers.tzkt.db_snapshot_url }}
+              value: {{ $tzkt_indexer.db.snapshot_url }}
             - name: SNAPSHOT_FILE
               value: {{ $snapshot_file }}
             - name: MY_IMPORTED_SNAPSHOTS_URL
@@ -134,7 +138,7 @@ spec:
 
               cat "$MY_IMPORTED_SNAPSHOTS_URL"
         - name: upgrade-db
-          image: postgres:13
+          image: "{{ $tzkt_indexer.images.postgres }}"
           volumeMounts:
             - name: indexer-db
               mountPath: /var/lib/postgresql/data
@@ -149,7 +153,7 @@ spec:
             - name: PGDATA
               value: /var/lib/postgresql/data/pgdata
             - name: SNAPSHOT_URL
-              value: {{ .Values.indexers.tzkt.db_snapshot_url }}
+              value: {{ $tzkt_indexer.db.snapshot_url }}
             - name: SNAPSHOT_FILE
               value: {{ $snapshot_file }}
             - name: MY_IMPORTED_SNAPSHOTS_URL
@@ -190,7 +194,7 @@ spec:
 
               pg_ctl stop
               [ "$import_exit_code" != 0 ] && exit 1 || exit 0
-      {{- end }}
+    {{- end }}
       containers:
         - image: {{ .Values.tezos_k8s_images.utils }}
           name: readiness
@@ -221,13 +225,17 @@ spec:
             successThreshold: 2
             exec:
               command: ["cat", "/tmp/synced"]
-        - image: "{{ $tzkt_indexer.api_image }}:{{ $tzkt_indexer.api_image_tag }}"
+        - image: "{{ $tzkt_indexer.images.api }}"
           name: api
           ports:
             - containerPort: 5000
           env:
           - name: Logging__LogLevel__Default
             value: {{ $tzkt_indexer.config.api_log_level }}
+          - name: POSTGRES_PORT
+            value: {{ $postgres_port }}
+          - name: POSTGRES_COMMAND_TIMEOUT
+            value: {{ $postgres_command_timeout }}
           - name: ConnectionStrings__DefaultConnection
             value: {{- include "tezos.tzkt.setDbConnectionEnvVar" . }}
           {{- /* https://github.com/baking-bad/tzkt/blob/198e3879d4/docker-compose.yml#L26 */}}
@@ -236,7 +244,7 @@ spec:
           envFrom:
           - secretRef:
               name: db-creds
-        - image: "{{ $tzkt_indexer.indexer_image }}:{{ $tzkt_indexer.indexer_image_tag }}"
+        - image: "{{ $tzkt_indexer.images.indexer }}"
           name: indexer
           volumeMounts:
             - name: tzkt-env
@@ -246,12 +254,17 @@ spec:
             value: {{ $tzkt_indexer.config.rpc_url }}
           - name: Logging__LogLevel__Default
             value: {{ $tzkt_indexer.config.indexer_log_level }}
+          - name: POSTGRES_PORT
+            value: {{ $postgres_port }}
+          - name: POSTGRES_COMMAND_TIMEOUT
+            value: {{ $postgres_command_timeout }}
           - name: ConnectionStrings__DefaultConnection
             value: {{- include "tezos.tzkt.setDbConnectionEnvVar" . }}
           envFrom:
           - secretRef:
               name: db-creds
-        - image: postgres:13
+        {{- if not $tzkt_indexer.db.isExternal }}
+        - image: {{ $tzkt_indexer.images.postgres }}
           name: db
           imagePullPolicy: IfNotPresent
           ports:
@@ -260,7 +273,7 @@ spec:
             - name: indexer-db
               mountPath: /var/lib/postgresql/data
               subPath: data
-            {{- if $tzkt_indexer.db_snapshot_url }}
+            {{- if $tzkt_indexer.db.snapshot_url }}
             - name: indexer-db
               mountPath: /etc/db-snapshot
               subPath: db-snapshot
@@ -272,9 +285,9 @@ spec:
           {{- /* https://github.com/docker-library/docs/blob/master/postgres/README.md#pgdata */}}
             - name: PGDATA
               value: /var/lib/postgresql/data/pgdata
-            {{- if $tzkt_indexer.db_snapshot_url }}
+            {{- if $tzkt_indexer.db.snapshot_url }}
             - name: SNAPSHOT_URL
-              value: {{ .Values.indexers.tzkt.db_snapshot_url }}
+              value: {{ $tzkt_indexer.db.snapshot_url }}
             - name: SNAPSHOT_FILE
               value: {{ $snapshot_file }}
             - name: MY_IMPORTED_SNAPSHOTS_URL
@@ -283,16 +296,18 @@ spec:
           envFrom:
           - secretRef:
               name: db-creds
+        {{- end }}
       volumes:
         - name: tzkt-env
           emptyDir: {}
-        {{- if $tzkt_indexer.db_snapshot_url }}
+        {{- if not $tzkt_indexer.db.isExternal }}
         - name: import-db-script
           configMap:
             name: import-db-script
             {{- /* Execute permissions */}}
             defaultMode: 111
         {{- end }}
+  {{- if not $tzkt_indexer.db.isExternal }}
   volumeClaimTemplates:
     - metadata:
         name: indexer-db
@@ -303,5 +318,5 @@ spec:
         resources:
           requests:
             storage: {{ required "DB storage size must be specified" $tzkt_indexer.storage  }}
-
+  {{- end }}
 {{- end }}

@@ -6,7 +6,7 @@ cat /etc/tezos/data/config.json
 echo ------------------------------------------------------------
 
 mkdir -p /var/tezos/client
-chmod -R 777 /var/tezos
+mkdir -p /var/tezos/node/data
 set -e
 python3 /config-generator.py "$@"
 set +e
@@ -17,6 +17,15 @@ set +e
 # tezos docker image.
 
 MY_CLASS=$(echo $NODES | jq -r ".\"${MY_NODE_CLASS}\"")
+
+# Set up symlinks for local storage
+local_storage=$(echo $MY_CLASS | jq -r ".local_storage")
+if [ "${local_storage}" == "true" ]; then
+  echo '{ "version": "2.0" }' > /var/tezos/node/data/version.json
+  ln -s /var/persistent/peers.json /var/tezos/node/data/peers.json
+  ln -s /var/persistent/identity.json /var/tezos/node/data/identity.json
+fi
+
 AM_I_BAKER=0
 if [ "$MY_CLASS" != null ]; then
     AM_I_BAKER=$(echo $MY_CLASS | \
@@ -39,3 +48,6 @@ if [ "$AM_I_BAKER" -eq 1 ]; then
 
     echo "$my_baker_account" > /etc/tezos/baker-account
 fi
+
+# make sure tezos user owns everything in /var/tezos
+chown -R 1000:1000 /var/tezos

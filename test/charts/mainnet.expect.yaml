@@ -33,7 +33,7 @@ data:
   ARCHIVE_TARBALL_URL: ""
   PREFER_TARBALLS: "false"
   SNAPSHOT_SOURCE: "https://xtz-shots.io/tezos-snapshots.json"
-  OCTEZ_VERSION: "tezos/tezos:v15-release"
+  OCTEZ_VERSION: "tezos/tezos:v16.1"
   NODE_GLOBALS: |
     {
       "env": {}
@@ -124,7 +124,7 @@ spec:
     spec:
       containers:        
         - name: octez-node
-          image: "tezos/tezos:v15-release"
+          image: "tezos/tezos:v16.1"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -209,7 +209,7 @@ spec:
               memory: 80Mi        
       initContainers:        
         - name: config-init
-          image: "tezos/tezos:v15-release"
+          image: "tezos/tezos:v16.1"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -220,6 +220,14 @@ spec:
               
               echo "Writing custom configuration for public node"
               mkdir -p /etc/tezos/data
+              
+              # if config already exists (container is rebooting), dump and delete it.
+              if [ -e /etc/tezos/data/config.json ]; then
+                printf "Found pre-existing config.json:\n"
+                cat /etc/tezos/data/config.json
+                printf "Deleting\n"
+                rm -rvf /etc/tezos/data/config.json
+              fi
               
               /usr/local/bin/octez-node config init		\
                   --config-file /etc/tezos/data/config.json	\
@@ -312,7 +320,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume        
         - name: snapshot-importer
-          image: "tezos/tezos:v15-release"
+          image: "tezos/tezos:v16.1"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -333,7 +341,7 @@ spec:
                   exit 0
               fi
               
-              if [ -d ${node_data_dir}/context ]; then
+              if [ -e ${node_data_dir}/context/store.dict ]; then
                   echo "Blockchain has already been imported. If a tarball"
                   echo "instead of a regular tezos snapshot was used, it was"
                   echo "imported in the snapshot-downloader container."
@@ -375,7 +383,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume                
         - name: upgrade-storage
-          image: "tezos/tezos:v15-release"
+          image: "tezos/tezos:v16.1"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -384,9 +392,9 @@ spec:
             - |
               set -ex
               
-              if [ ! -e /var/tezos/node/data/context ]
+              if [ ! -e /var/tezos/node/data/context/store.dict ]
               then
-                printf "No context in data dir found, probably initial start, doing nothing."
+                printf "No store in data dir found, probably initial start, doing nothing."
                 exit 0
               fi
               octez-node upgrade storage --config /etc/tezos/config.json
