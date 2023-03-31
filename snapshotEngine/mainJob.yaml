@@ -225,6 +225,8 @@ spec:
               name: snapshot-cache-volume
             - mountPath: /rolling-tarball-restore
               name: rolling-tarball-restore
+            - name: cloud-provider
+              mountPath: /cloud-provider
           env:
             - name: HISTORY_MODE
               value: ""
@@ -242,4 +244,8 @@ spec:
         - name: rolling-tarball-restore
           persistentVolumeClaim:
             claimName: rolling-tarball-restore
+        - name: cloud-provider
+          secret:
+            secretName: cloud-provider
+            optional: true
   backoffLimit: 0

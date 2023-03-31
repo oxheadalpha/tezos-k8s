@@ -5,12 +5,16 @@ BLOCK_HASH=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH)
 BLOCK_TIMESTAMP=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_TIMESTAMP)
 #TEZOS_VERSION=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_VERSION)
 NETWORK="${NAMESPACE%%-*}"
-export S3_BUCKET="${S3_BUCKET_OVERRIDE:-${NAMESPACE%-*}.${SNAPSHOT_WEBSITE_DOMAIN_NAME}}"
+S3_BUCKET="${S3_BUCKET_OVERRIDE:-${NAMESPACE%-*}.${SNAPSHOT_WEBSITE_DOMAIN_NAME}}"
 TEZOS_RPC_VERSION_INFO="$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_RPC_VERSION_INFO)"
 
 TEZOS_VERSION="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .version)"
 TEZOS_VERSION_COMMIT_HASH="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .commit_info.commit_hash)"
 TEZOS_VERSION_COMMIT_DATE="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .commit_info.commit_date)"
+
+if [[ "${CLOUD_PROVIDER}" = "digitalocean" ]]; then
+    alias aws="AWS_ACCESS_KEY_ID=ABCD AWS_SECRET_ACCESS_KEY=EF1234 aws --endpoint-url https://nyc3.digitaloceanspaces.com"
+fi
 
 cd /
 
