@@ -225,8 +225,8 @@ spec:
               name: snapshot-cache-volume
             - mountPath: /rolling-tarball-restore
               name: rolling-tarball-restore
-            - name: cloud-provider
-              mountPath: /cloud-provider
+            - mountPath: /cloud-provider
+              name: cloud-provider
           env:
             - name: HISTORY_MODE
               value: ""
