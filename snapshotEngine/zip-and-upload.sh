@@ -13,8 +13,9 @@ TEZOS_VERSION_COMMIT_HASH="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .commit_in
 TEZOS_VERSION_COMMIT_DATE="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .commit_info.commit_date)"
 
 if [[ "${CLOUD_PROVIDER}" = "digitalocean" ]]; then
-    AWS_ACCESS_KEY_ID=$(cat /cloud-provider-secret/spaces_access_id)
-    AWS_SECRET_ACCESS_KEY=$(cat /cloud-provider-secret/spaces_secret_key)
+    export AWS_ACCESS_KEY_ID=$(cat /cloud-provider-secret/spaces_access_id)
+    export AWS_SECRET_ACCESS_KEY=$(cat /cloud-provider-secret/spaces_secret_key)
+    alias aws='AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} aws --endpoint-url https://nyc3.digitaloceanspaces.com'
     alias aws='${AWS_ACCESS_KEY_ID} ${AWS_SECRET_ACCESS_KEY} aws --endpoint-url https://nyc3.digitaloceanspaces.com'
 fi
 
