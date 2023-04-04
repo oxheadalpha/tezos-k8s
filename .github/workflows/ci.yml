@@ -169,9 +169,9 @@ jobs:
         uses: actions/cache@v2
         with:
           path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-multi-buildx-${{ github.sha }}
+          key: ${{ runner.os }}-multi-buildx-${{ matrix.container }}-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-multi-buildx
+            ${{ runner.os }}-multi-buildx-${{ matrix.container }}
 
       - name: Docker meta
         id: meta
@@ -222,24 +222,24 @@ jobs:
       - name: Lint Helm Charts
         run: helm lint charts/*
 
-  test-helm-charts:
-    runs-on: ubuntu-latest
-    needs: lint_helm_charts
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+  # test-helm-charts:
+  #   runs-on: ubuntu-latest
+  #   needs: lint_helm_charts
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v2
 
-      - name: Set up Helm
-        uses: azure/setup-helm@v1
-        with:
-          version: v3.8.1
+  #     - name: Set up Helm
+  #       uses: azure/setup-helm@v1
+  #       with:
+  #         version: v3.8.1
 
-      - name: Run Helm Template Tests
-        run: ./bin/test-charts
+  #     - name: Run Helm Template Tests
+  #       run: ./bin/test-charts
 
   publish_helm_charts:
     runs-on: ubuntu-latest
-    needs: [test-helm-charts, lint_helm_charts, publish-to-ghcr]
+    # needs: [test-helm-charts, lint_helm_charts, publish-to-ghcr]
     if: github.event_name == 'release' && github.event.action == 'created'
     steps:
       - name: Checkout

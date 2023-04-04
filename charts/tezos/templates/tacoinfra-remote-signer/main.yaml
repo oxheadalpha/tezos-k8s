@@ -128,10 +128,12 @@ spec:
           command: ["/bin/sh", "-c"]
           args:
             - |
-              set -e
+              set -ex
               ls -ld /app
-              ls -la /app
-              ls -la /app/signer-config
+              ls -l /app
+              ls -l /app/signer-config
+              lsattr /app
+              lsattr  /app/signer-config
               cp /etc/signer-config/* /app/signer-config
               ls -la /app/signer-config
               chown -R 999:999 /app/signer-config /etc/file_ratchets
