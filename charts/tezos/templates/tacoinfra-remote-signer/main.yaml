@@ -129,8 +129,13 @@ spec:
           args:
             - |
               set -e
+              ls -ld /app
+              ls -la /app
+              ls -la /app/signer-config
               cp /etc/signer-config/* /app/signer-config
+              ls -la /app/signer-config
               chown -R 999:999 /app/signer-config /etc/file_ratchets
+              ls -la /app/signer-config
               chmod 770 /app/signer-config
               chmod 770 /etc/file_ratchets
           volumeMounts:
