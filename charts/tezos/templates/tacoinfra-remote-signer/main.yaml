@@ -122,25 +122,15 @@ spec:
               drop:
                 - ALL
               add:
-                - CAP_CHOWN # chown
-                - CAP_FOWNER # chmod
-                - CAP_DAC_OVERRIDE # cp
+                - CHOWN # chown
+                - FOWNER # chmod
+                - DAC_OVERRIDE # cp
           command: ["/bin/sh", "-c"]
           args:
             - |
-              mount
-              df -hT
-              capsh --print
               set -ex
-              ls -ld /app
-              ls -l /app
-              ls -l /app/signer-config
-              lsattr /app
-              lsattr  /app/signer-config
               cp /etc/signer-config/* /app/signer-config
-              ls -la /app/signer-config
               chown -R 999:999 /app/signer-config /etc/file_ratchets
-              ls -la /app/signer-config
               chmod 770 /app/signer-config
               chmod 770 /etc/file_ratchets
           volumeMounts:
