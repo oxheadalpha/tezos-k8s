@@ -14,35 +14,35 @@ on:
     types: [created]
 
 jobs:
-  # check-lint-and-format:
-  #   runs-on: ubuntu-latest
-  #   defaults:
-  #     run:
-  #       working-directory: ./mkchain
-  #   steps:
-  #     - uses: actions/checkout@v2
+  check-lint-and-format:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./mkchain
+    steps:
+      - uses: actions/checkout@v2
 
-  #     - name: Set up Python 3.9
-  #       uses: actions/setup-python@v1
-  #       with:
-  #         python-version: 3.9
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.9
 
-  #     - name: Install dependencies
-  #       run: |
-  #         python -m pip install --upgrade pip
-  #         pip install black isort==5.7.0 autoflake
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install black isort==5.7.0 autoflake
 
-  #     - name: Remove unused imports
-  #       run: |
-  #         # one run to output unused imports, another run for exit code
-  #         autoflake . -r --remove-all-unused-imports
-  #         autoflake . -r --remove-all-unused-imports -c
+      - name: Remove unused imports
+        run: |
+          # one run to output unused imports, another run for exit code
+          autoflake . -r --remove-all-unused-imports
+          autoflake . -r --remove-all-unused-imports -c
 
-  #     - name: Sort imports
-  #       run: isort . --check --diff
+      - name: Sort imports
+        run: isort . --check --diff
 
-  #     - name: black
-  #       run: black . --check
+      - name: black
+        run: black . --check
 
   # We don't have mkchain tests yet
   # test:
@@ -76,58 +76,58 @@ jobs:
   #     - name: pytest
   #       run: pytest tests
 
-  # publish_mkchain:
-  #   needs: check-lint-and-format
-  #   runs-on: ${{ matrix.os }}
-  #   strategy:
-  #     fail-fast: false
-  #     # after we test that the module works on all systems we only need to build one since this is a pure python module
-  #     matrix:
-  #       python-version: [3.8]
-  #       os: [ubuntu-latest]
+  publish_mkchain:
+    needs: check-lint-and-format
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      # after we test that the module works on all systems we only need to build one since this is a pure python module
+      matrix:
+        python-version: [3.8]
+        os: [ubuntu-latest]
 
-  #   steps:
-  #     - uses: actions/checkout@v2
+    steps:
+      - uses: actions/checkout@v2
 
-  #     - uses: actions/setup-python@v1
-  #       with:
-  #         python-version: ${{ matrix.python-version }}
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
 
-  #     - name: Install dependencies
-  #       run: |
-  #         python -m pip install --upgrade pip
-  #         pip install pyyaml
-  #         pip install wheel
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml
+          pip install wheel
 
-  #     - name: Build Python package
-  #       run: python setup.py bdist_wheel
-  #       working-directory: mkchain
+      - name: Build Python package
+        run: python setup.py bdist_wheel
+        working-directory: mkchain
 
-  #     - name: Install wheels
-  #       run: pip install dist/*.whl
-  #       working-directory: mkchain
+      - name: Install wheels
+        run: pip install dist/*.whl
+        working-directory: mkchain
 
-  #     - name: Release
-  #       uses: softprops/action-gh-release@v1
-  #       if: startsWith(github.ref, 'refs/tags/')
-  #       with:
-  #         files: "**/mkchain/dist/*.whl"
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: "**/mkchain/dist/*.whl"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  #     - name: Publish package to PyPI
-  #       if: github.event_name == 'release' && github.event.action == 'created'
-  #       uses: pypa/gh-action-pypi-publish@master
-  #       with:
-  #         user: __token__
-  #         password: ${{ secrets.PYPI_TOKEN }}
-  #         packages_dir: mkchain/dist/
+      - name: Publish package to PyPI
+        if: github.event_name == 'release' && github.event.action == 'created'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_TOKEN }}
+          packages_dir: mkchain/dist/
 
   list_containers_to_publish:
     # based on
     # https://stackoverflow.com/a/62953566/207209
     runs-on: ubuntu-latest
-    # needs: check-lint-and-format
+    needs: check-lint-and-format
     outputs:
       matrix: ${{ steps.gen-containers-matrix.outputs.matrix }}
     steps:
@@ -222,24 +222,24 @@ jobs:
       - name: Lint Helm Charts
         run: helm lint charts/*
 
-  # test-helm-charts:
-  #   runs-on: ubuntu-latest
-  #   needs: lint_helm_charts
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v2
+  test-helm-charts:
+    runs-on: ubuntu-latest
+    needs: lint_helm_charts
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
 
-  #     - name: Set up Helm
-  #       uses: azure/setup-helm@v1
-  #       with:
-  #         version: v3.8.1
+      - name: Set up Helm
+        uses: azure/setup-helm@v1
+        with:
+          version: v3.8.1
 
-  #     - name: Run Helm Template Tests
-  #       run: ./bin/test-charts
+      - name: Run Helm Template Tests
+        run: ./bin/test-charts
 
   publish_helm_charts:
     runs-on: ubuntu-latest
-    # needs: [test-helm-charts, lint_helm_charts, publish-to-ghcr]
+    needs: [test-helm-charts, lint_helm_charts, publish-to-ghcr]
     if: github.event_name == 'release' && github.event.action == 'created'
     steps:
       - name: Checkout

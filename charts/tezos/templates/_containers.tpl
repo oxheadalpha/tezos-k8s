@@ -150,6 +150,10 @@
       name: config-volume
     - mountPath: /var/tezos
       name: var-volume
+    {{- if .local_storage }}
+    - mountPath: /var/persistent
+      name: persistent-volume
+    {{- end }}
     {{- if .with_secret }}
     - mountPath: /etc/secret-volume
       name: tezos-accounts
@@ -264,6 +268,7 @@
                                                 "type"        "octez-node"
                                                 "image"       "octez"
                                                 "with_config" 0
+                                                "local_storage" $.node_vals.local_storage
                                                 "resources"   $.node_vals.resources
     ) | nindent 0 }}
 {{- end }}
