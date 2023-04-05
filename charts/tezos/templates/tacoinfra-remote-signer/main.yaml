@@ -112,7 +112,7 @@ spec:
         {{- /* Secret mount is always mounted as ro fs.
             Copy it to empty dir to make it writeable.
         */}}
-        - name: copy-configmap
+        - name: copy-accounts
           image: {{ $signerImageName }}
           imagePullPolicy: {{ default "IfNotPresent" $signerImage.pullPolicy }}
           securityContext:
