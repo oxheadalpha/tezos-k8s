@@ -4,6 +4,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: tacoinfra-signer
+  namespace: testing
 ---
 # Source: tezos-chain/templates/configs.yaml
 ---
@@ -352,6 +353,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: tacoinfra-signer
+  namespace: testing
   labels:
     helm.sh/chart: tezos-chain-0.0.0
     app.kubernetes.io/instance: release-name
@@ -387,13 +389,13 @@ spec:
               drop:
                 - ALL
               add:
-                - CAP_CHOWN # chown
-                - CAP_FOWNER # chmod
-                - CAP_DAC_OVERRIDE # cp
+                - CHOWN # chown
+                - FOWNER # chmod
+                - DAC_OVERRIDE # cp
           command: ["/bin/sh", "-c"]
           args:
             - |
-              set -e
+              set -ex
               cp /etc/signer-config/* /app/signer-config
               chown -R 999:999 /app/signer-config /etc/file_ratchets
               chmod 770 /app/signer-config
