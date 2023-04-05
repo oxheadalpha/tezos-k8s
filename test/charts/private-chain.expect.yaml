@@ -379,7 +379,7 @@ spec:
         runAsGroup: 999
         fsGroup: 999
       initContainers:
-        - name: copy-configmap
+        - name: copy-accounts
           image: ghcr.io/oxheadalpha/tacoinfra-remote-signer:0.1.0
           imagePullPolicy: IfNotPresent
           securityContext:
