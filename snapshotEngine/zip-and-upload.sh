@@ -13,10 +13,21 @@ TEZOS_VERSION_COMMIT_HASH="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .commit_in
 TEZOS_VERSION_COMMIT_DATE="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .commit_info.commit_date)"
 
 if [[ "${CLOUD_PROVIDER}" = "digitalocean" ]]; then
-    export AWS_ACCESS_KEY_ID=$(cat /cloud-provider/access-id)
-    export AWS_SECRET_ACCESS_KEY=$(cat /cloud-provider/secret-key)
-    alias aws='AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} aws --endpoint-url https://nyc3.digitaloceanspaces.com'
-    alias aws='${AWS_ACCESS_KEY_ID} ${AWS_SECRET_ACCESS_KEY} aws --endpoint-url https://nyc3.digitaloceanspaces.com'
+    printf "%s CLOUD_PROVIDER is... %s\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${CLOUD_PROVIDER}"
+    alias aws='AWS_ACCESS_KEY_ID=$(cat /cloud-provider/access-id) AWS_SECRET_ACCESS_KEY=$(cat /cloud-provider/secret-key) aws --endpoint-url https://nyc3.digitaloceanspaces.com'
+    printf "%s AWS command has been aliased to...%s\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "$(alias | cut -d' ' -f2-)"
+    if [[ -z ${AWS_ACCESS_KEY_ID+x} ]]; then 
+        printf "%s ERROR... AWS_ACCESS_KEY_ID is not set, but alternate cloud provider was set.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+        exit 1
+    else 
+        printf "%s AWS_ACCESS_KEY_ID is set to alternate cloud provider credential.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    fi
+    if [[ -z ${AWS_SECRET_ACCESS_KEY+x} ]]; then 
+        printf "%s ERROR... AWS_SECRET_ACCESS_KEY is not, but alternate cloud provider was set.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+        exit 1
+    else 
+        printf "%s AWS_SECRET_ACCESS_KEY is set to alternate cloud provider credential.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    fi
 fi
 
 cd /
