@@ -168,7 +168,6 @@ PVC="${PVC}" yq e -i '.spec.template.spec.volumes[1].name=strenv(PVC)' mainJob.y
 # get rid of rolling container if this is an archive job
 if [ "${HISTORY_MODE}" = archive ]; then
     yq eval -i 'del(.spec.template.spec.containers[0])' mainJob.yaml
-    yq eval -i 'del(.spec.template.spec.containers[0].volumeMounts[2])' mainJob.yaml
     yq eval -i 'del(.spec.template.spec.volumes[2])' mainJob.yaml
 fi
 
