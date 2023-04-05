@@ -1,6 +1,6 @@
-set -x
+#!/bin/sh
 
-set
+set -xe
 
 # ensure we can run octez-client commands without specifying client dir
 ln -s /var/tezos/client /home/tezos/.tezos-client

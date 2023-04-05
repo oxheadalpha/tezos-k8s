@@ -1,6 +1,7 @@
 ---
 # Source: tezos-chain/templates/configs.yaml
 ---
+
 apiVersion: v1
 data:
   ACCOUNTS: |
@@ -12,6 +13,10 @@ metadata:
 ---
 # Source: tezos-chain/templates/configs.yaml
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tezos-config
+  namespace: testing
 data:
   CHAIN_NAME: "mainnet"
   CHAIN_PARAMS: |
@@ -109,12 +114,10 @@ data:
       }
     }
 
-  SIGNERS: |
+  OCTEZ_SIGNERS: |
     {}
-kind: ConfigMap
-metadata:
-  name: tezos-config
-  namespace: testing
+  TACOINFRA_SIGNERS: |
+    {}
 ---
 # Source: tezos-chain/templates/static.yaml
 apiVersion: v1
@@ -198,9 +201,9 @@ spec:
           args:
             - "-c"
             - |
-              set -x
+              #!/bin/sh
               
-              set
+              set -xe
               
               # ensure we can run octez-client commands without specifying client dir
               ln -s /var/tezos/client /home/tezos/.tezos-client
@@ -571,9 +574,9 @@ spec:
           args:
             - "-c"
             - |
-              set -x
+              #!/bin/sh
               
-              set
+              set -xe
               
               # ensure we can run octez-client commands without specifying client dir
               ln -s /var/tezos/client /home/tezos/.tezos-client

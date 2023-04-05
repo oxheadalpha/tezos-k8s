@@ -1,0 +1,222 @@
+{{- range $signerName, $signerConfig := .Values.tacoinfraSigners }}
+  {{- include "tezos.checkDupeSignerAccounts" $ }}
+  {{- $_ := set $ "signerName" $signerName }}
+  {{- $_ := set $ "signerConfig" $signerConfig }}
+
+  {{- include "tacoinfra-remote-signer.serviceAccount" $ }}
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $signerName }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "tacoinfra-remote-signer.labels" $ | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 5000
+  selector:
+    appType: tacoinfra-remote-signer
+    signerName: {{ $signerName }}
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $signerName }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "tacoinfra-remote-signer.labels" $ | nindent 4 }}
+data:
+  accounts.json: |
+{{- $accountKeys := list }}
+{{- range $accountName := $signerConfig.accounts }}
+  {{- $accounts := default dict $.Values.accounts }}
+  {{- $account := get $accounts $accountName | default dict }}
+  {{- if not $account }}
+    {{- fail (printf "Account '%s' is undefined." $accountName) }}
+  {{- end }}
+
+  {{- $_ := set $account "account_name" $accountName }}
+
+  {{- if not (and ($account.key) ($account.key_id)) }}
+    {{- fail (printf "Account '%s' requires 'key' and 'key_id' values." $accountName) }}
+  {{- end }}
+  {{- if (include "tezos.hasSecretKeyPrefix" $account) }}
+    {{- fail (printf "'%s' account's key is not a public key." $accountName) }}
+  {{- end }}
+
+  {{- $accountKeys = append $accountKeys (pick $account "account_name" "key" "key_id") }}
+{{- end }}
+{{- $accountKeys | toJson | b64enc | nindent 4 }}
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: file-ratchet
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "tacoinfra-remote-signer.labels" $ | nindent 4 }}
+spec:
+  resources:
+    requests:
+      storage: 8Ki
+  accessModes:
+    - ReadWriteOnce
+---
+
+  {{- $signerImage := default dict $signerConfig.image }}
+  {{- $signerImageName := default $.Values.images.tacoinfraRemoteSigner $signerImage.name }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $signerName }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "tacoinfra-remote-signer.labels" $ | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      appType: tacoinfra-remote-signer
+      signerName: {{ $signerName }}
+      {{- include "tacoinfra-remote-signer.selectorLabels" $ | nindent 6 }}
+  template:
+    metadata:
+      {{- with $signerConfig.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        appType: tacoinfra-remote-signer
+        signerName: {{ $signerName }}
+        {{- include "tacoinfra-remote-signer.selectorLabels" $ | nindent 8 }}
+    spec:
+      {{- with $signerConfig.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ default "" $signerConfig.serviceAccountName }}
+      securityContext:
+      {{- with $signerConfig.podSecurityContext }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+      initContainers:
+        {{- /* Secret mount is always mounted as ro fs.
+            Copy it to empty dir to make it writeable.
+        */}}
+        - name: copy-accounts
+          image: {{ $signerImageName }}
+          imagePullPolicy: {{ default "IfNotPresent" $signerImage.pullPolicy }}
+          securityContext:
+            runAsNonRoot: false
+            runAsUser: 0
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - CHOWN # chown
+                - FOWNER # chmod
+                - DAC_OVERRIDE # cp
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -ex
+              cp /etc/signer-config/* /app/signer-config
+              chown -R 999:999 /app/signer-config /etc/file_ratchets
+              chmod 770 /app/signer-config
+              chmod 770 /etc/file_ratchets
+          volumeMounts:
+            - name: signer-secret
+              mountPath: /etc/signer-config
+            - name: signer-config
+              mountPath: /app/signer-config
+            - name: file-ratchet
+              mountPath: /etc/file_ratchets
+        - name: create-keys-json
+          image: {{ $signerImageName }}
+          imagePullPolicy: {{ default "IfNotPresent" $signerImage.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          command: ["python"]
+          args:
+            - "-c"
+            - |
+{{ tpl ($.Files.Get "scripts/tacoinfra/create-keys-json.py") $ | indent 13 }}
+          volumeMounts:
+            - name: signer-config
+              mountPath: /app/signer-config
+      containers:
+        - name: remote-signer
+          image: {{ $signerImageName }}
+          imagePullPolicy: {{ default "IfNotPresent" $signerImage.pullPolicy }}
+          args: ["kms"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          {{- with $signerConfig.securityContext }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: 5000
+          volumeMounts:
+            - name: file-ratchet
+              mountPath: /etc/file_ratchets
+            - name: signer-config
+              mountPath: /app/signer-config
+              readOnly: true
+          env:
+          {{- range $name, $value := $signerConfig.env }}
+            - name: {{ $name }}
+              value: {{ $value }}
+          {{- end }}
+
+          # livenessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          # readinessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          {{- with $signerConfig.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: signer-secret
+          secret:
+            secretName: {{ $signerName }}
+        - name: signer-config
+          emptyDir: {}
+        - name: file-ratchet
+          persistentVolumeClaim:
+            claimName: file-ratchet
+      {{- with $signerConfig.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $signerConfig.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $signerConfig.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+---
+{{- end -}}
