@@ -232,7 +232,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
     fi
 
     printf "%s Rolling Tarball : Tarballing /rolling-tarball-restore/var/tezos/node, LZ4ing, and uploading to S3...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    tar cvf - . \
+    tar cvf - . 2>/dev/null\
     --exclude='node/data/identity.json' \
     --exclude='node/data/lock' \
     --exclude='node/data/peers.json' \
