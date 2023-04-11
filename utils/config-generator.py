@@ -11,10 +11,11 @@ from hashlib import blake2b
 from pathlib import Path
 from re import sub
 from shutil import chown
+from typing import Union
 
-
-from pytezos import pytezos
+import requests
 from base58 import b58encode_check
+from pytezos import Key
 
 with open("/etc/secret-volume/ACCOUNTS", "r") as secret_file:
     ACCOUNTS = json.loads(secret_file.read())
@@ -23,7 +24,8 @@ DATA_DIR = "/var/tezos/node/data"
 NODE_GLOBALS = json.loads(os.environ["NODE_GLOBALS"]) or {}
 NODES = json.loads(os.environ["NODES"])
 NODE_IDENTITIES = json.loads(os.getenv("NODE_IDENTITIES", "{}"))
-SIGNERS = json.loads(os.environ["SIGNERS"])
+OCTEZ_SIGNERS = json.loads(os.getenv("OCTEZ_SIGNERS", "{}"))
+TACOINFRA_SIGNERS = json.loads(os.getenv("TACOINFRA_SIGNERS", "{}"))
 
 MY_POD_NAME = os.environ["MY_POD_NAME"]
 MY_POD_TYPE = os.environ["MY_POD_TYPE"]
@@ -53,7 +55,7 @@ if not MY_POD_CLASS and "MY_NODE_CLASS" in os.environ:
     MY_POD_CLASS = NODES[my_node_class]
 
 if MY_POD_TYPE == "signing":
-    MY_POD_CONFIG = SIGNERS[MY_POD_NAME]
+    MY_POD_CONFIG = OCTEZ_SIGNERS[MY_POD_NAME]
 
 NETWORK_CONFIG = CHAIN_PARAMS["network"]
 
@@ -251,8 +253,11 @@ def fill_in_missing_accounts():
     return {**new_accounts, **ACCOUNTS}
 
 
-# Verify that the current baker has a baker account with secret key
 def verify_this_bakers_account(accounts):
+    """
+    Verify the current baker pod has an account with a secret key, unless the
+    account is signed for via an external remote signer (e.g. Tacoinfra).
+    """
     accts = get_baking_accounts(MY_POD_CONFIG)
 
     if not accts or len(accts) < 1:
@@ -261,14 +266,17 @@ def verify_this_bakers_account(accounts):
     for acct in accts:
         if not accounts.get(acct):
             raise Exception(f"ERROR: No account named {acct} found.")
-        signer = accounts[acct].get("signer_url")
+        signer_url = accounts[acct].get("signer_url")
+        tacoinfra_signer = get_accounts_signer(TACOINFRA_SIGNERS, acct)
 
         # We can count on accounts[acct]["type"] because import_keys will
         # fill it in when it is missing.
-        if not (accounts[acct]["type"] == "secret" or signer):
+        if not (accounts[acct]["type"] == "secret" or signer_url or tacoinfra_signer):
             raise Exception(
-                f"ERROR: Either a secret key or a signer_url should be provided for {acct}"
+                f"ERROR: Neither a secret key, signer url, or cloud remote signer is provided for baking account{acct}."
             )
+
+    return True
 
 
 #
@@ -318,17 +326,16 @@ def fill_in_missing_keys(all_accounts):
             account_values["type"] = "secret"
 
 
-#
-# expose_secret_key() decides if an account needs to have its secret
-# key exposed on the current pod.  It returns the obvious Boolean.
-
-
 def expose_secret_key(account_name):
+    """
+    Decides if an account needs to have its secret key exposed on the current
+    pod.  It returns the obvious Boolean.
+    """
     if MY_POD_TYPE == "activating":
         return NETWORK_CONFIG["activation_account_name"] == account_name
 
     if MY_POD_TYPE == "signing":
-        return account_name in MY_POD_CONFIG.get("sign_for_accounts")
+        return account_name in MY_POD_CONFIG.get("accounts")
 
     if MY_POD_TYPE == "node":
         if MY_POD_CONFIG.get("bake_using_account", "") == account_name:
@@ -338,36 +345,72 @@ def expose_secret_key(account_name):
     return False
 
 
-#
-# pod_requires_secret_key() decides if a pod requires the secret key,
-# regardless of a remote_signer being present.  E.g. the remote signer
-# needs to have the keys not a URL to itself.
+def get_accounts_signer(signers, account_name):
+    """
+    Determine if there is a signer for the account. Error if the account is
+    specified in more than one signer.
+    """
+    found_signer = found_account = None
+    for signer in signers.items():
+        signer_name, signer_config = signer
+        if account_name in signer_config["accounts"]:
+            if account_name == found_account:
+                raise Exception(
+                    f"ERORR: Account '{account_name}' can't be specified in more than one signer."
+                )
+            found_account = account_name
+            found_signer = {"name": signer_name, "config": signer_config}
+    return found_signer
 
 
-def pod_requires_secret_key(account_values):
-    return (
-        MY_POD_TYPE in ["activating", "signing"] and "signer_url" not in account_values
-    )
+def get_remote_signer_url(account: tuple[str, dict], key: Key) -> Union[str, None]:
+    """
+    Return the url of a remote signer, if any, that claims to sign for the
+    account. Error if more than one signs for the account.
+    """
+    account_name, account_values = account
+
+    signer_url = account_values.get("signer_url")
+    octez_signer = get_accounts_signer(OCTEZ_SIGNERS, account_name)
+    tacoinfra_signer = get_accounts_signer(TACOINFRA_SIGNERS, account_name)
+
+    signers = (signer_url, octez_signer, tacoinfra_signer)
+    if tuple(map(bool, (signers))).count(True) > 1:
+        raise Exception(
+            f"ERROR: Account '{account_name}' may only have a signer_url field or be signed for by a single signer."
+        )
+
+    if octez_signer:
+        signer_url = f"http://{octez_signer['name']}.octez-signer:6732"
+
+    if tacoinfra_signer:
+        signer_url = f"http://{tacoinfra_signer['name']}:5000"
+
+    return signer_url and f"{signer_url}/{key.public_key_hash()}"
 
 
-#
-# remote_signer() returns a reference to a signer that
-# tezos-client understands, either:
-# * picks the first signer, if any, that claims to sign
-#   for account_name and returns a URL to locate it,
-# * returns the external signer url if passed.
+def get_secret_key(account, key: Key):
+    """
+    For nodes and activation job, check if there is a remote signer for the
+    account. If found, use its url as the sk. If there is no signer and for all
+    other pod types (e.g. octez signer), use an actual sk.
+    """
+    account_name, _ = account
 
+    sk = (key.is_secret or None) and f"unencrypted:{key.secret_key()}"
+    if MY_POD_TYPE in ("node", "activating"):
+        signer_url = get_remote_signer_url(account, key)
+        octez_signer = get_accounts_signer(OCTEZ_SIGNERS, account_name)
+        if (sk and signer_url) and not octez_signer:
+            raise Exception(
+                f"ERROR: Account {account_name} can't have both a secret key and cloud signer."
+            )
+        elif signer_url:
+            # Use signer for this account even if there's a sk
+            sk = signer_url
+            print(f"    Using remote signer url: {sk}")
 
-def remote_signer(account_name, external_signer_url, key):
-    signer_url_no_path = None
-    if external_signer_url:
-        signer_url_no_path = external_signer_url
-    for k, v in SIGNERS.items():
-        if account_name in v["sign_for_accounts"]:
-            signer_url_no_path = f"http://{k}.tezos-signer:6732"
-    if signer_url_no_path:
-        return f"{signer_url_no_path}/{key.public_key_hash()}"
-    return None
+    return sk
 
 
 def import_keys(all_accounts):
@@ -384,29 +427,15 @@ def import_keys(all_accounts):
         if account_key == None:
             raise Exception(f"{account_name} defined w/o a key")
 
-        key = pytezos.key.from_encoded_key(account_key)
-        try:
-            key.secret_key()
-        except ValueError:
-            account_values["type"] = "public"
-        else:
-            account_values["type"] = "secret"
+        key = Key.from_encoded_key(account_key)
+        account_values["type"] = "secret" if key.is_secret else "public"
 
         # restrict which private key is exposed to which pod
         if expose_secret_key(account_name):
-            signer = account_values.get("signer_url")
-            if signer:
-                print("\n  Using signer outside of chart: " + signer)
-            sk = remote_signer(account_name, signer, key)
-            if sk == None or pod_requires_secret_key(account_values):
-                try:
-                    sk = "unencrypted:" + key.secret_key()
-                except ValueError:
-                    raise ("Secret key required but not provided.")
-
-                print("    Appending secret key")
-            else:
-                print("    Using remote signer: " + sk)
+            sk = get_secret_key((account_name, account_values), key)
+            if not sk:
+                raise Exception("Secret key required but not provided.")
+            print("    Appending secret key")
             secret_keys.append({"name": account_name, "value": sk})
 
         pk_b58 = key.public_key()
@@ -420,28 +449,31 @@ def import_keys(all_accounts):
         account_values["pk"] = pk_b58
 
         pkh_b58 = key.public_key_hash()
-        print(f"  Appending public key hash: {pkh_b58}")
+        print(f"    Appending public key hash: {pkh_b58}")
         public_key_hashs.append({"name": account_name, "value": pkh_b58})
         account_values["pkh"] = pkh_b58
 
-        # XXXrcd: fix this print!
-
-        print(f"  Account key type: {account_values.get('type')}")
+        print(f"    Account key type: {account_values.get('type')}")
         print(
-            f"  Account bootstrap balance: "
+            f"    Account bootstrap balance: "
             + f"{account_values.get('bootstrap_balance')}"
         )
         print(
-            f"  Is account a bootstrap baker: "
+            f"    Is account a bootstrap baker: "
             + f"{account_values.get('is_bootstrap_baker_account', False)}"
         )
 
-    print("\n  Writing " + tezdir + "/secret_keys")
-    json.dump(secret_keys, open(tezdir + "/secret_keys", "w"), indent=4)
-    print("  Writing " + tezdir + "/public_keys")
-    json.dump(public_keys, open(tezdir + "/public_keys", "w"), indent=4)
-    print("  Writing " + tezdir + "/public_key_hashs")
-    json.dump(public_key_hashs, open(tezdir + "/public_key_hashs", "w"), indent=4)
+    sk_path, pk_path, pkh_path = (
+        f"{tezdir}/secret_keys",
+        f"{tezdir}/public_keys",
+        f"{tezdir}/public_key_hashs",
+    )
+    print(f"\n  Writing {sk_path}")
+    json.dump(secret_keys, open(sk_path, "w"), indent=4)
+    print(f"  Writing {pk_path}")
+    json.dump(public_keys, open(pk_path, "w"), indent=4)
+    print(f"  Writing {pkh_path}")
+    json.dump(public_key_hashs, open(pkh_path, "w"), indent=4)
 
 
 def create_node_identity_json():

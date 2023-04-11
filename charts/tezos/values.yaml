@@ -9,6 +9,7 @@ is_invitation: false
 # Images not part of the tezos-k8s repo go here
 images:
   octez: tezos/tezos:v16.1
+  tacoinfraRemoteSigner: ghcr.io/oxheadalpha/tacoinfra-remote-signer:0.1.0
 # Images that are part of the tezos-k8s repo go here with 'dev' tag
 tezos_k8s_images:
   utils: ghcr.io/oxheadalpha/tezos-k8s-utils:master
@@ -20,8 +21,8 @@ tzkt_indexer_statefulset:
   name: tzkt-indexer
 bcd_indexer_statefulset:
   name: bcd-indexer
-signer_statefulset:
-  name: tezos-signer
+octez_signer_statefulset:
+  name: octez-signer
   pod_type: signing
 chain_initiator_job:
   name: chain-initiator
@@ -76,21 +77,32 @@ accounts: {}
 #       vote:
 #         liquidity_baking_toggle_vote: "on"
 # ```
-#
-# A public key account can contain a url to a remote signer that signs with the
-# corresponding secret key. You shouldn't need to set this if you're deploying
-# a tezos-k8s chart's signer into the same namespace. See the `signers` values
-# field below in the file to define remote signers.
+# A public key account can contain a `signer_url` to a remote signer
+# that signs with the corresponding secret key. You don't need to
+# set this if you're deploying a tezos-k8s signer into the same
+# namespace of its baker. See `octezSigners` and `tacoinfraSigners`
+# fields in values.yaml to define remote signers. (You shouldn't add things
+# to the URL path such as the public key hash. It will be added automatically.)
 # ```
-#   baker2:
+# accounts:
+#   externalSignerAccount:
 #     key: edpk...
-#     is_bootstrap_baker_account: false
+#     is_bootstrap_baker_account: true
 #     bootstrap_balance: "4000000000000"
 #     signer_url: http://[POD-NAME].[SERVICE-NAME].[NAMESPACE]:6732
 # ```
 #
-# NOTE - signer_url must be URL to external remote signer without anything extra
-# in the path, such as the public key hash.
+#  An account being signed for by a Tacoinfra AWS KMS signer requires a
+# `key_id` field. This should be a valid id of the AWS KMS key.
+#  The key's corresponding public key must be provided here as well.
+# ```
+# accounts:
+#   tacoinfraSigner:
+#     key: sppk...
+#     key_id: "cloud-id-of-key"
+#     is_bootstrap_baker_account: true
+#     bootstrap_balance: "4000000000000"
+# ```
 #
 # When running bakers for a public net, you must provide your own secret keys.
 # For non public networks you can change the
@@ -272,15 +284,35 @@ serviceMonitor:
 #
 # Define remote signers. Bakers automatically use signers in their namespace
 # that are configured to sign for the accounts they are baking for.
+# By default no signer is configured.
 #
-# By default no signer is configured:
-signers: {}
-# Here is an example of octez signer config. When set, the
+# https://tezos.gitlab.io/user/key-management.html#signer
+octezSigners: {}
+# Example:
 # ```
-# signers:
+# octezSigners:
 #  tezos-signer-0:
-#    sign_for_accounts:
-#    - baker0
+#    accounts:
+#     - baker0
+# ```
+#
+# Deploys a signer using AWS KMS to sign operations.
+# The `AWS_REGION` env var must be set.
+# https://github.com/oxheadalpha/tacoinfra-remote-signer
+tacoinfraSigners: {}
+# Example:
+# ```
+# tacoinfraSigners
+#   tacoinfra-signer:
+#     accounts:
+#       - tacoinfraSigner
+#     env:
+#       AWS_REGION: us-east-2
+#     serviceAccount:
+#       create: true
+#       ## EKS example for setting the role-arn
+#       annotations:
+#         eks.amazonaws.com/role-arn: <SIGNER_ROLE_ARN>
 # ```
 # End Signers
 
@@ -467,10 +499,10 @@ protocols:
 ##
 # indexers:
 #   tzkt:
-#     api_image: "bakingbad/tzkt-api"
-#     api_image_tag: "1.6.4"
-#     indexer_image: "bakingbad/tzkt-sync"
-#     indexer_image_tag: "1.6.4"
+#     images:
+#       api: "bakingbad/tzkt-api:1.12.0"
+#       indexer: "bakingbad/tzkt-sync:1.12.0"
+#       postgres: "postgres:13"
 #
 #     ## Database volumeClaimTemplates config
 #     storageClassName: ""
@@ -481,24 +513,31 @@ protocols:
 #     ## Indexer replicas
 #     replicas: 1
 #
-#     ## Tzkt provides new snapshots as they update their code. Update your
-#     ## indexers by specifying new docker image tags and by using the matching
-#     ## db_snapshot_url. Spin up an additional replica if you only have one to
-#     ## avoid downtime. See tzkt's readme for public networks' db snapshot urls.
-#     ## If you want to index a brand new archive node you are spinning up, just
-#     ## let the indexer start syncing with it from scratch.
-#     ## https://github.com/baking-bad/tzkt
-#     db_snapshot_url: https://tzkt.fra1.digitaloceanspaces.com/snapshots/tzkt_v1.6_mainnet.backup
+#     db:
+#       # By default creates a postgres db container. Setting to true won't create
+#       # it and instead expects credentials for an external postgres database.
+#       isExternal: false
+#       ## Tzkt provides new snapshots as they update their code. Update your
+#       ## indexers by specifying new docker image tags and by using the matching
+#       ## snapshot_url. Spin up an additional replica if you only have one to
+#       ## avoid downtime. See tzkt's readme for public networks' db snapshot urls.
+#       ## If you want to index a brand new archive node you are spinning up, just
+#       ## let the indexer start syncing with it from scratch.
+#       ## https://github.com/baking-bad/tzkt
+#       snapshot_url: https://snapshots.tzkt.io/tzkt_v1.12_mainnet.backup
+#       host: localhost
+#       port: 5432
+#       name: db
+#       user: foo
+#       password: bar
+#       command_timeout: 600
 #
 #     ## Configurable tzkt fields
 #     config:
-#       ## Url of the archive node to index. You will need to create an archive node up
-#       ## above in the `nodes` section. The `rpc_url` field is looking for a node named
-#       ## `archive-node`.
-#       rpc_url: http://archive-node-0.archive-node:8732
-#       db_name: db
-#       db_user: foo
-#       db_password: bar
+#       ## RPC url of the node to index. A rolling node is sufficient if the
+#       ## indexer is bootstrapped from the most recent snapshot. Otherwise an
+#       ## archive node is needed.
+#       rpc_url: http://rolling-node-0.rolling-node:8732
 #       # api_log_level: Debug
 #       # indexer_log_level: Debug
 

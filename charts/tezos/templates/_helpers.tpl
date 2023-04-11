@@ -3,12 +3,12 @@
   Returns a string "true" or empty string which is falsey.
 */}}
 {{- define "tezos.doesZerotierConfigExist" -}}
-{{- $zerotier_config := .Values.zerotier_config | default dict }}
-{{- if and ($zerotier_config.zerotier_network)  ($zerotier_config.zerotier_token) }}
-{{- "true" }}
-{{- else }}
-{{- "" }}
-{{- end }}
+  {{- $zerotier_config := .Values.zerotier_config | default dict }}
+  {{- if and ($zerotier_config.zerotier_network)  ($zerotier_config.zerotier_token) }}
+    {{- "true" }}
+  {{- else }}
+    {{- "" }}
+  {{- end }}
 {{- end }}
 
 {{/*
@@ -19,20 +19,11 @@
   Returns a string "true" or empty string which is falsey.
 */}}
 {{- define "tezos.shouldWaitForDNSNode" -}}
-{{- if and (not .Values.is_invitation) (hasKey .Values.node_config_network "genesis")}}
-{{- "true" }}
-{{- else }}
-{{- "" }}
-{{- end }}
-{{- end }}
-
-{{- define "tezos.shouldDeploySignerStatefulset" -}}
-{{- $signers := .Values.signers | default dict }}
-{{- if and (not .Values.is_invitation) ($signers | len) }}
-{{- "true" }}
-{{- else }}
-{{- "" }}
-{{- end }}
+  {{- if and (not .Values.is_invitation) (hasKey .Values.node_config_network "genesis")}}
+    {{- "true" }}
+  {{- else }}
+    {{- "" }}
+  {{- end }}
 {{- end }}
 
 {{/*
@@ -41,12 +32,12 @@
   Returns a string "true" or empty string which is falsey.
 */}}
 {{- define "tezos.shouldActivateProtocol" -}}
-{{ $activation := .Values.activation | default dict }}
-{{- if and ($activation.protocol_hash)  ($activation.protocol_parameters) }}
-{{- "true" }}
-{{- else }}
-{{- "" }}
-{{- end }}
+  {{ $activation := .Values.activation | default dict }}
+  {{- if and ($activation.protocol_hash)  ($activation.protocol_parameters) }}
+    {{- "true" }}
+  {{- else }}
+    {{- "" }}
+  {{- end }}
 {{- end }}
 
 {{/*
@@ -92,7 +83,6 @@
   for its node class. All identities for all instances of the node
   class will be stored in it. Each instance will look up its identity
   values by its hostname, e.g. archive-node-0.
-  Returns a string "true" or empty string which is falsey.
 */}}
 {{- define "tezos.includeNodeIdentitySecret" }}
   {{- range $index, $config := $.node_vals.instances }}
@@ -148,4 +138,50 @@ metadata:
   {{- else }}
     {{- "" }}
   {{- end }}
+{{- end }}
+
+{{- /* Make sure only a single signer signs for an account */}}
+{{- define "tezos.checkDupeSignerAccounts" }}
+  {{- $accountNames := dict }}
+  {{- range $signer := concat list
+    (values (.Values.octezSigners | default dict ))
+    (values (.Values.tacoinfraSigners | default dict ))
+  }}
+
+    {{- range $account := $signer.accounts }}
+      {{- if hasKey $accountNames $account }}
+        {{- fail (printf "Account '%s' is specified by more than one remote signer" $account) }}
+      {{- else }}
+        {{- $_ := set $accountNames $account "" }}
+      {{- end }}
+    {{- end }}
+
+  {{- end }}
+{{- end }}
+
+{{- define "tezos.hasKeyPrefix" }}
+  {{- $keyPrefixes := list "edsk" "edpk" "spsk" "sppk" "p2sk" "p2pk" }}
+  {{- has (substr 0 4 .) $keyPrefixes | ternary "true" "" }}
+{{- end }}
+
+{{- define "tezos.hasKeyHashPrefix" }}
+  {{- $keyHashPrefixes := list "tz1" "tz2" "tz3" }}
+  {{- has (substr 0 3 .) $keyHashPrefixes | ternary "true" "" }}
+{{- end }}
+
+{{- define "tezos.hasSecretKeyPrefix" }}
+  {{- if not (include "tezos.hasKeyPrefix" .key) }}
+    {{- fail (printf "'%s' account's key is not a valid key." .account_name) }}
+  {{- end }}
+  {{- substr 2 4 .key | eq "sk" | ternary "true" "" }}
+{{- end }}
+
+{{- define "tezos.validateAccountKeyPrefix" }}
+  {{- if (not (or
+      (include "tezos.hasKeyPrefix" .key)
+      (include "tezos.hasKeyHashPrefix" .key)
+    )) }}
+    {{- fail (printf "'%s' account's key is not a valid key or key hash." .account_name) }}
+  {{- end }}
+  {{- "true" }}
 {{- end }}

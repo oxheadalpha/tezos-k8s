@@ -1,17 +1,43 @@
 ---
+# Source: tezos-chain/templates/tacoinfra-remote-signer/main.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tacoinfra-signer
+  namespace: testing
+---
 # Source: tezos-chain/templates/configs.yaml
 ---
+
 apiVersion: v1
 data:
   ACCOUNTS: |
-    e30=
+    eyJ0YWNvaW5mcmFTaWduZXIiOnsiYWNjb3VudF9uYW1lIjoidGFjb2luZnJhU2lnbmVyIiwia2V5Ijoic3Bway4uLiIsImtleV9pZCI6ImFsaWFzLy4uLiJ9fQ==
 kind: Secret
 metadata:
   name: tezos-secret
   namespace: testing
 ---
+# Source: tezos-chain/templates/tacoinfra-remote-signer/main.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: tacoinfra-signer
+  namespace: testing
+  labels:
+    helm.sh/chart: tezos-chain-0.0.0
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+data:
+  accounts.json: |
+    W3siYWNjb3VudF9uYW1lIjoidGFjb2luZnJhU2lnbmVyIiwia2V5Ijoic3Bway4uLiIsImtleV9pZCI6ImFsaWFzLy4uLiJ9XQ==
+---
 # Source: tezos-chain/templates/configs.yaml
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tezos-config
+  namespace: testing
 data:
   CHAIN_NAME: "elric"
   CHAIN_PARAMS: |
@@ -142,6 +168,7 @@ data:
             "is_bootstrap_node": true
           },
           {
+            "bake_using_account": "tacoinfraSigner",
             "is_bootstrap_node": true
           },
           {}
@@ -170,32 +197,55 @@ data:
       }
     }
 
-  SIGNERS: |
+  OCTEZ_SIGNERS: |
     {
-      "tezos-signer-0": {
-        "sign_for_accounts": [
+      "octez-signer-0": {
+        "accounts": [
           "tezos-baking-node-0"
+        ],
+        "name": "tezos-signer-0"
+      }
+    }
+  TACOINFRA_SIGNERS: |
+    {
+      "tacoinfra-signer": {
+        "accounts": [
+          "tacoinfraSigner"
         ]
       }
     }
-kind: ConfigMap
-metadata:
-  name: tezos-config
-  namespace: testing
 ---
 # Source: tezos-chain/templates/configs.yaml
 apiVersion: v1
 data:
+  tacoinfraSigner-013-PtJakart-per-block-votes.json: "{\"liquidity_baking_toggle_vote\":\"pass\"}"
 kind: ConfigMap
 metadata:
   name: per-block-votes
   namespace: testing
 ---
-# Source: tezos-chain/templates/signer.yaml
+# Source: tezos-chain/templates/tacoinfra-remote-signer/main.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: file-ratchet
+  namespace: testing
+  labels:
+    helm.sh/chart: tezos-chain-0.0.0
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+spec:
+  resources:
+    requests:
+      storage: 8Ki
+  accessModes:
+    - ReadWriteOnce
+---
+# Source: tezos-chain/templates/octez-signer.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: tezos-signer
+  name: octez-signer
   namespace: testing
 spec:
   clusterIP: None
@@ -203,7 +253,7 @@ spec:
     - port: 6732
       name: signer
   selector:
-    app: tezos-signer
+    app: octez-signer
 ---
 # Source: tezos-chain/templates/static.yaml
 apiVersion: v1
@@ -279,6 +329,179 @@ spec:
   selector:
     node_class: us
 ---
+# Source: tezos-chain/templates/tacoinfra-remote-signer/main.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: tacoinfra-signer
+  namespace: testing
+  labels:
+    helm.sh/chart: tezos-chain-0.0.0
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 5000
+  selector:
+    appType: tacoinfra-remote-signer
+    signerName: tacoinfra-signer
+---
+# Source: tezos-chain/templates/tacoinfra-remote-signer/main.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tacoinfra-signer
+  namespace: testing
+  labels:
+    helm.sh/chart: tezos-chain-0.0.0
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      appType: tacoinfra-remote-signer
+      signerName: tacoinfra-signer
+      app.kubernetes.io/instance: release-name
+  template:
+    metadata:
+      labels:
+        appType: tacoinfra-remote-signer
+        signerName: tacoinfra-signer
+        app.kubernetes.io/instance: release-name
+    spec:
+      serviceAccountName: tacoinfra-signer
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+      initContainers:
+        - name: copy-accounts
+          image: ghcr.io/oxheadalpha/tacoinfra-remote-signer:0.1.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsNonRoot: false
+            runAsUser: 0
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - CHOWN # chown
+                - FOWNER # chmod
+                - DAC_OVERRIDE # cp
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -ex
+              cp /etc/signer-config/* /app/signer-config
+              chown -R 999:999 /app/signer-config /etc/file_ratchets
+              chmod 770 /app/signer-config
+              chmod 770 /etc/file_ratchets
+          volumeMounts:
+            - name: signer-secret
+              mountPath: /etc/signer-config
+            - name: signer-config
+              mountPath: /app/signer-config
+            - name: file-ratchet
+              mountPath: /etc/file_ratchets
+        - name: create-keys-json
+          image: ghcr.io/oxheadalpha/tacoinfra-remote-signer:0.1.0
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          command: ["python"]
+          args:
+            - "-c"
+            - |
+             """Get the public key hashes of the accounts provided via the signer's
+             ConfigMap. Create json objects with the hashes as the keys and write them to
+             keys.json. The signer will read the file to determine keys it is signing for."""
+             
+             import json
+             import logging
+             import sys
+             from os import path
+             
+             from pytezos import Key
+             
+             config_path = "./signer-config"
+             accounts_json_path = f"{config_path}/accounts.json"
+             
+             if not path.isfile(accounts_json_path):
+                 logging.warning("accounts.json file not found. Exiting.")
+                 sys.exit(0)
+             
+             keys = {}
+             
+             with open(accounts_json_path, "r") as accounts_file:
+                 accounts = json.load(accounts_file)
+                 for account in accounts:
+                     key = Key.from_encoded_key(account["key"])
+                     if key.is_secret:
+                         raise ValueError(
+                             f"'{account['account_name']}' account's key is not a public key."
+                         )
+                     keys[key.public_key_hash()] = {
+                         "account_name": account["account_name"],
+                         "public_key": account["key"],
+                         "key_id": account["key_id"],
+                     }
+             
+             logging.info(f"Writing keys to {config_path}/keys.json...")
+             with open(f"{config_path}/keys.json", "w") as keys_file:
+                 keys_json = json.dumps(keys, indent=2)
+                 print(keys_json, file=keys_file)
+                 logging.info(f"Wrote keys.")
+                 logging.debug(f"Keys: {keys_json}")
+             
+          volumeMounts:
+            - name: signer-config
+              mountPath: /app/signer-config
+      containers:
+        - name: remote-signer
+          image: ghcr.io/oxheadalpha/tacoinfra-remote-signer:0.1.0
+          imagePullPolicy: IfNotPresent
+          args: ["kms"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - name: http
+              containerPort: 5000
+          volumeMounts:
+            - name: file-ratchet
+              mountPath: /etc/file_ratchets
+            - name: signer-config
+              mountPath: /app/signer-config
+              readOnly: true
+          env:
+
+          # livenessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          # readinessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+      volumes:
+        - name: signer-secret
+          secret:
+            secretName: tacoinfra-signer
+        - name: signer-config
+          emptyDir: {}
+        - name: file-ratchet
+          persistentVolumeClaim:
+            claimName: file-ratchet
+---
 # Source: tezos-chain/templates/nodes.yaml
 apiVersion: apps/v1
 kind: StatefulSet
@@ -307,9 +530,9 @@ spec:
           args:
             - "-c"
             - |
-              set -x
+              #!/bin/sh
               
-              set
+              set -xe
               
               # ensure we can run octez-client commands without specifying client dir
               ln -s /var/tezos/client /home/tezos/.tezos-client
@@ -511,9 +734,9 @@ spec:
           args:
             - "-c"
             - |
-              set -x
+              #!/bin/sh
               
-              set
+              set -xe
               
               # ensure we can run octez-client commands without specifying client dir
               ln -s /var/tezos/client /home/tezos/.tezos-client
@@ -1083,9 +1306,9 @@ spec:
           args:
             - "-c"
             - |
-              set -x
+              #!/bin/sh
               
-              set
+              set -xe
               
               # ensure we can run octez-client commands without specifying client dir
               ln -s /var/tezos/client /home/tezos/.tezos-client
@@ -1258,26 +1481,26 @@ spec:
           requests:
             storage: 15Gi
 ---
-# Source: tezos-chain/templates/signer.yaml
+# Source: tezos-chain/templates/octez-signer.yaml
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: tezos-signer
+  name: octez-signer
   namespace: testing
 spec:
   podManagementPolicy: Parallel
   replicas: 1
-  serviceName: tezos-signer
+  serviceName: octez-signer
   selector:
     matchLabels:
-      app: tezos-signer
+      app: octez-signer
   template:
     metadata:
       labels:
-        app: tezos-signer
+        app: octez-signer
     spec:
       containers:
-      - name: tezos-signer
+      - name: octez-signer
         image: "tezos/tezos:v15-release"
         imagePullPolicy: IfNotPresent
         ports:
