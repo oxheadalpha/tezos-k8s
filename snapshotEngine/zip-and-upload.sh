@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -i
 
 BLOCK_HEIGHT=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HEIGHT)
 BLOCK_HASH=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH)
@@ -230,13 +230,13 @@ if [ "${HISTORY_MODE}" = rolling ]; then
     fi
 
     ### DEBUG
-    printf "!# !# !# !# !# !# !# !# !# !# !# !# !# !# !# !# !#"
+    printf "!# !# !# !# !# !# !# !# !# !# !# !# !# !# !# !# !#\n"
     printf "ROLLING_SNAPSHOT_FILENAME %s\n" "${ROLLING_SNAPSHOT_FILENAME}"
     printf "ROLLING_SNAPSHOT %s\n" "${ROLLING_SNAPSHOT}"
     printf "ROLLING_TARBALL_FILENAME %s\n" "${ROLLING_TARBALL_FILENAME}"
     printf "IMPORT_IN_PROGRESS %s\n" "${IMPORT_IN_PROGRESS}"
     printf "S3_BUCKET %s\n" "${S3_BUCKET}"
-    printf "!# !# !# !# !# !# !# !# !# !# !# !# !# !# !# !# !#"
+    printf "!# !# !# !# !# !# !# !# !# !# !# !# !# !# !# !# !#\n"
 
     printf "%s Rolling Tarball : Tarballing /rolling-tarball-restore/var/tezos/node, LZ4ing, and uploading to S3...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     tar cvf - . 2>/dev/null\
