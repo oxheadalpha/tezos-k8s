@@ -13,7 +13,6 @@ application = Flask(__name__)
 readiness_probe_path = os.getenv("READINESS_PROBE_PATH")
 signer_port = os.getenv("SIGNER_PORT")
 endpoint_alias = os.getenv("ENDPOINT_ALIAS")
-baker_alias = os.getenv("BAKER_ALIAS")
 signer_metrics = os.getenv("SIGNER_METRICS") == "true"
 
 def relabel(prometheus_metrics,extra_labels):
@@ -40,7 +39,7 @@ def prometheus_metrics():
     Combines the readiness probe URL (i.e. checks that ledger is configured)
     and the health probe (check power status for example)
     '''
-    extra_labels = 'midl_endpoint_alias="%s",midl_baker_alias="%s"' % (endpoint_alias, baker_alias)
+    extra_labels = 'midl_endpoint_alias="%s"' % endpoint_alias
 
     try:
         probe = requests.get(f"http://localhost:{signer_port}{readiness_probe_path}")
