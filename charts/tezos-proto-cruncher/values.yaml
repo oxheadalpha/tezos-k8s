@@ -1,3 +1,5 @@
+images:
+  tz_proto_vanity: ghcr.io/oxheadalpha/tz-proto-vanity:latest
 # tezos-proto-cruncher downloads a protocol in binary format
 # from a S3 bucket, and writes the results in the same bucket.
 # Put the credentials for access to your bucket below.
