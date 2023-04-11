@@ -30,6 +30,7 @@ spec:
       labels:
         app.kubernetes.io/name: tezos-signer-forwarder
         midl_baker_name: {{ $name }}
+        midl_endpoint_name: {{ $endpoint.alias }}
     spec:
       volumes:
       - name: config-volume
@@ -87,8 +88,6 @@ spec:
           value: {{ $signer_port | quote }}
         - name: SIGNER_METRICS
           value: {{ $signer_metrics | quote }}
-        - name: ENDPOINT_ALIAS
-          value: {{ $endpoint.alias | quote }}
         command:
           - /usr/local/bin/python
         args:

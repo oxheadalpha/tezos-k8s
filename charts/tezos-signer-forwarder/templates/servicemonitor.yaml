@@ -19,6 +19,8 @@ spec:
       midl_baker_name: {{ .name }}
   targetLabels:
   - midl_baker_name
+  podTargetLabels:
+  - midl_endpoint_name
 ---
 {{- end }}
 {{- end }}
