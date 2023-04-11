@@ -18,7 +18,7 @@ if [[ "${CLOUD_PROVIDER}" = "digitalocean" ]]; then
     if [[ $(alias) ]]; then
         printf "%s AWS command has been aliased to to use cloud provider credentials and endpoint.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     else
-        printf "%s ERROR: CLOUD_PROVIDER was %s but aws command was not aliased!\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${CLOUD_PROVIDER}"
+        printf "%s ERROR: CLOUD_PROVIDER was %s but aws command was not aliased! \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${CLOUD_PROVIDER}"
     fi
 fi
 
