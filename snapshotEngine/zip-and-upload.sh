@@ -1,4 +1,6 @@
-#!/bin/bash -i
+#!/bin/bash
+
+shopt -s expand_aliases
 
 BLOCK_HEIGHT=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HEIGHT)
 BLOCK_HASH=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH)
