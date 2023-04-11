@@ -119,6 +119,14 @@ data:
   TACOINFRA_SIGNERS: |
     {}
 ---
+# Source: tezos-chain/templates/configs.yaml
+apiVersion: v1
+data:
+kind: ConfigMap
+metadata:
+  name: baker-config
+  namespace: testing
+---
 # Source: tezos-chain/templates/static.yaml
 apiVersion: v1
 kind: Service
@@ -535,6 +543,9 @@ spec:
         - name: tezos-accounts
           secret:
             secretName: tezos-secret
+        - name: baker-config
+          configMap:
+            name: baker-config
   volumeClaimTemplates:
     - metadata:
         name: var-volume
@@ -913,6 +924,9 @@ spec:
         - name: tezos-accounts
           secret:
             secretName: tezos-secret
+        - name: baker-config
+          configMap:
+            name: baker-config
   volumeClaimTemplates:
     - metadata:
         name: var-volume
