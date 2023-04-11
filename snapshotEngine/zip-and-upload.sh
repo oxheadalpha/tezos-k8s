@@ -15,7 +15,11 @@ TEZOS_VERSION_COMMIT_DATE="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .commit_in
 if [[ "${CLOUD_PROVIDER}" = "digitalocean" ]]; then
     printf "%s CLOUD_PROVIDER is... %s\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${CLOUD_PROVIDER}"
     alias aws="AWS_ACCESS_KEY_ID=$(cat /cloud-provider/access-id) AWS_SECRET_ACCESS_KEY=$(cat /cloud-provider/secret-key) aws --endpoint-url https://nyc3.digitaloceanspaces.com"
-    printf "%s AWS command has been aliased to to use cloud provider credentials and endpoint.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    if [[ $(alias) ]]; then
+        printf "%s AWS command has been aliased to to use cloud provider credentials and endpoint.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    else
+        printf "%s ERROR: CLOUD_PROVIDER was %s but aws command was not aliased!\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${CLOUD_PROVIDER}"
+    fi
 fi
 
 cd /
@@ -228,15 +232,6 @@ if [ "${HISTORY_MODE}" = rolling ]; then
     else
         EXPECTED_SIZE=100000000000 #100GB Arbitrary filesize for initial value. Only used if no rolling-tarball-metadata exists. IE starting up test network
     fi
-
-    ### DEBUG
-    printf "!# !# !# !# !# !# !# !# !# !# !# !# !# !# !# !# !#\n"
-    printf "ROLLING_SNAPSHOT_FILENAME %s\n" "${ROLLING_SNAPSHOT_FILENAME}"
-    printf "ROLLING_SNAPSHOT %s\n" "${ROLLING_SNAPSHOT}"
-    printf "ROLLING_TARBALL_FILENAME %s\n" "${ROLLING_TARBALL_FILENAME}"
-    printf "IMPORT_IN_PROGRESS %s\n" "${IMPORT_IN_PROGRESS}"
-    printf "S3_BUCKET %s\n" "${S3_BUCKET}"
-    printf "!# !# !# !# !# !# !# !# !# !# !# !# !# !# !# !# !#\n"
 
     printf "%s Rolling Tarball : Tarballing /rolling-tarball-restore/var/tezos/node, LZ4ing, and uploading to S3...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     tar cvf - . 2>/dev/null\
