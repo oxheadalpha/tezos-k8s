@@ -23,7 +23,7 @@ spec:
       annotations:
         # ensure that the pod bounces each time endpoint config changes
         # https://helm.sh/docs/howto/charts_tips_and_tricks/#automatically-roll-deployments
-        checksum/config: {{ print "$endpoint" | sha256sum }} 
+        checksum/config: {{ print "$endpoint" | sha256sum }}
       {{- with $.Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
