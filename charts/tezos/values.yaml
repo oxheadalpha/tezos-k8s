@@ -40,11 +40,19 @@ accounts: {}
 #
 # `accounts` is a map where keys are account aliases and values are maps of
 # fields `key`, `is_bootstrap_baker_account`, `bootstrap_balance`, `signer_url`
-# and `protocols`.
+# `protocols` and `operations_pool`.
 #
 # The `key` field can be set to a public or private key. For a bootstrap baker,
 # it must be set to a private key. The key type will be recognized automatically,
 # and the pod will fail if the key type is unexpected.
+#
+# The `protocols` fields overrides the top-level `protocols` field described
+# below and has the same syntax. This allows to set specific per-block votes per
+# baker.
+#
+# The `operations_pool` field instructs the baker to target a url for external
+# mempool queries when baking a block. This is useful to run a Flashbake-capable baker.
+# The entry is passed to baker binaries using the `--operations-pool` flag.
 #
 # - Public chains: Accounts do not get `is_bootstrap_baker_account` and
 # `bootstrap_balance` fields.
@@ -54,14 +62,6 @@ accounts: {}
 #   baker accounts. Accounts with balances set to "0" will be imported by the
 #   node but they will not be bootstrap accounts. If you don't set a bootstrap
 #   balance, it will default to the `bootstrap_mutez` field above.
-#
-# The `protocols` fields overrides the top-level `protocols` field described
-# below and has the same syntax. This allows to set specific per-block votes per
-# baker.
-#
-# The `operations_pool` field instructs the baker to target a url for external
-# mempool queries when baking a block. This is useful to run a Flashbake-capable baker.
-# The entry is passed to baker binaries using the `--operations-pool` flag.
 #
 # Example:
 #
