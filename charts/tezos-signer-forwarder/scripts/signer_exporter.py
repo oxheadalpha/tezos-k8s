@@ -18,8 +18,11 @@ signer_metrics = os.getenv("SIGNER_METRICS") == "true"
 def prometheus_metrics():
     '''
     Prometheus endpoint
-    Combines the readiness probe URL (i.e. checks that ledger is configured)
-    and the health probe (check power status for example)
+    This combines:
+    * the metrics from the signer, which themselves are a combination of the
+      prometheus node-expoter and custom probes (power status, etc)
+    * the `unhealthy_signers_total` metric exported by this script, verifying
+      whether the signer URL configured upstream returns a 200 OK
     '''
 
     try:
