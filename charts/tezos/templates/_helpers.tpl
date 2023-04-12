@@ -103,6 +103,17 @@ metadata:
 {{- end }}
 
 {{/*
+  Is there a baker?
+*/}}
+{{- define "tezos.shouldDeployBakerConfig" }}
+  {{- range .Values.nodes }}
+    {{- if (has "baker" .runs) }}
+      {{- "true" }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+
+{{/*
   Should deploy TZKT indexer?
 */}}
 {{- define "tezos.shouldDeployTzktIndexer" -}}

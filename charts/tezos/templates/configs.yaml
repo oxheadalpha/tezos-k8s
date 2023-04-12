@@ -88,6 +88,7 @@ metadata:
   name: tezos-secret
   namespace: {{ .Release.Namespace }}
 ---
+{{- if (include "tezos.shouldDeployBakerConfig" .) }}
 apiVersion: v1
 data:
 {{- range $k, $v := .Values.accounts }}
@@ -103,3 +104,4 @@ metadata:
   name: baker-config
   namespace: {{ .Release.Namespace }}
 ---
+{{- end }}
