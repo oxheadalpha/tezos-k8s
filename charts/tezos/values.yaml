@@ -59,9 +59,9 @@ accounts: {}
 # below and has the same syntax. This allows to set specific per-block votes per
 # baker.
 #
-# The `operations_pool` field instructs the baker to target an url for external
+# The `operations_pool` field instructs the baker to target a url for external
 # mempool queries when baking a block. This is useful to run a Flashbake-capable baker.
-# The entry is passed to baker binaries as `--operations-pool` param.
+# The entry is passed to baker binaries using the `--operations-pool` flag.
 #
 # Example:
 #
