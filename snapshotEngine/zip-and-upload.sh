@@ -14,6 +14,13 @@ TEZOS_VERSION="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .version)"
 TEZOS_VERSION_COMMIT_HASH="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .commit_info.commit_hash)"
 TEZOS_VERSION_COMMIT_DATE="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .commit_info.commit_date)"
 
+# Needed for alternate cloud providers
+AWS_S3_BUCKET="${NAMESPACE}.${SNAPSHOT_WEBSITE_DOMAIN_NAME}"
+
+# Default to root, is overridden by below logic if CLOUD_PROVIDER is defined
+# Used for redirect file that is always uploaded to AWS S3
+REDIRECT_ROOT="/"
+
 if [[ "${CLOUD_PROVIDER}" = "digitalocean" ]]; then
     printf "%s CLOUD_PROVIDER is... %s\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${CLOUD_PROVIDER}"
     alias aws="AWS_ACCESS_KEY_ID=$(cat /cloud-provider/access-id) AWS_SECRET_ACCESS_KEY=$(cat /cloud-provider/secret-key) aws --endpoint-url https://nyc3.digitaloceanspaces.com"
@@ -22,6 +29,7 @@ if [[ "${CLOUD_PROVIDER}" = "digitalocean" ]]; then
     else
         printf "%s ERROR: CLOUD_PROVIDER was %s but aws command was not aliased! \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${CLOUD_PROVIDER}"
     fi
+    REDIRECT_ROOT="${S3_BUCKET}/"
 fi
 
 cd /
@@ -47,22 +55,22 @@ if [ "${HISTORY_MODE}" = archive ]; then
     # Instead of guessing size, you can use expected-size which tells S3 how big the file is and it calculates the size for you.
     # However if the file gets bigger than your expected size, the multipart upload fails because it uses a part size outside of the bounds (1-10000)
     # This gets the old archive tarball size and then adds 10%.  Archive tarballs dont seem to grow more than that.
-    if aws s3 ls s3://"${S3_BUCKET}" | grep archive-tarball-metadata; then #Use last file for expected size if it exists
-        EXPECTED_SIZE=$(curl -L http://"${S3_BUCKET}"/archive-tarball-metadata 2>/dev/null | jq -r '.filesize_bytes' | awk '{print $1*1.1}' | awk '{print ($0-int($0)>0)?int($0)+1:int($0)}')
+    if aws s3 ls s3://"${AWS_S3_BUCKET}" | grep archive-tarball-metadata; then #Use last file for expected size if it exists
+        EXPECTED_SIZE=$(curl -L http://"${AWS_S3_BUCKET}"/archive-tarball-metadata 2>/dev/null | jq -r '.filesize_bytes' | awk '{print $1*1.1}' | awk '{print ($0-int($0)>0)?int($0)+1:int($0)}')
     else
         EXPECTED_SIZE=1000000000000 #1000GB Arbitrary filesize for initial value. Only used if no archive-tarball-metadata exists. IE starting up test network
     fi
 
     # LZ4 /var/tezos/node selectively and upload to S3
     printf "%s Archive Tarball : Tarballing /var/tezos/node, LZ4ing, and uploading to S3...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    tar cvf - . \
+    tar cvf - . 2>/dev/null\
     --exclude='node/data/identity.json' \
     --exclude='node/data/lock' \
     --exclude='node/data/peers.json' \
     --exclude='./lost+found' \
     -C /var/tezos \
     | lz4 | tee >(sha256sum | awk '{print $1}' > archive-tarball.sha256) \
-    | aws s3 cp - s3://"${S3_BUCKET}"/"${ARCHIVE_TARBALL_FILENAME}" --expected-size "${EXPECTED_SIZE}"
+    | aws s3 cp - s3://"${S3_BUCKET}"/"${ARCHIVE_TARBALL_FILENAME}" --expected-size "${EXPECTED_SIZE}" --acl public-read
 
     SHA256=$(cat archive-tarball.sha256)
 
@@ -130,7 +138,7 @@ if [ "${HISTORY_MODE}" = archive ]; then
             validate_metadata "${ARCHIVE_TARBALL_FILENAME}".json
 
             # Upload archive tarball metadata json
-            if ! aws s3 cp "${ARCHIVE_TARBALL_FILENAME}".json s3://"${S3_BUCKET}"/"${ARCHIVE_TARBALL_FILENAME}".json; then
+            if ! aws s3 cp "${ARCHIVE_TARBALL_FILENAME}".json s3://"${AWS_S3_BUCKET}"/"${ARCHIVE_TARBALL_FILENAME}".json; then
                 printf "%s Archive Tarball : Error uploading ${ARCHIVE_TARBALL_FILENAME}.json to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
             else
                 printf "%s Archive Tarball : Artifact JSON ${ARCHIVE_TARBALL_FILENAME}.json uploaded to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -147,7 +155,7 @@ if [ "${HISTORY_MODE}" = archive ]; then
         fi
 
         # Upload redirect file and set header for previously uploaded LZ4 File
-        if ! aws s3 cp archive-tarball s3://"${S3_BUCKET}" --website-redirect /"${ARCHIVE_TARBALL_FILENAME}" --cache-control 'no-cache'; then
+        if ! aws s3 cp archive-tarball s3://"${AWS_S3_BUCKET}" --website-redirect "${REDIRECT_ROOT}${ARCHIVE_TARBALL_FILENAME}" --cache-control 'no-cache'; then
             printf "%s Archive Tarball : Error uploading ${NETWORK}-archive-tarball. to S3\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         else
             printf "%s Archive Tarball : Upload of ${NETWORK}-archive-tarball successful to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -161,7 +169,7 @@ if [ "${HISTORY_MODE}" = archive ]; then
         fi
 
         # Upload archive tarball json redirect file and set header for previously uploaded archive tarball json File
-        if ! aws s3 cp archive-tarball-metadata s3://"${S3_BUCKET}" --website-redirect /"${ARCHIVE_TARBALL_FILENAME}".json --cache-control 'no-cache'; then
+        if ! aws s3 cp archive-tarball-metadata s3://"${AWS_S3_BUCKET}" --website-redirect "${REDIRECT_ROOT}${ARCHIVE_TARBALL_FILENAME}".json --cache-control 'no-cache'; then
             printf "%s archive Tarball : Error uploading ${NETWORK}-archive-tarball-metadata file to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         else
             printf "%s archive Tarball : Uploaded ${NETWORK}-archive-tarball-metadata file to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -229,8 +237,8 @@ if [ "${HISTORY_MODE}" = rolling ]; then
     # Instead of guessing size, you can use expected-size which tells S3 how big the file is and it calculates the size for you.
     # However if the file gets bigger than your expected size, the multipart upload fails because it uses a part size outside of the bounds (1-10000)
     # This gets the old rolling tarball size and then adds 10%.  rolling tarballs dont seem to grow more than that.
-    if aws s3 ls s3://"${S3_BUCKET}" | grep rolling-tarball-metadata; then #Use last file for expected size if it exists
-        EXPECTED_SIZE=$(curl -L http://"${S3_BUCKET}"/rolling-tarball-metadata 2>/dev/null | jq -r '.filesize_bytes' | awk '{print $1*1.1}' | awk '{print ($0-int($0)>0)?int($0)+1:int($0)}')
+    if aws s3 ls s3://"${AWS_S3_BUCKET}" | grep rolling-tarball-metadata; then #Use last file for expected size if it exists
+        EXPECTED_SIZE=$(curl -L http://"${AWS_S3_BUCKET}"/rolling-tarball-metadata 2>/dev/null | jq -r '.filesize_bytes' | awk '{print $1*1.1}' | awk '{print ($0-int($0)>0)?int($0)+1:int($0)}')
     else
         EXPECTED_SIZE=100000000000 #100GB Arbitrary filesize for initial value. Only used if no rolling-tarball-metadata exists. IE starting up test network
     fi
@@ -310,7 +318,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             validate_metadata "${ROLLING_TARBALL_FILENAME}".json
             
             # upload metadata json
-            if ! aws s3 cp "${ROLLING_TARBALL_FILENAME}".json s3://"${S3_BUCKET}"/"${ROLLING_TARBALL_FILENAME}".json --acl public-read; then
+            if ! aws s3 cp "${ROLLING_TARBALL_FILENAME}".json s3://"${AWS_S3_BUCKET}"/"${ROLLING_TARBALL_FILENAME}".json; then
                 printf "%s Rolling Tarball : Error uploading ${ROLLING_TARBALL_FILENAME}.json to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
             else
                 printf "%s Rolling Tarball : Metadata JSON ${ROLLING_TARBALL_FILENAME}.json uploaded to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -327,7 +335,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
         fi
 
         # Upload redirect file and set header for previously uploaded LZ4 File
-        if ! aws s3 cp rolling-tarball s3://"${S3_BUCKET}" --website-redirect /"${ROLLING_TARBALL_FILENAME}" --cache-control 'no-cache' --acl public-read; then
+        if ! aws s3 cp rolling-tarball s3://"${AWS_S3_BUCKET}" --website-redirect "${REDIRECT_ROOT}${ROLLING_TARBALL_FILENAME}" --cache-control 'no-cache'; then
             printf "%s Rolling Tarball : Error uploading ${NETWORK}-rolling-tarball file to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         else
             printf "%s Rolling Tarball : Uploaded ${NETWORK}-rolling-tarball file to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -341,7 +349,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
         fi
 
         # Upload rolling tarball json redirect file and set header for previously uploaded rolling tarball json File
-        if ! aws s3 cp rolling-tarball-metadata s3://"${S3_BUCKET}" --website-redirect /"${ROLLING_TARBALL_FILENAME}".json --cache-control 'no-cache' --acl public-read; then
+        if ! aws s3 cp rolling-tarball-metadata s3://"${AWS_S3_BUCKET}" --website-redirect "${REDIRECT_ROOT}${ROLLING_TARBALL_FILENAME}".json --cache-control 'no-cache'; then
             printf "%s Rolling Tarball : Error uploading ${NETWORK}-rolling-tarball-metadata file to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         else
             printf "%s Rolling Tarball : Uploaded ${NETWORK}-rolling-tarball-metadata file to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -430,7 +438,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
                 validate_metadata "${ROLLING_SNAPSHOT_FILENAME}".json
 
                 # Upload Rolling Snapshot metadata json
-                if ! aws s3 cp "${ROLLING_SNAPSHOT_FILENAME}".json s3://"${S3_BUCKET}"/"${ROLLING_SNAPSHOT_FILENAME}".json --acl public-read; then
+                if ! aws s3 cp "${ROLLING_SNAPSHOT_FILENAME}".json s3://"${AWS_S3_BUCKET}"/"${ROLLING_SNAPSHOT_FILENAME}".json; then
                     printf "%s Rolling Snapshot : Error uploading ${ROLLING_SNAPSHOT_FILENAME}.json to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
                 else
                     printf "%s Rolling Snapshot : Artifact JSON ${ROLLING_SNAPSHOT_FILENAME}.json uploaded to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -443,7 +451,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             touch rolling
 
             # Upload rolling tezos snapshot redirect object
-            if ! aws s3 cp rolling s3://"${S3_BUCKET}" --website-redirect /"${ROLLING_SNAPSHOT_FILENAME}" --cache-control 'no-cache' --acl public-read; then
+            if ! aws s3 cp rolling s3://"${AWS_S3_BUCKET}" --website-redirect "${REDIRECT_ROOT}${ROLLING_SNAPSHOT_FILENAME}" --cache-control 'no-cache'; then
                 printf "%s Rolling Tezos : Error uploading redirect object for ${ROLLING_SNAPSHOT} to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
             else
                 printf "%s Rolling Tezos : Successfully uploaded redirect object for ${ROLLING_SNAPSHOT} to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -457,7 +465,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             fi
 
             # Upload rolling snapshot json redirect file and set header for previously uploaded rolling snapshot json File
-            if ! aws s3 cp rolling-snapshot-metadata s3://"${S3_BUCKET}" --website-redirect /"${ROLLING_SNAPSHOT_FILENAME}".json --cache-control 'no-cache' --acl public-read; then
+            if ! aws s3 cp rolling-snapshot-metadata s3://"${AWS_S3_BUCKET}" --website-redirect "${REDIRECT_ROOT}${ROLLING_SNAPSHOT_FILENAME}".json --cache-control 'no-cache'; then
                 printf "%s Rolling snapshot : Error uploading ${NETWORK}-rolling-snapshot-metadata file to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
             else
                 printf "%s Rolling snapshot : Uploaded ${NETWORK}-rolling-snapshot-metadata file to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -475,7 +483,7 @@ if [[ -n "${SNAPSHOT_WEBSITE_DOMAIN_NAME}" ]]; then
     # Network bucket redirect
     # Redirects from network.website.com to website.com/network
     touch index.html
-    if ! aws s3 cp index.html s3://"${S3_BUCKET}" --website-redirect https://"${SNAPSHOT_WEBSITE_DOMAIN_NAME}"/"${NETWORK}" --cache-control 'no-cache'; then
+    if ! aws s3 cp index.html s3://"${AWS_S3_BUCKET}" --website-redirect https://"${SNAPSHOT_WEBSITE_DOMAIN_NAME}"/"${NETWORK}" --cache-control 'no-cache'; then
         printf "%s ERROR ##### Could not upload network site redirect.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     else
         printf "%s Successfully uploaded network site redirect.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -502,12 +510,12 @@ if [[ -n "${SNAPSHOT_WEBSITE_DOMAIN_NAME}" ]]; then
     echo '[]' > "base.json"
 
     printf "%s Building base.json... this may take a while.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    aws s3 ls s3://"${S3_BUCKET}" |  grep '\.json'| sort | awk '{print $4}' | awk -F '\\\\n' '{print $1}' | tr ' ' '\n' | grep -v -e base.json -e tezos-snapshots.json | while read ITEM; do
-        tmp=$(mktemp) && cp base.json "${tmp}" && jq --argjson file "$(curl -s https://"${S3_BUCKET}"/$ITEM)" '. += [$file]' "${tmp}" > base.json
+    aws s3 ls s3://"${AWS_S3_BUCKET}" |  grep '\.json'| sort | awk '{print $4}' | awk -F '\\\\n' '{print $1}' | tr ' ' '\n' | grep -v -e base.json -e tezos-snapshots.json | while read ITEM; do
+        tmp=$(mktemp) && cp base.json "${tmp}" && jq --argjson file "$(curl -s https://"${AWS_S3_BUCKET}"/$ITEM)" '. += [$file]' "${tmp}" > base.json
     done
 
     #Upload base.json
-    if ! aws s3 cp base.json s3://"${S3_BUCKET}"/base.json; then
+    if ! aws s3 cp base.json s3://"${AWS_S3_BUCKET}"/base.json; then
         printf "%s Upload base.json : Error uploading file base.json to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     else
         printf "%s Upload base.json : File base.json successfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
