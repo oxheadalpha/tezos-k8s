@@ -21,16 +21,18 @@ AWS_S3_BUCKET="${NAMESPACE}.${SNAPSHOT_WEBSITE_DOMAIN_NAME}"
 # Used for redirect file that is always uploaded to AWS S3
 REDIRECT_ROOT="/"
 
-if [[ "${CLOUD_PROVIDER}" = "digitalocean" ]]; then
-    printf "%s CLOUD_PROVIDER is... %s\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${CLOUD_PROVIDER}"
-    alias aws="AWS_ACCESS_KEY_ID=$(cat /cloud-provider/access-id) AWS_SECRET_ACCESS_KEY=$(cat /cloud-provider/secret-key) aws --endpoint-url https://nyc3.digitaloceanspaces.com"
-    if [[ $(alias) ]]; then
-        printf "%s AWS command has been aliased to to use cloud provider credentials and endpoint.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    else
-        printf "%s ERROR: CLOUD_PROVIDER was %s but aws command was not aliased! \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${CLOUD_PROVIDER}"
-    fi
-    REDIRECT_ROOT="${S3_BUCKET}/"
-fi
+# Sets alias for aws command based on CLOUD_PROVIDER
+set_alias() {
+    [[ -n "${CLOUD_PROVIDER}" ]] && alias aws="AWS_ACCESS_KEY_ID=$(cat /cloud-provider/access-id) \
+    AWS_SECRET_ACCESS_KEY=$(cat /cloud-provider/secret-key) \
+    aws --endpoint-url https://nyc3.digitaloceanspaces.com"
+}
+
+# Unsets alias for aws command if an alias is set
+unset_alias() {
+    ALIAS_OUTPUT=$(alias)
+    [[ -n "${ALIAS_OUTPUT}" ]] && unalias aws
+}
 
 cd /
 
@@ -61,6 +63,8 @@ if [ "${HISTORY_MODE}" = archive ]; then
         EXPECTED_SIZE=1000000000000 #1000GB Arbitrary filesize for initial value. Only used if no archive-tarball-metadata exists. IE starting up test network
     fi
 
+    set_alias
+
     # LZ4 /var/tezos/node selectively and upload to S3
     printf "%s Archive Tarball : Tarballing /var/tezos/node, LZ4ing, and uploading to S3...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     tar cvf - . 2>/dev/null\
@@ -71,6 +75,8 @@ if [ "${HISTORY_MODE}" = archive ]; then
     -C /var/tezos \
     | lz4 | tee >(sha256sum | awk '{print $1}' > archive-tarball.sha256) \
     | aws s3 cp - s3://"${S3_BUCKET}"/"${ARCHIVE_TARBALL_FILENAME}" --expected-size "${EXPECTED_SIZE}" --acl public-read
+
+    unset_alias
 
     SHA256=$(cat archive-tarball.sha256)
 
@@ -243,6 +249,8 @@ if [ "${HISTORY_MODE}" = rolling ]; then
         EXPECTED_SIZE=100000000000 #100GB Arbitrary filesize for initial value. Only used if no rolling-tarball-metadata exists. IE starting up test network
     fi
 
+    set_alias
+
     printf "%s Rolling Tarball : Tarballing /rolling-tarball-restore/var/tezos/node, LZ4ing, and uploading to S3...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     tar cvf - . 2>/dev/null\
     --exclude='node/data/identity.json' \
@@ -252,6 +260,8 @@ if [ "${HISTORY_MODE}" = rolling ]; then
     -C /rolling-tarball-restore/var/tezos \
     | lz4 | tee >(sha256sum | awk '{print $1}' > rolling-tarball.sha256) \
     | aws s3 cp - s3://"${S3_BUCKET}"/"${ROLLING_TARBALL_FILENAME}" --expected-size "${EXPECTED_SIZE}" --acl public-read
+
+    unset_alias
 
     SHA256=$(cat rolling-tarball.sha256)
 
@@ -363,11 +373,17 @@ if [ "${HISTORY_MODE}" = rolling ]; then
     # If rolling snapshot exists locally
     if test -f "${ROLLING_SNAPSHOT}"; then
         printf "%s ${ROLLING_SNAPSHOT} exists!\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+
+        set_alias
+
         # Upload rolling snapshot to S3 and error on failure
         if ! aws s3 cp "${ROLLING_SNAPSHOT}" s3://"${S3_BUCKET}" --acl public-read; then
             printf "%s Rolling Tezos : Error uploading ${ROLLING_SNAPSHOT} to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
         else
             printf "%s Rolling Tezos : Successfully uploaded ${ROLLING_SNAPSHOT} to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+
+            unset_alias
+
             printf "%s Rolling Tezos : Uploading redirect...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
             FILESIZE_BYTES=$(stat -c %s "${ROLLING_SNAPSHOT}")
