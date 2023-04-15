@@ -14,7 +14,7 @@ spec:
     app: {{ $.Values.smart_rollup_node_statefulset.name }}
 ---
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: {{ $k }}
   namespace: {{ $.Release.Namespace }}
@@ -62,9 +62,7 @@ spec:
               name: tezos-config
         env:
           - name: MY_POD_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.name
+            value: {{ $k }}
           - name: MY_POD_TYPE
             value: {{ $.Values.smart_rollup_node_statefulset.pod_type }}
         volumeMounts:
