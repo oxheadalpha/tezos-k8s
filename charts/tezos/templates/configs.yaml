@@ -58,6 +58,8 @@ data:
     {{- $_ := set $tacoinfraSigners $signerName (pick $signerConfig "accounts") }}
 {{- end }}
 {{ $tacoinfraSigners | default dict | mustToPrettyJson | indent 4 }}
+  OCTEZ_ROLLUP_NODES: |
+{{ $.Values.smartRollupNodes | default dict | mustToPrettyJson | indent 4 }}
 
 ---
 

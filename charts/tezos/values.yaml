@@ -27,6 +27,9 @@ octez_signer_statefulset:
 chain_initiator_job:
   name: chain-initiator
   pod_type: activating
+smart_rollup_node_statefulset:
+  name: smart-rollup
+  pod_type: rollup
 
 # For non-public chains the default mutez given to an account if the
 # account is not explicitly set below.
@@ -325,6 +328,24 @@ tacoinfraSigners: {}
 #         eks.amazonaws.com/role-arn: <SIGNER_ROLE_ARN>
 # ```
 # End Signers
+
+# # Rollup nodes
+#
+# Define remote signers. Bakers automatically use signers in their namespace
+# that are configured to sign for the accounts they are baking for.
+# By default no signer is configured.
+#
+# https://tezos.gitlab.io/user/key-management.html#signer
+smartRollupNodes: {}
+# Example:
+# ```
+# smartRollupNodes:
+#   rollup-node-0:
+#     operator_account: archive-baking-node-0
+#     rollup_address: sr1RYurGZtN8KNSpkMcCt9CgWeUaNkzsAfXf
+# ```
+
+# End Rollup Nodes
 
 # When spinning up nodes, tezos-k8s will attempt to download a snapshot from a
 # known source. This should be a url to a json metadata file in the format
