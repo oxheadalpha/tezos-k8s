@@ -28,7 +28,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
     printf "%s PVC Exists.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     kubectl delete pvc rolling-tarball-restore
     sleep 5
-fi
+    fi
 fi
 
 if [ "$(kubectl get pvc "${HISTORY_MODE}"-snapshot-cache-volume)" ]; then
