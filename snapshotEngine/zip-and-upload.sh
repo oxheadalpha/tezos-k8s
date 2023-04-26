@@ -34,19 +34,21 @@ fi
 set_alias() {
     [[ -n "${CLOUD_PROVIDER}" ]] && alias aws="AWS_ACCESS_KEY_ID=$(cat /cloud-provider/access-id) \
     AWS_SECRET_ACCESS_KEY=$(cat /cloud-provider/secret-key) \
-    aws --endpoint-url https://nyc3.digitaloceanspaces.com"
+    aws --endpoint-url https://nyc3.digitaloceanspaces.com" && \
+    printf "%s AWS alias set because loud provider is %s.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${CLOUD_PROVIDER}"
 }
 
 # Unsets alias for aws command if an alias is set
 unset_alias() {
     ALIAS_OUTPUT=$(alias)
-    [[ -n "${ALIAS_OUTPUT}" ]] && unalias aws
+    [[ -n "${ALIAS_OUTPUT}" ]] && unalias aws && \
+    printf "%s AWS alias is unset.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
 }
 
 cd /
 
 # If block_height is not set than init container failed, exit this container
-[ -z "${BLOCK_HEIGHT}" ] && exit 1
+[[ -z "${BLOCK_HEIGHT}" ]] && exit 1
 
 printf "%s BLOCK_HASH is...$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH))\n" "$(date "+%Y-%m-%d %H:%M:%S")"
 printf "%s BLOCK_HEIGHT is...$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HEIGHT)\n" "$(date "+%Y-%m-%d %H:%M:%S")"
@@ -57,7 +59,7 @@ printf "%s BLOCK_TIMESTAMP is...$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/B
 #
 
 # Do not take archive tarball in rolling namespace
-if [ "${HISTORY_MODE}" = archive ]; then
+if [[ "${HISTORY_MODE}" = archive ]]; then
     printf "%s ********************* Archive Tarball *********************\n" "$(date "+%Y-%m-%d %H:%M:%S")"
     ARCHIVE_TARBALL_FILENAME=tezos-"${NETWORK}"-archive-tarball-"${BLOCK_HEIGHT}".lz4
     printf "%s Archive tarball filename is ${ARCHIVE_TARBALL_FILENAME}\n" "$(date "+%Y-%m-%d %H:%M:%S")"
@@ -248,10 +250,15 @@ if [ "${HISTORY_MODE}" = rolling ]; then
     # Instead of guessing size, you can use expected-size which tells S3 how big the file is and it calculates the size for you.
     # However if the file gets bigger than your expected size, the multipart upload fails because it uses a part size outside of the bounds (1-10000)
     # This gets the old rolling tarball size and then adds 10%.  rolling tarballs dont seem to grow more than that.
+    printf "%s Rolling Tarball: Getting last rolling tarball filesize for multipart upload...\n" "$(date "+%Y-%m-%d %H:%M:%S")"
     if aws s3 ls s3://"${AWS_S3_BUCKET}" | grep rolling-tarball-metadata; then #Use last file for expected size if it exists
         EXPECTED_SIZE=$(curl -L http://"${AWS_S3_BUCKET}"/rolling-tarball-metadata 2>/dev/null | jq -r '.filesize_bytes' | awk '{print $1*1.1}' | awk '{print ($0-int($0)>0)?int($0)+1:int($0)}')
+        printf "%s Rolling Tarball: Bucket has existing artifact metadata.  \n" "$(date "+%Y-%m-%d %H:%M:%S")"
+        printf "%s Rolling Tarball: Expected size is - %s  \n" "$(date "+%Y-%m-%d %H:%M:%S")" "${EXPECTED_SIZE}"
     else
         EXPECTED_SIZE=100000000000 #100GB Arbitrary filesize for initial value. Only used if no rolling-tarball-metadata exists. IE starting up test network
+        printf "%s Rolling Tarball: No existing rolling tarball metadata...  \n" "$(date "+%Y-%m-%d %H:%M:%S")"
+        printf "%s Rolling Tarball: Expected size set arbitrarily to %s...  \n" "$(date "+%Y-%m-%d %H:%M:%S")" "${EXPECTED_SIZE}"
     fi
 
     set_alias
