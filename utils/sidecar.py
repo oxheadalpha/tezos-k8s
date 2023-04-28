@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 from flask import Flask, escape, request
 import requests
-from requests.exceptions import ConnectTimeout, RequestException
+from requests.exceptions import ConnectTimeout, ReadTimeout, RequestException
 import datetime
 
 import logging
@@ -29,6 +29,10 @@ def sync_checker():
         r = requests.get("http://127.0.0.1:8732/chains/main/blocks/head/header", timeout=NODE_CONNECT_TIMEOUT)
     except ConnectTimeout as e:
         err = "Timeout connect to node, %s" % repr(e), 500
+        application.logger.error(err)
+        return err
+    except ReadTimeout as e:
+        err = "Timeout read from node, %s" % repr(e), 500
         application.logger.error(err)
         return err
     except RequestException as e:
