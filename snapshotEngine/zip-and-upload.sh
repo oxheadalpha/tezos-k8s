@@ -72,7 +72,7 @@ if [[ "${HISTORY_MODE}" = archive ]]; then
 
     # LZ4 /var/tezos/node selectively and upload to S3
     printf "%s Archive Tarball : Tarballing /var/tezos/node, LZ4ing, and uploading to S3...\n" "$(date "+%Y-%m-%d %H:%M:%S")"
-    tar cvf - . 2>/dev/null \
+    tar cvf - . \
     --exclude='node/data/identity.json' \
     --exclude='node/data/lock' \
     --exclude='node/data/peers.json' \
@@ -254,7 +254,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
     fi
 
     printf "%s Rolling Tarball : Tarballing /rolling-tarball-restore/var/tezos/node, LZ4ing, and uploading to %s S3 bucket %s.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "$([[ -n ${CLOUD_PROVIDER} ]] && echo ${CLOUD_PROVIDER} || echo aws)" "${S3_BUCKET}"
-    tar cvf - . 2>/dev/null \
+    tar cvf - . \
     --exclude='node/data/identity.json' \
     --exclude='node/data/lock' \
     --exclude='node/data/peers.json' \
