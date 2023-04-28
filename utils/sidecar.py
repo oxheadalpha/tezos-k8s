@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-from flask import Flask, escape, request
+from flask import Flask
 import requests
 from requests.exceptions import ConnectTimeout, ReadTimeout, RequestException
 import datetime
