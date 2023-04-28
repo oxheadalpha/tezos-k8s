@@ -1,7 +1,5 @@
 #!/bin/bash
 
-shopt -s expand_aliases
-
 BLOCK_HEIGHT=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HEIGHT)
 BLOCK_HASH=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH)
 BLOCK_TIMESTAMP=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_TIMESTAMP)
@@ -30,22 +28,21 @@ else
     URL="${S3_BUCKET}"
 fi
 
-# Sets alias for aws command based on CLOUD_PROVIDER
-set_alias() {
-    [[ -n "${CLOUD_PROVIDER}" ]] && alias aws="AWS_ACCESS_KEY_ID=$(cat /cloud-provider/access-id) \
-    AWS_SECRET_ACCESS_KEY=$(cat /cloud-provider/secret-key) \
-    aws --endpoint-url https://nyc3.digitaloceanspaces.com" && \
-    printf "%s AWS alias set because loud provider is %s.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${CLOUD_PROVIDER}"
-}
-
-# Unsets alias for aws command if an alias is set
-unset_alias() {
-    ALIAS_OUTPUT=$(alias)
-    [[ -n "${ALIAS_OUTPUT}" ]] && unalias aws && \
-    printf "%s AWS alias is unset.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
-}
-
 cd /
+
+# Sets aws command credentials depending on cloud provider
+# Alias functionality outside of command blocks is not consistent
+#  so we opted for this.
+# $1 is file name
+set_aws_command_creds(){
+    if [[ -n ${CLOUD_PROVIDER} ]]; then
+        echo "AWS_ACCESS_KEY_ID=$(cat /cloud-provider/access-id) \
+            AWS_SECRET_ACCESS_KEY=$(cat /cloud-provider/secret-key) \
+            aws --endpoint-url https://nyc3.digitaloceanspaces.com "
+    else
+        echo "aws "
+    fi
+}
 
 # If block_height is not set than init container failed, exit this container
 [[ -z "${BLOCK_HEIGHT}" ]] && exit 1
@@ -74,22 +71,20 @@ if [[ "${HISTORY_MODE}" = archive ]]; then
         EXPECTED_SIZE=1000000000000 #1000GB Arbitrary filesize for initial value. Only used if no archive-tarball-metadata exists. IE starting up test network
     fi
 
-    set_alias
-
     # LZ4 /var/tezos/node selectively and upload to S3
     printf "%s Archive Tarball : Tarballing /var/tezos/node, LZ4ing, and uploading to S3...\n" "$(date "+%Y-%m-%d %H:%M:%S")"
-    tar cvf - . 2>/dev/null\
+    tar cvf - . 2>/dev/null \
     --exclude='node/data/identity.json' \
     --exclude='node/data/lock' \
     --exclude='node/data/peers.json' \
     --exclude='./lost+found' \
     -C /var/tezos \
     | lz4 | tee >(sha256sum | awk '{print $1}' > archive-tarball.sha256) \
-    | aws s3 cp - s3://"${S3_BUCKET}"/"${ARCHIVE_TARBALL_FILENAME}" --expected-size "${EXPECTED_SIZE}" --acl public-read
+    | eval "$(set_aws_command_creds) s3 cp - s3://${S3_BUCKET}/${ARCHIVE_TARBALL_FILENAME} --expected-size ${EXPECTED_SIZE} --acl public-read"
 
     SHA256=$(cat archive-tarball.sha256)
 
-    FILESIZE_BYTES=$(aws s3api head-object \
+    FILESIZE_BYTES=$(eval "$(set_aws_command_creds)" s3api head-object \
         --bucket "${S3_BUCKET}" \
         --key "${ARCHIVE_TARBALL_FILENAME}" \
         --query ContentLength \
@@ -97,7 +92,7 @@ if [[ "${HISTORY_MODE}" = archive ]]; then
     FILESIZE=$(echo "${FILESIZE_BYTES}" | awk '{ suffix="KMGT"; for(i=0; $1>1024 && i < length(suffix); i++) $1/=1024; print int($1) substr(suffix, i, 1), $3; }' | xargs)
 
     # Check if archive-tarball exists in S3 and process redirect
-    if ! aws s3api head-object --bucket "${S3_BUCKET}" --key "${ARCHIVE_TARBALL_FILENAME}" > /dev/null; then
+    if ! eval "$(set_aws_command_creds)" s3api head-object --bucket "${S3_BUCKET}" --key "${ARCHIVE_TARBALL_FILENAME}" > /dev/null; then
         printf "%s Archive Tarball : Error uploading ${ARCHIVE_TARBALL_FILENAME} to S3 Bucket ${S3_BUCKET}.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
     else
         printf "%s Archive Tarball : Upload of ${ARCHIVE_TARBALL_FILENAME} to S3 Bucket ${S3_BUCKET} successful!\n" "$(date "+%Y-%m-%d %H:%M:%S")"
@@ -139,8 +134,6 @@ if [[ "${HISTORY_MODE}" = archive ]]; then
             }
         }' \
         > "${ARCHIVE_TARBALL_FILENAME}".json
-
-        unset_alias
 
         # Since version.additional_info will either be another object or "release" we just overwrite it from whatever we got above
         # JQ has trouble inserting a key into a file this is the way we opted to insert it
@@ -261,21 +254,20 @@ if [ "${HISTORY_MODE}" = rolling ]; then
         printf "%s Rolling Tarball: Expected size set arbitrarily to %s...  \n" "$(date "+%Y-%m-%d %H:%M:%S")" "${EXPECTED_SIZE}"
     fi
 
-    set_alias
-
-    printf "%s Rolling Tarball : Tarballing /rolling-tarball-restore/var/tezos/node, LZ4ing, and uploading to S3...\n" "$(date "+%Y-%m-%d %H:%M:%S")"
-    tar cvf - . 2>/dev/null\
+    printf "%s Rolling Tarball : Tarballing /rolling-tarball-restore/var/tezos/node, LZ4ing, and uploading to %s S3 bucket %s.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "$([[ -n ${CLOUD_PROVIDER} ]] && echo ${CLOUD_PROVIDER} || echo aws)" "${S3_BUCKET}"
+    tar cvf - . 2>/dev/null \
     --exclude='node/data/identity.json' \
     --exclude='node/data/lock' \
     --exclude='node/data/peers.json' \
     --exclude='./lost+found' \
     -C /rolling-tarball-restore/var/tezos \
     | lz4 | tee >(sha256sum | awk '{print $1}' > rolling-tarball.sha256) \
-    | aws s3 cp - s3://"${S3_BUCKET}"/"${ROLLING_TARBALL_FILENAME}" --expected-size "${EXPECTED_SIZE}" --acl public-read
+    | eval "$(set_aws_command_creds) s3 cp - s3://${S3_BUCKET}/${ROLLING_SNAPSHOT_FILENAME} --expected-size ${EXPECTED_SIZE} --acl public-read" 
+
 
     SHA256=$(cat rolling-tarball.sha256)
 
-    FILESIZE_BYTES=$(aws s3api head-object \
+    FILESIZE_BYTES=$(eval "$(set_aws_command_creds)" s3api head-object \
     --bucket "${S3_BUCKET}" \
     --key "${ROLLING_TARBALL_FILENAME}" \
     --query ContentLength \
@@ -283,7 +275,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
     FILESIZE=$(echo "${FILESIZE_BYTES}" | awk '{ suffix="KMGT"; for(i=0; $1>1024 && i < length(suffix); i++) $1/=1024; print int($1) substr(suffix, i, 1), $3; }' | xargs)
 
     # Check if rolling-tarball exists and process redirect
-    if ! aws s3api head-object --bucket "${S3_BUCKET}" --key "${ROLLING_TARBALL_FILENAME}" > /dev/null; then
+    if ! eval "$(set_aws_command_creds)" s3api head-object --bucket "${S3_BUCKET}" --key "${ROLLING_TARBALL_FILENAME}" > /dev/null; then
         printf "%s Rolling Tarball : Error uploading ${ROLLING_TARBALL_FILENAME} to S3 Bucket ${S3_BUCKET}.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
     else
         printf "%s Rolling Tarball : Upload of ${ROLLING_TARBALL_FILENAME} to S3 Bucket ${S3_BUCKET} successful!\n" "$(date "+%Y-%m-%d %H:%M:%S")"
@@ -324,8 +316,6 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             }
         }' \
         > "${ROLLING_TARBALL_FILENAME}".json
-
-        unset_alias
 
         # Since version.additional_info will either be another object or "release" we just overwrite it from whatever we got above
         # JQ has trouble inserting a key into a file this is the way we opted to insert it
@@ -383,10 +373,8 @@ if [ "${HISTORY_MODE}" = rolling ]; then
     if test -f "${ROLLING_SNAPSHOT}"; then
         printf "%s ${ROLLING_SNAPSHOT} exists!\n" "$(date "+%Y-%m-%d %H:%M:%S")"
 
-        set_alias
-
         # Upload rolling snapshot to S3 and error on failure
-        if ! aws s3 cp "${ROLLING_SNAPSHOT}" s3://"${S3_BUCKET}" --acl public-read; then
+        if ! eval "$(set_aws_command_creds)" s3 cp "${ROLLING_SNAPSHOT}" s3://"${S3_BUCKET}" --acl public-read; then
             printf "%s Rolling Tezos : Error uploading ${ROLLING_SNAPSHOT} to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
         else
             printf "%s Rolling Tezos : Successfully uploaded ${ROLLING_SNAPSHOT} to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
@@ -452,8 +440,6 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             # JQ has trouble inserting a key into a file this is the way we opted to insert it
             tmp=$(mktemp)
             jq --arg version "$TEZOS_VERSION" '.tezos_version.version = ($version|fromjson)' "${ROLLING_SNAPSHOT_FILENAME}".json > "$tmp" && mv "$tmp" "${ROLLING_SNAPSHOT_FILENAME}".json
-            
-            unset_alias
 
             # Check metadata json exists
             if [[ -s "${ROLLING_SNAPSHOT_FILENAME}".json ]]; then
