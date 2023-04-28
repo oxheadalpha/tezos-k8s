@@ -262,7 +262,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
     --exclude='./lost+found' \
     -C /rolling-tarball-restore/var/tezos \
     | lz4 | tee >(sha256sum | awk '{print $1}' > rolling-tarball.sha256) \
-    | eval "$(set_aws_command_creds) s3 cp - s3://${S3_BUCKET}/${ROLLING_SNAPSHOT_FILENAME} --expected-size ${EXPECTED_SIZE} --acl public-read" 
+    | eval "$(set_aws_command_creds) s3 cp - s3://${S3_BUCKET}/${ROLLING_TARBALL_FILENAME} --expected-size ${EXPECTED_SIZE} --acl public-read" 
 
 
     SHA256=$(cat rolling-tarball.sha256)
