@@ -21,9 +21,8 @@ REDIRECT_ROOT="/"
 
 # CND Endpoint used for CDN URLs (different from command endpoint)
 if [[ "${CLOUD_PROVIDER}" == "digitalocean" ]]; then
-    CDN_ENDPOINT=nyc3.cdn.digitaloceanspaces.com
-    URL="${S3_BUCKET}.${CDN_ENDPOINT}"
-    REDIRECT_ROOT="https://${URL}/"
+    URL="${FQDN}"
+    REDIRECT_ROOT="https://${FQDN}/"
 else
     URL="${S3_BUCKET}"
 fi
