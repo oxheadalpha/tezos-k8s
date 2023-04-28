@@ -15,6 +15,7 @@ data:
   SCHEMA_URL: {{ $.Values.schemaUrl }}
   S3_BUCKET: {{ $.Values.s3BucketOverride }}
   CLOUD_PROVIDER: {{ $.Values.cloudProvider }}
+  FQDN: {{ $.Values.fqdn }}
 kind: ConfigMap
 metadata:
   name: snapshot-configmap
