@@ -12,7 +12,7 @@ log.setLevel(logging.ERROR)
 application = Flask(__name__)
 
 AGE_LIMIT_IN_SECS = 600
-# Default readiness probeperid timeout is 1s, timeout sync request before that and return a
+# Default readiness probe periodSeconds is 1s, timeout sync request before that and return a
 # connect timeout error if necessary
 NODE_CONNECT_TIMEOUT = 0.9
 
