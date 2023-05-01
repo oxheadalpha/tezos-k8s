@@ -13,7 +13,7 @@ TEZOS_VERSION_COMMIT_HASH="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .commit_in
 TEZOS_VERSION_COMMIT_DATE="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .commit_info.commit_date)"
 
 # Needed for alternate cloud providers
-AWS_S3_BUCKET="${NAMESPACE}.${SNAPSHOT_WEBSITE_DOMAIN_NAME}"
+AWS_S3_BUCKET="${NAMESPACE%-*}.${SNAPSHOT_WEBSITE_DOMAIN_NAME}"
 
 # Default to root, is overridden by below logic if CLOUD_PROVIDER is defined
 # Used for redirect file that is always uploaded to AWS S3
