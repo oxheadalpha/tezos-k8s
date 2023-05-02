@@ -162,6 +162,9 @@ jobs:
         with:
           install: true
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
       - name: Login to registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
