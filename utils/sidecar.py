@@ -12,7 +12,8 @@ log.setLevel(logging.ERROR)
 application = Flask(__name__)
 
 AGE_LIMIT_IN_SECS = 600
-# Default readiness probe periodSeconds is 1s, timeout sync request before that and return a
+# https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+# Default readiness probe timeoutSeconds is 1s, timeout sync request before that and return a
 # connect timeout error if necessary
 NODE_CONNECT_TIMEOUT = 0.9
 
