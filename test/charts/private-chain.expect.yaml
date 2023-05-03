@@ -214,6 +214,8 @@ data:
         ]
       }
     }
+  OCTEZ_ROLLUP_NODES: |
+    {}
 ---
 # Source: tezos-chain/templates/configs.yaml
 apiVersion: v1

@@ -550,6 +550,10 @@ def create_protocol_parameters_json(accounts):
             print(f"Injecting bootstrap contract from {url}")
             protocol_params["bootstrap_contracts"].append(requests.get(url).json())
 
+    # Append any additional bootstrap params such as smart rollups, if any
+    if protocol_activation.get("bootstrap_parameters"):
+        protocol_params = { **protocol_params, **protocol_activation.get("bootstrap_parameters") }
+
     return protocol_params
 
 

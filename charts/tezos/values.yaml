@@ -521,6 +521,15 @@ protocols:
 #   # This data is typically too large to pass it directly inside helm chart.
 #   bootstrap_contract_urls: []
 #
+#   # Pass additional structured data to add to parameters.json
+#   # This can be used to deploy smart rollup at bootstrap.
+#   bootstrap_parameters:
+#     bootstrap_smart_rollups:
+#       address: "sr1RYurGZtN8KNSpkMcCt9CgWeUaNkzsAfXf"
+#       pvm_kind: "arith"
+#       boot_sector: ""
+#       parameters_ty: "O [("prim", `String "Unit")]"
+#
 ## Deploy an indexer with the chain. An indexer puts the chain
 ## contents in a database for efficient indexing. Most dapps need it.
 ## Supported indexers:
