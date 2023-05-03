@@ -1,7 +1,7 @@
 #! /usr/bin/env python
-
-from flask import Flask, escape, request
+from flask import Flask
 import requests
+from requests.exceptions import ConnectTimeout, ReadTimeout, RequestException
 import datetime
 
 import logging
@@ -12,7 +12,10 @@ log.setLevel(logging.ERROR)
 application = Flask(__name__)
 
 AGE_LIMIT_IN_SECS = 600
-
+# https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+# Default readiness probe timeoutSeconds is 1s, timeout sync request before that and return a
+# connect timeout error if necessary
+NODE_CONNECT_TIMEOUT = 0.9
 
 @application.route("/is_synced")
 def sync_checker():
@@ -24,11 +27,20 @@ def sync_checker():
     not too old.
     """
     try:
-        r = requests.get("http://127.0.0.1:8732/chains/main/blocks/head/header")
-    except requests.exceptions.RequestException as e:
+        r = requests.get("http://127.0.0.1:8732/chains/main/blocks/head/header", timeout=NODE_CONNECT_TIMEOUT)
+    except ConnectTimeout as e:
+        err = "Timeout connect to node, %s" % repr(e), 500
+        application.logger.error(err)
+        return err
+    except ReadTimeout as e:
+        err = "Timeout read from node, %s" % repr(e), 500
+        application.logger.error(err)
+        return err
+    except RequestException as e:
         err = "Could not connect to node, %s" % repr(e), 500
         application.logger.error(err)
         return err
+
     header = r.json()
     if header["level"] == 0:
         # when chain has not been activated, bypass age check
