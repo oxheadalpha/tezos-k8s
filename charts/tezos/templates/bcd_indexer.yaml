@@ -240,7 +240,7 @@ metadata:
     {{- toYaml . | nindent 4 }}
 {{- end }}
 spec:
-  ingressClassName: {{ $indexerConfig.ingress.className | default "" }}
+  ingressClassName: {{ $indexerConfig.ingress.className }}
   {{- if $indexerConfig.ingress.tls }}
   tls:
     {{- range $indexerConfig.ingress.tls }}

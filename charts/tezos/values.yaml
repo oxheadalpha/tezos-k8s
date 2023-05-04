@@ -269,6 +269,16 @@ services:
     selector:
 #      rpc_node: "true"
 
+## Configuration for the tezos-node-rpc ingress
+ingress:
+  enabled: false
+  host: ""
+  annotations: {}
+  className: ""
+  labels: {}
+  pathType: Prefix
+  tls: []
+
 # Prometheus Operator is required in your cluster in order to enable
 # serviceMonitor below.
 # ServiceMonitor allows you to scrape the prometheus endpoints of your tezos nodes.
@@ -569,7 +579,7 @@ bcdIndexer:
     annotations: {}
     className: ""
     labels: {}
-    pathType: ImplementationSpecific
+    pathType: Prefix
     tls: []
 
   db:
