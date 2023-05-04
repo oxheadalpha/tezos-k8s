@@ -549,15 +549,27 @@ bcdIndexer:
     gui: ghcr.io/baking-bad/bcdhub-gui:4.4.0
     postgres: postgres:14
 
+  # Url of the RPC backend for the indexer to hit
+  indexerRpcUrl: "" # http://archive-baking-node-0.archive-baking-node:8732
+  # When creating an ingress, this will be the BCD api's hostname/FQDN (stripped
+  # of http(s)). When deploying the BCD gui, this will also be the api's full
+  # url called by the frontend.
+  apiUrl: "" # http://localhost:14000
+
   gui:
     enabled: false
-    ## Url of the BCD api for the frontend to hit
-    apiUrl: http://localhost:14000
-    ## Url to the RPC backend for the frontend to hit
+    # Url of the RPC backend for the frontend to query
     rpcUrl: http://localhost:8732
 
-  ## RPC url of the node to be indexed
-  # indexerRpcUrl: http://archive-baking-node-0.archive-baking-node:8732
+  ingress:
+    enabled: false
+    # Hostname for BCD frontend. The ingress rule will only be created when this
+    # is set and gui is enabled.
+    guiHostname: ""
+    annotations: {}
+    className: ""
+    labels: {}
+    tls: []
 
   db:
     # By default creates a postgres db container. Setting to true won't create
