@@ -133,7 +133,7 @@ metadata:
   Returns the true type or empty string which is falsey.
 */}}
 {{- define "tezos.shouldDeployBcdIndexer" -}}
-  {{- if and .indexerRpcUrl .db.password }}
+  {{- if and .rpcUrl .db.password }}
     {{- "true" }}
   {{- else }}
     {{- "" }}

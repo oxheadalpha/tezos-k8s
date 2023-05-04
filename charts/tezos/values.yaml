@@ -549,8 +549,8 @@ bcdIndexer:
     gui: ghcr.io/baking-bad/bcdhub-gui:4.4.0
     postgres: postgres:14
 
-  # Url of the RPC backend for the indexer to hit
-  indexerRpcUrl: "" # http://archive-baking-node-0.archive-baking-node:8732
+  # Url of the RPC backend for the indexer to index
+  rpcUrl: "" # http://archive-baking-node-0.archive-baking-node:8732
   # When creating an ingress, this will be the BCD api's hostname/FQDN (stripped
   # of http(s)). When deploying the BCD gui, this will also be the api's full
   # url called by the frontend.
@@ -569,6 +569,7 @@ bcdIndexer:
     annotations: {}
     className: ""
     labels: {}
+    pathType: ImplementationSpecific
     tls: []
 
   db:

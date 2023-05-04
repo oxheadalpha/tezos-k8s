@@ -29,7 +29,7 @@ metadata:
 data:
   BCD_ENV: sandbox
   GIN_MODE: debug
-  SANDBOX_NODE_URI: {{ $indexerConfig.indexerRpcUrl }}
+  SANDBOX_NODE_URI: {{ $indexerConfig.rpcUrl }}
 
 ---
 apiVersion: v1
@@ -176,8 +176,8 @@ spec:
               mountPath: /app/indexer/sandbox.yml
               subPath: sandbox.yml
       {{- if $indexerConfig.gui.enabled }}
-        {{- $_ := required "apiUrl is required" $indexerConfig.apiUrl }}
-        {{- $_ := required "gui.rpcUrl is required" $indexerConfig.gui.rpcUrl }}
+        {{- $_ := required "apiUrl is required for gui" $indexerConfig.apiUrl }}
+        {{- $_ := required "gui.rpcUrl is required for gui" $indexerConfig.gui.rpcUrl }}
         - image: {{ $indexerConfig.images.gui }}
           name: gui
           ports:
@@ -225,6 +225,7 @@ spec:
 
 ---
 {{- if $indexerConfig.ingress.enabled }}
+{{- $_ := required "apiUrl is required for ingress" $indexerConfig.apiUrl }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -254,7 +255,7 @@ spec:
     - host: {{ regexReplaceAll "(https?://)" $indexerConfig.apiUrl "" }}
       http:
         paths:
-          - pathType: Prefix
+          - pathType: {{ $indexerConfig.ingress.pathType }}
             path: /
             backend:
               service:
@@ -265,7 +266,7 @@ spec:
     - host: {{ $indexerConfig.ingress.guiHostname }}
       http:
         paths:
-          - pathType: Prefix
+          - pathType: {{ $indexerConfig.ingress.pathType }}
             path: /
             backend:
               service:
