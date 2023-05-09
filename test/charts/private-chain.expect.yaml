@@ -603,9 +603,9 @@ spec:
               name: var-volume
           resources:
             limits:
-              memory: 100Mi
+              memory: 1Gi
             requests:
-              memory: 80Mi        
+              memory: 700Mi        
       initContainers:                        
         - name: config-generator
           image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
@@ -1176,9 +1176,9 @@ spec:
               name: var-volume
           resources:
             limits:
-              memory: 100Mi
+              memory: 1Gi
             requests:
-              memory: 80Mi        
+              memory: 700Mi        
       initContainers:                        
         - name: config-generator
           image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
@@ -1380,9 +1380,9 @@ spec:
               name: var-volume
           resources:
             limits:
-              memory: 100Mi
+              memory: 1Gi
             requests:
-              memory: 80Mi        
+              memory: 700Mi        
       initContainers:                        
         - name: config-generator
           image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
