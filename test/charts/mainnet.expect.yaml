@@ -207,9 +207,9 @@ spec:
               name: var-volume
           resources:
             limits:
-              memory: 100Mi
+              memory: 1Gi
             requests:
-              memory: 80Mi        
+              memory: 700Mi        
       initContainers:        
         - name: config-init
           image: "tezos/tezos:v16.1"
