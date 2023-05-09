@@ -254,7 +254,7 @@
 
 {{- define "tezos.container.sidecar" }}
   {{- if or (not (hasKey $.node_vals "readiness_probe")) $.node_vals.readiness_probe }}
-    {{- $sidecarResources := dict "requests" (dict "memory" "80Mi") "limits" (dict "memory" "100Mi") -}}
+    {{- $sidecarResources := dict "requests" (dict "memory" "700Mi") "limits" (dict "memory" "1Gi") -}}
     {{- include "tezos.generic_container" (dict "root"      $
                                                 "type"      "sidecar"
                                                 "image"     "utils"
