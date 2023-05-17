@@ -73,9 +73,7 @@ accounts: {}
 #     bootstrap_balance: "50000000000000"
 #
 #   baker1:
-#     key: edpk...
-#     is_bootstrap_baker_account: false
-#     bootstrap_balance: "4000000000000"
+#     key: edsk...
 #     operations_pool: http://flashbake-endpoint-baker-listener:12732
 #     protocols:
 #     - command: PtMumbai
