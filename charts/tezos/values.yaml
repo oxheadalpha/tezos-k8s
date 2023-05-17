@@ -527,8 +527,9 @@ protocols:
 #     bootstrap_smart_rollups:
 #       address: "sr1RYurGZtN8KNSpkMcCt9CgWeUaNkzsAfXf"
 #       pvm_kind: "arith"
-#       boot_sector: ""
-#       parameters_ty: "O [("prim", `String "Unit")]"
+#       kernel: ""
+#       parameters_ty:
+#         prim: Unit
 #
 ## Deploy an indexer with the chain. An indexer puts the chain
 ## contents in a database for efficient indexing. Most dapps need it.
