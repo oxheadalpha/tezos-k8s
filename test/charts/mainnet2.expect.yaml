@@ -535,9 +535,6 @@ spec:
         - name: tezos-accounts
           secret:
             secretName: tezos-secret
-        - name: baker-config
-          configMap:
-            name: baker-config
   volumeClaimTemplates:
     - metadata:
         name: var-volume
@@ -916,9 +913,6 @@ spec:
         - name: tezos-accounts
           secret:
             secretName: tezos-secret
-        - name: baker-config
-          configMap:
-            name: baker-config
   volumeClaimTemplates:
     - metadata:
         name: var-volume
