@@ -518,12 +518,12 @@ if [[ -n "${SNAPSHOT_WEBSITE_DOMAIN_NAME}" ]]; then
     echo '[]' > "base.json"
 
     printf "%s Building base.json... this may take a while.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
-    aws s3 ls s3://"${AWS_S3_BUCKET}" |  grep '\.json'| sort | awk '{print $4}' | awk -F '\\\\n' '{print $1}' | tr ' ' '\n' | grep -v -e base.json -e tezos-snapshots.json | while read ITEM; do
-        tmp=$(mktemp) && cp base.json "${tmp}" && jq --argjson file "$(curl -s https://"${AWS_S3_BUCKET}"/$ITEM)" '. += [$file]' "${tmp}" > base.json
+    eval "$(set_aws_command_creds)" s3 ls s3://"${S3_BUCKET}" |  grep '\.json'| sort | awk '{print $4}' | awk -F '\\\\n' '{print $1}' | tr ' ' '\n' | grep -v -e base.json -e tezos-snapshots.json | while read ITEM; do
+        tmp=$(mktemp) && cp base.json "${tmp}" && jq --argjson file "$(curl -s https://"${FQDN}"/$ITEM)" '. += [$file]' "${tmp}" > base.json
     done
 
     #Upload base.json
-    if ! aws s3 cp base.json s3://"${AWS_S3_BUCKET}"/base.json; then
+    if ! eval "$(set_aws_command_creds)" s3 cp base.json s3://"${S3_BUCKET}"/base.json --acl public-read; then
         printf "%s Upload base.json : Error uploading file base.json to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S")"
     else
         printf "%s Upload base.json : File base.json successfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S")"
