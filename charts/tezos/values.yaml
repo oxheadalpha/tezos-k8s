@@ -529,7 +529,7 @@ protocols:
 #       pvm_kind: "arith"
 #       kernel: ""
 #       parameters_ty:
-#         prim: Unit
+#         prim: unit
 #
 ## Deploy an indexer with the chain. An indexer puts the chain
 ## contents in a database for efficient indexing. Most dapps need it.
