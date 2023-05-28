@@ -3,32 +3,32 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ $.Values.smart_rollup_node_statefulset.name }}
+  name: rollup-{{ $k }}
   namespace: {{ $.Release.Namespace }}
 spec:
   clusterIP: None
   ports:
-    - port: 8080
-      name: web
+    - port: 8932
+      name: rollup
   selector:
-    app: {{ $.Values.smart_rollup_node_statefulset.name }}
+    app: rollup-{{ $k }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ $k }}
+  name: rollup-{{ $k }}
   namespace: {{ $.Release.Namespace }}
 spec:
   podManagementPolicy: Parallel
   replicas: 1
-  serviceName: {{ $.Values.smart_rollup_node_statefulset.name }}
+  serviceName: rollup-{{ $k }}
   selector:
     matchLabels:
-      app: {{ $.Values.smart_rollup_node_statefulset.name }}
+      app: rollup-{{ $k }}
   template:
     metadata:
       labels:
-        app: {{ $.Values.smart_rollup_node_statefulset.name }}
+        app: rollup-{{ $k }}
     spec:
       containers:
       - name: octez-smart-rollup-node
@@ -79,4 +79,44 @@ spec:
           secret:
             secretName: tezos-secret
 ---
+{{- if $v.ingress | default false }}
+{{- if $v.ingress.enabled | default false }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rollup-{{ $k }}
+  namespace: {{ $.Release.Namespace }}
+{{- with $v.ingress.labels }}
+  labels:
+    {{- toYaml . | nindent 4 }}
+{{- end }}
+{{- with $v.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+{{- end }}
+spec:
+  ingressClassName: {{ $v.ingress.className }}
+  {{- if $v.ingress.tls }}
+  tls:
+    {{- range $v.ingress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
+  rules:
+    - host: {{ $v.ingress.host }}
+      http:
+        paths:
+          - pathType: {{ $v.ingress.pathType }}
+            path: /
+            backend:
+              service:
+                name: rollup-{{ $k }}
+                port:
+                  number: 8932
+{{- end }}
+{{- end }}
 {{- end }}

@@ -330,8 +330,13 @@ tacoinfraSigners: {}
 # End Signers
 
 # # Rollup nodes
+# Define Smart Rollup nodes. An operator account and rollup address
+# must be provided.
+# In private chains, you can create a rollup with the same address during
+# activation.
+# Optionally define an ingress for your rollup to be accessible from outside
+# the cluster.
 #
-# https://tezos.gitlab.io/user/key-management.html#signer
 smartRollupNodes: {}
 # Example:
 # ```
@@ -339,6 +344,14 @@ smartRollupNodes: {}
 #   rollup-node-0:
 #     operator_account: archive-baking-node-0
 #     rollup_address: sr1RYurGZtN8KNSpkMcCt9CgWeUaNkzsAfXf
+#     ingress:
+#       enabled: false
+#       host: ""
+#       annotations: {}
+#       className: ""
+#       labels: {}
+#       pathType: Prefix
+#       tls: []
 # ```
 
 # End Rollup Nodes
