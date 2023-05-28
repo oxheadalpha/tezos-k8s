@@ -331,10 +331,6 @@ tacoinfraSigners: {}
 
 # # Rollup nodes
 #
-# Define remote signers. Bakers automatically use signers in their namespace
-# that are configured to sign for the accounts they are baking for.
-# By default no signer is configured.
-#
 # https://tezos.gitlab.io/user/key-management.html#signer
 smartRollupNodes: {}
 # Example:

@@ -8,7 +8,5 @@ NODE_DATA_DIR="$TEZ_VAR/node/data"
 
 touch /var/tezos/smart-rollup-boot-sector
 CMD="$TEZ_BIN/octez-smart-rollup-node-alpha --endpoint http://tezos-node-rpc:8732 -d $CLIENT_DIR run operator for ${ROLLUP_ADDRESS} with operators ${OPERATOR_ACCOUNT} --boot-sector-file /var/tezos/smart-rollup-boot-sector"
-# ensure we can run tezos-signer commands without specifying client dir
-ln -s /var/tezos/client /home/tezos/.tezos-signer
 
 exec $CMD
