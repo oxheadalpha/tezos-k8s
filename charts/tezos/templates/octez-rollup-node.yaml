@@ -110,7 +110,7 @@ spec:
     - host: {{ $v.ingress.host }}
       http:
         paths:
-          - pathType: {{ $v.ingress.pathType }}
+          - pathType: Prefix
             path: /
             backend:
               service:
