@@ -553,11 +553,17 @@ def create_protocol_parameters_json(accounts):
 
     # Append any additional bootstrap params such as smart rollups, if any
     if protocol_activation.get("bootstrap_parameters"):
+        print("DEBUG append additional bootstrap params")
         if protocol_activation["bootstrap_parameters"].get("boostrap_smart_rollups"):
+            print("DEBUG append smart rollup activation config")
             for r, idx in protocol_activation["bootstrap_parameters"]["bootstrap_smart_rollups"]:
+                print(f"DEBUG append activation config for smart rollup {idx} {r.get('address')}")
                 if "kernel_from_file" in r:
+                    print(f"DEBUG found kernel_from_file {r.get('kernel_from_file')}")
                     with open(r["kernel_from_file"], 'rb') as f:
+                        print("DEBUG injecting kernel hex into bootstrap params")
                         protocol_activation["bootstrap_parameters"]["bootstrap_smart_rollups"][idx]["kernel"] = binascii.hexlify(f.read())
+                    print("DEBUG deleting kernel_from_file")
                     del protocol_activation["bootstrap_parameters"]["bootstrap_smart_rollups"][idx]["kernel_from_file"]
         protocol_params = { **protocol_params, **protocol_activation.get("bootstrap_parameters") }
 
