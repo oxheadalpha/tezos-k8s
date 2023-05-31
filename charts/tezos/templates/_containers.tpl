@@ -88,6 +88,8 @@
 {{- $node_vals_images := $.node_vals.images | default dict }}
 {{- if eq .image "octez" }}
   image: "{{ or $node_vals_images.octez $.Values.images.octez }}"
+{{- else if eq .image "octez_debug" }}
+  image: "{{ or $node_vals_images.octez_debug $.Values.images.octez_debug }}"
 {{- else }}
   image: "{{ $.Values.tezos_k8s_images.utils }}"
 {{- end }}
@@ -211,7 +213,7 @@
 {{- define "tezos.init_container.chain_initiator" }}
   {{- include "tezos.generic_container" (dict "root"        $
                                               "type"        "chain-initiator"
-                                              "image"       "octez"
+                                              "image"       "octez_debug"
   ) | nindent 0 }}
 {{- end }}
 
