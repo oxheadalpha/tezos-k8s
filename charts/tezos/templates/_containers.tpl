@@ -67,7 +67,7 @@
   {{- $_ := set . "localvars" (eq .image "utils") }}
 {{- end }}
 {{- if not (hasKey . "run_script") }}
-  {{- $_ := set . "run_script" (eq .image "octez") }}
+  {{- $_ := set . "run_script" (or (eq .image "octez") (eq .image "octez_debug") ) }}
 {{- end }}
 {{- if not (hasKey . "script_command") }}
   {{- $_ := set . "script_command" .type }}
