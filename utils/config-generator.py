@@ -556,7 +556,7 @@ def create_protocol_parameters_json(accounts):
         print("DEBUG append additional bootstrap params")
         if protocol_activation["bootstrap_parameters"].get("bootstrap_smart_rollups"):
             print("DEBUG append smart rollup activation config")
-            for r, idx in protocol_activation["bootstrap_parameters"]["bootstrap_smart_rollups"]:
+            for idx, r in enumerate(protocol_activation["bootstrap_parameters"]["bootstrap_smart_rollups"]):
                 print(f"DEBUG append activation config for smart rollup {idx} {r.get('address')}")
                 if "kernel_from_file" in r:
                     print(f"DEBUG found kernel_from_file {r.get('kernel_from_file')}")
