@@ -1,4 +1,5 @@
 import argparse
+import binascii
 import collections
 import json
 import os
@@ -552,6 +553,12 @@ def create_protocol_parameters_json(accounts):
 
     # Append any additional bootstrap params such as smart rollups, if any
     if protocol_activation.get("bootstrap_parameters"):
+        if protocol_activation["bootstrap_parameters"].get("boostrap_smart_rollups"):
+            for r, idx in protocol_activation["bootstrap_parameters"]["bootstrap_smart_rollups"]:
+                if "kernel_from_file" in r:
+                    with open(r["kernel_from_file"], 'rb') as f:
+                        protocol_activation["bootstrap_parameters"]["bootstrap_smart_rollups"][idx]["kernel"] = binascii.hexlify(f.read())
+                    del protocol_activation["bootstrap_parameters"]["bootstrap_smart_rollups"][idx]["kernel_from_file"]
         protocol_params = { **protocol_params, **protocol_activation.get("bootstrap_parameters") }
 
     return protocol_params
