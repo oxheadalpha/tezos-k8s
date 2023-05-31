@@ -6,7 +6,7 @@ CLIENT_DIR="$TEZ_VAR/client"
 NODE_DIR="$TEZ_VAR/node"
 NODE_DATA_DIR="$TEZ_VAR/node/data"
 
-touch /var/tezos/smart-rollup-boot-sector
+xxd -ps -c 0  /usr/local/share/tezos/evm_kernel.wasm   | tr -d '\n' > /var/tezos/smart-rollup-boot-sector
 CMD="$TEZ_BIN/octez-smart-rollup-node-alpha \
   --endpoint http://tezos-node-rpc:8732 \
   -d $CLIENT_DIR \

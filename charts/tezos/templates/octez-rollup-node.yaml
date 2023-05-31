@@ -32,7 +32,7 @@ spec:
     spec:
       containers:
       - name: octez-smart-rollup-node
-        image: "{{ $.Values.images.octez }}"
+        image: "{{ $.Values.images.octez_debug }}"
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8932
