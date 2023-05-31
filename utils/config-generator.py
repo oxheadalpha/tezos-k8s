@@ -554,7 +554,7 @@ def create_protocol_parameters_json(accounts):
     # Append any additional bootstrap params such as smart rollups, if any
     if protocol_activation.get("bootstrap_parameters"):
         print("DEBUG append additional bootstrap params")
-        if protocol_activation["bootstrap_parameters"].get("boostrap_smart_rollups"):
+        if protocol_activation["bootstrap_parameters"].get("bootstrap_smart_rollups"):
             print("DEBUG append smart rollup activation config")
             for r, idx in protocol_activation["bootstrap_parameters"]["bootstrap_smart_rollups"]:
                 print(f"DEBUG append activation config for smart rollup {idx} {r.get('address')}")
