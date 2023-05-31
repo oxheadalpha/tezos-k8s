@@ -6,7 +6,7 @@ metadata:
   name: rollup-{{ $k }}
   namespace: {{ $.Release.Namespace }}
 spec:
-  clusterIP: None
+  type: NodePort
   ports:
     - port: 8932
       name: rollup
@@ -35,8 +35,8 @@ spec:
         image: "{{ $.Values.images.octez }}"
         imagePullPolicy: IfNotPresent
         ports:
-        - containerPort: 8080
-          name: web
+        - containerPort: 8932
+          name: rollup
         command:
           - /bin/sh
         volumeMounts:
@@ -110,13 +110,13 @@ spec:
     - host: {{ $v.ingress.host }}
       http:
         paths:
-          - pathType: Prefix
-            path: /
+          - pathType: ImplementationSpecific
+            path: /*
             backend:
               service:
                 name: rollup-{{ $k }}
                 port:
-                  number: 8932
+                  name: rollup
 {{- end }}
 {{- end }}
 {{- end }}
