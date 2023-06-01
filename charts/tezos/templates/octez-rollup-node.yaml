@@ -16,6 +16,39 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  name: evm-proxy-{{ $k }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  serviceName: evm-proxy-{{ $k }}
+  selector:
+    matchLabels:
+      app: evm-proxy-{{ $k }}
+  template:
+    metadata:
+      labels:
+        app: evm-proxy-{{ $k }}
+    spec:
+      containers:
+      - name: octez-evm-proxy
+        image: "{{ $.Values.images.octez }}"
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8545
+          name: evm-proxy
+        command:
+          - /bin/sh
+        args:
+          - "-c"
+          - |
+{{ tpl ($.Files.Get "scripts/evm-proxy.sh") $ | indent 12 }}
+      securityContext:
+        fsGroup: 1000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
   name: rollup-{{ $k }}
   namespace: {{ $.Release.Namespace }}
 spec:
