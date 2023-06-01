@@ -1,5 +1,4 @@
 CLIENT="/usr/local/bin/octez-client --endpoint http://tezos-node-rpc:8732"
-echo "LALAL"
 
 until $CLIENT rpc get /chains/main/blocks/head/header | grep '"level":'; do
     sleep 2
@@ -93,4 +92,3 @@ $CLIENT -d /var/tezos/client --block					\
 	with fitness 1 and key						\
 	$( cat /etc/tezos/activation_account_name )			\
 	and parameters $PARAMETERS_FILE 2>&1 | head -200
-sleep 10000
