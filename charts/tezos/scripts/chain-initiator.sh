@@ -1,46 +1,96 @@
 CLIENT="/usr/local/bin/octez-client --endpoint http://tezos-node-rpc:8732"
+echo "LALAL"
 
 until $CLIENT rpc get /chains/main/blocks/head/header | grep '"level":'; do
     sleep 2
 done
 
-set -x
 set -o pipefail
 if ! $CLIENT rpc get /chains/main/blocks/head/header | grep '"level": 0,'; then
     echo "Chain already activated, considering activation successful and exiting"
     exit 0
 fi
 
-PARAMS_FILE='/etc/tezos/parameters.json'
+# Substitute #fromfile with the hex encoded files in question.
+# This is for bootstrapped smart rollups.
 
-# Check if there are any bootstrap rollups. If present, replace the file with its content.
-size=$(jq '.bootstrap_parameters.bootstrap_smart_rollups | length' $PARAMS_FILE)
 
-# Iterate over each object in the bootstrap_smart_rollups array
-for (( i=0; i<$size; i++ ))
+
+PARAMETERS_FILE='/etc/tezos/parameters.json'
+TMP_PARAMETERS_FILE='/etc/tezos/tmp_parameters.json'
+
+# Pattern to search for
+pattern='fromfile#'
+
+# Buffer for characters
+buffer=''
+
+# Whether 'fromfile#' was detected
+detected_fromfile=false
+
+# Process each character
+while IFS= read -r -n1 char
 do
-    KERNEL_FILE=$(jq -r ".bootstrap_parameters.bootstrap_smart_rollups[$i].kernel_from_file" $PARAMS_FILE)
+  # Add the character to the buffer
+  buffer=$(printf "%s%s" "$buffer" "$char")
+
+  # If the buffer ends with the pattern
+  if [ "${buffer%"$pattern"}" != "$buffer" ]
+  then
+    detected_fromfile=true
+
+    # Clear the buffer
+    buffer=''
+
+    # Read the filename
+    filename=''
+    while IFS= read -r -n1 char && [ "$char" != '"' ]
+    do
+      filename=$(printf "%s%s" "$filename" "$char")
+    done
+
+    echo "Found kernel file: $filename"
 
     # Check if file exists
-    if [ ! -f "$KERNEL_FILE" ]; then
-      echo "Kernel file $KERNEL_FILE not found!"
+    if [ ! -f "$filename" ]; then
+      echo "Kernel file $filename not found!"
       exit 1
     fi
 
-    # Convert the file content to hex
-    HEX_KERNEL=$(xxd -ps -c 256 $KERNEL_FILE | tr -d '\n')
+    # Convert the file content to hex and append to the temp file
+    xxd -ps -c 256 "$filename" | tr -d '\n' >> $TMP_PARAMETERS_FILE
 
-    # Replace kernel_from_file with kernel in JSON, and write to a temporary file
-    jq --arg kernel "$HEX_KERNEL" ".bootstrap_parameters.bootstrap_smart_rollups[$i] |= del(.kernel_from_file) | .bootstrap_parameters.bootstrap_smart_rollups[$i] += {\"kernel\": \$kernel}" $PARAMS_FILE > temp.json
+    # Add a closing double quote
+    printf '"' >> $TMP_PARAMETERS_FILE
+  elif [ ${#buffer} -ge ${#pattern} ]
+  then
+    # Write the oldest character in the buffer to the temporary file
+    printf "%s" "${buffer%"${buffer#?}"}" >> $TMP_PARAMETERS_FILE
 
-    # Move the temporary file back to the original file
-    mv temp.json $PARAMS_FILE
-done
+    # Remove the oldest character from the buffer
+    buffer=${buffer#?}
+  fi
+done < "$PARAMETERS_FILE"
 
+# If there's anything left in the buffer, write it to the file
+if [ -n "$buffer" ]
+then
+  printf "%s" "$buffer" >> $TMP_PARAMETERS_FILE
+fi
+
+# Replace the original parameters.json file with the modified one only if 'fromfile#' was detected
+if $detected_fromfile; then
+  mv $TMP_PARAMETERS_FILE $PARAMETERS_FILE
+  echo "Updated JSON saved in '$PARAMETERS_FILE'"
+else
+  rm -f $TMP_PARAMETERS_FILE
+  echo "No 'fromfile#' detected in '$PARAMETERS_FILE', no changes made."
+fi
 echo Activating chain:
 $CLIENT -d /var/tezos/client --block					\
 	genesis activate protocol					\
 	{{ .Values.activation.protocol_hash }}				\
 	with fitness 1 and key						\
 	$( cat /etc/tezos/activation_account_name )			\
-	and parameters /etc/tezos/parameters.json 2>&1 | head -200
+	and parameters $PARAMETERS_FILE 2>&1 | head -200
+sleep 10000
