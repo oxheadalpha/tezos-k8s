@@ -58,7 +58,7 @@ spec:
         - name: tezos-accounts
           secret:
             secretName: tezos-secret
-{{- if (include "tezos.shouldDeployBakerConfig" $) }}
+{{- if has "baker" $.node_vals.runs }}
         - name: baker-config
           configMap:
             name: baker-config
