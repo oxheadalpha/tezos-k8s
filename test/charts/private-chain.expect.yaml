@@ -221,7 +221,7 @@ data:
   tacoinfraSigner-013-PtJakart-per-block-votes.json: "{\"liquidity_baking_toggle_vote\":\"pass\"}"
 kind: ConfigMap
 metadata:
-  name: per-block-votes
+  name: baker-config
   namespace: testing
 ---
 # Source: tezos-chain/templates/tacoinfra-remote-signer/main.yaml
@@ -690,9 +690,6 @@ spec:
         - name: tezos-accounts
           secret:
             secretName: tezos-secret
-        - name: per-block-votes
-          configMap:
-            name: per-block-votes
   volumeClaimTemplates:
     - metadata:
         name: var-volume
@@ -799,7 +796,15 @@ spec:
               
               my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
               
-              per_block_vote_file=/etc/tezos/per-block-votes/${my_baker_account}-${proto_command}-per-block-votes.json
+              if [ "${my_baker_account}" == "" ]; then
+                while true; do
+                  printf "This container is not baking, but exists "
+                  printf "due to uneven numer of bakers within the statefulset\n"
+                  sleep 300
+                done
+              fi
+              
+              per_block_vote_file=/etc/tezos/baker-config/${my_baker_account}-${proto_command}-per-block-votes.json
               
               if [ $(cat $per_block_vote_file) == "null" ]; then
                 cat << EOF
@@ -813,12 +818,8 @@ spec:
               fi
               extra_args="--votefile ${per_block_vote_file}"
               
-              if [ "${my_baker_account}" == "" ]; then
-                while true; do
-                  printf "This container is not baking, but exists "
-                  printf "due to uneven numer of bakers within the statefulset\n"
-                  sleep 300
-                done
+              if [ -f /etc/tezos/baker-config/${my_baker_account}_operations_pool ]; then
+                extra_args="${extra_args} --operations-pool $(cat /etc/tezos/baker-config/${my_baker_account}_operations_pool)"
               fi
               
               CLIENT="$TEZ_BIN/octez-client -d $CLIENT_DIR"
@@ -844,8 +845,8 @@ spec:
               name: config-volume
             - mountPath: /var/tezos
               name: var-volume
-            - mountPath: /etc/tezos/per-block-votes
-              name: per-block-votes
+            - mountPath: /etc/tezos/baker-config
+              name: baker-config
         - name: baker-1-013-ptjakart
           image: "tezos/tezos:v15-release"
           imagePullPolicy: IfNotPresent
@@ -867,7 +868,15 @@ spec:
               
               my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
               
-              per_block_vote_file=/etc/tezos/per-block-votes/${my_baker_account}-${proto_command}-per-block-votes.json
+              if [ "${my_baker_account}" == "" ]; then
+                while true; do
+                  printf "This container is not baking, but exists "
+                  printf "due to uneven numer of bakers within the statefulset\n"
+                  sleep 300
+                done
+              fi
+              
+              per_block_vote_file=/etc/tezos/baker-config/${my_baker_account}-${proto_command}-per-block-votes.json
               
               if [ $(cat $per_block_vote_file) == "null" ]; then
                 cat << EOF
@@ -881,12 +890,8 @@ spec:
               fi
               extra_args="--votefile ${per_block_vote_file}"
               
-              if [ "${my_baker_account}" == "" ]; then
-                while true; do
-                  printf "This container is not baking, but exists "
-                  printf "due to uneven numer of bakers within the statefulset\n"
-                  sleep 300
-                done
+              if [ -f /etc/tezos/baker-config/${my_baker_account}_operations_pool ]; then
+                extra_args="${extra_args} --operations-pool $(cat /etc/tezos/baker-config/${my_baker_account}_operations_pool)"
               fi
               
               CLIENT="$TEZ_BIN/octez-client -d $CLIENT_DIR"
@@ -912,8 +917,8 @@ spec:
               name: config-volume
             - mountPath: /var/tezos
               name: var-volume
-            - mountPath: /etc/tezos/per-block-votes
-              name: per-block-votes
+            - mountPath: /etc/tezos/baker-config
+              name: baker-config
         - name: baker-2-013-ptjakart
           image: "tezos/tezos:v15-release"
           imagePullPolicy: IfNotPresent
@@ -935,7 +940,15 @@ spec:
               
               my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
               
-              per_block_vote_file=/etc/tezos/per-block-votes/${my_baker_account}-${proto_command}-per-block-votes.json
+              if [ "${my_baker_account}" == "" ]; then
+                while true; do
+                  printf "This container is not baking, but exists "
+                  printf "due to uneven numer of bakers within the statefulset\n"
+                  sleep 300
+                done
+              fi
+              
+              per_block_vote_file=/etc/tezos/baker-config/${my_baker_account}-${proto_command}-per-block-votes.json
               
               if [ $(cat $per_block_vote_file) == "null" ]; then
                 cat << EOF
@@ -949,12 +962,8 @@ spec:
               fi
               extra_args="--votefile ${per_block_vote_file}"
               
-              if [ "${my_baker_account}" == "" ]; then
-                while true; do
-                  printf "This container is not baking, but exists "
-                  printf "due to uneven numer of bakers within the statefulset\n"
-                  sleep 300
-                done
+              if [ -f /etc/tezos/baker-config/${my_baker_account}_operations_pool ]; then
+                extra_args="${extra_args} --operations-pool $(cat /etc/tezos/baker-config/${my_baker_account}_operations_pool)"
               fi
               
               CLIENT="$TEZ_BIN/octez-client -d $CLIENT_DIR"
@@ -980,8 +989,8 @@ spec:
               name: config-volume
             - mountPath: /var/tezos
               name: var-volume
-            - mountPath: /etc/tezos/per-block-votes
-              name: per-block-votes
+            - mountPath: /etc/tezos/baker-config
+              name: baker-config
         - name: baker-3-013-ptjakart
           image: "tezos/tezos:v15-release"
           imagePullPolicy: IfNotPresent
@@ -1003,7 +1012,15 @@ spec:
               
               my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
               
-              per_block_vote_file=/etc/tezos/per-block-votes/${my_baker_account}-${proto_command}-per-block-votes.json
+              if [ "${my_baker_account}" == "" ]; then
+                while true; do
+                  printf "This container is not baking, but exists "
+                  printf "due to uneven numer of bakers within the statefulset\n"
+                  sleep 300
+                done
+              fi
+              
+              per_block_vote_file=/etc/tezos/baker-config/${my_baker_account}-${proto_command}-per-block-votes.json
               
               if [ $(cat $per_block_vote_file) == "null" ]; then
                 cat << EOF
@@ -1017,12 +1034,8 @@ spec:
               fi
               extra_args="--votefile ${per_block_vote_file}"
               
-              if [ "${my_baker_account}" == "" ]; then
-                while true; do
-                  printf "This container is not baking, but exists "
-                  printf "due to uneven numer of bakers within the statefulset\n"
-                  sleep 300
-                done
+              if [ -f /etc/tezos/baker-config/${my_baker_account}_operations_pool ]; then
+                extra_args="${extra_args} --operations-pool $(cat /etc/tezos/baker-config/${my_baker_account}_operations_pool)"
               fi
               
               CLIENT="$TEZ_BIN/octez-client -d $CLIENT_DIR"
@@ -1048,8 +1061,8 @@ spec:
               name: config-volume
             - mountPath: /var/tezos
               name: var-volume
-            - mountPath: /etc/tezos/per-block-votes
-              name: per-block-votes
+            - mountPath: /etc/tezos/baker-config
+              name: baker-config
         - name: baker-4-013-ptjakart
           image: "tezos/tezos:v15-release"
           imagePullPolicy: IfNotPresent
@@ -1071,7 +1084,15 @@ spec:
               
               my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
               
-              per_block_vote_file=/etc/tezos/per-block-votes/${my_baker_account}-${proto_command}-per-block-votes.json
+              if [ "${my_baker_account}" == "" ]; then
+                while true; do
+                  printf "This container is not baking, but exists "
+                  printf "due to uneven numer of bakers within the statefulset\n"
+                  sleep 300
+                done
+              fi
+              
+              per_block_vote_file=/etc/tezos/baker-config/${my_baker_account}-${proto_command}-per-block-votes.json
               
               if [ $(cat $per_block_vote_file) == "null" ]; then
                 cat << EOF
@@ -1085,12 +1106,8 @@ spec:
               fi
               extra_args="--votefile ${per_block_vote_file}"
               
-              if [ "${my_baker_account}" == "" ]; then
-                while true; do
-                  printf "This container is not baking, but exists "
-                  printf "due to uneven numer of bakers within the statefulset\n"
-                  sleep 300
-                done
+              if [ -f /etc/tezos/baker-config/${my_baker_account}_operations_pool ]; then
+                extra_args="${extra_args} --operations-pool $(cat /etc/tezos/baker-config/${my_baker_account}_operations_pool)"
               fi
               
               CLIENT="$TEZ_BIN/octez-client -d $CLIENT_DIR"
@@ -1116,8 +1133,8 @@ spec:
               name: config-volume
             - mountPath: /var/tezos
               name: var-volume
-            - mountPath: /etc/tezos/per-block-votes
-              name: per-block-votes        
+            - mountPath: /etc/tezos/baker-config
+              name: baker-config        
         - name: logger
           image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
@@ -1263,9 +1280,9 @@ spec:
         - name: tezos-accounts
           secret:
             secretName: tezos-secret
-        - name: per-block-votes
+        - name: baker-config
           configMap:
-            name: per-block-votes
+            name: baker-config
   volumeClaimTemplates:
     - metadata:
         name: var-volume
@@ -1467,9 +1484,9 @@ spec:
         - name: tezos-accounts
           secret:
             secretName: tezos-secret
-        - name: per-block-votes
+        - name: baker-config
           configMap:
-            name: per-block-votes
+            name: baker-config
   volumeClaimTemplates:
     - metadata:
         name: var-volume
