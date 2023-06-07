@@ -225,8 +225,10 @@ spec:
               name: snapshot-cache-volume
             - mountPath: /rolling-tarball-restore
               name: rolling-tarball-restore
-            - mountPath: /cloud-provider
-              name: cloud-provider
+            - mountPath: /aws-secrets
+              name: aws-secrets
+            - mountPath: /do-secrets
+              name: do-secrets
           env:
             - name: HISTORY_MODE
               value: ""
@@ -244,8 +246,12 @@ spec:
         - name: rolling-tarball-restore
           persistentVolumeClaim:
             claimName: rolling-tarball-restore
-        - name: cloud-provider
+        - name: aws-secrets
           secret:
-            secretName: cloud-provider
+            secretName: aws-secrets
+            optional: true
+        - name: do-secrets
+          secret:
+            secretName: do-secrets
             optional: true
   backoffLimit: 0

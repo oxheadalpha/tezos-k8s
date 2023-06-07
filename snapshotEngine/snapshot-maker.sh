@@ -43,10 +43,10 @@ if [ "$(kubectl get pvc "${HISTORY_MODE}"-snap-volume)" ]; then
     sleep 5
 fi
 
-while [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' --namespace "${NAMESPACE}" -l history_mode="${HISTORY_MODE}")" ]; do
-    printf "%s Snapshot already in progress...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-    sleep 10
-done
+# while [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' --namespace "${NAMESPACE}" -l history_mode="${HISTORY_MODE}")" ]; do
+#     printf "%s Snapshot already in progress...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+#     sleep 10
+# done
 
 printf "%s EBS Snapshot finished!\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
@@ -175,22 +175,22 @@ if [ "${HISTORY_MODE}" = archive ]; then
     yq eval -i "del(.spec.template.spec.containers[0].volumeMounts[2])" mainJob.yaml
 fi
 
-# Switch alternate cloud provider secret name based on actual cloud provider
-if [[ -n "${CLOUD_PROVIDER}" ]]; then
-    # Need to account for dynamic volumes removed above. For example if not rolling node then rolling volume is deleted.
-    SECRET_NAME="${NAMESPACE}-secret"
-    # Index of zip-and-upload container changes depending on if rolling job or archive job
-    NUM_CONTAINERS=$(yq e '.spec.template.spec.containers | length' mainJob.yaml)
-    # Index of mounts also changes depending on history mode
-    NUM_CONTAINER_MOUNTS=$(yq e ".spec.template.spec.containers[$(( NUM_CONTAINERS - 1 ))].volumeMounts | length" mainJob.yaml )
-    # Secret volume mount is last item in list of volumeMounts for the zip and upload container
-    SECRET_NAME="${SECRET_NAME}" yq e -i ".spec.template.spec.containers[$(( NUM_CONTAINERS - 1 ))].volumeMounts[$(( NUM_CONTAINER_MOUNTS - 1 ))].name=strenv(SECRET_NAME)" mainJob.yaml
-    # Index of job volumes change depending on history mode
-    NUM_JOB_VOLUMES=$(yq e '.spec.template.spec.volumes | length' mainJob.yaml )
-    #  Setting job secret volume to value set by workflow
-    SECRET_NAME="${SECRET_NAME}" yq e -i ".spec.template.spec.volumes[$(( NUM_JOB_VOLUMES - 1 ))].name=strenv(SECRET_NAME)" mainJob.yaml
-    SECRET_NAME="${SECRET_NAME}" yq e -i ".spec.template.spec.volumes[$(( NUM_JOB_VOLUMES - 1 ))].secret.secretName=strenv(SECRET_NAME)" mainJob.yaml
-fi
+# # Switch alternate cloud provider secret name based on actual cloud provider
+# if [[ -n "${CLOUD_PROVIDER}" ]]; then
+#     # Need to account for dynamic volumes removed above. For example if not rolling node then rolling volume is deleted.
+#     SECRET_NAME="${NAMESPACE}-secret"
+#     # Index of zip-and-upload container changes depending on if rolling job or archive job
+#     NUM_CONTAINERS=$(yq e '.spec.template.spec.containers | length' mainJob.yaml)
+#     # Index of mounts also changes depending on history mode
+#     NUM_CONTAINER_MOUNTS=$(yq e ".spec.template.spec.containers[$(( NUM_CONTAINERS - 1 ))].volumeMounts | length" mainJob.yaml )
+#     # Secret volume mount is last item in list of volumeMounts for the zip and upload container
+#     SECRET_NAME="${SECRET_NAME}" yq e -i ".spec.template.spec.containers[$(( NUM_CONTAINERS - 1 ))].volumeMounts[$(( NUM_CONTAINER_MOUNTS - 1 ))].name=strenv(SECRET_NAME)" mainJob.yaml
+#     # Index of job volumes change depending on history mode
+#     NUM_JOB_VOLUMES=$(yq e '.spec.template.spec.volumes | length' mainJob.yaml )
+#     #  Setting job secret volume to value set by workflow
+#     SECRET_NAME="${SECRET_NAME}" yq e -i ".spec.template.spec.volumes[$(( NUM_JOB_VOLUMES - 1 ))].name=strenv(SECRET_NAME)" mainJob.yaml
+#     SECRET_NAME="${SECRET_NAME}" yq e -i ".spec.template.spec.volumes[$(( NUM_JOB_VOLUMES - 1 ))].secret.secretName=strenv(SECRET_NAME)" mainJob.yaml
+# fi
 
 # Service account to be used by entire zip-and-upload job.
 SERVICE_ACCOUNT="${SERVICE_ACCOUNT}" yq e -i '.spec.template.spec.serviceAccountName=strenv(SERVICE_ACCOUNT)' mainJob.yaml
