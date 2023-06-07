@@ -101,7 +101,7 @@ spec:
     app: rollup-{{ $k }}
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: rollup-{{ $k }}
   namespace: {{ $.Release.Namespace }}
@@ -160,11 +160,20 @@ spec:
       securityContext:
         fsGroup: 1000
       volumes:
-        - emptyDir: {}
+        - volume: var-volume
           name: var-volume
         - name: tezos-accounts
           secret:
             secretName: tezos-secret
+  volumeClaimTemplates:
+    - metadata:
+        name: var-volume
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: "15Gi"
 ---
 {{- if $v.ingress | default false }}
 {{- if $v.ingress.enabled | default false }}
