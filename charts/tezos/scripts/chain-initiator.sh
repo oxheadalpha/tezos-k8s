@@ -13,7 +13,8 @@ fi
 # Substitute #fromfile with the hex encoded files in question.
 # This is for bootstrapped smart rollups.
 
-
+# Note that this is low-level string substitution with `read`
+# Due to the size of the hex-encoded kernel, using `sed` was not possible.
 
 PARAMETERS_FILE='/etc/tezos/parameters.json'
 TMP_PARAMETERS_FILE='/etc/tezos/tmp_parameters.json'
