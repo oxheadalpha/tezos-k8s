@@ -155,6 +155,34 @@ if [[ "${HISTORY_MODE}" = archive ]]; then
         else
             printf "%s Archive Tarball : Error creating ${ARCHIVE_TARBALL_FILENAME}.json.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
         fi
+
+        # Create archive tarball redirect file
+        if ! touch archive-tarball; then
+            printf "%s Archive Tarball : Error creating ${NETWORK}-archive-tarball file locally.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+        else
+            printf "%s Archive Tarball : ${NETWORK}-archive-tarball created successfully.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+        fi
+
+        # Upload redirect file and set header for previously uploaded LZ4 File
+        if ! aws s3 cp archive-tarball s3://"${AWS_S3_BUCKET}" --website-redirect "${REDIRECT_ROOT}${ARCHIVE_TARBALL_FILENAME}" --cache-control 'no-cache'; then
+            printf "%s Archive Tarball : Error uploading ${NETWORK}-archive-tarball. to S3\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+        else
+            printf "%s Archive Tarball : Upload of ${NETWORK}-archive-tarball successful to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+        fi
+
+        # Archive Tarball json redirect file
+        if ! touch archive-tarball-metadata; then
+            printf "%s Archive Tarball : Error creating ${NETWORK}-archive-tarball-metadata file locally.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+        else
+            printf "%s Archive Tarball : Created ${NETWORK}-archive-tarball-metadata file locally.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+        fi
+
+        # Upload archive tarball json redirect file and set header for previously uploaded archive tarball json File
+        if ! aws s3 cp archive-tarball-metadata s3://"${AWS_S3_BUCKET}" --website-redirect "${REDIRECT_ROOT}${ARCHIVE_TARBALL_FILENAME}".json --cache-control 'no-cache'; then
+            printf "%s archive Tarball : Error uploading ${NETWORK}-archive-tarball-metadata file to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+        else
+            printf "%s archive Tarball : Uploaded ${NETWORK}-archive-tarball-metadata file to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+        fi
     fi
 else
     printf "%s Archive Tarball : Not creating archive tarball since this is a rolling job.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
@@ -218,7 +246,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
     # However if the file gets bigger than your expected size, the multipart upload fails because it uses a part size outside of the bounds (1-10000)
     # This gets the old rolling tarball size and then adds 10%.  rolling tarballs dont seem to grow more than that.
     printf "%s Rolling Tarball: Getting last rolling tarball filesize for multipart upload...\n" "$(date "+%Y-%m-%d %H:%M:%S")"
-    if eval "$(set_aws_command_creds)" s3 ls s3://"${S3_BUCKET}" | grep rolling-tarball-metadata; then #Use last file for expected size if it exists
+    if aws s3 ls s3://"${S3_BUCKET}" | grep rolling-tarball-metadata; then #Use last file for expected size if it exists
         EXPECTED_SIZE=$(curl -L http://"${S3_BUCKET}"/rolling-tarball-metadata 2>/dev/null | jq -r '.filesize_bytes' | awk '{print $1*1.1}' | awk '{print ($0-int($0)>0)?int($0)+1:int($0)}')
         printf "%s Rolling Tarball: Bucket has existing artifact metadata.  \n" "$(date "+%Y-%m-%d %H:%M:%S")"
         printf "%s Rolling Tarball: Expected size is - %s  \n" "$(date "+%Y-%m-%d %H:%M:%S")" "${EXPECTED_SIZE}"
@@ -308,6 +336,34 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             fi
         else
             printf "%s Rolling Tarball : Error creating ${ROLLING_TARBALL_FILENAME}.json locally.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+        fi
+        
+        # Tarball redirect file
+        if ! touch rolling-tarball; then
+            printf "%s Rolling Tarball : Error creating ${NETWORK}-rolling-tarball file locally.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+        else
+            printf "%s Rolling Tarball : Created ${NETWORK}-rolling-tarball file locally.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+        fi
+
+        # Upload redirect file and set header for previously uploaded LZ4 File
+        if ! aws s3 cp rolling-tarball s3://"${AWS_S3_BUCKET}" --website-redirect "${REDIRECT_ROOT}${ROLLING_TARBALL_FILENAME}" --cache-control 'no-cache'; then
+            printf "%s Rolling Tarball : Error uploading ${NETWORK}-rolling-tarball file to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+        else
+            printf "%s Rolling Tarball : Uploaded ${NETWORK}-rolling-tarball file to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+        fi
+
+        # Rolling Tarball json redirect file
+        if ! touch rolling-tarball-metadata; then
+            printf "%s Rolling Tarball : Error creating ${NETWORK}-rolling-tarball-metadata file locally.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+        else
+            printf "%s Rolling Tarball : Created ${NETWORK}-rolling-tarball-metadata file locally.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+        fi
+
+        # Upload rolling tarball json redirect file and set header for previously uploaded rolling tarball json File
+        if ! aws s3 cp rolling-tarball-metadata s3://"${AWS_S3_BUCKET}" --website-redirect "${REDIRECT_ROOT}${ROLLING_TARBALL_FILENAME}".json --cache-control 'no-cache'; then
+            printf "%s Rolling Tarball : Error uploading ${NETWORK}-rolling-tarball-metadata file to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+        else
+            printf "%s Rolling Tarball : Uploaded ${NETWORK}-rolling-tarball-metadata file to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
         fi
     fi
 
@@ -400,6 +456,30 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             else
                 printf "%s Rolling Snapshot : Error creating ${ROLLING_SNAPSHOT_FILENAME}.json.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
             fi
+
+            # Rolling snapshot redirect object
+            touch rolling
+
+            # Upload rolling tezos snapshot redirect object
+            if ! aws s3 cp rolling s3://"${AWS_S3_BUCKET}" --website-redirect "${REDIRECT_ROOT}${ROLLING_SNAPSHOT_FILENAME}" --cache-control 'no-cache'; then
+                printf "%s Rolling Tezos : Error uploading redirect object for ${ROLLING_SNAPSHOT} to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+            else
+                printf "%s Rolling Tezos : Successfully uploaded redirect object for ${ROLLING_SNAPSHOT} to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+            fi
+
+            # Rolling snapshot json redirect file
+            if ! touch rolling-snapshot-metadata; then
+                printf "%s Rolling Snapshot : Error creating ${NETWORK}-rolling-snapshot-metadata file locally.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+            else
+                printf "%s Rolling snapshot : Created ${NETWORK}-rolling-snapshot-metadata file locally.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+            fi
+
+            # Upload rolling snapshot json redirect file and set header for previously uploaded rolling snapshot json File
+            if ! aws s3 cp rolling-snapshot-metadata s3://"${AWS_S3_BUCKET}" --website-redirect "${REDIRECT_ROOT}${ROLLING_SNAPSHOT_FILENAME}".json --cache-control 'no-cache'; then
+                printf "%s Rolling snapshot : Error uploading ${NETWORK}-rolling-snapshot-metadata file to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+            else
+                printf "%s Rolling snapshot : Uploaded ${NETWORK}-rolling-snapshot-metadata file to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+            fi
         fi
     else
         printf "%s Rolling Tezos : ${ROLLING_SNAPSHOT} does not exist.  Not uploading.  \n" "$(date "+%Y-%m-%d %H:%M:%S")"
@@ -409,6 +489,15 @@ else
 fi
 
 if [[ -n "${SNAPSHOT_WEBSITE_DOMAIN_NAME}" ]]; then
+
+    # Network bucket redirect
+    # Redirects from network.website.com to website.com/network
+    touch index.html
+    if ! aws s3 cp index.html s3://"${AWS_S3_BUCKET}" --website-redirect https://"${SNAPSHOT_WEBSITE_DOMAIN_NAME}"/"${NETWORK}" --cache-control 'no-cache'; then
+        printf "%s ERROR ##### Could not upload network site redirect.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+    else
+        printf "%s Successfully uploaded network site redirect.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+    fi
 
     # Need to be in this dir for jekyll to run.
     # Container-specific requirement
@@ -464,7 +553,7 @@ if [[ -n "${SNAPSHOT_WEBSITE_DOMAIN_NAME}" ]]; then
     fi
 
     # Upload tezos-snapshots.json
-    if ! eval "$(set_aws_command_creds "aws")" s3 cp tezos-snapshots.json s3://"${SNAPSHOT_WEBSITE_DOMAIN_NAME}"/tezos-snapshots.json; then
+    if ! aws s3 cp tezos-snapshots.json s3://"${SNAPSHOT_WEBSITE_DOMAIN_NAME}"/tezos-snapshots.json; then
         printf "%s Upload tezos-snapshots.json : Error uploading file tezos-snapshots.json to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S")"
     else
         printf "%s Upload tezos-snapshots.json : File tezos-snapshots.json successfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S")"
