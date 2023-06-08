@@ -15,5 +15,6 @@ build
 
 # Ignore mkchain generated files
 *_values.yaml
+*-values.yaml
 
 charts/tezos/charts
