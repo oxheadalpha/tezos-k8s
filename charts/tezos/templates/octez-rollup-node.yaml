@@ -43,6 +43,9 @@ spec:
           - "-c"
           - |
 {{ tpl ($.Files.Get "scripts/evm-proxy.sh") $ | indent 12 }}
+        env:
+          - name: MY_POD_NAME
+            value: {{ $k }}
       securityContext:
         fsGroup: 1000
 ---
