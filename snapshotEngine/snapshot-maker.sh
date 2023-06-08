@@ -62,6 +62,9 @@ printf "%s Creating scratch volume for artifact processing...\n" "$(date "+%Y-%m
 # Set namespace for both "${HISTORY_MODE}"-snapshot-cache-volume
 NAMESPACE="${NAMESPACE}" yq e -i '.metadata.namespace=strenv(NAMESPACE)' scratchVolume.yaml
 
+# Set storage class for sratch volume yaml
+STORAGE_CLASS="${STORAGE_CLASS}" yq e -i '.spec.storageClassName=strenv(STORAGE_CLASS)' scratchVolume.yaml
+
 # Create "${HISTORY_MODE}"-snapshot-cache-volume
 printf "%s Creating PVC ${HISTORY_MODE}-snapshot-cache-volume.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 NAME="${HISTORY_MODE}-snapshot-cache-volume" yq e -i '.metadata.name=strenv(NAME)' scratchVolume.yaml
@@ -88,6 +91,9 @@ fi
 
 ## Snapshot volume namespace
 NAMESPACE="${NAMESPACE}" yq e -i '.metadata.namespace=strenv(NAMESPACE)' volumeFromSnap.yaml
+
+# Set storageclass for restored volume
+STORAGE_CLASS="${STORAGE_CLASS}" yq e -i '.spec.storageClassName=strenv(STORAGE_CLASS)' volumeFromSnap.yaml
 
 ## Snapshot volume name
 VOLUME_NAME="${HISTORY_MODE}-snap-volume"
