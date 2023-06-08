@@ -2,6 +2,8 @@
 
 cd /
 
+sleep infinity
+
 ZIP_AND_UPLOAD_JOB_NAME=zip-and-upload-"${HISTORY_MODE}"
 
 # Pause if nodes are not ready
