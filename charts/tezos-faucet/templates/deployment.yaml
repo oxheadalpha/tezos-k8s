@@ -33,7 +33,7 @@ spec:
         name: faucet
         ports:
         - name: frontend
-          containerPort: 80
+          containerPort: 8080
           protocol: TCP
         volumeMounts:
         - name: faucet-config
