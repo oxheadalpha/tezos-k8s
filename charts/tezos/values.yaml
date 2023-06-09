@@ -355,6 +355,8 @@ smartRollupNodes: {}
 #       tls: []
 # ```
 
+dalNodes: {}
+
 # End Rollup Nodes
 
 # When spinning up nodes, tezos-k8s will attempt to download a snapshot from a

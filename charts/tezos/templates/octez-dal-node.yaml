@@ -1,0 +1,129 @@
+{{- range $k, $v := .Values.dalNodes }}
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: dal-{{ $k }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  type: NodePort
+  ports:
+    - port: 8932
+      name: dal
+  selector:
+    app: dal-{{ $k }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: dal-{{ $k }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  serviceName: dal-{{ $k }}
+  selector:
+    matchLabels:
+      app: dal-{{ $k }}
+  template:
+    metadata:
+      labels:
+        app: dal-{{ $k }}
+    spec:
+      containers:
+      - name: octez-dal-node
+        image: "{{ $.Values.images.octez }}"
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8932
+          name: dal
+        command:
+          - /bin/sh
+        volumeMounts:
+        - mountPath: /var/tezos
+          name: var-volume
+        args:
+          - "-c"
+          - |
+{{ tpl ($.Files.Get "scripts/dal-node.sh") $ | indent 12 }}
+        env:
+          - name: dal_ADDRESS
+            value: {{ $v.dal_address }}
+          - name: OPERATOR_ACCOUNT
+            value: {{ $v.operator_account }}
+      initContainers:
+      # - image: {{ $.Values.tezos_k8s_images.utils }}
+      #   imagePullPolicy: IfNotPresent
+      #   name: config-generator
+      #   args:
+      #     - "config-generator"
+      #   envFrom:
+      #     - configMapRef:
+      #         name: tezos-config
+      #   env:
+      #     - name: MY_POD_NAME
+      #       value: {{ $k }}
+      #   volumeMounts:
+      #     - mountPath: /var/tezos
+      #       name: var-volume
+      #     - mountPath: /etc/secret-volume
+      #       name: tezos-accounts
+      # securityContext:
+      #   fsGroup: 1000
+      # volumes:
+      #   - volume: var-volume
+      #     name: var-volume
+      #   - name: tezos-accounts
+      #     secret:
+      #       secretName: tezos-secret
+  volumeClaimTemplates:
+    - metadata:
+        name: var-volume
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: "15Gi"
+---
+{{- if $v.ingress | default false }}
+{{- if $v.ingress.enabled | default false }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dal-{{ $k }}
+  namespace: {{ $.Release.Namespace }}
+{{- with $v.ingress.labels }}
+  labels:
+    {{- toYaml . | nindent 4 }}
+{{- end }}
+{{- with $v.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+{{- end }}
+spec:
+  ingressClassName: {{ $v.ingress.className }}
+  {{- if $v.ingress.tls }}
+  tls:
+    {{- range $v.ingress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
+  rules:
+    - host: {{ $v.ingress.host }}
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: dal-{{ $k }}
+                port:
+                  name: dal
+{{- end }}
+{{- end }}
+{{- end }}
