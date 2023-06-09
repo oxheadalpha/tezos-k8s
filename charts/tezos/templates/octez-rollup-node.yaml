@@ -80,8 +80,8 @@ spec:
     - host: {{ $v.evm_proxy_ingress.host }}
       http:
         paths:
-          - pathType: ImplementationSpecific
-            path: /*
+          - pathType: Prefix
+            path: /
             backend:
               service:
                 name: evm-proxy-{{ $k }}
@@ -209,8 +209,8 @@ spec:
     - host: {{ $v.ingress.host }}
       http:
         paths:
-          - pathType: ImplementationSpecific
-            path: /*
+          - pathType: Prefix
+            path: /
             backend:
               service:
                 name: rollup-{{ $k }}
