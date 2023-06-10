@@ -8,7 +8,9 @@ mkdir -p ${DAL_DATA_DIR}
 $TEZ_BIN/octez-dal-node \
   init-config \
   --data-dir ${DAL_DATA_DIR} \
-  --rpc-addr 0.0.0.0
+  --net-addr 0.0.0.0:11732 \
+  --rpc-addr 0.0.0.0 \
+  --rpc-port 10732
 
 CMD="$TEZ_BIN/octez-dal-node \
   --endpoint http://tezos-node-rpc:8732 \
