@@ -8,8 +8,10 @@ metadata:
 spec:
   type: NodePort
   ports:
-    - port: 8932
-      name: dal
+    - port: 10732
+      name: rpc
+    - port: 11732
+      name: p2p
   selector:
     app: dal-{{ $k }}
 ---
@@ -48,11 +50,6 @@ spec:
           - "-c"
           - |
 {{ tpl ($.Files.Get "scripts/dal-node.sh") $ | indent 12 }}
-        env:
-          - name: dal_ADDRESS
-            value: {{ $v.dal_address }}
-          - name: OPERATOR_ACCOUNT
-            value: {{ $v.operator_account }}
   volumeClaimTemplates:
     - metadata:
         name: var-volume
@@ -100,7 +97,7 @@ spec:
               service:
                 name: dal-{{ $k }}
                 port:
-                  name: dal
+                  name: rpc
 {{- end }}
 {{- end }}
 {{- end }}
