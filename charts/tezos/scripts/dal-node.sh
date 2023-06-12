@@ -10,7 +10,8 @@ $TEZ_BIN/octez-dal-node \
   --data-dir ${DAL_DATA_DIR} \
   --net-addr 0.0.0.0:11732 \
   --rpc-addr 0.0.0.0 \
-  --rpc-port 10732
+  --rpc-port 10732 \
+  --use-unsafe-srs-for-tests
 
 CMD="$TEZ_BIN/octez-dal-node \
   --endpoint http://tezos-node-rpc:8732 \
