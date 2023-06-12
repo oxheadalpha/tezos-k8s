@@ -50,6 +50,8 @@ spec:
           - "-c"
           - |
 {{ tpl ($.Files.Get "scripts/dal-node.sh") $ | indent 12 }}
+      securityContext:
+        fsGroup: 1000
   volumeClaimTemplates:
     - metadata:
         name: var-volume
