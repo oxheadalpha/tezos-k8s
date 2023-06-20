@@ -58,10 +58,10 @@ spec:
         - name: tezos-accounts
           secret:
             secretName: tezos-secret
-{{- if (include "tezos.hasPerBlockVotes" $) }}
-        - name: per-block-votes
+{{- if has "baker" $.node_vals.runs }}
+        - name: baker-config
           configMap:
-            name: per-block-votes
+            name: baker-config
 {{- end }}
 {{- if $.node_vals.local_storage | default false }}
         - emptyDir: {}

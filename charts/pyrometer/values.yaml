@@ -7,6 +7,10 @@ config:
   node_monitor:
     nodes:
     - http://tezos-node-rpc:8732
+  ui:
+    enabled: false
+    host: "0.0.0.0"
+    port: 8080
   webhook:
     enabled: true
     url: http://127.0.0.1:31732/pyrometer_webhook

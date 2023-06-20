@@ -103,11 +103,11 @@ metadata:
 {{- end }}
 
 {{/*
-  Has per-block votes defined?
+  Is there a baker?
 */}}
-{{- define "tezos.hasPerBlockVotes" }}
-  {{- range .Values.protocols }}
-    {{- if .vote }}
+{{- define "tezos.shouldDeployBakerConfig" }}
+  {{- range .Values.nodes }}
+    {{- if (has "baker" .runs) }}
       {{- "true" }}
     {{- end }}
   {{- end }}
