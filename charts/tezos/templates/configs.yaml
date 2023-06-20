@@ -100,6 +100,9 @@ data:
 {{- if $v.operations_pool }}
   {{ $k }}_operations_pool: {{ $v.operations_pool | quote }}
 {{- end }}
+{{- if $v.dal_node }}
+  {{ $k }}_dal_node: {{ $v.dal_node | quote }}
+{{- end }}
 {{- end }}
 kind: ConfigMap
 metadata:
