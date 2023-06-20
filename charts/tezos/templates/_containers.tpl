@@ -67,7 +67,7 @@
   {{- $_ := set . "localvars" (eq .image "utils") }}
 {{- end }}
 {{- if not (hasKey . "run_script") }}
-  {{- $_ := set . "run_script" (or (eq .image "octez") (eq .image "octez_debug") ) }}
+  {{- $_ := set . "run_script" (eq .image "octez") }}
 {{- end }}
 {{- if not (hasKey . "script_command") }}
   {{- $_ := set . "script_command" .type }}
@@ -88,8 +88,6 @@
 {{- $node_vals_images := $.node_vals.images | default dict }}
 {{- if eq .image "octez" }}
   image: "{{ or $node_vals_images.octez $.Values.images.octez }}"
-{{- else if eq .image "octez_debug" }}
-  image: "{{ or $node_vals_images.octez_debug $.Values.images.octez_debug }}"
 {{- else }}
   image: "{{ $.Values.tezos_k8s_images.utils }}"
 {{- end }}
@@ -213,7 +211,7 @@
 {{- define "tezos.init_container.chain_initiator" }}
   {{- include "tezos.generic_container" (dict "root"        $
                                               "type"        "chain-initiator"
-                                              "image"       "octez_debug"
+                                              "image"       "octez"
   ) | nindent 0 }}
 {{- end }}
 
