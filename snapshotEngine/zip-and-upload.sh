@@ -65,8 +65,8 @@ if [[ "${HISTORY_MODE}" = archive ]]; then
     # Instead of guessing size, you can use expected-size which tells S3 how big the file is and it calculates the size for you.
     # However if the file gets bigger than your expected size, the multipart upload fails because it uses a part size outside of the bounds (1-10000)
     # This gets the old archive tarball size and then adds 10%.  Archive tarballs dont seem to grow more than that.
-    if eval "$(set_aws_command_creds)" s3 ls s3://"${S3_BUCKET}" | grep archive-tarball-metadata; then #Use last file for expected size if it exists
-        EXPECTED_SIZE=$(curl -L http://"${S3_BUCKET}"/archive-tarball-metadata 2>/dev/null | jq -r '.filesize_bytes' | awk '{print $1*1.1}' | awk '{print ($0-int($0)>0)?int($0)+1:int($0)}')
+    if aws s3 ls s3://"${AWS_S3_BUCKET}" | grep archive-tarball-metadata; then #Use last file for expected size if it exists
+        EXPECTED_SIZE=$(curl -L http://"${AWS_S3_BUCKET}"/archive-tarball-metadata 2>/dev/null | jq -r '.filesize_bytes' | awk '{print $1*1.1}' | awk '{print ($0-int($0)>0)?int($0)+1:int($0)}')
     else
         EXPECTED_SIZE=1000000000000 #1000GB Arbitrary filesize for initial value. Only used if no archive-tarball-metadata exists. IE starting up test network
     fi
@@ -244,8 +244,8 @@ if [ "${HISTORY_MODE}" = rolling ]; then
     # However if the file gets bigger than your expected size, the multipart upload fails because it uses a part size outside of the bounds (1-10000)
     # This gets the old rolling tarball size and then adds 10%.  rolling tarballs dont seem to grow more than that.
     printf "%s Rolling Tarball: Getting last rolling tarball filesize for multipart upload...\n" "$(date "+%Y-%m-%d %H:%M:%S")"
-    if aws s3 ls s3://"${S3_BUCKET}" | grep rolling-tarball-metadata; then #Use last file for expected size if it exists
-        EXPECTED_SIZE=$(curl -L http://"${S3_BUCKET}"/rolling-tarball-metadata 2>/dev/null | jq -r '.filesize_bytes' | awk '{print $1*1.1}' | awk '{print ($0-int($0)>0)?int($0)+1:int($0)}')
+    if aws s3 ls s3://"${AWS_S3_BUCKET}" | grep rolling-tarball-metadata; then #Use last file for expected size if it exists
+        EXPECTED_SIZE=$(curl -L http://"${AWS_S3_BUCKET}"/rolling-tarball-metadata 2>/dev/null | jq -r '.filesize_bytes' | awk '{print $1*1.1}' | awk '{print ($0-int($0)>0)?int($0)+1:int($0)}')
         printf "%s Rolling Tarball: Bucket has existing artifact metadata.  \n" "$(date "+%Y-%m-%d %H:%M:%S")"
         printf "%s Rolling Tarball: Expected size is - %s  \n" "$(date "+%Y-%m-%d %H:%M:%S")" "${EXPECTED_SIZE}"
     else
