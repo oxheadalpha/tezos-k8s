@@ -11,7 +11,6 @@ CMD="$TEZ_BIN/octez-dal-node \
   --data-dir ${DAL_DATA_DIR} \
   --endpoint http://tezos-node-rpc:8732 \
   --net-addr 0.0.0.0:11732 \
-  --rpc-addr 0.0.0.0:10732 \
-  --use-unsafe-srs-for-tests"
+  --rpc-addr 0.0.0.0:10732"
 
 exec $CMD
