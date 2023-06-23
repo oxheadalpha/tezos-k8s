@@ -8,7 +8,7 @@ is_invitation: false
 
 # Images not part of the tezos-k8s repo go here
 images:
-  octez: tezos/tezos:v16.1
+  octez: tezos/tezos:v17.1
   tacoinfraRemoteSigner: ghcr.io/oxheadalpha/tacoinfra-remote-signer:0.1.0
 # Images that are part of the tezos-k8s repo go here with 'dev' tag
 tezos_k8s_images:
@@ -404,7 +404,7 @@ protocols:
   ##   "on" and "off" must be between quotes.
   ## Note that we are not providing default votes since every baker needs
   ## to make an explicit educated choice on every toggle.
-  - command: PtMumbai
+  - command: PtNairob
     vote: {}
   # - command: alpha
   #   vote:

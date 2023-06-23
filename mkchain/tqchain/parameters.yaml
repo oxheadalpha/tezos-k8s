@@ -58,10 +58,11 @@ dal_parametric:
   number_of_slots: 256
   number_of_shards: 2048
   attestation_lag: 2
-  availability_threshold: 50
+  attestation_threshold: 50
   slot_size: 1048576
   redundancy_factor: 16
   page_size: 4096
+  blocks_per_epoch: 8
 smart_rollup_enable: true
 smart_rollup_origination_size: 6314
 smart_rollup_challenge_window_in_blocks: 40
