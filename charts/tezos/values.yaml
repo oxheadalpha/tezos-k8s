@@ -8,7 +8,7 @@ is_invitation: false
 
 # Images not part of the tezos-k8s repo go here
 images:
-  octez: tezos/tezos:v16.1
+  octez: tezos/tezos:v17.1
   tacoinfraRemoteSigner: ghcr.io/oxheadalpha/tacoinfra-remote-signer:0.1.0
 # Images that are part of the tezos-k8s repo go here with 'dev' tag
 tezos_k8s_images:
@@ -404,7 +404,7 @@ protocols:
   ##   "on" and "off" must be between quotes.
   ## Note that we are not providing default votes since every baker needs
   ## to make an explicit educated choice on every toggle.
-  - command: PtMumbai
+  - command: PtNairob
     vote: {}
   # - command: alpha
   #   vote:
@@ -416,7 +416,7 @@ protocols:
 ## after chain activation.
 ##
 # activation:
-#  protocol_hash: PtMumbai2TmsJHNGRkD8v8YDbtao7BLUC3wjASn1inAKLFCjaH1
+#  protocol_hash: PtNairobiyssHuh87hEhfVBGCVrK3WnS8Z2FT4ymB5tAa4r1nQf
 #  protocol_parameters:
 #    preserved_cycles: 3
 #    blocks_per_cycle: 8
@@ -478,10 +478,11 @@ protocols:
 #      number_of_slots: 256
 #      number_of_shards: 2048
 #      attestation_lag: 2
-#      availability_threshold: 50
+#      attestation_threshold: 50
 #      slot_size: 1048576
 #      redundancy_factor: 16
 #      page_size: 4096
+#      blocks_per_epoch: 8
 #    smart_rollup_enable: true
 #    smart_rollup_origination_size: 6314
 #    smart_rollup_challenge_window_in_blocks: 40
