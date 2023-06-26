@@ -1,3 +1,4 @@
+set -e
 CLIENT="/usr/local/bin/octez-client --endpoint http://tezos-node-rpc:8732"
 
 until $CLIENT rpc get /chains/main/blocks/head/header | grep '"level":'; do
