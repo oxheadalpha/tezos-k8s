@@ -58,7 +58,7 @@ do
     fi
 
     # Convert the file content to hex and append to the temp file
-    xxd -ps -c 256 "$filename" | tr -d '\n' >> $TMP_PARAMETERS_FILE
+    xxd -p -c 0 "$filename" | tr -d '\n' >> $TMP_PARAMETERS_FILE
 
     # Add a closing double quote
     printf '"' >> $TMP_PARAMETERS_FILE
