@@ -1,23 +1,39 @@
-{{- if (include "tezos.shouldDeploySignerStatefulset" .) }}
+{{- $octezSigners := .Values.octezSigners | default dict }}
+{{- if and (not .Values.is_invitation) (len $octezSigners) }}
+  {{- include "tezos.checkDupeSignerAccounts" $ }}
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.octez_signer_statefulset.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  clusterIP: None
+  ports:
+    - port: 6732
+      name: signer
+  selector:
+    app: {{ .Values.octez_signer_statefulset.name }}
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ .Values.signer_statefulset.name }}
+  name: {{ .Values.octez_signer_statefulset.name }}
   namespace: {{ .Release.Namespace }}
 spec:
   podManagementPolicy: Parallel
-  replicas: {{ .Values.signers | len }}
-  serviceName: {{ .Values.signer_statefulset.name }}
+  replicas: {{ len $octezSigners }}
+  serviceName: {{ .Values.octez_signer_statefulset.name }}
   selector:
     matchLabels:
-      app: {{ .Values.signer_statefulset.name }}
+      app: {{ .Values.octez_signer_statefulset.name }}
   template:
     metadata:
       labels:
-        app: {{ .Values.signer_statefulset.name }}
+        app: {{ .Values.octez_signer_statefulset.name }}
     spec:
       containers:
-      - name: tezos-signer
+      - name: octez-signer
         image: "{{ .Values.images.octez }}"
         imagePullPolicy: IfNotPresent
         ports:
@@ -47,7 +63,7 @@ spec:
               fieldRef:
                 fieldPath: metadata.name
           - name: MY_POD_TYPE
-            value: {{ .Values.signer_statefulset.pod_type }}
+            value: {{ .Values.octez_signer_statefulset.pod_type }}
         volumeMounts:
           - mountPath: /var/tezos
             name: var-volume
@@ -61,18 +77,5 @@ spec:
         - name: tezos-accounts
           secret:
             secretName: tezos-secret
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ .Values.signer_statefulset.name }}
-  namespace: {{ .Release.Namespace }}
-spec:
-  clusterIP: None
-  ports:
-    - port: 6732
-      name: signer
-  selector:
-    app: {{ .Values.signer_statefulset.name }}
 ---
 {{- end }}

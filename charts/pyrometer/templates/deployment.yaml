@@ -16,6 +16,8 @@ spec:
         # https://helm.sh/docs/howto/charts_tips_and_tricks/#automatically-roll-deployments
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
+      securityContext:
+        fsGroup: 1000
       containers:
       - name: pyrometer
         image: {{ .Values.images.pyrometer }}
@@ -23,13 +25,17 @@ spec:
         - run
         - -c
         - '/config/config.json'
+        - -d
+        - '/data'
         ports:
           - name: http
-            containerPort: 80
+            containerPort: 8080
             protocol: TCP
         volumeMounts:
         - name: config-volume
           mountPath: /config/
+        - name: pyrometer-volume
+          mountPath: /data/
       - name: prom-exporter
         image: {{ .Values.tezos_k8s_images.utils }}
         ports:
@@ -46,3 +52,7 @@ spec:
       - name: config-volume
         configMap:
           name: pyrometer-config
+      - name: pyrometer-volume
+        # Stores pyrometer's state (like pending queue items)
+        persistentVolumeClaim:
+          claimName: pyrometer-volume

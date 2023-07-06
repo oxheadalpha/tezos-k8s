@@ -1,6 +1,7 @@
 ---
 # Source: tezos-chain/templates/configs.yaml
 ---
+
 apiVersion: v1
 data:
   ACCOUNTS: |
@@ -12,6 +13,10 @@ metadata:
 ---
 # Source: tezos-chain/templates/configs.yaml
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tezos-config
+  namespace: testing
 data:
   CHAIN_NAME: "mainnet"
   CHAIN_PARAMS: |
@@ -33,7 +38,7 @@ data:
   ARCHIVE_TARBALL_URL: ""
   PREFER_TARBALLS: "false"
   SNAPSHOT_SOURCE: "https://xtz-shots.io/tezos-snapshots.json"
-  OCTEZ_VERSION: "tezos/tezos:v16.1"
+  OCTEZ_VERSION: "tezos/tezos:v17.1"
   NODE_GLOBALS: |
     {
       "env": {}
@@ -62,12 +67,10 @@ data:
       }
     }
 
-  SIGNERS: |
+  OCTEZ_SIGNERS: |
     {}
-kind: ConfigMap
-metadata:
-  name: tezos-config
-  namespace: testing
+  TACOINFRA_SIGNERS: |
+    {}
 ---
 # Source: tezos-chain/templates/static.yaml
 apiVersion: v1
@@ -124,16 +127,16 @@ spec:
     spec:
       containers:        
         - name: octez-node
-          image: "tezos/tezos:v16.1"
+          image: "tezos/tezos:v17.1"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
           args:
             - "-c"
             - |
-              set -x
+              #!/bin/sh
               
-              set
+              set -xe
               
               # ensure we can run octez-client commands without specifying client dir
               ln -s /var/tezos/client /home/tezos/.tezos-client
@@ -209,7 +212,7 @@ spec:
               memory: 80Mi        
       initContainers:        
         - name: config-init
-          image: "tezos/tezos:v16.1"
+          image: "tezos/tezos:v17.1"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -320,7 +323,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume        
         - name: snapshot-importer
-          image: "tezos/tezos:v16.1"
+          image: "tezos/tezos:v17.1"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -383,7 +386,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume                
         - name: upgrade-storage
-          image: "tezos/tezos:v16.1"
+          image: "tezos/tezos:v17.1"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh

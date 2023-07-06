@@ -70,7 +70,7 @@ cli_args = {
     },
     "octez_docker_image": {
         "help": "Version of the Octez docker image",
-        "default": "tezos/tezos:v16.1",
+        "default": "tezos/tezos:v17.1",
     },
     "use_docker": {
         "action": "store_true",
@@ -188,7 +188,7 @@ def main():
         },
         "protocols": [
             {
-                "command": "PtMumbai",
+                "command": "PtNairob",
                 "vote": {"liquidity_baking_toggle_vote": "pass"},
             }
         ],
@@ -294,7 +294,7 @@ def main():
         parametersYaml = yaml.safe_load(yaml_file)
         activation = {
             "activation": {
-                "protocol_hash": "PtMumbai2TmsJHNGRkD8v8YDbtao7BLUC3wjASn1inAKLFCjaH1",
+                "protocol_hash": "PtNairobiyssHuh87hEhfVBGCVrK3WnS8Z2FT4ymB5tAa4r1nQf",
                 "protocol_parameters": parametersYaml,
             },
         }

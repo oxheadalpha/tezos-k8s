@@ -27,14 +27,11 @@ spec:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.tezos_k8s_images.utils }}"
+          image: "{{ .Values.images.tz_proto_vanity }}"
           volumeMounts:
-            - mountPath: /proto-cruncher.py
+            - mountPath: /tezos-proto-cruncher.py
               name: scripts
-              subPath: proto-cruncher.py
-            - mountPath: /proto-downloader.py
-              name: scripts
-              subPath: proto-downloader.py
+              subPath: tezos-proto-cruncher.py
           envFrom:
           - secretRef:
               name: s3-secrets

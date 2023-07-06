@@ -1,4 +1,8 @@
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tezos-config
+  namespace: {{ .Release.Namespace }}
 data:
   CHAIN_NAME: "{{ .Values.node_config_network.chain_name }}"
   CHAIN_PARAMS: |
@@ -40,13 +44,23 @@ data:
 {{- end }}
 {{- $nodes_copy | mustToPrettyJson | indent 4 }}
 
-  SIGNERS: |
-{{ .Values.signers | mustToPrettyJson | indent 4 }}
-kind: ConfigMap
-metadata:
-  name: tezos-config
-  namespace: {{ .Release.Namespace }}
+  OCTEZ_SIGNERS: |
+{{- $octezSigners := dict }}
+{{- range $signerName, $signerConfig := .Values.octezSigners }}
+    {{- $_ := set $signerConfig "name" $signerName }}
+    {{- $podName := print $.Values.octez_signer_statefulset.name "-" (len $octezSigners) }}
+    {{- $_ := set $octezSigners $podName $signerConfig }}
+{{- end }}
+{{ $octezSigners | default dict | mustToPrettyJson | indent 4 }}
+  TACOINFRA_SIGNERS: |
+{{- $tacoinfraSigners := dict }}
+{{- range $signerName, $signerConfig := .Values.tacoinfraSigners }}
+    {{- $_ := set $tacoinfraSigners $signerName (pick $signerConfig "accounts") }}
+{{- end }}
+{{ $tacoinfraSigners | default dict | mustToPrettyJson | indent 4 }}
+
 ---
+
 {{- if (include "tezos.doesZerotierConfigExist" .) }}
 apiVersion: v1
 data:
@@ -60,6 +74,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 {{- end }}
 ---
+
 apiVersion: v1
 data:
   ACCOUNTS: |
@@ -73,17 +88,20 @@ metadata:
   name: tezos-secret
   namespace: {{ .Release.Namespace }}
 ---
-{{- if (include "tezos.hasPerBlockVotes" .) }}
+{{- if (include "tezos.shouldDeployBakerConfig" .) }}
 apiVersion: v1
 data:
 {{- range $k, $v := .Values.accounts }}
 {{- range ( $v.protocols | default $.Values.protocols ) }}
   {{ $k }}-{{ .command }}-per-block-votes.json: {{ .vote | toJson | quote }}
 {{- end }}
+{{- if $v.operations_pool }}
+  {{ $k }}_operations_pool: {{ $v.operations_pool | quote }}
+{{- end }}
 {{- end }}
 kind: ConfigMap
 metadata:
-  name: per-block-votes
+  name: baker-config
   namespace: {{ .Release.Namespace }}
 ---
 {{- end }}
