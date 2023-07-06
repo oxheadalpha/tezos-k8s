@@ -6,7 +6,7 @@ BLOCK_TIMESTAMP=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_TIMESTAMP)
 #TEZOS_VERSION=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_VERSION)
 NETWORK="${NAMESPACE%%-*}"
 # Export for python
-export S3_BUCKET="${S3_BUCKET:-${NAMESPACE%-*}.${SNAPSHOT_WEBSITE_DOMAIN_NAME}}"
+export S3_BUCKET="${NAMESPACE}"
 TEZOS_RPC_VERSION_INFO="$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_RPC_VERSION_INFO)"
 
 TEZOS_VERSION="$(echo "${TEZOS_RPC_VERSION_INFO}" | jq -r .version)"
