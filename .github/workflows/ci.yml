@@ -195,7 +195,8 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           file: ${{ matrix.container }}/Dockerfile
           context: ${{ matrix.container}}/.
-          platforms: linux/amd64,linux/arm64
+          # Skips arm64 build for snapshotEngine
+          platforms: ${{ matrix.container!= 'snapshotEngine' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
 
           # Cache settings
           builder: ${{ steps.buildx.outputs.name }}
