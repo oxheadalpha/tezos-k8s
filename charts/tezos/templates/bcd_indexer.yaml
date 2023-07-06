@@ -29,7 +29,7 @@ metadata:
 data:
   BCD_ENV: sandbox
   GIN_MODE: debug
-  SANDBOX_NODE_URI: {{ $indexerConfig.indexerRpcUrl }}
+  SANDBOX_NODE_URI: {{ $indexerConfig.rpcUrl }}
 
 ---
 apiVersion: v1
@@ -176,8 +176,8 @@ spec:
               mountPath: /app/indexer/sandbox.yml
               subPath: sandbox.yml
       {{- if $indexerConfig.gui.enabled }}
-        {{- $_ := required "gui.apiUrl is required" $indexerConfig.gui.apiUrl }}
-        {{- $_ := required "gui.rpcUrl is required" $indexerConfig.gui.rpcUrl }}
+        {{- $_ := required "apiUrl is required for gui" $indexerConfig.apiUrl }}
+        {{- $_ := required "gui.rpcUrl is required for gui" $indexerConfig.gui.rpcUrl }}
         - image: {{ $indexerConfig.images.gui }}
           name: gui
           ports:
@@ -189,7 +189,7 @@ spec:
             - |
               set -ex
 
-              api_url="{{ $indexerConfig.gui.apiUrl }}/v1"
+              api_url="{{ $indexerConfig.apiUrl }}/v1"
 
               for file in js/*; do
                 echo $file
@@ -221,6 +221,59 @@ spec:
         resources:
           requests:
             storage: {{ $indexerConfig.storage | default "300Gi" }}
+{{- end }}
+
+---
+{{- if $indexerConfig.ingress.enabled }}
+{{- $_ := required "apiUrl is required for ingress" $indexerConfig.apiUrl }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bcd
+  namespace: {{ .Release.Namespace }}
+{{- with $indexerConfig.ingress.labels }}
+  labels:
+    {{- toYaml . | nindent 4 }}
+{{- end }}
+{{- with $indexerConfig.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+{{- end }}
+spec:
+  ingressClassName: {{ $indexerConfig.ingress.className }}
+  {{- if $indexerConfig.ingress.tls }}
+  tls:
+    {{- range $indexerConfig.ingress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
+  rules:
+    - host: {{ regexReplaceAll "(https?://)" $indexerConfig.apiUrl "" }}
+      http:
+        paths:
+          - pathType: {{ $indexerConfig.ingress.pathType }}
+            path: /
+            backend:
+              service:
+                name: bcd
+                port:
+                  number: 14000
+  {{- if and $indexerConfig.gui.enabled $indexerConfig.ingress.guiHostname }}
+    - host: {{ $indexerConfig.ingress.guiHostname }}
+      http:
+        paths:
+          - pathType: {{ $indexerConfig.ingress.pathType }}
+            path: /
+            backend:
+              service:
+                name: bcd
+                port:
+                  number: 8080
+    {{- end }}
 {{- end }}
 
 {{- end }}

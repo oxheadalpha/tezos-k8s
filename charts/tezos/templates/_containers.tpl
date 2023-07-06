@@ -159,8 +159,8 @@
       name: tezos-accounts
     {{- end }}
   {{- if eq .type "baker" }}
-    - mountPath: /etc/tezos/per-block-votes
-      name: per-block-votes
+    - mountPath: /etc/tezos/baker-config
+      name: baker-config
   {{- end }}
   {{- if (eq .type "octez-node") }}
   ports:

@@ -95,6 +95,7 @@ nodes:
         shell: {history_mode: archive}
       is_bootstrap_node: true
     - is_bootstrap_node: true
+      bake_using_account: tacoinfraSigner
     - {}
     runs: [octez_node, baker, logger, metrics]
     storage_size: 15Gi
@@ -110,11 +111,22 @@ nodes:
     - {}
   rolling-node: null
 should_generate_unsafe_deterministic_data: true
-signers:
-  tezos-signer-0:
-    sign_for_accounts: [tezos-baking-node-0]
 zerotier_config: {zerotier_network: null, zerotier_token: null}
 open_acls: true
+
+accounts:
+  tacoinfraSigner:
+    key: sppk...
+    key_id: alias/...
+octezSigners:
+ tezos-signer-0:
+   accounts:
+    - tezos-baking-node-0
+tacoinfraSigners:
+  tacoinfra-signer:
+    accounts:
+      - tacoinfraSigner
+
 protocols:
   - command: 013-PtJakart
     vote:
