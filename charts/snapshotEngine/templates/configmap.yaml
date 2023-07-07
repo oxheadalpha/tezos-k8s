@@ -15,7 +15,6 @@ data:
   SCHEMA_URL: {{ $.Values.schemaUrl }}
   S3_BUCKET: {{ $.Values.s3BucketOverride }}
   CLOUD_PROVIDER: {{ $.Values.cloudProvider }}
-  FQDN: {{ $.Values.fqdn }}
   STORAGE_CLASS: {{$.Values.volumeSnapClass }}
 kind: ConfigMap
 metadata:
