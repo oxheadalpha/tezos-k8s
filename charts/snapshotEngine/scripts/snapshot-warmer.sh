@@ -27,6 +27,7 @@ delete_old_volumesnapshots() {
   local max_snapshots="${2##max_snapshots=}"
 
   while [ "$(getNumberOfSnapshots readyToUse=true --selector="$selector")" -gt "$max_snapshots" ]; do
+    sleep 5
     NUMBER_OF_SNAPSHOTS=$(getNumberOfSnapshots readyToUse=true --selector="$selector")
     printf "%s Number of snapshots with selector '$selector' is too high at $NUMBER_OF_SNAPSHOTS. Deleting 1.\n" "$(timestamp)"
     SNAPSHOTS=$(getSnapshotNames readyToUse=true --selector="$selector")
