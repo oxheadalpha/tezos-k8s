@@ -84,6 +84,16 @@ yq e -i '.spec.volumeSnapshotClassName=strenv(VOLUME_SNAPSHOT_CLASS)' createVolu
 
 while true; do
 
+  # Pause if nodes are not ready
+  until [ "$(kubectl get pods -n "${NAMESPACE}" -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}' -l appType=octez-node -l node_class_history_mode="${HISTORY_MODE}")" = "True" ]; do
+    printf "%s Tezos node is not ready for snapshot.  Check node pod logs.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    until [ "$(kubectl get pods -n "${NAMESPACE}" -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}' -l appType=octez-node -l node_class_history_mode="${HISTORY_MODE}")" = "True" ]; do
+      if  [ "$(kubectl get pods -n "${NAMESPACE}" -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}' -l appType=octez-node -l node_class_history_mode="${HISTORY_MODE}")" = "True" ]; then
+        break
+      fi
+    done
+  done
+
   # Remove unlabeled snapshots
   delete_old_volumesnapshots selector='!history_mode' max_snapshots=0
   # Maintain 4 snapshots of a certain history mode
