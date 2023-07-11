@@ -151,7 +151,7 @@ should_generate_unsafe_deterministic_data: false
 # - "local_storage": use local storage instead of a volume. The storage will be
 #                  wiped when the node restarts for any reason. Useful when
 #                  faster IO is desired. Defaults to false.
-# - "local_storage_size": the size of the persistent volume to store identity.json and peers.json
+# - "local_storage_pv_size": the size of the persistent volume to store identity.json and peers.json
 #                            when local_storage is enabled, default value is 1Gi. Some cloud providers
 #                            would have minimum pv size requirement, for which this value can be used.
 # - "labels": https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
