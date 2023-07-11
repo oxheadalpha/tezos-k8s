@@ -86,7 +86,7 @@ spec:
         resources:
           requests:
 {{- if $.node_vals.local_storage | default false }}
-            storage: "1Gi"
+            storage: {{ default "1Gi" $.node_vals.local_storage_size }}
 {{- else }}
             storage: {{ default "15Gi" $.node_vals.storage_size }}
 {{- end }}
