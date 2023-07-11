@@ -18,6 +18,17 @@ JOB_NAME=snapshot-maker-"${HISTORY_MODE}"-node
 JOB_NAME="${JOB_NAME}" yq e -i '.metadata.name=strenv(JOB_NAME)' snapshotMakerJob.yaml
 
 while true; do
+
+  # Pause if nodes are not ready
+  until [ "$(kubectl get pods -n "${NAMESPACE}" -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}' -l appType=octez-node -l node_class_history_mode="${HISTORY_MODE}")" = "True" ]; do
+    printf "%s Tezos node is not ready for snapshot.  Check node pod logs.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    until [ "$(kubectl get pods -n "${NAMESPACE}" -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}' -l appType=octez-node -l node_class_history_mode="${HISTORY_MODE}")" = "True" ]; do
+      if  [ "$(kubectl get pods -n "${NAMESPACE}" -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}' -l appType=octez-node -l node_class_history_mode="${HISTORY_MODE}")" = "True" ]; then
+        break
+      fi
+    done
+  done
+  
   # Job exists
   if [ "$(kubectl get jobs "${JOB_NAME}" --namespace "${NAMESPACE}")" ]; then
     printf "%s Snapshot-maker job exists.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
