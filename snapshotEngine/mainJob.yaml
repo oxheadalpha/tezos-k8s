@@ -56,6 +56,7 @@ spec:
               until wget -qO-  http://127.0.0.1:8732/chains/main/blocks/head/header >/dev/null 2>&1; do
                 printf "%s Waiting for node RPC to come online.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
                 until wget -qO-  http://127.0.0.1:8732/chains/main/blocks/head/header >/dev/null 2>&1; do
+                  sleep 1m # without sleep, this loop is a "busy wait". this sleep vastly reduces CPU usage while we wait for rpc
                   if  wget -qO-  http://127.0.0.1:8732/chains/main/blocks/head/header >/dev/null 2>&1; then
                     break
                   fi
