@@ -88,6 +88,7 @@ while true; do
   until [ "$(kubectl get pods -n "${NAMESPACE}" -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}' -l appType=octez-node -l node_class_history_mode="${HISTORY_MODE}")" = "True" ]; do
     printf "%s Tezos node is not ready for snapshot.  Check node pod logs.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     until [ "$(kubectl get pods -n "${NAMESPACE}" -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}' -l appType=octez-node -l node_class_history_mode="${HISTORY_MODE}")" = "True" ]; do
+      sleep 1m
       if  [ "$(kubectl get pods -n "${NAMESPACE}" -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}' -l appType=octez-node -l node_class_history_mode="${HISTORY_MODE}")" = "True" ]; then
         break
       fi
