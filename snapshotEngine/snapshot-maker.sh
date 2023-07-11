@@ -26,6 +26,7 @@ fi
 if [ "${HISTORY_MODE}" = rolling ]; then
     if [ "$(kubectl get pvc rolling-tarball-restore)" ]; then
     printf "%s PVC Exists.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    sleep 5
     kubectl delete pvc rolling-tarball-restore
     sleep 5
     fi
@@ -33,12 +34,14 @@ fi
 
 if [ "$(kubectl get pvc "${HISTORY_MODE}"-snapshot-cache-volume)" ]; then
     printf "%s PVC Exists.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    sleep 5
     kubectl delete pvc "${HISTORY_MODE}"-snapshot-cache-volume
     sleep 5
 fi
 
 if [ "$(kubectl get pvc "${HISTORY_MODE}"-snap-volume)" ]; then
     printf "%s PVC Exists.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    sleep 5
     kubectl delete pvc "${HISTORY_MODE}"-snap-volume
     sleep 5
 fi
@@ -63,6 +66,8 @@ NAMESPACE="${NAMESPACE}" yq e -i '.metadata.namespace=strenv(NAMESPACE)' scratch
 # Set storage class for sratch volume yaml
 STORAGE_CLASS="${STORAGE_CLASS}" yq e -i '.spec.storageClassName=strenv(STORAGE_CLASS)' scratchVolume.yaml
 
+sleep 5
+
 # Create "${HISTORY_MODE}"-snapshot-cache-volume
 printf "%s Creating PVC ${HISTORY_MODE}-snapshot-cache-volume.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 NAME="${HISTORY_MODE}-snapshot-cache-volume" yq e -i '.metadata.name=strenv(NAME)' scratchVolume.yaml
@@ -76,6 +81,7 @@ printf "%s PVC %s created.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${HISTORY_MOD
 
 
 if [ "${HISTORY_MODE}" = rolling ]; then
+    sleep 5
     # Create rolling-tarball-restore
     printf "%s Creating PVC rolling-tarball-restore..\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     NAME="rolling-tarball-restore" yq e -i '.metadata.name=strenv(NAME)' scratchVolume.yaml
@@ -116,6 +122,8 @@ RESTORE_VOLUME_SIZE=$(echo "${EBS_SNAPSHOT_RESTORE_SIZE}" | awk '{print $1*1.2}'
 printf "%s We're rounding up and adding 20%% , volume size will be %sGB.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${RESTORE_VOLUME_SIZE}"
 
 RESTORE_VOLUME_SIZE="${RESTORE_VOLUME_SIZE}Gi" yq e -i '.spec.resources.requests.storage=strenv(RESTORE_VOLUME_SIZE)' volumeFromSnap.yaml
+
+sleep 5
 
 printf "%s Creating volume from snapshot ${NEWEST_SNAPSHOT}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 if ! kubectl apply -f volumeFromSnap.yaml
@@ -210,7 +218,7 @@ then
     exit 1
 fi
 
-sleep 10
+sleep 20
 
 # Wait for snapshotting job to complete
 while [ "$(kubectl get jobs "zip-and-upload-${HISTORY_MODE}" --namespace "${NAMESPACE}" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')" != "True" ]; do
@@ -232,5 +240,7 @@ if ! [ "$(kubectl get jobs "zip-and-upload-${HISTORY_MODE}" --namespace "${NAMES
 fi
 
 printf "%s Deleting temporary snapshot volume.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+sleep 5
 kubectl delete -f volumeFromSnap.yaml  | while IFS= read -r line; do printf '%s %s\n' "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "$line"; done
+sleep 5
 kubectl delete job snapshot-maker --namespace "${NAMESPACE}"
