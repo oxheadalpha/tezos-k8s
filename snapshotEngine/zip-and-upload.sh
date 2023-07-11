@@ -22,6 +22,7 @@ REDIRECT_ROOT="/"
 
 # CND Endpoint used for CDN URLs (different from command endpoint)
 if [[ "${CLOUD_PROVIDER}" == "digitalocean" ]]; then
+    FQDN=${S3_BUCKET}.nyc3.digitaloceanspaces.com
     URL="${FQDN}"
     REDIRECT_ROOT="https://${FQDN}/"
 else
@@ -525,7 +526,7 @@ if [[ -n "${SNAPSHOT_WEBSITE_DOMAIN_NAME}" ]]; then
     done
 
     #Upload base.json
-    if ! eval "$(set_aws_command_creds "aws")" s3 cp base.json s3://"${S3_BUCKET}"/base.json --acl public-read; then
+    if ! eval "$(set_aws_command_creds)" s3 cp base.json s3://"${S3_BUCKET}"/base.json --acl public-read; then
         printf "%s Upload base.json : Error uploading file base.json to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S")"
     else
         printf "%s Upload base.json : File base.json successfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S")"
@@ -565,14 +566,10 @@ if [[ -n "${SNAPSHOT_WEBSITE_DOMAIN_NAME}" ]]; then
 
     # Generate HTML from markdown and metadata
     chown -R jekyll:jekyll ./*
-    bundle exec jekyll build
+    bundle exec jekyll build --quiet
 
     # Upload chain page (index.html and assets) to root of website bucket
-    if ! eval "$(set_aws_command_creds "aws")" s3 cp _site/ s3://"${SNAPSHOT_WEBSITE_DOMAIN_NAME}" --recursive --include "*"; then
-        printf "%s Website Build & Deploy : Error uploading site to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
-    else
-        printf "%s Website Build & Deploy  : Successful uploaded website to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
-    fi
+    eval "$(set_aws_command_creds "aws")" s3 cp _site/ s3://"${SNAPSHOT_WEBSITE_DOMAIN_NAME}" --recursive | grep "*"
 fi
 
 SLEEP_TIME=0m
