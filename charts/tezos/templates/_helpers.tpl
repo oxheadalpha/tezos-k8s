@@ -114,6 +114,28 @@ metadata:
 {{- end }}
 
 {{/*
+  Get list of accounts that are being used to bake. Returned as a json
+  serialized dict because of how Helm renders everything returned from
+  a template as string. Function callers need to parse the returned
+  value like so: `fromJson | values | first`. A dict and not list is
+  returned because of the way `fromJson` works which expects a type of
+  map[string]interface {}.
+*/}}
+{{- define "tezos.getAccountsBaking" }}
+  {{- $allAccounts := list }}
+  {{- range $node := .Values.nodes }}
+    {{- range $instance := $node.instances }}
+    {{- if and .bake_using_accounts (kindIs "slice" .bake_using_accounts) }}
+        {{- $allAccounts = concat $allAccounts .bake_using_accounts }}
+      {{- else if and .bake_using_account (kindIs "string" .bake_using_account) }}
+        {{- $allAccounts = append $allAccounts .bake_using_account }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- dict "data" (uniq $allAccounts) | toJson }}
+{{- end }}
+
+{{/*
   Should deploy TZKT indexer?
 */}}
 {{- define "tezos.shouldDeployTzktIndexer" -}}
