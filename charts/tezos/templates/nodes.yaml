@@ -50,9 +50,11 @@ spec:
         fsGroup: 1000
 {{- include "tezos.nodeSelectorConfig" $ | indent 6 }}
       volumes:
+      {{- if (include "tezos.doesZerotierConfigExist" $) }}
         - hostPath:
             path: /dev/net/tun
           name: dev-net-tun
+      {{- end }}
         - emptyDir: {}
           name: config-volume
         - name: tezos-accounts

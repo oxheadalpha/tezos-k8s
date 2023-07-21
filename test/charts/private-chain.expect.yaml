@@ -218,7 +218,12 @@ data:
 # Source: tezos-chain/templates/configs.yaml
 apiVersion: v1
 data:
-  tacoinfraSigner-013-PtJakart-per-block-votes.json: "{\"liquidity_baking_toggle_vote\":\"pass\"}"
+    tezos-baking-node-0-013-PtJakart-per-block-votes.json: "{\"liquidity_baking_toggle_vote\":\"pass\"}"
+    a-013-PtJakart-per-block-votes.json: "{\"liquidity_baking_toggle_vote\":\"pass\"}"
+    b-013-PtJakart-per-block-votes.json: "{\"liquidity_baking_toggle_vote\":\"pass\"}"
+    c-013-PtJakart-per-block-votes.json: "{\"liquidity_baking_toggle_vote\":\"pass\"}"
+    d-013-PtJakart-per-block-votes.json: "{\"liquidity_baking_toggle_vote\":\"pass\"}"
+    tacoinfraSigner-013-PtJakart-per-block-votes.json: "{\"liquidity_baking_toggle_vote\":\"pass\"}"
 kind: ConfigMap
 metadata:
   name: baker-config
@@ -682,9 +687,6 @@ spec:
       securityContext:
         fsGroup: 1000      
       volumes:
-        - hostPath:
-            path: /dev/net/tun
-          name: dev-net-tun
         - emptyDir: {}
           name: config-volume
         - name: tezos-accounts
@@ -806,7 +808,12 @@ spec:
               
               per_block_vote_file=/etc/tezos/baker-config/${my_baker_account}-${proto_command}-per-block-votes.json
               
-              if [ $(cat $per_block_vote_file) == "null" ]; then
+              if [ ! -f "$per_block_vote_file" ]; then
+                echo "Error: $per_block_vote_file not found" >&2
+                exit 1
+              fi
+              
+              if [ "$(cat $per_block_vote_file)" == "null" ]; then
                 cat << EOF
               You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
               protocols:
@@ -878,7 +885,12 @@ spec:
               
               per_block_vote_file=/etc/tezos/baker-config/${my_baker_account}-${proto_command}-per-block-votes.json
               
-              if [ $(cat $per_block_vote_file) == "null" ]; then
+              if [ ! -f "$per_block_vote_file" ]; then
+                echo "Error: $per_block_vote_file not found" >&2
+                exit 1
+              fi
+              
+              if [ "$(cat $per_block_vote_file)" == "null" ]; then
                 cat << EOF
               You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
               protocols:
@@ -950,7 +962,12 @@ spec:
               
               per_block_vote_file=/etc/tezos/baker-config/${my_baker_account}-${proto_command}-per-block-votes.json
               
-              if [ $(cat $per_block_vote_file) == "null" ]; then
+              if [ ! -f "$per_block_vote_file" ]; then
+                echo "Error: $per_block_vote_file not found" >&2
+                exit 1
+              fi
+              
+              if [ "$(cat $per_block_vote_file)" == "null" ]; then
                 cat << EOF
               You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
               protocols:
@@ -1022,7 +1039,12 @@ spec:
               
               per_block_vote_file=/etc/tezos/baker-config/${my_baker_account}-${proto_command}-per-block-votes.json
               
-              if [ $(cat $per_block_vote_file) == "null" ]; then
+              if [ ! -f "$per_block_vote_file" ]; then
+                echo "Error: $per_block_vote_file not found" >&2
+                exit 1
+              fi
+              
+              if [ "$(cat $per_block_vote_file)" == "null" ]; then
                 cat << EOF
               You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
               protocols:
@@ -1094,7 +1116,12 @@ spec:
               
               per_block_vote_file=/etc/tezos/baker-config/${my_baker_account}-${proto_command}-per-block-votes.json
               
-              if [ $(cat $per_block_vote_file) == "null" ]; then
+              if [ ! -f "$per_block_vote_file" ]; then
+                echo "Error: $per_block_vote_file not found" >&2
+                exit 1
+              fi
+              
+              if [ "$(cat $per_block_vote_file)" == "null" ]; then
                 cat << EOF
               You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
               protocols:
@@ -1272,9 +1299,6 @@ spec:
       securityContext:
         fsGroup: 1000      
       volumes:
-        - hostPath:
-            path: /dev/net/tun
-          name: dev-net-tun
         - emptyDir: {}
           name: config-volume
         - name: tezos-accounts
@@ -1476,9 +1500,6 @@ spec:
       securityContext:
         fsGroup: 1000      
       volumes:
-        - hostPath:
-            path: /dev/net/tun
-          name: dev-net-tun
         - emptyDir: {}
           name: config-volume
         - name: tezos-accounts
