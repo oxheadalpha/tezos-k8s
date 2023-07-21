@@ -134,6 +134,7 @@ data:
   OCTEZ_VERSION: "tezos/tezos:v15-release"
   NODE_GLOBALS: |
     {
+      "config": {},
       "env": {}
     }
 

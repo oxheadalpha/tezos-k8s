@@ -41,6 +41,7 @@ data:
   OCTEZ_VERSION: "tezos/tezos:v17.1"
   NODE_GLOBALS: |
     {
+      "config": {},
       "env": {}
     }
 
