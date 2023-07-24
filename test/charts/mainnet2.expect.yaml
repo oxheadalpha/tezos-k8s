@@ -41,6 +41,7 @@ data:
   OCTEZ_VERSION: "tezos/tezos:v17.1"
   NODE_GLOBALS: |
     {
+      "config": {},
       "env": {
         "all": {
           "key": "outer-value"
@@ -527,9 +528,6 @@ spec:
       securityContext:
         fsGroup: 1000      
       volumes:
-        - hostPath:
-            path: /dev/net/tun
-          name: dev-net-tun
         - emptyDir: {}
           name: config-volume
         - name: tezos-accounts
@@ -905,9 +903,6 @@ spec:
       securityContext:
         fsGroup: 1000      
       volumes:
-        - hostPath:
-            path: /dev/net/tun
-          name: dev-net-tun
         - emptyDir: {}
           name: config-volume
         - name: tezos-accounts

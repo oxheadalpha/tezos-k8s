@@ -21,7 +21,12 @@ fi
 
 per_block_vote_file=/etc/tezos/baker-config/${my_baker_account}-${proto_command}-per-block-votes.json
 
-if [ $(cat $per_block_vote_file) == "null" ]; then
+if [ ! -f "$per_block_vote_file" ]; then
+  echo "Error: $per_block_vote_file not found" >&2
+  exit 1
+fi
+
+if [ "$(cat $per_block_vote_file)" == "null" ]; then
   cat << EOF
 You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
 protocols:
