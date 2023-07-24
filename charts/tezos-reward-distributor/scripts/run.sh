@@ -5,6 +5,11 @@ if [ "${DRY_RUN}" == "false" ]; then
 else
   dry_run_arg="--dry_run"
 fi
+if [ "${ADJUSTED_EARLY_PAYOUTS}" == "false" ]; then
+  aep_arg=""
+else
+  aep_arg="--adjusted_early_payouts"
+fi
 python src/main.py \
   -M 2 \
   --reward_data_provider ${REWARD_DATA_PROVIDER} \
@@ -12,8 +17,8 @@ python src/main.py \
   --node_endpoint ${TEZOS_NODE_ADDR} \
   --base_directory /trd \
   --signer_endpoint ${SIGNER_ADDR} \
-  --release_override ${RELEASE_OVERRIDE} \
   --initial_cycle ${INITIAL_CYCLE} \
   -N ${NETWORK} \
   ${EXTRA_TRD_ARGS} \
-  ${dry_run_arg}
+  ${dry_run_arg} \
+  ${aep_arg}
