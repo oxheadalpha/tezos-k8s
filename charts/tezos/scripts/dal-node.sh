@@ -12,10 +12,7 @@ if [ ${BOOTSTRAP_PROFILE} == "true" ]; then
 fi
 
 
-CMD="$TEZ_BIN/octez-dal-node \
-  run \
-  ${extra_args} \ 
-  --data-dir ${DAL_DATA_DIR} \
+CMD="$TEZ_BIN/octez-dal-node run ${extra_args} --data-dir ${DAL_DATA_DIR} \
   --endpoint http://tezos-node-rpc:8732 \
   --net-addr 0.0.0.0:11732 \
   --rpc-addr 0.0.0.0:10732"
