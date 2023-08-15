@@ -126,11 +126,11 @@ should_generate_unsafe_deterministic_data: false
 # Said names are typically kebab case.
 #
 # Params at the statefulset level:
-# - "config": The "config" property should mimic the structure of a node's
+# - `config`: The "config" property should mimic the structure of a node's
 #             config.json. Run `octez-node config --help` for more info.
 #             If present at the statefulset level, it overrides it in
-#             node_globals.
-# - "env": a dictionary of containers mapped to a dictionary of env
+#             `node_globals`.
+# - `env`: A dictionary of containers mapped to a dictionary of env
 #          vars.  The container name "all" will apply the env vars to
 #          all containers.  The most specific wins.  Find the names of
 #          the containers by examining an installed environment, or by
@@ -138,25 +138,29 @@ should_generate_unsafe_deterministic_data: false
 #          that we truncate the protocol from the container name for
 #          bakers and accusers, so "baker-011-pthangz2" is configured
 #          using just "baker".
-# - "storage_size": the size of the PV
-# - "resources": resources specifications for the node.
+# - `storage_size`: The size of the PV.
+# - `resources`: Resources specifications for the node.
 #                Optionally set resources and limits for octez node
 #                See: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
-# - "images": Optional specification of images to use for the tezos node and
+# - `images`: Optional specification of images to use for the tezos node and
 #           baker. Options are "octez" with a tezos/tezos image.
 #           If no images are provided, the containers will default to the images
 #           defined in the "images" field up above.
-# - "runs": A list of containers to run.
-#         Options being "octez_node", "accuser", "baker", "logger" and "vdf".
-# - "local_storage": use local storage instead of a volume. The storage will be
+# - `runs`: A list of containers to run.
+#         Options being `octez_node`, `accuser`, `baker`, `logger` and `vdf`.
+# - `local_storage`: Use local storage instead of a volume. The storage will be
 #                  wiped when the node restarts for any reason. Useful when
 #                  faster IO is desired. Defaults to false.
-# - "labels": https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
-#      NOTE: the labels appType, node_class, and baking_node are set
+# - `local_storage_pv_size`: The size of the persistent volume to store `identity.json`
+#                            and `peers.json` when `local_storage` is enabled. Some cloud
+#                            providers have minimum pv size requirements for which this
+#                            value can be used. Default value is 1Gi.
+# - `labels`: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+#      NOTE: the labels `appType`, `node_class`, and `baking_node` are set
 #      automatically for you.
-# - "node_selector": Specify a kubernetes node selector in 'key: value' format
+# - `node_selector`: Specify a kubernetes node selector in `key: value` format
 #     for your tezos nodes.
-# - "readiness_probe": Attach a probe to the node. The probe checks whether
+# - `readiness_probe`: Attach a probe to the node. The probe checks whether
 #                    the most recent block is recent enough. If not, the
 #                    services will be unreachable. Defaults to True.
 #                    True is good for RPC nodes, private nodes, and
@@ -165,23 +169,25 @@ should_generate_unsafe_deterministic_data: false
 #                    chain with external bakers, such as a new test chain.
 #                    Otherwise, the chain may become unreachable externally
 #                    while waiting for other nodes to come online.
-# - "instances": a list of nodes to fire up, each is a dictionary defining:
-#    - "bake_using_account": Account name that should be used for baking.
-#    - "bake_using_accounts": List of account names that should be used for baking.
-#    - "config": Same as the outer statefulset level "config". It overrides the
+# - `instances`: A list of nodes to fire up, each is a dictionary defining:
+#    - `bake_using_account`: Account name that should be used for baking.
+#                            Don't also set `bake_using_accounts`.
+#    - `bake_using_accounts`: List of account names that should be used for baking.
+#                            Don't also set `bake_using_account`.
+#    - `config`: Same as the outer statefulset level `config`. It overrides the
 #                statefulset level.
-#    - "is_bootstrap_node": Is this node a bootstrap peer.
-#    - "identity": An optional map containing a pre-generated Tezos node
+#    - `is_bootstrap_node`: Boolean for is this node a bootstrap peer.
+#    - `identity`: An optional map containing a pre-generated Tezos node
 #                 identity. This is useful for local storage nodes which would
 #                 need to generate an identity at every boot. The identity file
 #                 will be created at /var/tezos/node/data/identity.json.
-#                 Required fields are "peer_id", "public_key", "secret_key",
-#                 and "proof_of_work_timestamp".
+#                 Required fields are `peer_id`, `public_key`, `secret_key`,
+#                 and `proof_of_work_timestamp`.
 #
 # Defaults are filled in for most of the above values.  You can also provide
-# global defaults for all nodes via a node_globals: section which is also
-# a dictionary.  Currently, two keys are defined: "config" and "env".  These
-# operate in the same way as the section in "nodes" going by the same name.
+# global defaults for all nodes via a `node_globals` section which is also
+# a dictionary.  Currently, two keys are defined: `config` and `env`.  These
+# operate in the same way as the section in `nodes` going by the same name.
 #
 # Example config:
 #
@@ -248,6 +254,7 @@ should_generate_unsafe_deterministic_data: false
 # ```
 # The default configuration is:
 node_globals:
+  config: {}
   env: {}
 nodes:
   rolling-node:
