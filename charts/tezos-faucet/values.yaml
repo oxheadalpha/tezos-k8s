@@ -1,33 +1,63 @@
+# Faucet backend: https://github.com/oxheadalpha/tezos-faucet-backend
+# Faucet frontend: https://github.com/oxheadalpha/tezos-faucet
+
 images:
-  tezos_faucet: ghcr.io/oxheadalpha/tezos-faucet:latest
-  tezos_faucet_backend: ghcr.io/oxheadalpha/tezos-faucet-backend:latest
-authorizedHost: "'*'"
+  tezosFaucet: ghcr.io/oxheadalpha/tezos-faucet:latest
+  tezosFaucetBackend: ghcr.io/oxheadalpha/tezos-faucet-backend:latest
 
-# if your balance is over the max, the faucet won't give you more tokens
-maxBalance: 12000
-
+# Frontend application configuration.
 config:
   application:
-     name: "Tezos Jakartanet faucet"
-     googleCaptchaSiteKey: #6LeiK14fAAAAAPptX4v49I4wSrHjOrU2cb_y5oII
-     backendUrl: "http://localhost:3000"
-     githubRepo: "https://github.com/oxheadalpha/tezos-faucet"
-     profiles:
-       user:
-         profile: USER
-         amount: 1
-       baker:
-         profile: BAKER
-         amount: 6000
+    name: "Tezos Faucet"
+    googleCaptchaSiteKey: "" # 6LefC8QmAAAAAIX...
+    backendUrl: "" # http://faucet-backend:3000
+    githubRepo: https://github.com/oxheadalpha/tezos-faucet
   network:
-     name: #Jakartanet
-     rpcUrl: #https://jakartanet.tezos.marigold.dev/
-     faucetAddress: #tz1cpdS3qoQBYCGohszPWS8Gdya6Wg2e4JnL
-     viewer: #https://jakarta.tzstats.com
-     allowSendButton: true
-service:
-  type: ClusterIP
-  port: 8080
+    name: Custom
+    rpcUrl: "" # http://tezos-node-rpc:8732
+    faucetAddress: "" # tz1PW...
+    viewer: "" # https://network.tzstats.com
+
+# Value the server sets for the "Access-Control-Allow-Origin" header for CORS.
+authorizedHost: "*"
+# If the backend requires captcha/
+enableCaptcha: true
+# Faucet won't dispense to an address if its balance exceeds this.
+maxBalance: 6000
+
+# Configuration for the faucet profiles. Each profile (e.g., 'user', 'baker') has specific parameters:
+#   - `profile`: The name of the profile.
+#   - `amount`: The amount of Tez to be distributed for this profile.
+#   - `challengesNeeded`: The number of PoW challenges to be solved when a CAPTCHA is not used.
+#   - `challengesNeededWithCaptcha`: The number of PoW challenges to be solved when a CAPTCHA is used.
+#   - `difficulty`: The difficulty level of the PoW challenge when a CAPTCHA is not used.
+#   - `difficultyWithCaptcha`: The difficulty level of the PoW challenge when a CAPTCHA is used.
+# These parameters control the distribution of Tez and the complexity of challenges to prevent spamming and abuse.
+profiles:
+  user:
+    profile: USER
+    amount: 1
+    challengesNeeded: 5
+    challengesNeededWithCaptcha: 4
+    difficulty: 4
+    difficultyWithCaptcha: 3
+  baker:
+    profile: BAKER
+    amount: 6000
+    challengesNeeded: 6
+    challengesNeededWithCaptcha: 5
+    difficulty: 5
+    difficultyWithCaptcha: 4
+
+# Set to true to disable the requirement of solving PoW challenges.
+disableChallenges: false
+
+# Config for the Redis backend for the PoW challenges. Redis is not needed if
+# challenges are disabled.
+redis:
+  url: "" # redis://redis-master.redis:6379
+  password: ""
+
 ingress:
   enabled: false
   className: ""
@@ -41,5 +71,5 @@ ingress:
   #      - chart-example-frontend.local
 
 # Secrets
-googleCaptchaSecretKey: secret_key_goes_here
-faucetPrivateKey: edsk***
+googleCaptchaSecretKey: "" # 6LefC8QmAAAAAPH...
+faucetPrivateKey: "" # edsk3X...

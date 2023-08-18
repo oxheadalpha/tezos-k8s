@@ -18,7 +18,7 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
       containers:
-      - image: {{ .Values.images.tezos_faucet_backend }}
+      - image: {{ .Values.images.tezosFaucetBackend }}
         name: faucet-backend
         ports:
         - name: backend
@@ -29,7 +29,7 @@ spec:
             name: faucet-backend-config
         - secretRef:
             name: faucet-backend-secret
-      - image: {{ .Values.images.tezos_faucet }}
+      - image: {{ .Values.images.tezosFaucet }}
         name: faucet
         ports:
         - name: frontend
