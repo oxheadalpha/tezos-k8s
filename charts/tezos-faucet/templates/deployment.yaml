@@ -17,6 +17,7 @@ spec:
         # https://helm.sh/docs/howto/charts_tips_and_tricks/#automatically-roll-deployments
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
+      restartPolicy: Always
       containers:
       - image: {{ .Values.images.tezosFaucetBackend }}
         name: faucet-backend
@@ -29,6 +30,7 @@ spec:
             name: faucet-backend-config
         - secretRef:
             name: faucet-backend-secret
+    {{- if .Values.enableUI }}
       - image: {{ .Values.images.tezosFaucet }}
         name: faucet
         ports:
@@ -40,8 +42,8 @@ spec:
           mountPath: /app/public/config.json
           subPath: config.json
           readOnly: true
-      restartPolicy: Always
       volumes:
       - name: faucet-config
         configMap:
           name: faucet-config
+    {{- end }}

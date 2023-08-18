@@ -5,16 +5,19 @@ images:
   tezosFaucet: ghcr.io/oxheadalpha/tezos-faucet:latest
   tezosFaucetBackend: ghcr.io/oxheadalpha/tezos-faucet-backend:latest
 
-# Frontend application configuration.
+# Frontend app configuration. You can optionally deploy only the faucet backend.
+enableUI: true
 config:
   application:
     name: "Tezos Faucet"
     googleCaptchaSiteKey: "" # 6LefC8QmAAAAAIX...
-    backendUrl: "" # http://faucet-backend:3000
+    # Default value assumes faucet backend is available on localhost.
+    backendUrl: http://localhost:3000
     githubRepo: https://github.com/oxheadalpha/tezos-faucet
   network:
     name: Custom
-    rpcUrl: "" # http://tezos-node-rpc:8732
+    # Default value assumes node rpc is available on localhost.
+    rpcUrl: http://localhost:8732
     faucetAddress: "" # tz1PW...
     viewer: "" # https://network.tzstats.com
 

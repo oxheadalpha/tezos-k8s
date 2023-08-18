@@ -1,3 +1,4 @@
+{{- if .Values.enableUI }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -11,17 +12,18 @@ data:
 {{- end }}
 {{- $_ := set .Values.config.application "profiles" $newProfiles }}
 {{ .Values.config | mustToPrettyJson | indent 4 }}
-
 ---
+{{- end }}
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: faucet-backend-config
   namespace: {{ .Release.Namespace }}
 data:
-  AUTHORIZED_HOST: {{ .Values.authorizedHost }}
+  AUTHORIZED_HOST: "{{ .Values.authorizedHost }}"
   DISABLE_CHALLENGES: "{{ .Values.disableChallenges }}"
   ENABLE_CAPTCHA: "{{ .Values.enableCaptcha }}"
   MAX_BALANCE: "{{ .Values.maxBalance }}"
-  REDIS_URL: {{ .Values.redis.url }}
-  RPC_URL: {{ .Values.config.network.rpcUrl }}
+  REDIS_URL: "{{ .Values.redis.url }}"
+  RPC_URL: "{{ required "config.network.rpcUrl is required." .Values.config.network.rpcUrl }}"

@@ -15,6 +15,7 @@ apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: {{ $fullName }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "tezos-faucet.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}
@@ -48,11 +49,14 @@ spec:
                 port:
                   number: 3000
           {{- end }}
+
+        {{- if .Values.enableUI }}
           - path: /
-            pathType: 'Prefix'
+            pathType: Prefix
             backend:
               service:
                 name: {{ $fullName }}
                 port:
                   number: 8080
+        {{- end }}
 {{- end }}
