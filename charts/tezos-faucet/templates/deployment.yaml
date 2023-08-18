@@ -18,32 +18,57 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
       restartPolicy: Always
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "tezos-faucet.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
-      - image: {{ .Values.images.tezosFaucetBackend }}
-        name: faucet-backend
-        ports:
-        - name: backend
-          containerPort: 3000
-          protocol: TCP
-        envFrom:
-        - configMapRef:
-            name: faucet-backend-config
-        - secretRef:
-            name: faucet-backend-secret
+        - image: {{ .Values.images.tezosFaucetBackend }}
+          name: faucet-backend
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          ports:
+            - name: backend
+              containerPort: 3000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: faucet-backend-config
+            - secretRef:
+                name: faucet-backend-secret
     {{- if .Values.enableUI }}
-      - image: {{ .Values.images.tezosFaucet }}
-        name: faucet
-        ports:
-        - name: frontend
-          containerPort: 8080
-          protocol: TCP
-        volumeMounts:
-        - name: faucet-config
-          mountPath: /app/public/config.json
-          subPath: config.json
-          readOnly: true
+        - image: {{ .Values.images.tezosFaucet }}
+          name: faucet
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          ports:
+            - name: frontend
+              containerPort: 8080
+              protocol: TCP
+          volumeMounts:
+            - name: faucet-config
+              mountPath: /app/public/config.json
+              subPath: config.json
+              readOnly: true
       volumes:
-      - name: faucet-config
-        configMap:
-          name: faucet-config
+        - name: faucet-config
+          configMap:
+            name: faucet-config
+
     {{- end }}
+
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

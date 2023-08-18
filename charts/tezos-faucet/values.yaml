@@ -65,6 +65,10 @@ redis:
   url: "" # redis://redis-master.redis:6379
   password: ""
 
+# Secrets
+googleCaptchaSecretKey: "" # 6LefC8QmAAAAAPH...
+faucetPrivateKey: "" # edsk3X...
+
 ingress:
   enabled: false
   className: ""
@@ -77,6 +81,29 @@ ingress:
   #    hosts:
   #      - chart-example-frontend.local
 
-# Secrets
-googleCaptchaSecretKey: "" # 6LefC8QmAAAAAPH...
-faucetPrivateKey: "" # edsk3X...
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
