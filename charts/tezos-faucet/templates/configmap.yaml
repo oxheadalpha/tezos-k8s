@@ -26,4 +26,4 @@ data:
   ENABLE_CAPTCHA: "{{ .Values.enableCaptcha }}"
   MAX_BALANCE: "{{ .Values.maxBalance }}"
   REDIS_URL: "{{ .Values.redis.url }}"
-  RPC_URL: "{{ required "config.network.rpcUrl is required." .Values.config.network.rpcUrl }}"
+  RPC_URL: "{{ .Values.backendRpcUrl | default .Values.config.network.rpcUrl | required "An rpc url is required." }}"

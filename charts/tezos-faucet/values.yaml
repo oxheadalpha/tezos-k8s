@@ -16,26 +16,30 @@ config:
     githubRepo: https://github.com/oxheadalpha/tezos-faucet
   network:
     name: Custom
-    # Default value assumes node rpc is available on localhost.
+    # Default value assumes node RPC is available on localhost.
     rpcUrl: http://localhost:8732
     faucetAddress: "" # tz1PW...
     viewer: "" # https://network.tzstats.com
 
 # Value the server sets for the "Access-Control-Allow-Origin" header for CORS.
 authorizedHost: "*"
-# If the backend requires captcha/
+# RPC url for the faucet backend. Default value assumes tezos-k8s created an RPC
+# service in the same namespace. If not set, defaults to `config.network.rpcUrl`.
+backendRpcUrl: http://tezos-node-rpc:8732
+# If the backend requires CAPTCHA token.
 enableCaptcha: true
 # Faucet won't dispense to an address if its balance exceeds this.
 maxBalance: 6000
 
-# Configuration for the faucet profiles. Each profile (e.g., 'user', 'baker') has specific parameters:
-#   - `profile`: The name of the profile.
-#   - `amount`: The amount of Tez to be distributed for this profile.
-#   - `challengesNeeded`: The number of PoW challenges to be solved when a CAPTCHA is not used.
-#   - `challengesNeededWithCaptcha`: The number of PoW challenges to be solved when a CAPTCHA is used.
-#   - `difficulty`: The difficulty level of the PoW challenge when a CAPTCHA is not used.
-#   - `difficultyWithCaptcha`: The difficulty level of the PoW challenge when a CAPTCHA is used.
-# These parameters control the distribution of Tez and the complexity of challenges to prevent spamming and abuse.
+# Configuration for the faucet profiles. To prevent spamming and abuse, each
+# profile has specific parameters that control the distribution of Tez and the
+# complexity and number of PoW challenges needed.
+# - `profile`: The name of the profile.
+# - `amount`: Amount of Tez to be distributed for this profile.
+# - `challengesNeeded`: Number of challenges given when CAPTCHA isn't used.
+# - `challengesNeededWithCaptcha`: Number of challenges given when CAPTCHA is used.
+# - `difficulty`: Challenge difficulty level when CAPTCHA isn't used.
+# - `difficultyWithCaptcha`: Challenge difficulty level when CAPTCHA is used.
 profiles:
   user:
     profile: USER
