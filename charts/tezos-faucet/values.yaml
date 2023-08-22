@@ -26,7 +26,7 @@ authorizedHost: "*"
 # RPC url for the faucet backend. Default value assumes tezos-k8s created an RPC
 # service in the same namespace. If not set, defaults to `config.network.rpcUrl`.
 backendRpcUrl: http://tezos-node-rpc:8732
-# If the backend requires CAPTCHA token.
+# If the backend requires CAPTCHA tokens to be submitted.
 enableCaptcha: true
 # Faucet won't dispense to an address if its balance exceeds this.
 maxBalance: 6000
@@ -42,14 +42,12 @@ maxBalance: 6000
 # - `difficultyWithCaptcha`: Challenge difficulty level when CAPTCHA is used.
 profiles:
   user:
-    profile: USER
     amount: 1
     challengesNeeded: 5
     challengesNeededWithCaptcha: 4
     difficulty: 4
     difficultyWithCaptcha: 3
   baker:
-    profile: BAKER
     amount: 6000
     challengesNeeded: 6
     challengesNeededWithCaptcha: 5
