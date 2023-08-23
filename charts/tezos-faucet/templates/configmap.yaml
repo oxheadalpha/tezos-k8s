@@ -11,6 +11,7 @@ data:
   {{- $newProfiles = set $newProfiles $key (pick $value "amount" "profile") }}
 {{- end }}
 {{- $_ := set .Values.config.application "profiles" $newProfiles }}
+{{- $_ := set .Values.config.application "disableChallenges" .Values.disableChallenges }}
 {{ .Values.config | mustToPrettyJson | indent 4 }}
 ---
 {{- end }}
