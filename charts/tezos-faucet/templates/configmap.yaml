@@ -22,6 +22,8 @@ metadata:
   name: faucet-backend-config
   namespace: {{ .Release.Namespace }}
 data:
+  profiles.json: {{ .Values.profiles | mustToPrettyJson | quote }}
+
   AUTHORIZED_HOST: "{{ .Values.authorizedHost }}"
   DISABLE_CHALLENGES: "{{ .Values.disableChallenges }}"
   ENABLE_CAPTCHA: "{{ .Values.enableCaptcha }}"

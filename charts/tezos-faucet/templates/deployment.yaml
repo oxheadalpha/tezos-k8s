@@ -39,7 +39,18 @@ spec:
                 name: faucet-backend-config
             - secretRef:
                 name: faucet-backend-secret
-    {{- if .Values.enableUI }}
+          env:
+          # profiles.json gets set via the configmap. We store it there for easy
+          # access to mount as a file instead of in a new configmap. We don't
+          # need it to be an env var so we make it empty here.
+            - name: profiles.json
+              value: ""
+          volumeMounts:
+            - name: faucet-backend-config
+              mountPath: /app/dist/profiles.json
+              subPath: profiles.json
+              readOnly: true
+      {{- if .Values.enableUI }}
         - image: {{ .Values.images.tezosFaucet }}
           name: faucet
           securityContext:
@@ -53,12 +64,16 @@ spec:
               mountPath: /app/public/config.json
               subPath: config.json
               readOnly: true
+      {{- end }}
       volumes:
+        - name: faucet-backend-config
+          configMap:
+            name: faucet-backend-config
+      {{- if .Values.enableUI }}
         - name: faucet-config
           configMap:
             name: faucet-config
-
-    {{- end }}
+      {{- end }}
 
       {{- with .Values.nodeSelector }}
       nodeSelector:
