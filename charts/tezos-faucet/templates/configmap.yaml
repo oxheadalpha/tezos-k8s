@@ -1,21 +1,32 @@
+{{- if .Values.enableUI }}
 apiVersion: v1
-data:
-  config.json: |
-{{ .Values.config | mustToPrettyJson | indent 4 }}
 kind: ConfigMap
 metadata:
   name: faucet-config
   namespace: {{ .Release.Namespace }}
+data:
+  config.json: |
+{{- $newProfiles := dict }}
+{{- range $key, $value :=  .Values.profiles }}
+  {{- $newProfiles = set $newProfiles $key (pick $value "amount" "profile") }}
+{{- end }}
+{{- $_ := set .Values.config.application "profiles" $newProfiles }}
+{{- $_ := set .Values.config.application "disableChallenges" .Values.disableChallenges }}
+{{ .Values.config | mustToPrettyJson | indent 4 }}
 ---
+{{- end }}
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: faucet-backend-config
   namespace: {{ .Release.Namespace }}
 data:
-  FAUCET_ADDRESS: {{ .Values.config.network.faucetAddress }}
-  RPC_URL: {{ .Values.config.network.rpcUrl }}
-  AUTHORIZED_HOST: {{ .Values.authorizedHost }}
-  FAUCET_AMOUNT_USER: "{{ .Values.config.application.profiles.user.amount}}"
-  FAUCET_AMOUNT_BAKER: "{{ .Values.config.application.profiles.baker.amount}}"
+  profiles.json: {{ .Values.profiles | mustToPrettyJson | quote }}
+
+  AUTHORIZED_HOST: "{{ .Values.authorizedHost }}"
+  DISABLE_CHALLENGES: "{{ .Values.disableChallenges }}"
+  ENABLE_CAPTCHA: "{{ .Values.enableCaptcha }}"
   MAX_BALANCE: "{{ .Values.maxBalance }}"
+  REDIS_URL: "{{ .Values.redis.url }}"
+  RPC_URL: "{{ .Values.backendRpcUrl | default .Values.config.network.rpcUrl | required "An rpc url is required." }}"
