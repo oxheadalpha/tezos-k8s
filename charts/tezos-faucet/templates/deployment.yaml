@@ -40,9 +40,9 @@ spec:
             - secretRef:
                 name: faucet-backend-secret
           env:
-          # profiles.json gets set via the configmap. We store it there for easy
-          # access to mount as a file instead of in a new configmap. We don't
-          # need it to be an env var so we make it empty here.
+          # profiles.json is stored in faucet-backend-config instead of in a new
+          # dedicated configmap. We don't need it to be an env var so we make it
+          # empty here to counteract envFrom.
             - name: profiles.json
               value: ""
           volumeMounts:
