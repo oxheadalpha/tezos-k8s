@@ -26,8 +26,9 @@ spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
-        - image: {{ .Values.images.tezosFaucetBackend }}
-          name: faucet-backend
+        - name: faucet-backend
+          image: {{ .Values.images.tezosFaucetBackend }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           ports:
@@ -51,8 +52,9 @@ spec:
               subPath: profiles.json
               readOnly: true
       {{- if .Values.enableUI }}
-        - image: {{ .Values.images.tezosFaucet }}
-          name: faucet
+        - name: faucet
+          image: {{ .Values.images.tezosFaucet }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           ports:

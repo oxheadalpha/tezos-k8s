@@ -79,6 +79,7 @@ ingress:
   #    hosts:
   #      - chart-example-frontend.local
 
+imagePullPolicy: IfNotPresent
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
