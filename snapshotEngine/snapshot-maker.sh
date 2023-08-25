@@ -232,6 +232,63 @@ done
 
 if ! [ "$(kubectl get jobs "zip-and-upload-${HISTORY_MODE}" --namespace "${NAMESPACE}" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')" != "True" ]; then
     printf "%s Zip-and-upload job completed successfully.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+
+    # Delete zip-and-upload job
+    if kubectl get job "${ZIP_AND_UPLOAD_JOB_NAME}"; then
+        printf "%s Old zip-and-upload job exits.  Attempting to delete.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+        if ! kubectl delete jobs "${ZIP_AND_UPLOAD_JOB_NAME}"; then
+                printf "%s Error deleting zip-and-upload job.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+                exit 1
+        fi
+        printf "%s Old zip-and-upload job deleted.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    else
+        printf "%s No old zip-and-upload job detected for cleanup.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    fi
+
+    # Delete old PVCs
+    if [ "${HISTORY_MODE}" = rolling ]; then
+        if [ "$(kubectl get pvc rolling-tarball-restore)" ]; then
+        printf "%s PVC Exists.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+        sleep 5
+        kubectl delete pvc rolling-tarball-restore
+        sleep 5
+        fi
+    fi
+
+    if [ "$(kubectl get pvc "${HISTORY_MODE}"-snapshot-cache-volume)" ]; then
+        printf "%s PVC Exists.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+        sleep 5
+        kubectl delete pvc "${HISTORY_MODE}"-snapshot-cache-volume
+        sleep 5
+    fi
+
+    if [ "$(kubectl get pvc "${HISTORY_MODE}"-snap-volume)" ]; then
+        printf "%s PVC Exists.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+        sleep 5
+        kubectl delete pvc "${HISTORY_MODE}"-snap-volume
+        sleep 5
+    fi
+
+    SLEEP_TIME=0m
+
+    if [ "${HISTORY_MODE}" = "archive" ]; then
+        SLEEP_TIME="${ARCHIVE_SLEEP_DELAY}"
+        if [ "${ARCHIVE_SLEEP_DELAY}" != "0m" ]; then
+            printf "%s artifactDelay.archive is set to %s sleeping...\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${ARCHIVE_SLEEP_DELAY}"
+        fi
+    elif [ "${HISTORY_MODE}" = "rolling" ]; then
+        SLEEP_TIME="${ROLLING_SLEEP_DELAY}"
+        if [ "${ROLLING_SLEEP_DELAY}" != "0m" ]; then
+            printf "%s artifactDelay.rolling is set to %s sleeping...\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${ROLLING_SLEEP_DELAY}"
+        fi
+    fi
+
+    if [ "${SLEEP_TIME}" = "0m" ]; then
+        printf "%s artifactDelay.HISTORY_MODE was not set! No delay...\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+    fi
+
+    sleep "${SLEEP_TIME}"
+
 fi
 
 printf "%s Deleting temporary snapshot volume.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"

@@ -570,24 +570,6 @@ if [[ -n "${SNAPSHOT_WEBSITE_DOMAIN_NAME}" ]]; then
 
     # Upload chain page (index.html and assets) to root of website bucket
     eval "$(set_aws_command_creds "aws")" s3 cp _site/ s3://"${SNAPSHOT_WEBSITE_DOMAIN_NAME}" --recursive | grep "*"
+
+    exit 0
 fi
-
-SLEEP_TIME=0m
-
-if [ "${HISTORY_MODE}" = "archive" ]; then
-    SLEEP_TIME="${ARCHIVE_SLEEP_DELAY}"
-    if [ "${ARCHIVE_SLEEP_DELAY}" != "0m" ]; then
-        printf "%s artifactDelay.archive is set to %s sleeping...\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${ARCHIVE_SLEEP_DELAY}"
-    fi
-elif [ "${HISTORY_MODE}" = "rolling" ]; then
-    SLEEP_TIME="${ROLLING_SLEEP_DELAY}"
-    if [ "${ROLLING_SLEEP_DELAY}" != "0m" ]; then
-        printf "%s artifactDelay.rolling is set to %s sleeping...\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${ROLLING_SLEEP_DELAY}"
-    fi
-fi
-
-if [ "${SLEEP_TIME}" = "0m" ]; then
-    printf "%s artifactDelay.HISTORY_MODE was not set! No delay...\n" "$(date "+%Y-%m-%d %H:%M:%S")"
-fi
-
-sleep "${SLEEP_TIME}"
