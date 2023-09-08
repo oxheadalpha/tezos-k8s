@@ -1,5 +1,25 @@
 #!/bin/bash
 
+SLEEP_TIME=0m
+
+if [ "${HISTORY_MODE}" = "archive" ]; then
+    SLEEP_TIME="${ARCHIVE_SLEEP_DELAY}"
+    if [ "${ARCHIVE_SLEEP_DELAY}" != "0m" ]; then
+        printf "%s artifactDelay.archive is set to %s sleeping...\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${ARCHIVE_SLEEP_DELAY}"
+    fi
+elif [ "${HISTORY_MODE}" = "rolling" ]; then
+    SLEEP_TIME="${ROLLING_SLEEP_DELAY}"
+    if [ "${ROLLING_SLEEP_DELAY}" != "0m" ]; then
+        printf "%s artifactDelay.rolling is set to %s sleeping...\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${ROLLING_SLEEP_DELAY}"
+    fi
+fi
+
+if [ "${SLEEP_TIME}" = "0m" ]; then
+    printf "%s artifactDelay.HISTORY_MODE was not set! No delay...\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+fi
+
+sleep "${SLEEP_TIME}"
+
 cd /
 
 ZIP_AND_UPLOAD_JOB_NAME=zip-and-upload-"${HISTORY_MODE}"
@@ -269,25 +289,25 @@ if ! [ "$(kubectl get jobs "zip-and-upload-${HISTORY_MODE}" --namespace "${NAMES
         sleep 5
     fi
 
-    SLEEP_TIME=0m
+    # SLEEP_TIME=0m
 
-    if [ "${HISTORY_MODE}" = "archive" ]; then
-        SLEEP_TIME="${ARCHIVE_SLEEP_DELAY}"
-        if [ "${ARCHIVE_SLEEP_DELAY}" != "0m" ]; then
-            printf "%s artifactDelay.archive is set to %s sleeping...\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${ARCHIVE_SLEEP_DELAY}"
-        fi
-    elif [ "${HISTORY_MODE}" = "rolling" ]; then
-        SLEEP_TIME="${ROLLING_SLEEP_DELAY}"
-        if [ "${ROLLING_SLEEP_DELAY}" != "0m" ]; then
-            printf "%s artifactDelay.rolling is set to %s sleeping...\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${ROLLING_SLEEP_DELAY}"
-        fi
-    fi
+    # if [ "${HISTORY_MODE}" = "archive" ]; then
+    #     SLEEP_TIME="${ARCHIVE_SLEEP_DELAY}"
+    #     if [ "${ARCHIVE_SLEEP_DELAY}" != "0m" ]; then
+    #         printf "%s artifactDelay.archive is set to %s sleeping...\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${ARCHIVE_SLEEP_DELAY}"
+    #     fi
+    # elif [ "${HISTORY_MODE}" = "rolling" ]; then
+    #     SLEEP_TIME="${ROLLING_SLEEP_DELAY}"
+    #     if [ "${ROLLING_SLEEP_DELAY}" != "0m" ]; then
+    #         printf "%s artifactDelay.rolling is set to %s sleeping...\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${ROLLING_SLEEP_DELAY}"
+    #     fi
+    # fi
 
-    if [ "${SLEEP_TIME}" = "0m" ]; then
-        printf "%s artifactDelay.HISTORY_MODE was not set! No delay...\n" "$(date "+%Y-%m-%d %H:%M:%S")"
-    fi
+    # if [ "${SLEEP_TIME}" = "0m" ]; then
+    #     printf "%s artifactDelay.HISTORY_MODE was not set! No delay...\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+    # fi
 
-    sleep "${SLEEP_TIME}"
+    # sleep "${SLEEP_TIME}"
 
 fi
 
