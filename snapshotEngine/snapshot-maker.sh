@@ -1,5 +1,35 @@
 #!/bin/bash
 
+HISTORY_MODE="$(echo "$NODE_CONFIG" | jq -r ".history_mode")"
+TARGET_VOLUME="$(echo "$NODE_CONFIG" | jq ".target_volume")"
+PERSISTENT_VOLUME_CLAIM="$(
+  kubectl get po -n "$NAMESPACE" -l node_class="$NODE_CLASS" \
+    -o jsonpath="{.items[0].spec.volumes[?(@.name==$TARGET_VOLUME)].persistentVolumeClaim.claimName}"
+)"
+
+# For yq to work, the values resulting from the above cmds need to be exported.
+# We don't export them inline because of
+# https://github.com/koalaman/shellcheck/wiki/SC2155
+export HISTORY_MODE
+export PERSISTENT_VOLUME_CLAIM
+
+yq e -i '.metadata.namespace=strenv(NAMESPACE)' createVolumeSnapshot.yaml
+yq e -i '.metadata.labels.history_mode=strenv(HISTORY_MODE)' createVolumeSnapshot.yaml
+yq e -i '.spec.source.persistentVolumeClaimName=strenv(PERSISTENT_VOLUME_CLAIM)' createVolumeSnapshot.yaml
+yq e -i '.spec.volumeSnapshotClassName=strenv(VOLUME_SNAPSHOT_CLASS)' createVolumeSnapshot.yaml
+
+# Returns list of snapshots with a given status
+# readyToUse true/false
+getSnapshotNames() {
+  local readyToUse="${1##readyToUse=}"
+  shift
+  if [ -z "$readyToUse" ]; then
+    echo "Error: No jsonpath for volumesnapshots' ready status was provided."
+    exit 1
+  fi
+  kubectl get volumesnapshots -o jsonpath="{.items[?(.status.readyToUse==$readyToUse)].metadata.name}" --namespace "$NAMESPACE" "$@"
+}
+
 SLEEP_TIME=0m
 
 if [ "${HISTORY_MODE}" = "archive" ]; then
@@ -24,7 +54,7 @@ cd /
 
 ZIP_AND_UPLOAD_JOB_NAME=zip-and-upload-"${HISTORY_MODE}"
 
-# Delete zip-and-upload job
+# Delete zip-and-upload job if still around
 if kubectl get job "${ZIP_AND_UPLOAD_JOB_NAME}"; then
     printf "%s Old zip-and-upload job exits.  Attempting to delete.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     if ! kubectl delete jobs "${ZIP_AND_UPLOAD_JOB_NAME}"; then
@@ -36,7 +66,7 @@ else
     printf "%s No old zip-and-upload job detected for cleanup.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 fi
 
-# Delete old PVCs
+# Delete old PVCs if still around
 if [ "${HISTORY_MODE}" = rolling ]; then
     if [ "$(kubectl get pvc rolling-tarball-restore)" ]; then
     printf "%s PVC Exists.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -60,12 +90,34 @@ if [ "$(kubectl get pvc "${HISTORY_MODE}"-snap-volume)" ]; then
     sleep 5
 fi
 
-# while [ "$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==false)].metadata.name}' --namespace "${NAMESPACE}" -l history_mode="${HISTORY_MODE}")" ]; do
-#     printf "%s Snapshot already in progress...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-#     sleep 10
-# done
+# Take volume snapshot
+current_date=$(date "+%Y-%m-%d-%H-%M-%S" "$@")
+export SNAPSHOT_NAME="$current_date-$HISTORY_MODE-node-snapshot"
+# Update volume snapshot name
+yq e -i '.metadata.name=strenv(SNAPSHOT_NAME)' createVolumeSnapshot.yaml
 
-printf "%s EBS Snapshot finished!\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+printf "%s Creating snapshot ${SNAPSHOT_NAME} in ${NAMESPACE}.\n" "$(timestamp)"
+
+# Create snapshot
+if ! kubectl apply -f createVolumeSnapshot.yaml; then
+    printf "%s ERROR creating volumeSnapshot ${SNAPSHOT_NAME} in ${NAMESPACE} .\n" "$(timestamp)"
+    exit 1
+fi
+
+sleep 5
+
+# Wait for snapshot to finish
+until [ "$(getSnapshotNames readyToUse=true -l history_mode="${HISTORY_MODE}")" ]; do
+    printf "%s Snapshot in progress.  \n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+    until [ "$(getSnapshotNames readyToUse=true -l history_mode="${HISTORY_MODE}")" ]; do
+        sleep 1m # without sleep, this loop is a "busy wait". this sleep vastly reduces CPU usage while we wait for node
+        if  [ "$(getSnapshotNames readyToUse=true -l history_mode="${HISTORY_MODE}")" ]; then
+        break
+        fi
+    done
+done
+
+printf "%s Snapshot finished!\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
 SNAPSHOTS=$(kubectl get volumesnapshots -o jsonpath='{.items[?(.status.readyToUse==true)].metadata.name}' -l history_mode="${HISTORY_MODE}")
 NEWEST_SNAPSHOT=${SNAPSHOTS##* }
@@ -146,6 +198,9 @@ then
     exit 1
 fi
 
+# Delete all volumesnapshots so they arent setting around accruing charges
+kubectl delete vs --all
+
 # TODO Check for PVC
 printf "%s PersistentVolumeClaim ${HISTORY_MODE}-snap-volume created successfully in namespace ${NAMESPACE}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
@@ -202,23 +257,6 @@ if [ "${HISTORY_MODE}" = archive ]; then
     # Removes rolling-tarball-restore volumeMount from zip-and-upload container (second to last volume mount)
     yq eval -i "del(.spec.template.spec.containers[0].volumeMounts[2])" mainJob.yaml
 fi
-
-# # Switch alternate cloud provider secret name based on actual cloud provider
-# if [[ -n "${CLOUD_PROVIDER}" ]]; then
-#     # Need to account for dynamic volumes removed above. For example if not rolling node then rolling volume is deleted.
-#     SECRET_NAME="${NAMESPACE}-secret"
-#     # Index of zip-and-upload container changes depending on if rolling job or archive job
-#     NUM_CONTAINERS=$(yq e '.spec.template.spec.containers | length' mainJob.yaml)
-#     # Index of mounts also changes depending on history mode
-#     NUM_CONTAINER_MOUNTS=$(yq e ".spec.template.spec.containers[$(( NUM_CONTAINERS - 1 ))].volumeMounts | length" mainJob.yaml )
-#     # Secret volume mount is last item in list of volumeMounts for the zip and upload container
-#     SECRET_NAME="${SECRET_NAME}" yq e -i ".spec.template.spec.containers[$(( NUM_CONTAINERS - 1 ))].volumeMounts[$(( NUM_CONTAINER_MOUNTS - 1 ))].name=strenv(SECRET_NAME)" mainJob.yaml
-#     # Index of job volumes change depending on history mode
-#     NUM_JOB_VOLUMES=$(yq e '.spec.template.spec.volumes | length' mainJob.yaml )
-#     #  Setting job secret volume to value set by workflow
-#     SECRET_NAME="${SECRET_NAME}" yq e -i ".spec.template.spec.volumes[$(( NUM_JOB_VOLUMES - 1 ))].name=strenv(SECRET_NAME)" mainJob.yaml
-#     SECRET_NAME="${SECRET_NAME}" yq e -i ".spec.template.spec.volumes[$(( NUM_JOB_VOLUMES - 1 ))].secret.secretName=strenv(SECRET_NAME)" mainJob.yaml
-# fi
 
 # Service account to be used by entire zip-and-upload job.
 SERVICE_ACCOUNT="${SERVICE_ACCOUNT}" yq e -i '.spec.template.spec.serviceAccountName=strenv(SERVICE_ACCOUNT)' mainJob.yaml
