@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Delete all volumesnapshots so they arent setting around accruing charges
-kubectl delete vs --all
+kubectl delete vs -l history_mode=$HISTORY_MODE
 
 PERSISTENT_VOLUME_CLAIM="var-volume-snapshot-${HISTORY_MODE}-node-0"
 
@@ -323,7 +323,7 @@ if ! [ "$(kubectl get jobs "zip-and-upload-${HISTORY_MODE}" --namespace "${NAMES
     fi
 
     # Delete all volumesnapshots so they arent setting around accruing charges
-    kubectl delete vs --all
+    kubectl delete vs -l history_mode=$HISTORY_MODE
 
     SLEEP_TIME=0m
 
