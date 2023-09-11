@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Delete all volumesnapshots so they arent setting around accruing charges
+kubectl delete vs --all
+
 PERSISTENT_VOLUME_CLAIM="var-volume-snapshot-${HISTORY_MODE}-node-0"
 
 # For yq to work, the values resulting from the above cmds need to be exported.
@@ -193,9 +196,6 @@ then
     exit 1
 fi
 
-# Delete all volumesnapshots so they arent setting around accruing charges
-kubectl delete vs --all
-
 # TODO Check for PVC
 printf "%s PersistentVolumeClaim ${HISTORY_MODE}-snap-volume created successfully in namespace ${NAMESPACE}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
@@ -271,7 +271,7 @@ sleep 20
 while [ "$(kubectl get jobs "zip-and-upload-${HISTORY_MODE}" --namespace "${NAMESPACE}" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')" != "True" ]; do
     printf "%s Waiting for zip-and-upload job to complete.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"    
     while [ "$(kubectl get jobs "zip-and-upload-${HISTORY_MODE}" --namespace "${NAMESPACE}" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')" != "True" ]; do
-        sleep 1m # without sleep, this loop is a "busy wait". this sleep vastly reduces CPU usage while we wait for job
+        sleep 2m # without sleep, this loop is a "busy wait". this sleep vastly reduces CPU usage while we wait for job
         if [ "$(kubectl get pod -l job-name=zip-and-upload-"${HISTORY_MODE}" --namespace="${NAMESPACE}"| grep -i -e error -e evicted -e pending)" ] || \
         [ "$(kubectl get jobs  "zip-and-upload-${HISTORY_MODE}" --namespace="${NAMESPACE}" -o jsonpath='{.status.conditions[?(@.type=="Failed")].type}')" ] ; then
             printf "%s Zip-and-upload job failed. This job will end and a new snapshot will be taken.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" 
@@ -322,6 +322,9 @@ if ! [ "$(kubectl get jobs "zip-and-upload-${HISTORY_MODE}" --namespace "${NAMES
         sleep 5
     fi
 
+    # Delete all volumesnapshots so they arent setting around accruing charges
+    kubectl delete vs --all
+
     SLEEP_TIME=0m
 
     if [ "${HISTORY_MODE}" = "archive" ]; then
@@ -349,3 +352,4 @@ sleep 5
 kubectl delete -f volumeFromSnap.yaml  | while IFS= read -r line; do printf '%s %s\n' "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "$line"; done
 sleep 5
 kubectl delete job snapshot-maker --namespace "${NAMESPACE}"
+
