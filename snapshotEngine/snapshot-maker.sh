@@ -1,5 +1,6 @@
 #!/bin/bash
 
+NODE_CLASS="snapshot-${HISTORY_MODE}-node"
 TARGET_VOLUME="var-volume"
 PERSISTENT_VOLUME_CLAIM="$(
   kubectl get po -n "$NAMESPACE" -l node_class="$NODE_CLASS" \
