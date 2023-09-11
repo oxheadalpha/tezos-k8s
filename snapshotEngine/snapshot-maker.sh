@@ -1,11 +1,6 @@
 #!/bin/bash
 
-NODE_CLASS="snapshot-${HISTORY_MODE}-node"
-TARGET_VOLUME="var-volume"
-PERSISTENT_VOLUME_CLAIM="$(
-  kubectl get po -n "$NAMESPACE" -l node_class="$NODE_CLASS" \
-    -o jsonpath="{.items[0].spec.volumes[?(@.name==$TARGET_VOLUME)].persistentVolumeClaim.claimName}"
-)"
+PERSISTENT_VOLUME_CLAIM="var-volume-snapshot-${HISTORY_MODE}-node-0"
 
 # For yq to work, the values resulting from the above cmds need to be exported.
 # We don't export them inline because of
@@ -16,7 +11,7 @@ export PERSISTENT_VOLUME_CLAIM
 yq e -i '.metadata.namespace=strenv(NAMESPACE)' createVolumeSnapshot.yaml
 yq e -i '.metadata.labels.history_mode=strenv(HISTORY_MODE)' createVolumeSnapshot.yaml
 yq e -i '.spec.source.persistentVolumeClaimName=strenv(PERSISTENT_VOLUME_CLAIM)' createVolumeSnapshot.yaml
-yq e -i '.spec.volumeSnapshotClassName=strenv(VOLUME_SNAPSHOT_CLASS)' createVolumeSnapshot.yaml
+yq e -i '.spec.volumeSnapshotClassName=strenv(STORAGE_CLASS)' createVolumeSnapshot.yaml
 
 # Returns list of snapshots with a given status
 # readyToUse true/false
@@ -30,25 +25,25 @@ getSnapshotNames() {
   kubectl get volumesnapshots -o jsonpath="{.items[?(.status.readyToUse==$readyToUse)].metadata.name}" --namespace "$NAMESPACE" "$@"
 }
 
-SLEEP_TIME=0m
+# SLEEP_TIME=0m
 
-if [ "${HISTORY_MODE}" = "archive" ]; then
-    SLEEP_TIME="${ARCHIVE_SLEEP_DELAY}"
-    if [ "${ARCHIVE_SLEEP_DELAY}" != "0m" ]; then
-        printf "%s artifactDelay.archive is set to %s sleeping...\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${ARCHIVE_SLEEP_DELAY}"
-    fi
-elif [ "${HISTORY_MODE}" = "rolling" ]; then
-    SLEEP_TIME="${ROLLING_SLEEP_DELAY}"
-    if [ "${ROLLING_SLEEP_DELAY}" != "0m" ]; then
-        printf "%s artifactDelay.rolling is set to %s sleeping...\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${ROLLING_SLEEP_DELAY}"
-    fi
-fi
+# if [ "${HISTORY_MODE}" = "archive" ]; then
+#     SLEEP_TIME="${ARCHIVE_SLEEP_DELAY}"
+#     if [ "${ARCHIVE_SLEEP_DELAY}" != "0m" ]; then
+#         printf "%s artifactDelay.archive is set to %s sleeping...\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${ARCHIVE_SLEEP_DELAY}"
+#     fi
+# elif [ "${HISTORY_MODE}" = "rolling" ]; then
+#     SLEEP_TIME="${ROLLING_SLEEP_DELAY}"
+#     if [ "${ROLLING_SLEEP_DELAY}" != "0m" ]; then
+#         printf "%s artifactDelay.rolling is set to %s sleeping...\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${ROLLING_SLEEP_DELAY}"
+#     fi
+# fi
 
-if [ "${SLEEP_TIME}" = "0m" ]; then
-    printf "%s artifactDelay.HISTORY_MODE was not set! No delay...\n" "$(date "+%Y-%m-%d %H:%M:%S")"
-fi
+# if [ "${SLEEP_TIME}" = "0m" ]; then
+#     printf "%s artifactDelay.HISTORY_MODE was not set! No delay...\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+# fi
 
-sleep "${SLEEP_TIME}"
+# sleep "${SLEEP_TIME}"
 
 cd /
 
@@ -327,25 +322,25 @@ if ! [ "$(kubectl get jobs "zip-and-upload-${HISTORY_MODE}" --namespace "${NAMES
         sleep 5
     fi
 
-    # SLEEP_TIME=0m
+    SLEEP_TIME=0m
 
-    # if [ "${HISTORY_MODE}" = "archive" ]; then
-    #     SLEEP_TIME="${ARCHIVE_SLEEP_DELAY}"
-    #     if [ "${ARCHIVE_SLEEP_DELAY}" != "0m" ]; then
-    #         printf "%s artifactDelay.archive is set to %s sleeping...\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${ARCHIVE_SLEEP_DELAY}"
-    #     fi
-    # elif [ "${HISTORY_MODE}" = "rolling" ]; then
-    #     SLEEP_TIME="${ROLLING_SLEEP_DELAY}"
-    #     if [ "${ROLLING_SLEEP_DELAY}" != "0m" ]; then
-    #         printf "%s artifactDelay.rolling is set to %s sleeping...\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${ROLLING_SLEEP_DELAY}"
-    #     fi
-    # fi
+    if [ "${HISTORY_MODE}" = "archive" ]; then
+        SLEEP_TIME="${ARCHIVE_SLEEP_DELAY}"
+        if [ "${ARCHIVE_SLEEP_DELAY}" != "0m" ]; then
+            printf "%s artifactDelay.archive is set to %s sleeping...\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${ARCHIVE_SLEEP_DELAY}"
+        fi
+    elif [ "${HISTORY_MODE}" = "rolling" ]; then
+        SLEEP_TIME="${ROLLING_SLEEP_DELAY}"
+        if [ "${ROLLING_SLEEP_DELAY}" != "0m" ]; then
+            printf "%s artifactDelay.rolling is set to %s sleeping...\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${ROLLING_SLEEP_DELAY}"
+        fi
+    fi
 
-    # if [ "${SLEEP_TIME}" = "0m" ]; then
-    #     printf "%s artifactDelay.HISTORY_MODE was not set! No delay...\n" "$(date "+%Y-%m-%d %H:%M:%S")"
-    # fi
+    if [ "${SLEEP_TIME}" = "0m" ]; then
+        printf "%s artifactDelay.HISTORY_MODE was not set! No delay...\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+    fi
 
-    # sleep "${SLEEP_TIME}"
+    sleep "${SLEEP_TIME}"
 
 fi
 
