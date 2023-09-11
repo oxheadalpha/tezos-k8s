@@ -1,7 +1,6 @@
 #!/bin/bash
 
-HISTORY_MODE="$(echo "$NODE_CONFIG" | jq -r ".history_mode")"
-TARGET_VOLUME="$(echo "$NODE_CONFIG" | jq ".target_volume")"
+TARGET_VOLUME="var-volume"
 PERSISTENT_VOLUME_CLAIM="$(
   kubectl get po -n "$NAMESPACE" -l node_class="$NODE_CLASS" \
     -o jsonpath="{.items[0].spec.volumes[?(@.name==$TARGET_VOLUME)].persistentVolumeClaim.claimName}"
