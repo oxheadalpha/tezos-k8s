@@ -196,6 +196,11 @@ then
     exit 1
 fi
 
+sleep 5
+
+# Delete all volumesnapshots so they arent setting around accruing charges
+kubectl delete vs -l history_mode=$HISTORY_MODE
+
 # TODO Check for PVC
 printf "%s PersistentVolumeClaim ${HISTORY_MODE}-snap-volume created successfully in namespace ${NAMESPACE}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
