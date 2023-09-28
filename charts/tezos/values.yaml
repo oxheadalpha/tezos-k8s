@@ -342,6 +342,8 @@ tacoinfraSigners: {}
 # activation.
 # Optionally define an ingress for your rollup to be accessible from outside
 # the cluster.
+# If your rollup is an EVM rollup, you can also define an EVM proxy object,
+# which can in turn have an ingress.
 #
 smartRollupNodes: {}
 # Example:
@@ -350,6 +352,7 @@ smartRollupNodes: {}
 #   rollup-node-0:
 #     operator_account: archive-baking-node-0
 #     rollup_address: sr1RYurGZtN8KNSpkMcCt9CgWeUaNkzsAfXf
+#     annotations: {}
 #     ingress:
 #       enabled: false
 #       host: ""
@@ -358,6 +361,16 @@ smartRollupNodes: {}
 #       labels: {}
 #       pathType: Prefix
 #       tls: []
+#     evm_proxy:
+#       annotations: {}
+#       ingress:
+#         enabled: false
+#         host: ""
+#         annotations: {}
+#         className: ""
+#         labels: {}
+#         pathType: Prefix
+#         tls: []
 # ```
 
 dalNodes: {}
