@@ -2,8 +2,8 @@
 # Faucet frontend: https://github.com/oxheadalpha/tezos-faucet
 
 images:
-  tezosFaucet: ghcr.io/oxheadalpha/tezos-faucet:2.0.0
-  tezosFaucetBackend: ghcr.io/oxheadalpha/tezos-faucet-backend:2.0.0
+  tezosFaucet: ghcr.io/oxheadalpha/tezos-faucet:2.1.0
+  tezosFaucetBackend: ghcr.io/oxheadalpha/tezos-faucet-backend:2.1.0
 
 # Frontend app configuration. You can optionally deploy only the faucet backend.
 enableUI: true
@@ -28,34 +28,26 @@ authorizedHost: "*"
 backendRpcUrl: http://tezos-node-rpc:8732
 # If the backend requires CAPTCHA tokens to be submitted.
 enableCaptcha: true
-# Faucet won't dispense to an address if its balance exceeds this.
+# Faucet won't dispense to an address if its balance will exceed this.
 maxBalance: 6000
-
-# Configuration for the faucet profiles. To prevent spamming and abuse, each
-# profile has specific parameters that control the distribution of Tez and the
-# complexity and number of PoW challenges needed.
-# - `profile`: The name of the profile.
-# - `amount`: Amount of Tez to be distributed for this profile.
-# - `challengesNeeded`: Number of challenges given when CAPTCHA isn't used.
-# - `challengesNeededWithCaptcha`: Number of challenges given when CAPTCHA is used.
-# - `difficulty`: Challenge difficulty level when CAPTCHA isn't used.
-# - `difficultyWithCaptcha`: Challenge difficulty level when CAPTCHA is used.
-profiles:
-  user:
-    amount: 1
-    challengesNeeded: 5
-    challengesNeededWithCaptcha: 4
-    difficulty: 4
-    difficultyWithCaptcha: 3
-  baker:
-    amount: 6000
-    challengesNeeded: 6
-    challengesNeededWithCaptcha: 5
-    difficulty: 5
-    difficultyWithCaptcha: 4
+# The minimum Tez allowed per request.
+minTez: 1
+# The maximum Tez allowed per request.
+maxTez: 6000
 
 # Set to true to disable the requirement of solving PoW challenges.
 disableChallenges: false
+# Minimum number of challenges required for the minimum Tez request.
+minChallenges: 1
+# Maximum number of challenges required for the maximum Tez request.
+maxChallenges: 550
+# Maximum number of challenges required for the maximum Tez request when a
+# captcha is used.
+maxChallengesWithCaptcha: 66
+# How many bytes the challenge string should be.
+challengeSize: 2048
+# Difficulty level for challenges.
+difficulty: 4
 
 # Config for the Redis backend for the PoW challenges. Redis is not needed if
 # challenges are disabled.
