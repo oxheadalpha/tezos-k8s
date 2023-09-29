@@ -20,7 +20,7 @@ metadata:
   name: evm-proxy-{{ $k }}
   namespace: {{ $.Release.Namespace }}
 {{- if $v.evm_proxy.annotations | default false }}
-{{- with $v.annotations }}
+{{- with $v.evm_proxy.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
 {{- end }}
