@@ -40,17 +40,6 @@ spec:
                 name: faucet-backend-config
             - secretRef:
                 name: faucet-backend-secret
-          env:
-          # profiles.json is stored in faucet-backend-config instead of in a new
-          # dedicated configmap. We don't need it to be an env var so we make it
-          # empty here to counteract envFrom.
-            - name: profiles.json
-              value: ""
-          volumeMounts:
-            - name: faucet-backend-config
-              mountPath: /app/dist/profiles.json
-              subPath: profiles.json
-              readOnly: true
       {{- if .Values.enableUI }}
         - name: faucet
           image: {{ .Values.images.tezosFaucet }}
