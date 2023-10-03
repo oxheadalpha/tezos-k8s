@@ -28,26 +28,6 @@ getSnapshotNames() {
   kubectl get volumesnapshots -o jsonpath="{.items[?(.status.readyToUse==$readyToUse)].metadata.name}" --namespace "$NAMESPACE" "$@"
 }
 
-# SLEEP_TIME=0m
-
-# if [ "${HISTORY_MODE}" = "archive" ]; then
-#     SLEEP_TIME="${ARCHIVE_SLEEP_DELAY}"
-#     if [ "${ARCHIVE_SLEEP_DELAY}" != "0m" ]; then
-#         printf "%s artifactDelay.archive is set to %s sleeping...\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${ARCHIVE_SLEEP_DELAY}"
-#     fi
-# elif [ "${HISTORY_MODE}" = "rolling" ]; then
-#     SLEEP_TIME="${ROLLING_SLEEP_DELAY}"
-#     if [ "${ROLLING_SLEEP_DELAY}" != "0m" ]; then
-#         printf "%s artifactDelay.rolling is set to %s sleeping...\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${ROLLING_SLEEP_DELAY}"
-#     fi
-# fi
-
-# if [ "${SLEEP_TIME}" = "0m" ]; then
-#     printf "%s artifactDelay.HISTORY_MODE was not set! No delay...\n" "$(date "+%Y-%m-%d %H:%M:%S")"
-# fi
-
-# sleep "${SLEEP_TIME}"
-
 cd /
 
 ZIP_AND_UPLOAD_JOB_NAME=zip-and-upload-"${HISTORY_MODE}"
@@ -88,17 +68,79 @@ if [ "$(kubectl get pvc "${HISTORY_MODE}"-snap-volume)" ]; then
     sleep 5
 fi
 
+# Check latest artifact and sleep if its too new
+# This was done because nodes sometimes OOM and jobs are restarted 
+# Resulting in more artifacts created than should be with
+# a given sleep time. IE 3 days sleep should result in 2 artifacts in a 7 day lifecycle policy
+# but if the job restarts during its sleeping time it would result in more, multiple per day even.
+
+SLEEP_TIME=0m
+
+if [ "${HISTORY_MODE}" = "archive" ]; then
+    SLEEP_TIME="${ARCHIVE_SLEEP_DELAY}"
+    if [ "${ARCHIVE_SLEEP_DELAY}" != "0m" ]; then
+        printf "%s artifactDelay.archive is set to %s.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${ARCHIVE_SLEEP_DELAY}"
+    fi
+elif [ "${HISTORY_MODE}" = "rolling" ]; then
+    SLEEP_TIME="${ROLLING_SLEEP_DELAY}"
+    if [ "${ROLLING_SLEEP_DELAY}" != "0m" ]; then
+        printf "%s artifactDelay.rolling is set to %s.\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${ROLLING_SLEEP_DELAY}"
+    fi
+fi
+
+if [ "${SLEEP_TIME}" = "0m" ]; then
+    printf "%s artifactDelay.HISTORY_MODE was not set! No delay...\n" "$(date "+%Y-%m-%d %H:%M:%S")"
+else
+    # Latest timestamp of this network's artifact of this history mode
+    LATEST_ARTIFACT_TIMESTAMP=$(curl https://${NAMESPACE}.nyc3.digitaloceanspaces.com/base.json | \
+    jq --arg HISTORY_MODE "${HISTORY_MODE}" \
+    '[.[] |  select(.history_mode==$HISTORY_MODE)] | sort_by(.block_timestamp) | last | .block_timestamp' | tr -d '"')
+
+    # If base.json doesnt exists continue
+    if [[ -n ${LATEST_ARTIFACT_TIMESTAMP}  ]]; then
+        printf "%s Latest artifact timestamp is %s.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${LATEST_ARTIFACT_TIMESTAMP}"
+        printf "%s Sleep time is %s.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${SLEEP_TIME}"
+
+        ## Now minus artifact timestamp
+        ARTIFACT_EPOCH_TIME=$(date -d "${LATEST_ARTIFACT_TIMESTAMP}" -D "%Y-%m-%dT%H:%M:%SZ" +%s)
+
+        # Check if sleep time is in hours or days and convert to minutes
+        if [[ -n $(echo $SLEEP_TIME | grep d) ]]; then
+            # Converting hours to minutes
+            SLEEP_TIME_MINUTES=$(( ${SLEEP_TIME%?} * 24 * 60 ))
+        else
+            # if its hours already just pop off the h
+            SLEEP_TIME_MINUTES=$(( "${SLEEP_TIME%?}" * 60 ))
+        fi
+
+        # Age of artifact in minutes
+        ARTIFACT_AGE=$(( ($(date +%s) - ARTIFACT_EPOCH_TIME) / 60 ))
+
+        printf "%s Latest artifact is %s minutes old.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${ARTIFACT_AGE}"
+        printf "%s Our set sleep time in minutes is %s.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${SLEEP_TIME_MINUTES}"
+
+        # If the age is less than our sleep minutes we need to continue to sleep
+        if [[ ${ARTIFACT_AGE} -lt ${SLEEP_TIME_MINUTES} ]]; then
+            TIME_LEFT=$(( SLEEP_TIME_MINUTES - ARTIFACT_AGE ))
+            printf "%s We need to sleep for %s minutes.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")" "${TIME_LEFT}"
+            sleep "${TIME_LEFT}"m
+        else
+            printf "%s Newest artifact is older than sleep time starting job!.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
+        fi
+    fi
+fi
+
 # Take volume snapshot
 current_date=$(date "+%Y-%m-%d-%H-%M-%S" "$@")
 export SNAPSHOT_NAME="$current_date-$HISTORY_MODE-node-snapshot"
 # Update volume snapshot name
 yq e -i '.metadata.name=strenv(SNAPSHOT_NAME)' createVolumeSnapshot.yaml
 
-printf "%s Creating snapshot ${SNAPSHOT_NAME} in ${NAMESPACE}.\n" "$(timestamp)"
+printf "%s Creating snapshot ${SNAPSHOT_NAME} in ${NAMESPACE}.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
 
 # Create snapshot
 if ! kubectl apply -f createVolumeSnapshot.yaml; then
-    printf "%s ERROR creating volumeSnapshot ${SNAPSHOT_NAME} in ${NAMESPACE} .\n" "$(timestamp)"
+    printf "%s ERROR creating volumeSnapshot ${SNAPSHOT_NAME} in ${NAMESPACE} .\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
     exit 1
 fi
 
@@ -329,26 +371,6 @@ if ! [ "$(kubectl get jobs "zip-and-upload-${HISTORY_MODE}" --namespace "${NAMES
 
     # Delete all volumesnapshots so they arent setting around accruing charges
     kubectl delete vs -l history_mode=$HISTORY_MODE
-
-    SLEEP_TIME=0m
-
-    if [ "${HISTORY_MODE}" = "archive" ]; then
-        SLEEP_TIME="${ARCHIVE_SLEEP_DELAY}"
-        if [ "${ARCHIVE_SLEEP_DELAY}" != "0m" ]; then
-            printf "%s artifactDelay.archive is set to %s sleeping...\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${ARCHIVE_SLEEP_DELAY}"
-        fi
-    elif [ "${HISTORY_MODE}" = "rolling" ]; then
-        SLEEP_TIME="${ROLLING_SLEEP_DELAY}"
-        if [ "${ROLLING_SLEEP_DELAY}" != "0m" ]; then
-            printf "%s artifactDelay.rolling is set to %s sleeping...\n" "$(date "+%Y-%m-%d %H:%M:%S")" "${ROLLING_SLEEP_DELAY}"
-        fi
-    fi
-
-    if [ "${SLEEP_TIME}" = "0m" ]; then
-        printf "%s artifactDelay.HISTORY_MODE was not set! No delay...\n" "$(date "+%Y-%m-%d %H:%M:%S")"
-    fi
-
-    sleep "${SLEEP_TIME}"
 
 fi
 
