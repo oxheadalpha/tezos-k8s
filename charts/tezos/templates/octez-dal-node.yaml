@@ -51,10 +51,14 @@ spec:
           - |
 {{ tpl ($.Files.Get "scripts/dal-node.sh") $ | indent 12 }}
 {{- if $v | default false }}
-{{- if $v.bootstrapProfile | default false }}
         env:
+{{- if $v.bootstrapProfile | default false }}
         - name: BOOTSTRAP_PROFILE
           value: "true"
+{{- end }}
+{{- if $v.publicAddr | default false }}
+        - name: PUBLIC_ADDR
+          value: "{{ $v.publicAddr }}"
 {{- end }}
 {{- end }}
       securityContext:

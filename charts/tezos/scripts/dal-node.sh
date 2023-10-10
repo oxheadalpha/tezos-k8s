@@ -7,10 +7,12 @@ DAL_DATA_DIR="$TEZ_VAR/dal"
 mkdir -p ${DAL_DATA_DIR}
 
 extra_args=""
-if [ ${BOOTSTRAP_PROFILE} == "true" ]; then
+if [ "${BOOTSTRAP_PROFILE}" == "true" ]; then
   extra_args="--bootstrap-profile"
 fi
-
+if [ "${PUBLIC_ADDR}" != "" ]; then
+  extra_args="${extra_args} --public-addr ${PUBLIC_ADDR}"
+fi
 
 CMD="$TEZ_BIN/octez-dal-node run ${extra_args} --data-dir ${DAL_DATA_DIR} \
   --endpoint http://tezos-node-rpc:8732 \
