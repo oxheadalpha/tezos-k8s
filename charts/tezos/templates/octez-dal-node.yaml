@@ -60,6 +60,10 @@ spec:
         - name: ATTESTER_PROFILES
           value: "{{ $v.attesterProfiles }}"
 {{- end }}
+{{- if $v.peer | default false }}
+        - name: PEER
+          value: "{{ $v.peer }}"
+{{- end }}
 {{- if $v.publicAddr | default false }}
         - name: PUBLIC_ADDR
           value: "{{ $v.publicAddr }}"

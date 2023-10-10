@@ -13,6 +13,9 @@ fi
 if [ "${ATTESTER_PROFILES}" != "" ]; then
   extra_args="${extra_args} --attester-profiles ${ATTESTER_PROFILES}"
 fi
+if [ "${PEER}" != "" ]; then
+  extra_args="${extra_args} --peer ${PEER}"
+fi
 if [ "${PUBLIC_ADDR}" != "" ]; then
   extra_args="${extra_args} --public-addr ${PUBLIC_ADDR}"
 fi
