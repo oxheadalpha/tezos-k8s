@@ -10,6 +10,9 @@ extra_args=""
 if [ "${BOOTSTRAP_PROFILE}" == "true" ]; then
   extra_args="--bootstrap-profile"
 fi
+if [ "${ATTESTER_PROFILES}" != "" ]; then
+  extra_args="${extra_args} --attester-profiles ${ATTESTER_PROFILES}"
+fi
 if [ "${PUBLIC_ADDR}" != "" ]; then
   extra_args="${extra_args} --public-addr ${PUBLIC_ADDR}"
 fi
