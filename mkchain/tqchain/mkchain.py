@@ -70,7 +70,7 @@ cli_args = {
     },
     "octez_docker_image": {
         "help": "Version of the Octez docker image",
-        "default": "tezos/tezos:v17.1",
+        "default": "tezos/tezos:v17.3",
     },
     "use_docker": {
         "action": "store_true",
@@ -154,6 +154,7 @@ def node_config(name, n, is_baker):
             "shell": {"history_mode": "rolling"},
             "metrics_addr": [":9932"],
         },
+        "authorized_keys": ["authorized-key-0"],
     }
     if is_baker:
         ret["bake_using_accounts"] = [f"{name}-{n}"]
@@ -243,7 +244,7 @@ def main():
         baking_accounts = {
             f"{ARCHIVE_BAKER_NODE_NAME}-{n}": {} for n in range(args.number_of_bakers)
         }
-        for account in baking_accounts:
+        for account in [*baking_accounts, *["authorized-key-0"]]:
             print(f"Generating keys for account {account}")
             keys = gen_key(args.octez_docker_image)
             for key_type in keys:
@@ -275,11 +276,12 @@ def main():
             ],
         }
 
-    signers = {
+    octezSigners = {
         "tezos-signer-0": {
-            "sign_for_accounts": [
+            "accounts": [
                 f"{ARCHIVE_BAKER_NODE_NAME}-{n}" for n in range(args.number_of_bakers)
-            ]
+            ],
+            "authorized_keys": ["authorized-key-0"],
         }
     }
 
@@ -308,7 +310,7 @@ def main():
         **base_constants,
         "bootstrap_peers": bootstrap_peers,
         "accounts": accounts["secret"],
-        "signers": signers,
+        "octezSigners": octezSigners,
         "nodes": creation_nodes,
         **activation,
     }
