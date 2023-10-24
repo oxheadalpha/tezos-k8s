@@ -54,7 +54,7 @@ signers:
   signer_metrics: false
 
   # Enter email address to send alerts to.
-  # monitoring_email:
+  monitoring_email: ""
 
 # Name that goes into the service
 # e.g tezos-signer-mybaker
