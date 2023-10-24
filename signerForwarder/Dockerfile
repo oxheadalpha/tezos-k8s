@@ -20,4 +20,4 @@ RUN cat /etc/ssh/sshd_config
 
 RUN mkdir /home/signer/.ssh && chown -R signer /home/signer
 
-CMD ["/usr/sbin/sshd"]
+CMD ["/usr/sbin/sshd", "-D", "-e"]
