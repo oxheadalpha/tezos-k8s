@@ -61,7 +61,7 @@ spec:
           readOnly: true
         env:
         - name: TUNNEL_ENDPOINT_PORT
-          value: {{ $endpoint.tunnel_endpoint_port }}
+          value: "{{ $endpoint.tunnel_endpoint_port }}"
         ports:
         - name: signer
           containerPort: {{ $signer_port }}
