@@ -1,8 +1,6 @@
 {{- range .Values.signers }}
 {{- $name := .name }}
-{{- $signers := . }}
-{{- range $i := until (len .endpoints) }}
-{{- $endpoint := index $signers.endpoints $i }}
+{{- range $i, $endpoint := .endpoints }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
