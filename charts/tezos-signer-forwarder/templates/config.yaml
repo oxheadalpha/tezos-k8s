@@ -7,7 +7,6 @@ metadata:
   name: tezos-signer-forwarder-config-{{ $name }}-{{ $i }}
 data:
   authorized_keys: "{{ $endpoint.ssh_pubkey }} signer"
-  tunnel_endpoint_port: "{{ $endpoint.tunnel_endpoint_port }}"
 ---
 {{- end }}
 {{- end }}

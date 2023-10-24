@@ -61,11 +61,7 @@ spec:
           readOnly: true
         env:
         - name: TUNNEL_ENDPOINT_PORT
-          valueFrom:
-            configMapKeyRef:
-              name: tezos-signer-forwarder-config-{{ $name }}-{{ $i }}
-              defaultMode: 0400
-              key: tunnel_endpoint_port
+          value: {{ $endpoint.tunnel_endpoint_port }}
         ports:
         - name: signer
           containerPort: {{ $signer_port }}
