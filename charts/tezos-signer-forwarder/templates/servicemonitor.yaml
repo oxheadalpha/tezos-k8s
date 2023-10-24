@@ -15,11 +15,11 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: tezos-signer-forwarder
-      midl_baker_name: {{ .name }}
+      tezos_baker_name: {{ .name }}
   targetLabels:
-  - midl_baker_name
+  - tezos_baker_name
   podTargetLabels:
-  - midl_endpoint_name
+  - tezos_endpoint_name
 ---
 {{- end }}
 {{- end }}

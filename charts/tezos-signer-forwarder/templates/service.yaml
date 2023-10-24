@@ -36,11 +36,11 @@ metadata:
   name: tezos-remote-signer-{{ .name }}
   labels:
     app.kubernetes.io/name: tezos-signer-forwarder
-    midl_baker_name: {{ .name }}
+    tezos_baker_name: {{ .name }}
 spec:
   selector:
     app.kubernetes.io/name: tezos-signer-forwarder
-    midl_baker_name: {{ .name }}
+    tezos_baker_name: {{ .name }}
   ports:
   - port: {{ .signer_port }}
     name: signer

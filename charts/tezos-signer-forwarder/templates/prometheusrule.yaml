@@ -11,8 +11,8 @@ spec:
     rules:
     - alert: SignerPowerLoss
       annotations:
-        description: 'Remote signer "{{`{{ $labels.midl_endpoint_name }}`}}" for baker "{{`{{ $labels.midl_baker_name }}`}}" has lost power'
-        summary: 'Remote signer "{{`{{ $labels.midl_endpoint_name }}`}}" for baker "{{`{{ $labels.midl_baker_name }}`}}" has lost power'
+        description: 'Remote signer "{{`{{ $labels.tezos_endpoint_name }}`}}" for baker "{{`{{ $labels.tezos_baker_name }}`}}" has lost power'
+        summary: 'Remote signer "{{`{{ $labels.tezos_endpoint_name }}`}}" for baker "{{`{{ $labels.tezos_baker_name }}`}}" has lost power'
       expr: power{namespace="{{ .Release.Namespace }}"} != 0
       for: 1m
       labels:
@@ -20,8 +20,8 @@ spec:
         alertType: tezos-remote-signer-alert
     - alert: SignerWiredNetworkLoss
       annotations:
-        description: 'Remote signer "{{`{{ $labels.midl_endpoint_name }}`}}" for baker "{{`{{ $labels.midl_baker_name }}`}}" has lost wired internet connection'
-        summary: 'Tezos remote signer "{{`{{ $labels.midl_endpoint_name }}`}}" for baker "{{`{{ $labels.midl_baker_name }}`}}" has lost wired internet connection'
+        description: 'Remote signer "{{`{{ $labels.tezos_endpoint_name }}`}}" for baker "{{`{{ $labels.tezos_baker_name }}`}}" has lost wired internet connection'
+        summary: 'Tezos remote signer "{{`{{ $labels.tezos_endpoint_name }}`}}" for baker "{{`{{ $labels.tezos_baker_name }}`}}" has lost wired internet connection'
       expr: wired_network{namespace="{{ .Release.Namespace }}"} != 0
       for: 1m
       labels:
@@ -40,8 +40,8 @@ spec:
     rules:
     - alert: NoRemoteSigner
       annotations:
-        description: 'Remote signer "{{`{{ $labels.midl_endpoint_name }}`}}" for baker "{{`{{ $labels.midl_baker_name }}`}}" is down'
-        summary: 'Remote signer "{{`{{ $labels.midl_endpoint_name }}`}}" for baker "{{`{{ $labels.midl_baker_name }}`}}" is down or unable to sign.'
+        description: 'Remote signer "{{`{{ $labels.tezos_endpoint_name }}`}}" for baker "{{`{{ $labels.tezos_baker_name }}`}}" is down'
+        summary: 'Remote signer "{{`{{ $labels.tezos_endpoint_name }}`}}" for baker "{{`{{ $labels.tezos_baker_name }}`}}" is down or unable to sign.'
       expr: unhealthy_signers_total{namespace="{{ .Release.Namespace }}"} != 0
       for: 1m
       labels:

@@ -24,7 +24,7 @@ spec:
     - name: alertType
       value: tezos-remote-signer-alert
       regex: false
-    - name: midl_endpoint_name
+    - name: tezos_endpoint_name
       value: {{ .alias }}
       regex: false
     continue: false
