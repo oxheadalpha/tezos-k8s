@@ -50,18 +50,20 @@ spec:
         fsGroup: 1000
 {{- include "tezos.nodeSelectorConfig" $ | indent 6 }}
       volumes:
+      {{- if (include "tezos.doesZerotierConfigExist" $) }}
         - hostPath:
             path: /dev/net/tun
           name: dev-net-tun
+      {{- end }}
         - emptyDir: {}
           name: config-volume
         - name: tezos-accounts
           secret:
             secretName: tezos-secret
-{{- if (include "tezos.hasPerBlockVotes" $) }}
-        - name: per-block-votes
+{{- if has "baker" $.node_vals.runs }}
+        - name: baker-config
           configMap:
-            name: per-block-votes
+            name: baker-config
 {{- end }}
 {{- if $.node_vals.local_storage | default false }}
         - emptyDir: {}
@@ -86,7 +88,7 @@ spec:
         resources:
           requests:
 {{- if $.node_vals.local_storage | default false }}
-            storage: "1Gi"
+            storage: {{ default "1Gi" $.node_vals.local_storage_pv_size }}
 {{- else }}
             storage: {{ default "15Gi" $.node_vals.storage_size }}
 {{- end }}

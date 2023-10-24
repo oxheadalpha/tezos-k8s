@@ -1,6 +1,5 @@
 {{- if .Values.ingress.enabled -}}
 {{- $fullName := "tezos-faucet" -}}
-{{- $svcPort := .Values.service.port -}}
 {{- if and .Values.ingress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
   {{- if not (hasKey .Values.ingress.annotations "kubernetes.io/ingress.class") }}
   {{- $_ := set .Values.ingress.annotations "kubernetes.io/ingress.class" .Values.ingress.className}}
@@ -16,6 +15,7 @@ apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: {{ $fullName }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "tezos-faucet.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}
@@ -40,25 +40,23 @@ spec:
     - host: {{ .Values.ingress.host | quote }}
       http:
         paths:
-        - path: "/info"
-          pathType: 'Prefix'
-          backend:
-            service:
-              name: {{ $fullName }}
-              port:
-                number: 3000
-        - path: "/send"
-          pathType: 'Prefix'
-          backend:
-            service:
-              name: {{ $fullName }}
-              port:
-                number: 3000
-        - path: "/"
-          pathType: 'Prefix'
-          backend:
-            service:
-              name: {{ $fullName }}
-              port:
-                number: 80
+          {{- range $path := list "/info" "/challenge" "/verify" }}
+          - path: {{ $path }}
+            pathType: Exact
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: 3000
+          {{- end }}
+
+        {{- if .Values.enableUI }}
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: 8080
+        {{- end }}
 {{- end }}

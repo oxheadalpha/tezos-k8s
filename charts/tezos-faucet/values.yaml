@@ -1,33 +1,65 @@
+# Faucet backend: https://github.com/oxheadalpha/tezos-faucet-backend
+# Faucet frontend: https://github.com/oxheadalpha/tezos-faucet
+
 images:
-  tezos_faucet: ghcr.io/oxheadalpha/tezos-faucet:latest
-  tezos_faucet_backend: ghcr.io/oxheadalpha/tezos-faucet-backend:latest
-authorizedHost: "'*'"
+  tezosFaucet: ghcr.io/oxheadalpha/tezos-faucet:2.2.1
+  tezosFaucetBackend: ghcr.io/oxheadalpha/tezos-faucet-backend:2.2.0
 
-# if your balance is over the max, the faucet won't give you more tokens
-maxBalance: 12000
-
+# Frontend app configuration. You can optionally deploy only the faucet backend.
+enableUI: true
 config:
   application:
-     name: "Tezos Jakartanet faucet"
-     googleCaptchaSiteKey: #6LeiK14fAAAAAPptX4v49I4wSrHjOrU2cb_y5oII
-     backendUrl: "http://localhost:3000"
-     githubRepo: "https://github.com/oxheadalpha/tezos-faucet"
-     profiles:
-       user:
-         profile: USER
-         amount: 1
-       baker:
-         profile: BAKER
-         amount: 6000
+    name: "Tezos Faucet"
+    googleCaptchaSiteKey: "" # 6LefC8QmAAAAAIX...
+    # Default value assumes faucet backend is available on localhost.
+    backendUrl: http://localhost:3000
+    githubRepo: https://github.com/oxheadalpha/tezos-faucet
   network:
-     name: #Jakartanet
-     rpcUrl: #https://jakartanet.tezos.marigold.dev/
-     faucetAddress: #tz1cpdS3qoQBYCGohszPWS8Gdya6Wg2e4JnL
-     viewer: #https://jakarta.tzstats.com
-     allowSendButton: true
-service:
-  type: ClusterIP
-  port: 80
+    name: Custom
+    # Default value assumes node RPC is available on localhost.
+    rpcUrl: http://localhost:8732
+    faucetAddress: "" # tz1PW...
+    viewer: "" # https://network.tzstats.com
+
+# Value the server sets for the "Access-Control-Allow-Origin" header for CORS.
+authorizedHost: "*"
+# RPC url for the faucet backend. Default value assumes tezos-k8s created an RPC
+# service in the same namespace. If not set, defaults to `config.network.rpcUrl`.
+backendRpcUrl: http://tezos-node-rpc:8732
+# If the backend requires CAPTCHA tokens to be submitted.
+enableCaptcha: true
+# Faucet won't dispense to an address if its balance will exceed this. Not
+# capped by default.
+maxBalance: null
+# The minimum Tez allowed per request.
+minTez: 1
+# The maximum Tez allowed per request.
+maxTez: 6000
+
+# Set to true to disable the requirement of solving PoW challenges.
+disableChallenges: false
+# Minimum number of challenges required for the minimum Tez request.
+minChallenges: 1
+# Maximum number of challenges required for the maximum Tez request.
+maxChallenges: 550
+# Maximum number of challenges required for the maximum Tez request when a
+# captcha is used.
+maxChallengesWithCaptcha: 66
+# How many bytes the challenge string should be.
+challengeSize: 2048
+# Difficulty level for challenges.
+difficulty: 4
+
+# Config for the Redis backend for the PoW challenges. Redis is not needed if
+# challenges are disabled.
+redis:
+  url: "" # redis://redis-master.redis:6379
+  password: ""
+
+# Secrets
+googleCaptchaSecretKey: "" # 6LefC8QmAAAAAPH...
+faucetPrivateKey: "" # edsk3X...
+
 ingress:
   enabled: false
   className: ""
@@ -40,6 +72,30 @@ ingress:
   #    hosts:
   #      - chart-example-frontend.local
 
-# Secrets
-googleCaptchaSecretKey: secret_key_goes_here
-faucetPrivateKey: edsk***
+imagePullPolicy: IfNotPresent
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: tezos-faucet
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

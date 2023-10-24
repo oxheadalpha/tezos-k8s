@@ -53,17 +53,18 @@ spec:
 
               # These loops wait on the RPC to come online and prevent log from printing same line
               # over and over and over again.  This prints one line and waits for the RPC to come online for a clean log.
-              until wget -qO-  http://localhost:8732/chains/main/blocks/head/header >/dev/null 2>&1; do
+              until wget -qO-  http://127.0.0.1:8732/chains/main/blocks/head/header >/dev/null 2>&1; do
                 printf "%s Waiting for node RPC to come online.\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
-                until wget -qO-  http://localhost:8732/chains/main/blocks/head/header >/dev/null 2>&1; do
-                  if  wget -qO-  http://localhost:8732/chains/main/blocks/head/header >/dev/null 2>&1; then
+                until wget -qO-  http://127.0.0.1:8732/chains/main/blocks/head/header >/dev/null 2>&1; do
+                  sleep 1m # without sleep, this loop is a "busy wait". this sleep vastly reduces CPU usage while we wait for rpc
+                  if  wget -qO-  http://127.0.0.1:8732/chains/main/blocks/head/header >/dev/null 2>&1; then
                     break
                   fi
                 done
               done
 
               # If somehow we skip the above waiting loop, this kills the job if the RPC is not online.
-              if ! wget -qO-  http://localhost:8732/chains/main/blocks/head/header >/dev/null 2>&1; then
+              if ! wget -qO-  http://127.0.0.1:8732/chains/main/blocks/head/header >/dev/null 2>&1; then
                 printf "%s RPC is not online! Exiting...\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
                 exit 1
 
@@ -76,15 +77,15 @@ spec:
 
               # Tezos devs have advised us that it is safer to target HEAD~2 for rolling artifacts.
               else
-                HEAD_BLOCK=$(wget -qO-  http://localhost:8732/chains/main/blocks/head/header | sed -E 's/.*"hash":"?([^,"]*)"?.*/\1/')
+                HEAD_BLOCK=$(wget -qO-  http://127.0.0.1:8732/chains/main/blocks/head/header | sed -E 's/.*"hash":"?([^,"]*)"?.*/\1/')
                 TARGET="${HEAD_BLOCK}~2"
               fi
 
               # Get BLOCK_HASH from RPC
-              wget -qO-  http://localhost:8732/chains/main/blocks/"${TARGET}"/header | sed -E 's/.*"hash":"?([^,"]*)"?.*/\1/' > /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH
+              wget -qO-  http://127.0.0.1:8732/chains/main/blocks/"${TARGET}"/header | sed -E 's/.*"hash":"?([^,"]*)"?.*/\1/' > /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH
 
               # Get BLOCK_HEIGHT from RPC
-              wget -qO-  http://localhost:8732/chains/main/blocks/"${TARGET}"/header | sed -E 's/.*"level":"?([^,"]*)"?.*/\1/' > /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HEIGHT
+              wget -qO-  http://127.0.0.1:8732/chains/main/blocks/"${TARGET}"/header | sed -E 's/.*"level":"?([^,"]*)"?.*/\1/' > /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HEIGHT
 
               # We need to check if the block is finalized for archive nodes since we aren't getting
               # validation by a Tezos snapshot like our rolling tarball. We are just zipping up the data dir from an archive node.
@@ -117,13 +118,13 @@ spec:
               fi
 
               # Get BLOCK_TIMESTAMP from RPC
-              wget -qO- http://localhost:8732/chains/main/blocks/head/header | sed -E 's/.*"timestamp":"?([^,"]*)"?.*/\1/' > /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_TIMESTAMP
+              wget -qO- http://127.0.0.1:8732/chains/main/blocks/head/header | sed -E 's/.*"timestamp":"?([^,"]*)"?.*/\1/' > /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_TIMESTAMP
 
               # Old version string
               /usr/local/bin/octez-node --version > /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_VERSION
 
               # Get new version object from RPC
-              wget -qO- http://localhost:8732/version > /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_RPC_VERSION_INFO
+              wget -qO- http://127.0.0.1:8732/version > /"${HISTORY_MODE}"-snapshot-cache-volume/TEZOS_RPC_VERSION_INFO
 
               # Print variables for debug
               printf "%s BLOCK_HASH is...$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH))\n" "$(date "+%Y-%m-%d %H:%M:%S" "$@")"
@@ -225,6 +226,10 @@ spec:
               name: snapshot-cache-volume
             - mountPath: /rolling-tarball-restore
               name: rolling-tarball-restore
+            - mountPath: /aws-secrets
+              name: aws-secrets
+            - mountPath: /do-secrets
+              name: do-secrets
           env:
             - name: HISTORY_MODE
               value: ""
@@ -242,4 +247,12 @@ spec:
         - name: rolling-tarball-restore
           persistentVolumeClaim:
             claimName: rolling-tarball-restore
+        - name: aws-secrets
+          secret:
+            secretName: aws-secrets
+            optional: true
+        - name: do-secrets
+          secret:
+            secretName: do-secrets
+            optional: true
   backoffLimit: 0

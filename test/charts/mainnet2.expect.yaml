@@ -38,9 +38,10 @@ data:
   ARCHIVE_TARBALL_URL: ""
   PREFER_TARBALLS: "false"
   SNAPSHOT_SOURCE: "https://xtz-shots.io/tezos-snapshots.json"
-  OCTEZ_VERSION: "tezos/tezos:v16.1"
+  OCTEZ_VERSION: "tezos/tezos:v17.1"
   NODE_GLOBALS: |
     {
+      "config": {},
       "env": {
         "all": {
           "key": "outer-value"
@@ -194,7 +195,7 @@ spec:
     spec:
       containers:        
         - name: octez-node
-          image: "tezos/tezos:v16.1"
+          image: "tezos/tezos:v17.1"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -315,7 +316,7 @@ spec:
               memory: 80Mi        
       initContainers:        
         - name: config-init
-          image: "tezos/tezos:v16.1"
+          image: "tezos/tezos:v17.1"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -432,7 +433,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume        
         - name: snapshot-importer
-          image: "tezos/tezos:v16.1"
+          image: "tezos/tezos:v17.1"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -497,7 +498,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume                
         - name: upgrade-storage
-          image: "tezos/tezos:v16.1"
+          image: "tezos/tezos:v17.1"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -527,9 +528,6 @@ spec:
       securityContext:
         fsGroup: 1000      
       volumes:
-        - hostPath:
-            path: /dev/net/tun
-          name: dev-net-tun
         - emptyDir: {}
           name: config-volume
         - name: tezos-accounts
@@ -905,9 +903,6 @@ spec:
       securityContext:
         fsGroup: 1000      
       volumes:
-        - hostPath:
-            path: /dev/net/tun
-          name: dev-net-tun
         - emptyDir: {}
           name: config-volume
         - name: tezos-accounts

@@ -3,7 +3,7 @@ tezos_k8s_images:
 
 # the tezos version used to run `octez-node snapshot import/export`
 images:
-  octez: tezos/tezos:v16.1
+  octez: tezos/tezos:v17.1
 
 # snapshotEngine containers interact with the kubernetes control
 # plane to create volume snapshots. This requires a special IAM role
@@ -99,3 +99,5 @@ artifactDelay:
 
 # URL to schema.json file to validate generated metadata against
 schemaUrl: "https://oxheadalpha.com/tezos-snapshot-metadata.schema.1.0.json"
+
+s3BucketOverride: ""

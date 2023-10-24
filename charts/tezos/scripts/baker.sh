@@ -11,9 +11,22 @@ proto_command="{{ .command_in_tpl }}"
 
 my_baker_account="$(sed -n "$(($BAKER_INDEX + 1))p" < /etc/tezos/baker-account )"
 
-per_block_vote_file=/etc/tezos/per-block-votes/${my_baker_account}-${proto_command}-per-block-votes.json
+if [ "${my_baker_account}" == "" ]; then
+  while true; do
+    printf "This container is not baking, but exists "
+    printf "due to uneven numer of bakers within the statefulset\n"
+    sleep 300
+  done
+fi
 
-if [ $(cat $per_block_vote_file) == "null" ]; then
+per_block_vote_file=/etc/tezos/baker-config/${my_baker_account}-${proto_command}-per-block-votes.json
+
+if [ ! -f "$per_block_vote_file" ]; then
+  echo "Error: $per_block_vote_file not found" >&2
+  exit 1
+fi
+
+if [ "$(cat $per_block_vote_file)" == "null" ]; then
   cat << EOF
 You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
 protocols:
@@ -25,12 +38,8 @@ EOF
 fi
 extra_args="--votefile ${per_block_vote_file}"
 
-if [ "${my_baker_account}" == "" ]; then
-  while true; do
-    printf "This container is not baking, but exists "
-    printf "due to uneven numer of bakers within the statefulset\n"
-    sleep 300
-  done
+if [ -f /etc/tezos/baker-config/${my_baker_account}_operations_pool ]; then
+  extra_args="${extra_args} --operations-pool $(cat /etc/tezos/baker-config/${my_baker_account}_operations_pool)"
 fi
 
 CLIENT="$TEZ_BIN/octez-client -d $CLIENT_DIR"

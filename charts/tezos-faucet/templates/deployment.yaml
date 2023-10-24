@@ -15,34 +15,66 @@ spec:
       annotations:
         # ensure that the pod bounces each time configmap changes
         # https://helm.sh/docs/howto/charts_tips_and_tricks/#automatically-roll-deployments
-        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }} 
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
-      containers:
-      - image: {{ .Values.images.tezos_faucet_backend }}
-        name: faucet-backend
-        ports:
-        - name: backend
-          containerPort: 3000
-          protocol: TCP
-        envFrom:
-        - configMapRef:
-            name: faucet-backend-config
-        - secretRef:
-            name: faucet-backend-secret
-      - image: {{ .Values.images.tezos_faucet }}
-        name: faucet
-        ports:
-        - name: frontend
-          containerPort: 80
-          protocol: TCP
-        volumeMounts:
-        - name: faucet-config
-          mountPath: "/app/src/config.json"
-          subPath: "config.json"
-          readOnly: true
       restartPolicy: Always
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "tezos-faucet.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: faucet-backend
+          image: {{ .Values.images.tezosFaucetBackend }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          ports:
+            - name: backend
+              containerPort: 3000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: faucet-backend-config
+            - secretRef:
+                name: faucet-backend-secret
+      {{- if .Values.enableUI }}
+        - name: faucet
+          image: {{ .Values.images.tezosFaucet }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          ports:
+            - name: frontend
+              containerPort: 8080
+              protocol: TCP
+          volumeMounts:
+            - name: faucet-config
+              mountPath: /app/public/config.json
+              subPath: config.json
+              readOnly: true
+      {{- end }}
       volumes:
-      - name: faucet-config
-        configMap:
-          name: faucet-config
-status: {}
+        - name: faucet-backend-config
+          configMap:
+            name: faucet-backend-config
+      {{- if .Values.enableUI }}
+        - name: faucet-config
+          configMap:
+            name: faucet-config
+      {{- end }}
+
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

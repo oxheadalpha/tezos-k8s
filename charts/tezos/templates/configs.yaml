@@ -88,17 +88,29 @@ metadata:
   name: tezos-secret
   namespace: {{ .Release.Namespace }}
 ---
-{{- if (include "tezos.hasPerBlockVotes" .) }}
+{{- if (include "tezos.shouldDeployBakerConfig" .) }}
 apiVersion: v1
 data:
-{{- range $k, $v := .Values.accounts }}
-{{- range ( $v.protocols | default $.Values.protocols ) }}
-  {{ $k }}-{{ .command }}-per-block-votes.json: {{ .vote | toJson | quote }}
-{{- end }}
+{{- $accountsBaking := include "tezos.getAccountsBaking" . | fromJson | values | first }}
+{{- range $accountName := $accountsBaking }}
+  {{- $account := get $.Values.accounts $accountName | default dict }}
+  {{- if and
+    (not $.Values.should_generate_unsafe_deterministic_data)
+    (not $account)
+   }}
+    {{- fail (printf "Baking account '%s' is not defined." $account) }}
+  {{- end }}
+
+  {{- range ( $account.protocols | default $.Values.protocols ) }}
+    {{ $accountName }}-{{ .command }}-per-block-votes.json: {{ .vote | toJson | quote }}
+  {{- end }}
+  {{- if $account.operations_pool }}
+    {{ $accountName }}_operations_pool: {{ $account.operations_pool | quote }}
+  {{- end }}
 {{- end }}
 kind: ConfigMap
 metadata:
-  name: per-block-votes
+  name: baker-config
   namespace: {{ .Release.Namespace }}
 ---
 {{- end }}
