@@ -1,4 +1,4 @@
-FROM alpine:edge
+FROM alpine:3.18.4
 
 # add openssh and clean
 RUN apk add --no-cache openssh shadow
