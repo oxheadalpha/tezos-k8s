@@ -34,7 +34,7 @@ spec:
       - name: config-volume
         configMap:
            name: tezos-signer-forwarder-config-{{ $name }}-{{ $i }}
-           defaultMode: 0400
+           defaultMode: 0444
       - name: secret-volume
         secret:
            secretName: tezos-signer-forwarder-secret-{{ $.Values.name }}
@@ -54,11 +54,9 @@ spec:
         - name: config-volume
           mountPath: /home/signer/.ssh/authorized_keys
           subPath: authorized_keys
-          readOnly: true
         - name: secret-volume
           mountPath: /etc/ssh/ssh_host_ecdsa_key
           subPath: ssh_host_ecdsa_key
-          readOnly: true
         env:
         - name: TUNNEL_ENDPOINT_PORT
           value: "{{ $endpoint.tunnel_endpoint_port }}"
