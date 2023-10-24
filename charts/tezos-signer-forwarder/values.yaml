@@ -71,7 +71,7 @@ service_annotations: {}
 
 # Load Balancer IP to set the ssh service.
 # In some cloud providers, it is used to assign static ip.
-#load_balancer_ip:
+load_balancer_ip: ""
 
 secrets:
   # The ssh host key must be passed as input.
