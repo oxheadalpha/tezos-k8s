@@ -38,6 +38,7 @@ spec:
         secret:
            secretName: tezos-signer-forwarder-secret-{{ $.Values.name }}
            defaultMode: 0400
+           readOnly: true
       containers:
       - name: tezos-signer-forwarder
         image: {{ $.Values.tezos_k8s_images.tezos_signer_forwarder }}
@@ -52,9 +53,11 @@ spec:
         - name: config-volume
           mountPath: /home/signer/.ssh/authorized_keys
           subPath: authorized_keys
+          readOnly: true
         - name: secret-volume
           mountPath: /etc/ssh/ssh_host_ecdsa_key
           subPath: ssh_host_ecdsa_key
+          readOnly: true
         env:
         - name: TUNNEL_ENDPOINT_PORT
           valueFrom:
