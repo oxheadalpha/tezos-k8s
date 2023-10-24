@@ -42,8 +42,10 @@ spec:
   ports:
   - port: {{ .signer_port }}
     name: signer
+{{ if .signer_metrics }}
   - port: 31732
     name: metrics
+{{ end }}
   # make sure that the service always targets the same signer, when HA is in use.
   sessionAffinity: ClientIP
 ---
