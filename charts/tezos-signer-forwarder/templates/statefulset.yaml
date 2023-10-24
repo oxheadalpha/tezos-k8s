@@ -34,6 +34,7 @@ spec:
       - name: config-volume
         configMap:
            name: tezos-signer-forwarder-config-{{ $name }}-{{ $i }}
+           defaultMode: 0400
       - name: secret-volume
         secret:
            secretName: tezos-signer-forwarder-secret-{{ $.Values.name }}
@@ -63,6 +64,7 @@ spec:
           valueFrom:
             configMapKeyRef:
               name: tezos-signer-forwarder-config-{{ $name }}-{{ $i }}
+              defaultMode: 0400
               key: tunnel_endpoint_port
         ports:
         - name: signer
