@@ -3,9 +3,7 @@
 {{- $readiness_probe_path := .readiness_probe_path }}
 {{- $signer_port := .signer_port }}
 {{- $signer_metrics := .signer_metrics }}
-{{- $signers := . }}
-{{- range $i := until (len .endpoints) }}
-{{- $endpoint := index $signers.endpoints $i }}
+{{- range $i, $endpoint := .endpoints }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
