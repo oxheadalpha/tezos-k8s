@@ -6,7 +6,6 @@ metadata:
   labels:
     app.kubernetes.io/name: tezos-signer-forwarder
   name: tezos-remote-signer-monitoring-{{ .name }}
-  namespace: {{ $.Release.Namespace }}
 spec:
   endpoints:
   - port: metrics
