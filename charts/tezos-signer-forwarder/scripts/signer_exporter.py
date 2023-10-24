@@ -20,7 +20,7 @@ def prometheus_metrics():
     Prometheus endpoint
     This combines:
     * the metrics from the signer, which themselves are a combination of the
-      prometheus node-expoter and custom probes (power status, etc)
+      prometheus node-exporter and custom probes (power status, etc)
     * the `unhealthy_signers_total` metric exported by this script, verifying
       whether the signer URL configured upstream returns a 200 OK
     '''
