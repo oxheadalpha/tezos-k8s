@@ -42,7 +42,7 @@ spec:
            defaultMode: 0400
       containers:
       - name: tezos-signer-forwarder
-        image: {{ $.Values.images.tezos_signer_forwarder }}
+        image: {{ $.Values.tezos_k8s_images.tezos_signer_forwarder }}
         imagePullPolicy: IfNotPresent
         command:
           - /bin/sh
