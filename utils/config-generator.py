@@ -332,10 +332,16 @@ def expose_secret_key(account_name):
     pod.  It returns the obvious Boolean.
     """
     if MY_POD_TYPE == "activating":
-        all_authorized_keys = [key for node in NODES.values() for instance in node['instances'] for key in instance.get('authorized_keys', [])]
+        all_authorized_keys = [
+            key
+            for node in NODES.values()
+            for instance in node["instances"]
+            for key in instance.get("authorized_keys", [])
+        ]
         if account_name in all_authorized_keys:
-            # populate all known authorized keys in the activation account.
-            # This avoids annoying edge cases for activating private chains, when security is not critical.
+            # Populate authorized keys known by all bakers in the activation account.
+            # This ensures that activation will succeed with a remote signer that requires auth,
+            # regardless of which baker does it.
             return True
         return NETWORK_CONFIG["activation_account_name"] == account_name
 
@@ -461,8 +467,9 @@ def import_keys(all_accounts):
         public_key_hashs.append({"name": account_name, "value": pkh_b58})
         account_values["pkh"] = pkh_b58
 
-        if MY_POD_TYPE == "signing" and \
-            account_name in MY_POD_CONFIG.get("authorized_keys", {}):
+        if MY_POD_TYPE == "signing" and account_name in MY_POD_CONFIG.get(
+            "authorized_keys", {}
+        ):
             print(f"    Appending authorized key: {pk_b58}")
             authorized_keys.append({"name": account_name, "value": pk_b58})
 
@@ -756,7 +763,9 @@ and octez version {octez_version}.
     ]
     if octez_version:
         matching_snapshots = [
-            s for s in matching_snapshots if int(octez_version) == s.get("tezos_version").get("version").get("major")
+            s
+            for s in matching_snapshots
+            if int(octez_version) == s.get("tezos_version").get("version").get("major")
         ]
     matching_snapshots = sorted(matching_snapshots, key=lambda s: s.get("block_height"))
 
