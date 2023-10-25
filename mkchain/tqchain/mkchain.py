@@ -244,7 +244,7 @@ def main():
         baking_accounts = {
             f"{ARCHIVE_BAKER_NODE_NAME}-{n}": {} for n in range(args.number_of_bakers)
         }
-        for account in [*baking_accounts, *["authorized-key-0"]]:
+        for account in [*baking_accounts, "authorized-key-0"]:
             print(f"Generating keys for account {account}")
             keys = gen_key(args.octez_docker_image)
             for key_type in keys:
