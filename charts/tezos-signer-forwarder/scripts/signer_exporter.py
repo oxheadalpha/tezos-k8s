@@ -2,7 +2,6 @@
 import os
 from flask import Flask, request, jsonify
 import requests
-import re
 
 import logging
 log = logging.getLogger('werkzeug')
@@ -13,6 +12,10 @@ application = Flask(__name__)
 readiness_probe_path = os.getenv("READINESS_PROBE_PATH")
 signer_port = os.getenv("SIGNER_PORT")
 signer_metrics = os.getenv("SIGNER_METRICS") == "true"
+
+# https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+# Configured readiness probe timeoutSeconds is 5s, timeout sync request before that.
+SIGNER_CONNECT_TIMEOUT = 4.5
 
 @application.route('/metrics', methods=['GET'])
 def prometheus_metrics():
@@ -26,7 +29,13 @@ def prometheus_metrics():
     '''
 
     try:
-        probe = requests.get(f"http://localhost:{signer_port}{readiness_probe_path}")
+        probe = requests.get(f"http://localhost:{signer_port}{readiness_probe_path}", timeout=SIGNER_CONNECT_TIMEOUT)
+    except requests.exceptions.ConnectTimeout:
+        #Timeout connect to node
+        probe = None
+    except requests.exceptions.ReadTimeout:
+        #Timeout read from node
+        probe = None
     except requests.exceptions.RequestException:
         probe = None
     if probe and signer_metrics:
