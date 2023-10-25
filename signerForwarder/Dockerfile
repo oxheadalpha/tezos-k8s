@@ -20,4 +20,6 @@ RUN cat /etc/ssh/sshd_config
 
 RUN mkdir /home/signer/.ssh && chown -R signer /home/signer
 
+# Note that the container must run as root. see
+#  https://superuser.com/a/1548482
 CMD ["/usr/sbin/sshd", "-D", "-e"]
