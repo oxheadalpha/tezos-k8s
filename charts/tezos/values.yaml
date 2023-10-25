@@ -317,7 +317,7 @@ octezSigners: {}
 #     - baker0
 #    authorized_keys:
 #     # if set, baker will only sign request authenticated by one of the authorized_keys
-#     - authorized_key0
+#     - authorized-key-0
 # ```
 #
 # Deploys a signer using AWS KMS to sign operations.
