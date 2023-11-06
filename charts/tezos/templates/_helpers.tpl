@@ -207,3 +207,31 @@ metadata:
   {{- end }}
   {{- "true" }}
 {{- end }}
+
+{{/*
+  Get list of authorized keys. Fails if any of the keys is not defined in the accounts.
+*/}}
+{{- define "tezos.getAuthorizedKeys" }}
+  {{- $allAuthorizedKeys := list }}
+  {{- /* Gather keys from nodes */}}
+  {{- range $node := .Values.nodes }}
+    {{- range $instance := $node.instances }}
+      {{- if .authorized_keys }}
+        {{- $allAuthorizedKeys = concat $allAuthorizedKeys .authorized_keys }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- /* Gather keys from octezSigners */}}
+  {{- range $signer := .Values.octezSigners }}
+    {{- if $signer.authorized_keys }}
+      {{- $allAuthorizedKeys = concat $allAuthorizedKeys $signer.authorized_keys }}
+    {{- end }}
+  {{- end }}
+  {{- /* Ensure all keys are defined in accounts and fail otherwise */}}
+  {{- $allAuthorizedKeys = uniq $allAuthorizedKeys }}
+  {{- range $key := $allAuthorizedKeys }}
+    {{- if not (index $.Values.accounts $key) }}
+      {{- fail (printf "Authorized key '%s' is not defined in accounts." $key) }}
+    {{- end }}
+  {{- end }}
+{{- end }}
