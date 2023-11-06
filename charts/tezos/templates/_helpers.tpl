@@ -230,7 +230,7 @@ metadata:
   {{- /* Ensure all keys are defined in accounts and fail otherwise */}}
   {{- $allAuthorizedKeys = uniq $allAuthorizedKeys }}
   {{- range $key := $allAuthorizedKeys }}
-    {{- if not (index $.Values.accounts $key) }}
+    {{- if not (index $.Values.accounts $key "key") }}
       {{- fail (printf "Authorized key '%s' is not defined in accounts." $key) }}
     {{- end }}
   {{- end }}
