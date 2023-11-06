@@ -114,3 +114,4 @@ metadata:
   namespace: {{ .Release.Namespace }}
 ---
 {{- end }}
+{{- include "tezos.getAuthorizedKeys" . }}
