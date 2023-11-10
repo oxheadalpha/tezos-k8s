@@ -69,6 +69,11 @@ node_selector: {}
 # be used to assign a static ip address.
 service_annotations: {}
 
+
+stateful_set_annotations: {}
+# example: this will cause pulumi to not wait for tunnel to be up
+# pulumi/skipAwait: true
+
 # Load Balancer IP to set the ssh service.
 # In some cloud providers, it is used to assign static ip.
 load_balancer_ip: ""

@@ -9,7 +9,9 @@ kind: StatefulSet
 metadata:
   name: tezos-signer-forwarder-{{ $name}}-{{ $i }}
   annotations:
-    "pulumi.com/skipAwait": "true"
+  {{- with $.Values.stateful_set_annotations }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   replicas: 1
   serviceName: tezos-remote-signer-{{ $name }}
@@ -35,6 +37,7 @@ spec:
         configMap:
            name: tezos-signer-forwarder-config-{{ $name }}-{{ $i }}
            defaultMode: 0444
+           readOnly: true
       - name: secret-volume
         secret:
            secretName: tezos-signer-forwarder-secret-{{ $.Values.name }}
