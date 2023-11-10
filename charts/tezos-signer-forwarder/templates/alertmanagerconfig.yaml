@@ -1,0 +1,63 @@
+{{- if .Values.alertmanagerConfig.enabled }}
+{{- range .Values.signers }}
+{{- if .monitoring_email }}
+{{ $signer := . }}
+{{- range .endpoints }}
+{{- if .alert_when_down }}
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: tezos-signer-{{ $signer.name }}-{{ .alias }}-email
+  labels:
+{{- toYaml $.Values.alertmanagerConfig.labels | nindent 4 }}
+spec:
+  route:
+    groupBy: ['job']
+    groupWait: 30s
+    groupInterval: 5m
+    repeatInterval: 12h
+    receiver: 'email_{{ $signer.name }}'
+    matchers:
+    - name: service
+      value: tezos-remote-signer-{{ $signer.name }}
+      regex: false
+    - name: alertType
+      value: tezos-remote-signer-alert
+      regex: false
+    - name: tezos_endpoint_name
+      value: {{ .alias }}
+      regex: false
+    continue: false
+
+  receivers:
+  - name: 'email_{{ $signer.name }}'
+    emailConfigs:
+    - to: "{{ $signer.monitoring_email }}"
+      sendResolved: true
+      headers:
+      - key: subject
+        value: '{{`[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .CommonLabels.alertname }}`}}'
+      html: >-
+        {{`{{ if eq .Status "firing" }}
+        Attention Required for Tezos Remote Signer:
+        {{ else }}
+        Resolved Alert for Tezos Remote Signer:
+        {{ end }}
+        {{ range .Alerts -}}
+        {{ .Annotations.summary }}
+        {{ end }}`}}
+      text: >-
+        {{`{{ if eq .Status "firing" }}
+        Attention Required for Tezos Remote Signer:
+        {{ else }}
+        Resolved Alert for Tezos Remote Signer:
+        {{ end }}
+        {{ range .Alerts -}}
+        {{ .Annotations.summary }}
+        {{ end }}`}}
+---
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

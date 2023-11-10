@@ -1,0 +1,6 @@
+apiVersion: v2
+name: tezos-signer-forwarder
+description: A chart for tezos-signer-forwarder
+type: application
+version: 0.0.0
+appVersion: "10.0"

@@ -1,0 +1,101 @@
+{{- range .Values.signers }}
+{{- $name := .name }}
+{{- $readiness_probe_path := .readiness_probe_path }}
+{{- $signer_port := .signer_port }}
+{{- $signer_metrics := .signer_metrics }}
+{{- range $i, $endpoint := .endpoints }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: tezos-signer-forwarder-{{ $name}}-{{ $i }}
+  annotations:
+  {{- with $.Values.stateful_set_annotations }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: 1
+  serviceName: tezos-remote-signer-{{ $name }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: tezos-signer-forwarder
+  template:
+    metadata:
+      annotations:
+        # ensure that the pod bounces each time endpoint config changes
+        # https://helm.sh/docs/howto/charts_tips_and_tricks/#automatically-roll-deployments
+        checksum/config: {{ print "$endpoint" | sha256sum }}
+      {{- with $.Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        app.kubernetes.io/name: tezos-signer-forwarder
+        tezos_baker_name: {{ $name }}
+        tezos_endpoint_name: {{ $endpoint.alias }}
+    spec:
+      volumes:
+      - name: config-volume
+        configMap:
+           name: tezos-signer-forwarder-config-{{ $name }}-{{ $i }}
+           defaultMode: 0444
+           readOnly: true
+      - name: secret-volume
+        secret:
+           secretName: tezos-signer-forwarder-secret-{{ $.Values.name }}
+           defaultMode: 0400
+           readOnly: true
+      containers:
+      - name: tezos-signer-forwarder
+        image: {{ $.Values.tezos_k8s_images.tezos_signer_forwarder }}
+        imagePullPolicy: IfNotPresent
+        command:
+          - /bin/sh
+        args:
+          - "-c"
+          - |
+{{ tpl ($.Files.Get (print "scripts/entrypoint.sh")) $ | indent 12 }}
+        volumeMounts:
+        - name: config-volume
+          mountPath: /home/signer/.ssh/authorized_keys
+          subPath: authorized_keys
+        - name: secret-volume
+          mountPath: /etc/ssh/ssh_host_ecdsa_key
+          subPath: ssh_host_ecdsa_key
+        env:
+        - name: TUNNEL_ENDPOINT_PORT
+          value: "{{ $endpoint.tunnel_endpoint_port }}"
+        ports:
+        - name: signer
+          containerPort: {{ $signer_port }}
+          protocol: TCP
+        - name: ssh-{{ trunc 9 $name }}-{{ $i }}
+          containerPort: {{ $endpoint.tunnel_endpoint_port }}
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: {{ $readiness_probe_path }}
+            port: {{ $signer_port }}
+          timeoutSeconds: 5
+      - name: prom-exporter
+        image: {{ $.Values.tezos_k8s_images.utils }}
+        ports:
+          - name: metrics
+            containerPort: 31732
+            protocol: TCP
+        env:
+        - name: READINESS_PROBE_PATH
+          value: {{ $readiness_probe_path | quote }}
+        - name: SIGNER_PORT
+          value: {{ $signer_port | quote }}
+        - name: SIGNER_METRICS
+          value: {{ $signer_metrics | quote }}
+        command:
+          - /usr/local/bin/python
+        args:
+          - "-c"
+          - |
+{{ tpl ($.Files.Get (print "scripts/signer_exporter.py")) $ | indent 12 }}
+      nodeSelector:
+ {{ toYaml $.Values.node_selector | indent 8 }}
+---
+{{- end }}
+{{- end }}

@@ -1,0 +1,12 @@
+{{- range .Values.signers }}
+{{- $name := .name }}
+{{- range $i, $endpoint := .endpoints }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tezos-signer-forwarder-config-{{ $name }}-{{ $i }}
+data:
+  authorized_keys: "{{ $endpoint.ssh_pubkey }} signer"
+---
+{{- end }}
+{{- end }}
