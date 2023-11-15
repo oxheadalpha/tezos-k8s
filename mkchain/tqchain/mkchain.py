@@ -250,7 +250,7 @@ def main():
             for key_type in keys:
                 accounts[key_type][account] = {
                     "key": keys[key_type],
-                    "is_bootstrap_baker_account": True,
+                    "is_bootstrap_baker_account": False if account == "authorized-key-0" else True,
                     "bootstrap_balance": "4000000000000",
                 }
 
