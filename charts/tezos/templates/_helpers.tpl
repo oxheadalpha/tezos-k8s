@@ -114,6 +114,28 @@ metadata:
 {{- end }}
 
 {{/*
+  Get list of accounts that are being used to bake. Returned as a json
+  serialized dict because of how Helm renders everything returned from
+  a template as string. Function callers need to parse the returned
+  value like so: `fromJson | values | first`. A dict and not list is
+  returned because of the way `fromJson` works which expects a type of
+  map[string]interface {}.
+*/}}
+{{- define "tezos.getAccountsBaking" }}
+  {{- $allAccounts := list }}
+  {{- range $node := .Values.nodes }}
+    {{- range $instance := $node.instances }}
+    {{- if and .bake_using_accounts (kindIs "slice" .bake_using_accounts) }}
+        {{- $allAccounts = concat $allAccounts .bake_using_accounts }}
+      {{- else if and .bake_using_account (kindIs "string" .bake_using_account) }}
+        {{- $allAccounts = append $allAccounts .bake_using_account }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- dict "data" (uniq $allAccounts) | toJson }}
+{{- end }}
+
+{{/*
   Should deploy TZKT indexer?
 */}}
 {{- define "tezos.shouldDeployTzktIndexer" -}}
@@ -184,4 +206,32 @@ metadata:
     {{- fail (printf "'%s' account's key is not a valid key or key hash." .account_name) }}
   {{- end }}
   {{- "true" }}
+{{- end }}
+
+{{/*
+  Get list of authorized keys. Fails if any of the keys is not defined in the accounts.
+*/}}
+{{- define "tezos.getAuthorizedKeys" }}
+  {{- $allAuthorizedKeys := list }}
+  {{- /* Gather keys from nodes */}}
+  {{- range $node := .Values.nodes }}
+    {{- range $instance := $node.instances }}
+      {{- if .authorized_keys }}
+        {{- $allAuthorizedKeys = concat $allAuthorizedKeys .authorized_keys }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- /* Gather keys from octezSigners */}}
+  {{- range $signer := .Values.octezSigners }}
+    {{- if $signer.authorized_keys }}
+      {{- $allAuthorizedKeys = concat $allAuthorizedKeys $signer.authorized_keys }}
+    {{- end }}
+  {{- end }}
+  {{- /* Ensure all keys are defined in accounts and fail otherwise */}}
+  {{- $allAuthorizedKeys = uniq $allAuthorizedKeys }}
+  {{- range $key := $allAuthorizedKeys }}
+    {{- if not (index $.Values.accounts $key "key") }}
+      {{- fail (printf "Authorized key '%s' is not defined in accounts." $key) }}
+    {{- end }}
+  {{- end }}
 {{- end }}

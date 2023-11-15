@@ -134,6 +134,7 @@ data:
   OCTEZ_VERSION: "tezos/tezos:v15-release"
   NODE_GLOBALS: |
     {
+      "config": {},
       "env": {}
     }
 
@@ -220,7 +221,12 @@ data:
 # Source: tezos-chain/templates/configs.yaml
 apiVersion: v1
 data:
-  tacoinfraSigner-013-PtJakart-per-block-votes.json: "{\"liquidity_baking_toggle_vote\":\"pass\"}"
+    tezos-baking-node-0-013-PtJakart-per-block-votes.json: "{\"liquidity_baking_toggle_vote\":\"pass\"}"
+    a-013-PtJakart-per-block-votes.json: "{\"liquidity_baking_toggle_vote\":\"pass\"}"
+    b-013-PtJakart-per-block-votes.json: "{\"liquidity_baking_toggle_vote\":\"pass\"}"
+    c-013-PtJakart-per-block-votes.json: "{\"liquidity_baking_toggle_vote\":\"pass\"}"
+    d-013-PtJakart-per-block-votes.json: "{\"liquidity_baking_toggle_vote\":\"pass\"}"
+    tacoinfraSigner-013-PtJakart-per-block-votes.json: "{\"liquidity_baking_toggle_vote\":\"pass\"}"
 kind: ConfigMap
 metadata:
   name: baker-config
@@ -684,9 +690,6 @@ spec:
       securityContext:
         fsGroup: 1000      
       volumes:
-        - hostPath:
-            path: /dev/net/tun
-          name: dev-net-tun
         - emptyDir: {}
           name: config-volume
         - name: tezos-accounts
@@ -808,7 +811,12 @@ spec:
               
               per_block_vote_file=/etc/tezos/baker-config/${my_baker_account}-${proto_command}-per-block-votes.json
               
-              if [ $(cat $per_block_vote_file) == "null" ]; then
+              if [ ! -f "$per_block_vote_file" ]; then
+                echo "Error: $per_block_vote_file not found" >&2
+                exit 1
+              fi
+              
+              if [ "$(cat $per_block_vote_file)" == "null" ]; then
                 cat << EOF
               You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
               protocols:
@@ -880,7 +888,12 @@ spec:
               
               per_block_vote_file=/etc/tezos/baker-config/${my_baker_account}-${proto_command}-per-block-votes.json
               
-              if [ $(cat $per_block_vote_file) == "null" ]; then
+              if [ ! -f "$per_block_vote_file" ]; then
+                echo "Error: $per_block_vote_file not found" >&2
+                exit 1
+              fi
+              
+              if [ "$(cat $per_block_vote_file)" == "null" ]; then
                 cat << EOF
               You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
               protocols:
@@ -952,7 +965,12 @@ spec:
               
               per_block_vote_file=/etc/tezos/baker-config/${my_baker_account}-${proto_command}-per-block-votes.json
               
-              if [ $(cat $per_block_vote_file) == "null" ]; then
+              if [ ! -f "$per_block_vote_file" ]; then
+                echo "Error: $per_block_vote_file not found" >&2
+                exit 1
+              fi
+              
+              if [ "$(cat $per_block_vote_file)" == "null" ]; then
                 cat << EOF
               You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
               protocols:
@@ -1024,7 +1042,12 @@ spec:
               
               per_block_vote_file=/etc/tezos/baker-config/${my_baker_account}-${proto_command}-per-block-votes.json
               
-              if [ $(cat $per_block_vote_file) == "null" ]; then
+              if [ ! -f "$per_block_vote_file" ]; then
+                echo "Error: $per_block_vote_file not found" >&2
+                exit 1
+              fi
+              
+              if [ "$(cat $per_block_vote_file)" == "null" ]; then
                 cat << EOF
               You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
               protocols:
@@ -1096,7 +1119,12 @@ spec:
               
               per_block_vote_file=/etc/tezos/baker-config/${my_baker_account}-${proto_command}-per-block-votes.json
               
-              if [ $(cat $per_block_vote_file) == "null" ]; then
+              if [ ! -f "$per_block_vote_file" ]; then
+                echo "Error: $per_block_vote_file not found" >&2
+                exit 1
+              fi
+              
+              if [ "$(cat $per_block_vote_file)" == "null" ]; then
                 cat << EOF
               You must pass per-block-votes (such as liquidity_baking_toggle_vote) in values.yaml, for example:
               protocols:
@@ -1274,9 +1302,6 @@ spec:
       securityContext:
         fsGroup: 1000      
       volumes:
-        - hostPath:
-            path: /dev/net/tun
-          name: dev-net-tun
         - emptyDir: {}
           name: config-volume
         - name: tezos-accounts
@@ -1478,9 +1503,6 @@ spec:
       securityContext:
         fsGroup: 1000      
       volumes:
-        - hostPath:
-            path: /dev/net/tun
-          name: dev-net-tun
         - emptyDir: {}
           name: config-volume
         - name: tezos-accounts
@@ -1541,7 +1563,11 @@ spec:
             NODE_DIR="$TEZ_VAR/node"
             NODE_DATA_DIR="$TEZ_VAR/node/data"
             
-            CMD="$TEZ_BIN/octez-signer -d $CLIENT_DIR launch http signer --magic-bytes 0x11,0x12,0x13 --check-high-watermark -a 0.0.0.0 -p 6732"
+            extra_args=""
+            if [ -f ${CLIENT_DIR}/authorized_keys ]; then
+              extra_args="${extra_args} --require-authentication"
+            fi
+            CMD="$TEZ_BIN/octez-signer -d $CLIENT_DIR ${extra_args} launch http signer -a 0.0.0.0 -p 6732"
             
             # ensure we can run tezos-signer commands without specifying client dir
             ln -s /var/tezos/client /home/tezos/.tezos-signer
@@ -1600,24 +1626,25 @@ spec:
             - |
               CLIENT="/usr/local/bin/octez-client --endpoint http://tezos-node-rpc:8732"
               
-              until $CLIENT rpc get /chains/main/blocks/head/header | grep '"level":'; do
+              OUTPUT=""
+              until OUTPUT=$($CLIENT rpc get /chains/main/blocks/head/header) && echo "$OUTPUT" | grep '"level":'; do
                   sleep 2
               done
               
               set -x
               set -o pipefail
-              if ! $CLIENT rpc get /chains/main/blocks/head/header | grep '"level": 0,'; then
+              if ! echo "$OUTPUT" | grep '"level": 0,'; then
                   echo "Chain already activated, considering activation successful and exiting"
                   exit 0
               fi
               
               echo Activating chain:
-              $CLIENT -d /var/tezos/client --block					\
-              	genesis activate protocol					\
-              	PtJakart2xVj7pYXJBXrqHgd82rdkLey5ZeeGwDgPp9rhQUbSqY				\
-              	with fitness 1 and key						\
-              	$( cat /etc/tezos/activation_account_name )			\
-              	and parameters /etc/tezos/parameters.json 2>&1 | head -200
+              $CLIENT -d /var/tezos/client --block                                    \
+                      genesis activate protocol                                       \
+                      PtJakart2xVj7pYXJBXrqHgd82rdkLey5ZeeGwDgPp9rhQUbSqY                          \
+                      with fitness 1 and key                                          \
+                      $( cat /etc/tezos/activation_account_name )                     \
+                      and parameters /etc/tezos/parameters.json 2>&1 | head -200
               
           envFrom:
           env:

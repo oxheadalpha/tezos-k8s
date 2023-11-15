@@ -1,21 +1,36 @@
+{{- if .Values.enableUI }}
 apiVersion: v1
-data:
-  config.json: |
-{{ .Values.config | mustToPrettyJson | indent 4 }}
 kind: ConfigMap
 metadata:
   name: faucet-config
   namespace: {{ .Release.Namespace }}
+data:
+  config.json: |
+{{- $_ := set .Values.config.application "disableChallenges" .Values.disableChallenges }}
+{{- $_ := set .Values.config.application "minTez" .Values.minTez }}
+{{- $_ := set .Values.config.application "maxTez" .Values.maxTez }}
+{{ .Values.config | mustToPrettyJson | indent 4 }}
 ---
+{{- end }}
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: faucet-backend-config
   namespace: {{ .Release.Namespace }}
 data:
-  FAUCET_ADDRESS: {{ .Values.config.network.faucetAddress }}
-  RPC_URL: {{ .Values.config.network.rpcUrl }}
-  AUTHORIZED_HOST: {{ .Values.authorizedHost }}
-  FAUCET_AMOUNT_USER: "{{ .Values.config.application.profiles.user.amount}}"
-  FAUCET_AMOUNT_BAKER: "{{ .Values.config.application.profiles.baker.amount}}"
+  AUTHORIZED_HOST: "{{ .Values.authorizedHost }}"
+  DISABLE_CHALLENGES: "{{ .Values.disableChallenges }}"
+  ENABLE_CAPTCHA: "{{ .Values.enableCaptcha }}"
+  {{- if .Values.maxBalance }}
   MAX_BALANCE: "{{ .Values.maxBalance }}"
+  {{- end }}
+  REDIS_URL: "{{ .Values.redis.url }}"
+  RPC_URL: "{{ .Values.backendRpcUrl | default .Values.config.network.rpcUrl | required "An rpc url is required." }}"
+  MIN_TEZ: "{{ .Values.minTez }}"
+  MAX_TEZ: "{{ .Values.maxTez }}"
+  MIN_CHALLENGES: "{{ .Values.minChallenges }}"
+  MAX_CHALLENGES: "{{ .Values.maxChallenges }}"
+  MAX_CHALLENGES_WITH_CAPTCHA: "{{ .Values.maxChallengesWithCaptcha }}"
+  CHALLENGE_SIZE: "{{ .Values.challengeSize }}"
+  DIFFICULTY: "{{ .Values.difficulty }}"

@@ -70,7 +70,7 @@ cli_args = {
     },
     "octez_docker_image": {
         "help": "Version of the Octez docker image",
-        "default": "tezos/tezos:v16.1",
+        "default": "tezos/tezos:v17.3",
     },
     "use_docker": {
         "action": "store_true",
@@ -154,6 +154,7 @@ def node_config(name, n, is_baker):
             "shell": {"history_mode": "rolling"},
             "metrics_addr": [":9932"],
         },
+        "authorized_keys": ["authorized-key-0"],
     }
     if is_baker:
         ret["bake_using_accounts"] = [f"{name}-{n}"]
@@ -188,7 +189,7 @@ def main():
         },
         "protocols": [
             {
-                "command": "PtMumbai",
+                "command": "PtNairob",
                 "vote": {"liquidity_baking_toggle_vote": "pass"},
             }
         ],
@@ -243,13 +244,13 @@ def main():
         baking_accounts = {
             f"{ARCHIVE_BAKER_NODE_NAME}-{n}": {} for n in range(args.number_of_bakers)
         }
-        for account in baking_accounts:
+        for account in [*baking_accounts, "authorized-key-0"]:
             print(f"Generating keys for account {account}")
             keys = gen_key(args.octez_docker_image)
             for key_type in keys:
                 accounts[key_type][account] = {
                     "key": keys[key_type],
-                    "is_bootstrap_baker_account": True,
+                    "is_bootstrap_baker_account": False if account == "authorized-key-0" else True,
                     "bootstrap_balance": "4000000000000",
                 }
 
@@ -275,11 +276,12 @@ def main():
             ],
         }
 
-    signers = {
+    octezSigners = {
         "tezos-signer-0": {
-            "sign_for_accounts": [
+            "accounts": [
                 f"{ARCHIVE_BAKER_NODE_NAME}-{n}" for n in range(args.number_of_bakers)
-            ]
+            ],
+            "authorized_keys": ["authorized-key-0"],
         }
     }
 
@@ -294,7 +296,7 @@ def main():
         parametersYaml = yaml.safe_load(yaml_file)
         activation = {
             "activation": {
-                "protocol_hash": "PtMumbai2TmsJHNGRkD8v8YDbtao7BLUC3wjASn1inAKLFCjaH1",
+                "protocol_hash": "PtNairobiyssHuh87hEhfVBGCVrK3WnS8Z2FT4ymB5tAa4r1nQf",
                 "protocol_parameters": parametersYaml,
             },
         }
@@ -308,7 +310,7 @@ def main():
         **base_constants,
         "bootstrap_peers": bootstrap_peers,
         "accounts": accounts["secret"],
-        "signers": signers,
+        "octezSigners": octezSigners,
         "nodes": creation_nodes,
         **activation,
     }

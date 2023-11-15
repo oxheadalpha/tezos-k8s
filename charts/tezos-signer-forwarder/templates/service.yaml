@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: tezos-remote-signer-ssh-ingress-{{ .Values.name }}
+  annotations:
+{{ toYaml .Values.service_annotations | indent 4 }}
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/name: tezos-signer-forwarder
+  ports:
+{{- range .Values.signers }}
+{{- $name := .name }}
+  # undocumented k8s feature to make a service route to different pods
+  # based on the port - allows to reuse the same public ip in all cloud
+  # providers. For it to work, ports need to have names.
+  # https://github.com/kubernetes/kubernetes/issues/24875#issuecomment-794596576
+{{- range $i, $endpoint := .endpoints }}
+  - port: {{ $endpoint.tunnel_endpoint_port }}
+    name: ssh-{{ trunc 9 $name }}-{{ $i }}
+    targetPort: ssh-{{ trunc 9 $name }}-{{ $i }}
+{{- end }}
+{{- end }}
+  # ensures that remote signers can always ssh
+  publishNotReadyAddresses: true
+{{ if .Values.load_balancer_ip }}
+  loadBalancerIP: {{ .Values.load_balancer_ip }}
+{{ end }}
+---
+{{- range .Values.signers }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: tezos-remote-signer-{{ .name }}
+  labels:
+    app.kubernetes.io/name: tezos-signer-forwarder
+    tezos_baker_name: {{ .name }}
+spec:
+  selector:
+    app.kubernetes.io/name: tezos-signer-forwarder
+    tezos_baker_name: {{ .name }}
+  ports:
+  - port: {{ .signer_port }}
+    name: signer
+  - port: 31732
+    name: metrics
+  # make sure that the service always targets the same signer, when HA is in use.
+  sessionAffinity: ClientIP
+---
+{{- end }}

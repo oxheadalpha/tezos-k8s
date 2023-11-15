@@ -1,0 +1,109 @@
+tezos_k8s_images:
+  utils: ghcr.io/oxheadalpha/tezos-k8s-utils:master
+  tezos_signer_forwarder: ghcr.io/oxheadalpha/tezos-k8s-signerforwarder:dev
+
+# List the endpoints below.
+# Each endpoint represents a ssh server.
+# To handle several endpoints, you can either:
+# * instantiate several replicas of this chart, or
+# * list several endpoints below.
+
+# Since this chart instantiates a service of type Loadbalancer,
+# it may be the case that each such service comes with its own
+# auto-assigned IP, increasing costs.
+# Listing several signers below will put all
+# associated pods behind the same LoadBalancer service.
+# Consequenty, the same IP will be re-used between signers.
+# If you prefer to have one IP per signer, instantiate this chart
+# several times.
+signers:
+  # signer name - to disambiguate them
+- name: mysigner
+
+  # Signer may have several endpoints: signer replicas signing for the same key.
+  # This is useful for a highly-available setup.
+  endpoints:
+    # the public key that the server is expecting.
+    # The signer should authenticate with the corresponding secret key.
+  - ssh_pubkey: "ssh-rsa AAAA...."
+
+    # ssh tunnel connection establishes to this port
+    tunnel_endpoint_port: 50000
+
+    # Alias to distinguish the endpoints from one another
+    alias: "my home signer"
+
+    # Whether to send alerts when down. set to false for cold standbys.
+    alert_when_down: true
+
+  # Set a readiness probe path for your signer.
+  # By default, it is the known path implemented by every signer "/authorized_keys"
+  # When using tezos-remote-signer-os, you can set it to a path that performs more
+  # checks, such as:
+  #  "/statusz/${PUBLIC_BAKING_KEY_HASH}?ledger_url=${LEDGER_AUTHORIZED_PATH_ENCODED}"
+  readiness_probe_path: /authorized_keys
+
+  # The signer port that is being tunneled by the remote signer.
+  # When using HA signer, must be identical for all.
+  signer_port: 6732
+
+  # Whether the remote signer exposes prometheus metrics.
+  # Typically these will be hardware metrics of the signer.
+  # If true, these metrics will be labeled and scraped into
+  # the cluster's prometheus.
+  signer_metrics: false
+
+  # Enter email address to send alerts to.
+  monitoring_email: ""
+
+# Name that goes into the service
+# e.g tezos-signer-mybaker
+# useful when one baker bakes for several addresses
+# on different remote signers.
+name: mybaker
+
+# to deploy in a specific node pool, put label here
+node_selector: {}
+
+# LoadBalancer service annotations. On some cloud providers, it can
+# be used to assign a static ip address.
+service_annotations: {}
+
+
+stateful_set_annotations: {}
+# example: this will cause pulumi to not wait for tunnel to be up
+# pulumi/skipAwait: true
+
+# Load Balancer IP to set the ssh service.
+# In some cloud providers, it is used to assign static ip.
+load_balancer_ip: ""
+
+secrets:
+  # The ssh host key must be passed as input.
+  # Otherwise, when destroying and respinning the infra,
+  # the signer would not recognize the host and refuse to
+  # connect.
+  signer_target_host_key: |
+    -----BEGIN OPENSSH PRIVATE KEY-----
+    xxx
+    -----END OPENSSH PRIVATE KEY-----
+
+# Prometheus Operator is required in your cluster in order to enable
+# serviceMonitor and prometheusRule below.
+# Enable service monitor to scrape the /healthz endpoint of your
+# remote signer.
+# The /healthz endpoint is exposed by tezos-remote-signer-os:
+#    https://github.com/midl-dev/tezos-remote-signer-os
+serviceMonitor:
+  enabled: false
+# Enable Prometheus Rule to be alerted when your hardware remote signer
+# provisioned with tezos-remote-signer-os loses power or wired network
+# connectivity.
+# For rules to be picked up by the Prometheus Operator, proper labels need
+# to be set below. Refer to Prometheus operator documentation for details.
+prometheusRule:
+  enabled: false
+  labels: {}
+alertmanagerConfig:
+  enabled: false
+  labels: {}

@@ -13,6 +13,10 @@ data:
   ARCHIVE_SLEEP_DELAY: {{ $.Values.artifactDelay.archive }}
   ROLLING_SLEEP_DELAY: {{ $.Values.artifactDelay.rolling }}
   SCHEMA_URL: {{ $.Values.schemaUrl }}
+  S3_BUCKET: {{ $.Values.s3BucketOverride }}
+  CLOUD_PROVIDER: {{ $.Values.cloudProvider }}
+  STORAGE_CLASS: {{ $.Values.volumeSnapClass }}
+  NODES: {{ $.Values.nodes }}
 kind: ConfigMap
 metadata:
   name: snapshot-configmap
