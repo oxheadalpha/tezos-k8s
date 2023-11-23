@@ -120,6 +120,7 @@ spec:
                 name: dal-{{ $k }}
                 port:
                   name: rpc
+---
 {{- end }}
 {{- end }}
 {{- end }}
