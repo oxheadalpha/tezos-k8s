@@ -744,7 +744,13 @@ def create_node_snapshot_config_json(history_mode):
         octez_container_version = os.environ.get("OCTEZ_VERSION")
     snapshot_source = os.environ.get("SNAPSHOT_SOURCE")
     if snapshot_source:
-        all_snapshots = requests.get(snapshot_source).json()
+        try:
+            response = requests.get(snapshot_source)
+            response.raise_for_status()  # Raises an HTTPError if the HTTP request returned an unsuccessful status code
+            all_snapshots = response.json()
+        except (requests.exceptions.RequestException, ValueError):  # Catches exceptions related to requests and invalid JSON
+            print(f"Error: unable to retrieve snapshot metadata from {snapshot_source}")
+            return
     else:
         return
     try:
@@ -772,11 +778,14 @@ and octez version {octez_version}.
         and s.get("chain_name") == network_name
     ]
     if octez_version:
-        matching_snapshots = [
+        version_matching_snapshots = [
             s
             for s in matching_snapshots
             if int(octez_version) == s.get("tezos_version").get("version").get("major")
         ]
+        if len(version_matching_snapshots):
+            # If we can't find snapshots of the right octez version, we just pick the most recent available.
+            matching_snapshots = version_matching_snapshots
     matching_snapshots = sorted(matching_snapshots, key=lambda s: s.get("block_height"))
 
     return matching_snapshots[-1] if len(matching_snapshots) else None
