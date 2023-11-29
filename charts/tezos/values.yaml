@@ -360,6 +360,10 @@ snapshot_source: https://xtz-shots.io/tezos-snapshots.json
 # If you prefer tarballs, set to "true" below.
 prefer_tarballs: false
 
+# In case the network name in the snapshot metadata does not correspond to the
+# network_name configured in `node_config_network`, hardcode the value here.
+# snapshot_metadata_network_name: "mondaynet"
+
 # By default, tezos-k8s will attempt to download the right artifact from
 # `snapshot_source` set above. You can override and hard-code a snapshot URL
 # source below. When any of the below variables are set, `snapshot_source` above

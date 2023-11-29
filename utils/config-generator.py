@@ -684,7 +684,10 @@ def create_node_config_json(
 def create_node_snapshot_config_json(history_mode):
     """Create this node's snapshot config"""
 
-    network_name = NETWORK_CONFIG.get("chain_name")
+    if os.environ.get("SNAPSHOT_METADATA_NETWORK_NAME"):
+        network_name = os.environ.get("SNAPSHOT_METADATA_NETWORK_NAME")
+    else:
+        network_name = NETWORK_CONFIG.get("chain_name")
     prefer_tarballs = os.environ.get("PREFER_TARBALLS", "").lower() in (
         "true",
         "1",
