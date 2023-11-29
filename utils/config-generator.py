@@ -738,7 +738,7 @@ def create_node_snapshot_config_json(history_mode):
             response = requests.get(snapshot_source)
             response.raise_for_status()  # Raises an HTTPError if the HTTP request returned an unsuccessful status code
             all_snapshots = response.json()
-        except (requests.exceptions.RequestException, ValueError):  # Catches exceptions related to requests and invalid JSON
+        except (requests.exceptions.RequestException, requests.exceptions.JSONDecodeError):  # Catches exceptions related to requests and invalid JSON
             print(f"Error: unable to retrieve snapshot metadata from {snapshot_source}")
             return
     else:
