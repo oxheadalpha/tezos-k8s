@@ -16,6 +16,8 @@ spec:
         # https://helm.sh/docs/howto/charts_tips_and_tricks/#automatically-roll-deployments
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
+      strategy:
+        type: Recreate
       securityContext:
         fsGroup: 1000
       containers:
