@@ -68,8 +68,6 @@ mkchain $CHAIN_NAME
 
 This command will create a yaml file in your current working directory: `<$CHAIN_NAME>_values.yaml`
 
-If you configure your chain to run over a Zerotier VPN, mkchain will create an additional file for invitees to join your network: `<$CHAIN_NAME>_invite_values.yaml`.
-
 ### mkchain parameters
 
 You can explicitly specify some values by:
@@ -88,8 +86,6 @@ You can explicitly specify some values by:
 | expected_proof_of_work           | --expected-proof-of-work | Node identity generation difficulty                            | 0                       |
 | images.octez                     | --octez-docker-image     | Version of the Octez docker image to run                       | tezos/tezos:v17.3 |
 |                                  | --use-docker (--no...)   | Use (or don't use) docker to generate keys rather than pytezos | autodetect              |
-| zerotier_config.zerotier_network | --zerotier-network       | Zerotier network id for external chain access                  |                         |
-| zerotier_config.zerotier_token   | --zerotier-token         | Zerotier token for external chain access                       |                         |
 
 ## Create Tezos Chain
 

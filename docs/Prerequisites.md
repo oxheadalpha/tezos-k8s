@@ -4,7 +4,6 @@
 - [docker](https://docs.docker.com/get-docker/)
 - [kubectl](https://kubernetes.io/docs/reference/kubectl/kubectl/)
 - [helm](https://helm.sh/)
-- (optional, for distributed private chains) A [ZeroTier](https://www.zerotier.com/) network with api access token
 
 ### For local deployment
 

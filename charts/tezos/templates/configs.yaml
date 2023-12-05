@@ -62,20 +62,6 @@ data:
 
 ---
 
-{{- if (include "tezos.doesZerotierConfigExist" .) }}
-apiVersion: v1
-data:
-  NETWORK_ID: "{{ .Values.zerotier_config.zerotier_network }}"
-  ZTAUTHTOKEN: "{{ .Values.zerotier_config.zerotier_token }}"
-  NODES: |
-{{ .Values.nodes | mustToPrettyJson | indent 4 }}
-kind: ConfigMap
-metadata:
-  name: zerotier-config
-  namespace: {{ .Release.Namespace }}
-{{- end }}
----
-
 apiVersion: v1
 data:
   ACCOUNTS: |

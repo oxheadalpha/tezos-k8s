@@ -1,27 +1,5 @@
 # Creating a Private Blockchain
 
-## Zerotier
-
-Zerotier is a VPN service that the Tezos nodes in your cluster will use to communicate with each other.
-
-Create a ZeroTier network:
-
-- Go to https://my.zerotier.com
-- Login with credentials or create a new account
-- Go to https://my.zerotier.com/account to create a new API access token
-- Under `API Access Tokens > New Token`, give a name to your access token and generate it by clicking on the "generate" button. Save the generated access token, e.g. `yEflQt726fjXuSUyQ73WqXvAFoijXkLt` on your computer.
-- Go to https://my.zerotier.com/network
-- Create a new network by clicking on the "Create a Network"
-  button. Save the 16 character generated network
-  id, e.g. `1c33c1ced02a5eee` on your computer.
-
-Set Zerotier environment variables in order to access the network id and access token values with later commands:
-
-```shell
-export ZT_TOKEN=yEflQt726fjXuSUyQ73WqXvAFoijXkLt
-export ZT_NET=1c33c1ced02a5eee
-```
-
 ## mkchain
 
 mkchain is a python script that generates Helm values, which Helm then uses to create your Tezos chain on k8s.
@@ -47,7 +25,7 @@ export PYTHONUNBUFFERED=x
 Run `mkchain` to create your Helm values
 
 ```shell
-mkchain $CHAIN_NAME --zerotier-network $ZT_NET --zerotier-token $ZT_TOKEN
+mkchain $CHAIN_NAME
 ```
 
 This will create two files:
@@ -68,7 +46,6 @@ helm install $CHAIN_NAME oxheadalpha/tezos-chain \
 Your kubernetes cluster will now be running a series of jobs to
 perform the following tasks:
 
-- get a zerotier ip
 - generate a node identity
 - create a baker account
 - generate a genesis block for your chain
@@ -93,7 +70,7 @@ chain running one node.
 
 ## Adding nodes within the cluster
 
-You can spin up a number of regular peer nodes that don't bake in your cluster by passing `--number-of-nodes N` to `mkchain`. Pass this along with your previously used flags (`--zerotier-network` and `--zerotier-token`). You can use this to both scale up and down.
+You can spin up a number of regular peer nodes that don't bake in your cluster by passing `--number-of-nodes N` to `mkchain`. You can use this to both scale up and down.
 
 Or if you previously spun up the chain using `mkchain`, you may adjust
 your setup to an arbitrary number of nodes by updating the "nodes"

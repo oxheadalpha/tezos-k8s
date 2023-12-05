@@ -35,12 +35,10 @@ spec:
         {{- include "tezos.container.accusers"  $ | indent 8 }}
         {{- include "tezos.container.bakers"    $ | indent 8 }}
         {{- include "tezos.container.logger"    $ | indent 8 }}
-        {{- include "tezos.container.zerotier"  $ | indent 8 }}
         {{- include "tezos.container.sidecar"   $ | indent 8 }}
         {{- include "tezos.container.vdf"       $ | indent 8 }}
       initContainers:
         {{- include "tezos.init_container.config_init"         $ | indent 8 }}
-        {{- include "tezos.init_container.zerotier"            $ | indent 8 }}
         {{- include "tezos.init_container.config_generator"    $ | indent 8 }}
         {{- include "tezos.init_container.snapshot_downloader" $ | indent 8 }}
         {{- include "tezos.init_container.snapshot_importer"   $ | indent 8 }}
@@ -50,11 +48,6 @@ spec:
         fsGroup: 1000
 {{- include "tezos.nodeSelectorConfig" $ | indent 6 }}
       volumes:
-      {{- if (include "tezos.doesZerotierConfigExist" $) }}
-        - hostPath:
-            path: /dev/net/tun
-          name: dev-net-tun
-      {{- end }}
         - emptyDir: {}
           name: config-volume
         - name: tezos-accounts

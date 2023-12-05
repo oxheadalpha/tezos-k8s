@@ -5,8 +5,7 @@ set -xe
 # ensure we can run octez-client commands without specifying client dir
 ln -s /var/tezos/client /home/tezos/.tezos-client
 #
-# Not every error is fatal on start.  In particular, with zerotier,
-# the listen-addr may not yet be bound causing octez-node to fail.
+# Not every error is fatal on start.
 # So, we try a few times with increasing delays:
 
 for d in 1 1 5 10 20 60 120; do
