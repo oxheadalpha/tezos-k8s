@@ -1,17 +1,4 @@
 {{/*
-  Checks if Zerotier config has a network and token set.
-  Returns a string "true" or empty string which is falsey.
-*/}}
-{{- define "tezos.doesZerotierConfigExist" -}}
-  {{- $zerotier_config := .Values.zerotier_config | default dict }}
-  {{- if and ($zerotier_config.zerotier_network)  ($zerotier_config.zerotier_token) }}
-    {{- "true" }}
-  {{- else }}
-    {{- "" }}
-  {{- end }}
-{{- end }}
-
-{{/*
   Should nodes wait for DNS to be ready for peers
   Yes if these conditions are met:
   - Node is not an invitee to a private chain

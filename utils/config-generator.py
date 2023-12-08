@@ -112,13 +112,6 @@ def main():
         print("\nStarting config.json file generation")
         bootstrap_peers = CHAIN_PARAMS.get("bootstrap_peers", [])
 
-        my_zerotier_ip = None
-        zerotier_data_file_path = Path("/var/tezos/zerotier_data.json")
-        if is_chain_running_on_zerotier_net(zerotier_data_file_path):
-            my_zerotier_ip = get_my_pods_zerotier_ip(zerotier_data_file_path)
-            if bootstrap_peers == []:
-                bootstrap_peers.extend(get_zerotier_bootstrap_peer_ips())
-
         if JOIN_PUBLIC_NETWORK:
             with open("/etc/tezos/data/config.json", "r") as f:
                 bootstrap_peers.extend(json.load(f)["p2p"]["bootstrap-peers"])
@@ -147,7 +140,6 @@ def main():
 
         node_config = create_node_config_json(
             bootstrap_peers,
-            my_zerotier_ip,
         )
         node_config_json = json.dumps(
             node_config,
@@ -569,26 +561,6 @@ def create_protocol_parameters_json(accounts):
             protocol_params["bootstrap_contracts"].append(requests.get(url).json())
 
     return protocol_params
-
-
-def is_chain_running_on_zerotier_net(file):
-    return file.is_file()
-
-
-def get_my_pods_zerotier_ip(zerotier_data_file_path):
-    with open(zerotier_data_file_path, "r") as f:
-        return json.load(f)[0]["assignedAddresses"][0].split("/")[0]
-
-
-def get_zerotier_bootstrap_peer_ips():
-    with open("/var/tezos/zerotier_network_members.json", "r") as f:
-        network_members = json.load(f)
-    return [
-        n["config"]["ipAssignments"][0]
-        for n in network_members
-        if "ipAssignments" in n["config"]
-        and n["name"] == f"{CHAIN_PARAMS['network']['chain_name']}_bootstrap"
-    ]
 
 
 def get_genesis_pubkey():

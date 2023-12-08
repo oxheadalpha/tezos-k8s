@@ -61,8 +61,6 @@ Devspace will now do a few things:
 
 - If you would like to build all of our images without using Devspace to deploy (you might want to do a `helm install` instead), you can run `devspace build -t dev --skip-push`.
 
-- Due to a current limitation of devspace, multiple profiles cannot be used at one time. Therefore, devspace will watch `zerotier` files even if tezos nodes are not configured to use it via `mkchain`. Preferably `zerotier` would also be a profile in addition to `rpc-auth` being one.
-
 - If you find that you have images built but Devspace is having a hard time getting them and/or is producing errors that don't seem to make sense, you can try `rm -rf .devspace` to remove any potentially wrong state.
 
 # Helm Charts

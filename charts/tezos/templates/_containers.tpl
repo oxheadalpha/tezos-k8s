@@ -348,60 +348,6 @@
 {{- end }}
 
 {{/*
-// * The zerotier containers:
-*/}}
-
-{{- define "tezos.init_container.zerotier" }}
-{{- if (include "tezos.doesZerotierConfigExist" .) }}
-- envFrom:
-    - configMapRef:
-        name: tezos-config
-    - configMapRef:
-        name: zerotier-config
-  image: "{{ .Values.tezos_k8s_images.zerotier }}"
-  imagePullPolicy: IfNotPresent
-  name: get-zerotier-ip
-  securityContext:
-    capabilities:
-      add:
-        - NET_ADMIN
-        - NET_RAW
-        - SYS_ADMIN
-    privileged: true
-  volumeMounts:
-    - mountPath: /etc/tezos
-      name: config-volume
-    - mountPath: /var/tezos
-      name: var-volume
-    - mountPath: /dev/net/tun
-      name: dev-net-tun
-  env:
-{{- include "tezos.localvars.pod_envvars" . | indent 4 }}
-{{- end }}
-{{- end }}
-
-{{- define "tezos.container.zerotier" }}
-{{- if (include "tezos.doesZerotierConfigExist" .) }}
-- args:
-    - "-c"
-    - "echo 'starting zerotier' && zerotier-one /var/tezos/zerotier"
-  command:
-    - sh
-  image: "{{ .Values.tezos_k8s_images.zerotier }}"
-  imagePullPolicy: IfNotPresent
-  name: zerotier
-  securityContext:
-    capabilities:
-      add:
-        - NET_ADMIN
-        - NET_RAW
-        - SYS_ADMIN
-    privileged: true
-  volumeMounts:
-    - mountPath: /var/tezos
-      name: var-volume
-{{- end }}
-{{- end }}
 
 {{/*
   Node selector config section
