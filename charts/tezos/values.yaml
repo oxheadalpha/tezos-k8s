@@ -382,9 +382,18 @@ smartRollupNodes: {}
 #         tls: []
 # ```
 
-dalNodes: {}
-
 # End Rollup Nodes
+
+# DAL Nodes
+dalNodes: {}
+# Deploys DAL nodes in pods and maps them to L1 nodes.
+# Example:
+#  bootstrap:
+#    bootstrapProfile: true
+#    ingress:
+#    # ingress details filled up by pulumi
+#  dal1:
+#    attesterProfiles: tz1foXHgRzdYdaLgX6XhpZGxbBv42LZ6ubvE
 
 # When spinning up nodes, tezos-k8s will attempt to download a snapshot from a
 # known source. This should be a url to a json metadata file in the format
