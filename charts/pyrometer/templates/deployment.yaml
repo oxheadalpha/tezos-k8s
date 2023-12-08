@@ -1,9 +1,10 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: pyrometer
   namespace: {{ .Release.Namespace }}
 spec:
+  serviceName: pyrometer
   selector:
     matchLabels:
       app: pyrometer
@@ -16,6 +17,8 @@ spec:
         # https://helm.sh/docs/howto/charts_tips_and_tricks/#automatically-roll-deployments
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
+      strategy:
+        type: Recreate
       securityContext:
         fsGroup: 1000
       containers:
@@ -28,9 +31,9 @@ spec:
         - -d
         - '/data'
         ports:
-          - name: http
-            containerPort: 8080
-            protocol: TCP
+        - name: http
+          containerPort: 8080
+          protocol: TCP
         volumeMounts:
         - name: config-volume
           mountPath: /config/
@@ -39,20 +42,26 @@ spec:
       - name: prom-exporter
         image: {{ .Values.tezos_k8s_images.utils }}
         ports:
-          - name: metrics
-            containerPort: 31732
-            protocol: TCP
+        - name: metrics
+          containerPort: 31732
+          protocol: TCP
         command:
-          - /usr/local/bin/python
+        - /usr/local/bin/python
         args:
-          - "-c"
-          - |
+        - "-c"
+        - |
 {{ tpl ($.Files.Get (print "scripts/pyrometer_exporter.py")) $ | indent 12 }}
       volumes:
       - name: config-volume
         configMap:
           name: pyrometer-config
-      - name: pyrometer-volume
-        # Stores pyrometer's state (like pending queue items)
-        persistentVolumeClaim:
-          claimName: pyrometer-volume
+  volumeClaimTemplates:
+  - metadata:
+      name: pyrometer-volume
+    spec:
+      storageClassName: 
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi

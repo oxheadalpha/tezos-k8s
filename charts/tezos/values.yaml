@@ -408,6 +408,10 @@ snapshot_source: https://xtz-shots.io/tezos-snapshots.json
 # If you prefer tarballs, set to "true" below.
 prefer_tarballs: false
 
+# In case the network name in the snapshot metadata does not correspond to the
+# network_name configured in `node_config_network`, hardcode the value here.
+# snapshot_metadata_network_name: "weeklynet"
+
 # By default, tezos-k8s will attempt to download the right artifact from
 # `snapshot_source` set above. You can override and hard-code a snapshot URL
 # source below. When any of the below variables are set, `snapshot_source` above
@@ -445,7 +449,7 @@ expected_proof_of_work: 26
 ## - Specify the name of the network which must be recognized by the
 ##   octez-node binary of the Octez image being used.
 ## - Pass a url that returns the config.json of the network. Example:
-##   "https://teztnets.xyz/mondaynet". It is helpful for running
+##   "https://teztnets.xyz/weeklynet". It is helpful for running
 ##   testnets and shouldn't be needed in general.
 node_config_network:
   chain_name: mainnet
