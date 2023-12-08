@@ -8,10 +8,6 @@ deployments:
         - ./${CHAIN_NAME}_values.yaml
 
 images:
-  zerotier:
-    image: tezos-k8s-zerotier
-    dockerfile: ./zerotier/Dockerfile
-    context: ./zerotier
   utils:
     image: tezos-k8s-utils
     dockerfile: ./utils/Dockerfile
@@ -29,8 +25,6 @@ dev:
   autoReload:
     deployments:
       - chain
-    paths:
-      - ./zerotier/*
 
 hooks:
   - command: minikube

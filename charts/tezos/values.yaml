@@ -1,11 +1,3 @@
-# Is the values file an invitation for a private chain
-is_invitation: false
-
-# A chain using Zerotier would be a private chain
-# zerotier_config:
-#   zerotier_network: YOUR_NETWORK_ID_HERE
-#   zerotier_token: YOUR_ZEROTIER_TOKEN_HERE
-
 # Images not part of the tezos-k8s repo go here
 images:
   octez: tezos/tezos:v17.3
@@ -13,7 +5,6 @@ images:
 # Images that are part of the tezos-k8s repo go here with 'dev' tag
 tezos_k8s_images:
   utils: ghcr.io/oxheadalpha/tezos-k8s-utils:master
-  zerotier: ghcr.io/oxheadalpha/tezos-k8s-zerotier:master
 
 ## Properties that are templated for some k8s resources. There are container
 ## scripts that will look up some of these values. They should not be modified.
