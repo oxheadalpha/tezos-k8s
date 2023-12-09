@@ -404,6 +404,7 @@ dalNodes: {}
 #       secret_key:
 #       proof_of_work_stamp:
 #  dal1:
+#    storageSize: 50Gi
 #    attesterProfiles: tz1foXHgRzdYdaLgX6XhpZGxbBv42LZ6ubvE
 
 # When spinning up nodes, tezos-k8s will attempt to download a snapshot from a
