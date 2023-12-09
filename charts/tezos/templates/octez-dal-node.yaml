@@ -68,6 +68,10 @@ spec:
         - name: PUBLIC_ADDR
           value: "{{ $v.publicAddr }}"
 {{- end }}
+{{- if $v.identity | default false }}
+        - name: IDENTITY_JSON
+          value: {{ toJson $v.identity | quote }}
+{{- end }}
 {{- end }}
       securityContext:
         fsGroup: 1000

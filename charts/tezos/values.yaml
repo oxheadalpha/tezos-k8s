@@ -180,9 +180,8 @@ should_generate_unsafe_deterministic_data: false
 #                statefulset level.
 #    - `is_bootstrap_node`: Boolean for is this node a bootstrap peer.
 #    - `identity`: An optional map containing a pre-generated Tezos node
-#                 identity. This is useful for local storage nodes which would
-#                 need to generate an identity at every boot. The identity file
-#                 will be created at /var/tezos/node/data/identity.json.
+#                 identity. The identity file will be created at
+#                 /var/tezos/node/data/identity.json.
 #                 Required fields are `peer_id`, `public_key`, `secret_key`,
 #                 and `proof_of_work_timestamp`.
 #
@@ -391,7 +390,19 @@ dalNodes: {}
 #  bootstrap:
 #    bootstrapProfile: true
 #    ingress:
-#    # ingress details filled up by pulumi
+#       enabled: false
+#       host: ""
+#       annotations: {}
+#       className: ""
+#       labels: {}
+#       pathType: Prefix
+#       tls: []
+#    identity:
+#       # fill here the identity of the node, if you want it to persist
+#       peer_id:
+#       public_key:
+#       secret_key:
+#       proof_of_work_stamp:
 #  dal1:
 #    attesterProfiles: tz1foXHgRzdYdaLgX6XhpZGxbBv42LZ6ubvE
 
