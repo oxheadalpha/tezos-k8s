@@ -13,7 +13,7 @@ spec:
 {{- include "tezos.init_container.chain_initiator"    $ | indent 8 }}
       initContainers:
         - image: {{ .Values.tezos_k8s_images.utils }}
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           name: config-generator
           args:
             - config-generator
