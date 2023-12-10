@@ -178,7 +178,7 @@ def main():
     }
 
     # preserve pre-existing values, if any (in case of scale-up)
-    old_create_values = {}
+    old_values = {}
     files_path = f"{os.getcwd()}/{args.chain_name}"
     if os.path.isfile(f"{files_path}_values.yaml"):
         print(
@@ -187,10 +187,10 @@ def main():
             "delete the values file to generate all new values.\n"
         )
         with open(f"{files_path}_values.yaml", "r") as yaml_file:
-            old_create_values = yaml.safe_load(yaml_file)
+            old_values = yaml.safe_load(yaml_file)
 
         current_number_of_bakers = len(
-            old_create_values["nodes"][ARCHIVE_BAKER_NODE_NAME]["instances"]
+            old_values["nodes"][ARCHIVE_BAKER_NODE_NAME]["instances"]
         )
         if current_number_of_bakers != args.number_of_bakers:
             print("ERROR: the number of bakers must not change on a pre-existing chain")
@@ -198,9 +198,9 @@ def main():
             print(f"Attempted change to {args.number_of_bakers} bakers")
             exit(1)
 
-    if old_create_values.get("node_config_network", {}).get("genesis"):
+    if old_values.get("node_config_network", {}).get("genesis"):
         print("Using existing genesis parameters")
-        base_constants["node_config_network"]["genesis"] = old_create_values[
+        base_constants["node_config_network"]["genesis"] = old_values[
             "node_config_network"
         ]["genesis"]
     else:
@@ -211,9 +211,9 @@ def main():
         }
 
     accounts = {"secret": {}, "public": {}}
-    if old_create_values.get("accounts"):
+    if old_values.get("accounts"):
         print("Using existing secret keys")
-        accounts["secret"] = old_create_values["accounts"]
+        accounts["secret"] = old_values["accounts"]
     elif not args.should_generate_unsafe_deterministic_data:
         baking_accounts = {
             f"{ARCHIVE_BAKER_NODE_NAME}-{n}": {} for n in range(args.number_of_bakers)
@@ -232,7 +232,7 @@ def main():
 
     # First 2 bakers are acting as bootstrap nodes for the others, and run in
     # archive mode. Any other bakers will be in rolling mode.
-    creation_nodes = {
+    nodes = {
         ARCHIVE_BAKER_NODE_NAME: {
             "runs": ["octez_node", "baker"],
             "storage_size": "15Gi",
@@ -244,7 +244,7 @@ def main():
         ROLLING_REGULAR_NODE_NAME: None,
     }
     if args.number_of_nodes:
-        creation_nodes[ROLLING_REGULAR_NODE_NAME] = {
+        nodes[ROLLING_REGULAR_NODE_NAME] = {
             "storage_size": "15Gi",
             "instances": [
                 node_config(ROLLING_REGULAR_NODE_NAME, n, is_baker=False)
@@ -279,26 +279,26 @@ def main():
 
     bootstrap_peers = args.bootstrap_peers if args.bootstrap_peers else []
 
-    creation_constants = {
+    protocol_constants = {
         "should_generate_unsafe_deterministic_data": args.should_generate_unsafe_deterministic_data,
         "expected_proof_of_work": args.expected_proof_of_work,
         **base_constants,
         "bootstrap_peers": bootstrap_peers,
         "accounts": accounts["secret"],
         "octezSigners": octezSigners,
-        "nodes": creation_nodes,
+        "nodes": nodes,
         **activation,
     }
 
     with open(f"{files_path}_values.yaml", "w") as yaml_file:
         yaml.dump(
-            creation_constants,
+            protocol_constants,
             yaml_file,
             Dumper=MyDumper,
             default_flow_style=False,
             sort_keys=False,
         )
-        print(f"Wrote chain creation constants to {files_path}_values.yaml")
+        print(f"Wrote chain constants to {files_path}_values.yaml")
 
 
 if __name__ == "__main__":
