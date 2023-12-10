@@ -329,8 +329,8 @@ def authorized_key_for(account_name):
     requires an authorized key, returns it.
     """
     for signer_val in OCTEZ_SIGNERS.values():
-        if account_name in signer_val.accounts:
-            return signer_val.authorized_keys.get(0)
+        if account_name in signer_val["accounts"]:
+            return signer_val["authorized_keys"].get(0)
     return
 
 def expose_secret_key(account_name):
