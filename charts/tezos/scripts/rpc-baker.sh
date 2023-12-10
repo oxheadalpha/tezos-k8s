@@ -30,5 +30,4 @@ CMD="$TEZ_BIN/octez-baker-${PROTO_COMMAND} -d $CLIENT_DIR"
 # ensure we can run octez-client commands without specifying client dir
 ln -s /var/tezos/client /home/tezos/.tezos-client
 
-sleep 10000
 exec $CMD --endpoint ${NODE_RPC_URL} run remotely  ${extra_args} ${BAKER_EXTRA_ARGS_FROM_ENV} ${BAKE_USING_ACCOUNTS}
