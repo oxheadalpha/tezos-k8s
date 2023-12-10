@@ -48,7 +48,7 @@ cli_args = {
     },
     "number_of_nodes": {
         "help": "number of peers in the cluster",
-        "default": 0,
+        "default": 1,
         "type": int,
     },
     "number_of_bakers": {
@@ -110,25 +110,17 @@ def get_args():
 
 
 def validate_args(args):
-    if args.number_of_nodes < 0:
+    if args.number_of_nodes < 1:
         print(
             f"Invalid argument --number-of-nodes ({args.number_of_nodes}) "
-            f"must be non-negative"
+            f"must be non-zero"
         )
         exit(1)
 
-    if args.number_of_bakers < 0:
+    if args.number_of_bakers < 1:
         print(
             f"Invalid argument --number-of-bakers ({args.number_of_bakers}) "
-            f"must be non-negative"
-        )
-        exit(1)
-
-    if args.number_of_nodes + args.number_of_bakers < 1:
-        print(
-            f"Invalid arguments: either "
-            f"--number-of-nodes ({args.number_of_nodes}) or "
-            f"--number-of-bakers ({args.number_of_bakers}) must be non-zero"
+            f"must be non-zero"
         )
         exit(1)
 
@@ -140,8 +132,10 @@ def node_config(name, n, is_baker):
             "shell": {"history_mode": "rolling"},
             "metrics_addr": [":9932"],
         },
-        "authorized_keys": ["authorized-key-0"],
     }
+    if n < 2:
+        ret["is_bootstrap_node"] = True
+        ret["config"]["shell"]["history_mode"] = "archive"
     return ret
 
 def baker_config(name, n):
@@ -237,25 +231,12 @@ def main():
             "runs": ["octez_node"],
             "storage_size": "15Gi",
             "instances": [
-                {
-                   "is_bootstrap_node": False,
-                   "config": {
-                       "shell": {"history_mode": "rolling"},
-                       "metrics_addr": [":9932"],
-                   },
-               } for _ in range(args.number_of_bakers)
+                node_config(ROLLING_REGULAR_NODE_NAME, n, is_baker=False)
+                for n in range(args.number_of_nodes)
             ],
         },
         ROLLING_REGULAR_NODE_NAME: None,
     }
-    if args.number_of_nodes:
-        nodes[ROLLING_REGULAR_NODE_NAME] = {
-            "storage_size": "15Gi",
-            "instances": [
-                node_config(ROLLING_REGULAR_NODE_NAME, n, is_baker=False)
-                for n in range(args.number_of_nodes)
-            ],
-        }
 
     bakers = {f"baker-{i}": {"bake_using_accounts": [f"{ARCHIVE_BAKER_NODE_NAME}-{i}"],
         "node_rpc_url": "http://archive-node-0.archive-node:8732"} 
@@ -289,6 +270,9 @@ def main():
     bootstrap_peers = args.bootstrap_peers if args.bootstrap_peers else []
 
     protocol_constants = {
+        "tezos_k8s_images": {
+           "utils": "ghcr.io/oxheadalpha/tezos-k8s-utils:bake_remotely"
+        },
         "should_generate_unsafe_deterministic_data": args.should_generate_unsafe_deterministic_data,
         "expected_proof_of_work": args.expected_proof_of_work,
         **base_constants,
