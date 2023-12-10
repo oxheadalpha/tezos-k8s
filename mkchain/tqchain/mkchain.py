@@ -1,5 +1,6 @@
 import argparse
 import os
+import string
 import sys
 from datetime import datetime, timezone
 
@@ -33,8 +34,6 @@ sys.path.insert(0, "tqchain")
 __version__ = get_versions()["version"]
 
 ARCHIVE_BAKER_NODE_NAME = "archive-node"
-ROLLING_REGULAR_NODE_NAME = "rolling-node"
-
 
 cli_args = {
     "should_generate_unsafe_deterministic_data": {
@@ -125,7 +124,7 @@ def validate_args(args):
         exit(1)
 
 
-def node_config(name, n, is_baker):
+def node_config(n):
     ret = {
         "is_bootstrap_node": False,
         "config": {
@@ -210,7 +209,7 @@ def main():
         accounts["secret"] = old_values["accounts"]
     elif not args.should_generate_unsafe_deterministic_data:
         baking_accounts = {
-            f"{ARCHIVE_BAKER_NODE_NAME}-{n}": {} for n in range(args.number_of_bakers)
+            f"baker-{char}": {} for char in string.ascii_lowercase[:args.number_of_bakers]
         }
         for account in [*baking_accounts, "authorized-key-0"]:
             print(f"Generating keys for account {account}")
@@ -231,16 +230,17 @@ def main():
             "runs": ["octez_node"],
             "storage_size": "15Gi",
             "instances": [
-                node_config(ROLLING_REGULAR_NODE_NAME, n, is_baker=False)
+                node_config(n)
                 for n in range(args.number_of_nodes)
             ],
         },
-        ROLLING_REGULAR_NODE_NAME: None,
+        "rolling-node": None,
     }
 
-    bakers = {f"baker-{i}": {"bake_using_accounts": [f"{ARCHIVE_BAKER_NODE_NAME}-{i}"],
-        "node_rpc_url": "http://archive-node-0.archive-node:8732"} 
-           for i in range(args.number_of_bakers)}
+        
+    bakers = {f"{char}": {"bake_using_accounts": [f"baker-{char}"], 
+                          "node_rpc_url": "http://archive-node-0.archive-node:8732"} 
+              for char in string.ascii_lowercase[:args.number_of_bakers]}
 
     octezSigners = {
         "tezos-signer-0": {
@@ -251,10 +251,9 @@ def main():
         }
     }
 
-    activation_account_name = f"{ARCHIVE_BAKER_NODE_NAME}-0"
     base_constants["node_config_network"][
         "activation_account_name"
-    ] = activation_account_name
+    ] = "baker-a"
 
     with open(
         f"{os.path.dirname(os.path.realpath(__file__))}/parameters.yaml", "r"
