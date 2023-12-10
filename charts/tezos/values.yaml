@@ -270,6 +270,18 @@ nodes:
           metrics_addr: ["0.0.0.0:9932"]
 # End nodes
 
+# Bakers
+# This deploys "remote bakers" that only bake through RPC.
+# Since octez 17.0, it is possible to bake with RPC only.
+# This is an alternative to defining bakers inside the node pods,
+# as above.
+bakers: {}
+  # baker0:
+  #   bake_using_accounts: [baker0]
+  #   node_rpc_url: http://octez-node-0:8732
+  #   operations_pool: http://flashbake-endpoint:10732
+  #   dal_node: http://dal-node:8732
+
 ## Configuration for K8s Service resources. Configuring the labels selector of a
 ## service will result in the service forwarding traffic only to pods that have
 ## matching labels.

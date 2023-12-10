@@ -89,35 +89,42 @@ metadata:
   {{- end }}
 {{- end }}
 
-{{/*
-  Is there a baker?
+{{/* 
+  Is there a baker in nodes or is the bakers object not empty?
 */}}
 {{- define "tezos.shouldDeployBakerConfig" }}
+  {{- $hasBakerInNodes := false }}
   {{- range .Values.nodes }}
     {{- if (has "baker" .runs) }}
-      {{- "true" }}
+      {{- $hasBakerInNodes = true }}
     {{- end }}
+  {{- end }}
+  {{- $hasBakersObject := ne (len .Values.bakers) 0 }}
+  {{- if or $hasBakerInNodes $hasBakersObject }}
+    {{- "true" }}
+  {{- else }}
+    {{- "false" }}
   {{- end }}
 {{- end }}
 
-{{/*
-  Get list of accounts that are being used to bake. Returned as a json
-  serialized dict because of how Helm renders everything returned from
-  a template as string. Function callers need to parse the returned
-  value like so: `fromJson | values | first`. A dict and not list is
-  returned because of the way `fromJson` works which expects a type of
-  map[string]interface {}.
+{{/* 
+  Get list of accounts that are being used to bake, including keys from bakers 
+  object if it is non-empty. Returned as a json serialized dict.
 */}}
 {{- define "tezos.getAccountsBaking" }}
   {{- $allAccounts := list }}
   {{- range $node := .Values.nodes }}
     {{- range $instance := $node.instances }}
-    {{- if and .bake_using_accounts (kindIs "slice" .bake_using_accounts) }}
+      {{- if and .bake_using_accounts (kindIs "slice" .bake_using_accounts) }}
         {{- $allAccounts = concat $allAccounts .bake_using_accounts }}
       {{- else if and .bake_using_account (kindIs "string" .bake_using_account) }}
         {{- $allAccounts = append $allAccounts .bake_using_account }}
       {{- end }}
     {{- end }}
+  {{- end }}
+  {{- if ne (len .Values.bakers) 0 }}
+    {{- $bakerKeys := keys .Values.bakers }}
+    {{- $allAccounts = concat $allAccounts $bakerKeys }}
   {{- end }}
   {{- dict "data" (uniq $allAccounts) | toJson }}
 {{- end }}

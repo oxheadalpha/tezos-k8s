@@ -61,6 +61,8 @@ data:
 {{ $tacoinfraSigners | default dict | mustToPrettyJson | indent 4 }}
   OCTEZ_ROLLUP_NODES: |
 {{ $.Values.smartRollupNodes | default dict | mustToPrettyJson | indent 4 }}
+  OCTEZ_BAKERS: |
+{{ $.Values.bakers | default dict | mustToPrettyJson | indent 4 }}
 
 ---
 

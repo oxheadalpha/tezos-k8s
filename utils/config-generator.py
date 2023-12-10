@@ -26,6 +26,7 @@ NODES = json.loads(os.environ["NODES"])
 NODE_IDENTITIES = json.loads(os.getenv("NODE_IDENTITIES", "{}"))
 OCTEZ_SIGNERS = json.loads(os.getenv("OCTEZ_SIGNERS", "{}"))
 OCTEZ_ROLLUP_NODES = json.loads(os.getenv("OCTEZ_ROLLUP_NODES", "{}"))
+OCTEZ_BAKERS = json.loads(os.getenv("OCTEZ_BAKERS", "{}"))
 TACOINFRA_SIGNERS = json.loads(os.getenv("TACOINFRA_SIGNERS", "{}"))
 
 MY_POD_NAME = os.environ["MY_POD_NAME"]
@@ -59,6 +60,8 @@ if MY_POD_TYPE == "signing":
     MY_POD_CONFIG = OCTEZ_SIGNERS[MY_POD_NAME]
 if MY_POD_TYPE == "rollup":
     MY_POD_CONFIG = OCTEZ_ROLLUP_NODES[MY_POD_NAME]
+if MY_POD_TYPE == "baker":
+    MY_POD_CONFIG = OCTEZ_BAKERS[MY_POD_NAME]
 
 NETWORK_CONFIG = CHAIN_PARAMS["network"]
 
@@ -409,7 +412,7 @@ def get_secret_key(account, key: Key):
     account_name, _ = account
 
     sk = (key.is_secret or None) and f"unencrypted:{key.secret_key()}"
-    if MY_POD_TYPE in ("node", "activating"):
+    if MY_POD_TYPE != "signing":
         signer_url = get_remote_signer_url(account, key)
         octez_signer = get_accounts_signer(OCTEZ_SIGNERS, account_name)
         if (sk and signer_url) and not octez_signer:
