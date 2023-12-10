@@ -330,7 +330,7 @@ def authorized_key_for(account_name):
     """
     for signer_val in OCTEZ_SIGNERS.values():
         if account_name in signer_val["accounts"]:
-            return signer_val["authorized_keys"].get(0)
+            return signer_val["authorized_keys"][0] if signer_val["authorized_keys"] else None
     return
 
 def expose_secret_key(account_name):
