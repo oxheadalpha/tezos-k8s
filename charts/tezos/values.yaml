@@ -171,11 +171,6 @@ should_generate_unsafe_deterministic_data: false
 #                            Don't also set `bake_using_accounts`.
 #    - `bake_using_accounts`: List of account names that should be used for baking.
 #                            Don't also set `bake_using_account`.
-#    - `authorized_keys`: List of account names that should be used as keys to
-#                         authenticate a baker to a signer.
-#                         When a baker uses a remote signer that requires
-#                         authentication, the relevant key from this list
-#                         will be used to sign every signature request.
 #    - `config`: Same as the outer statefulset level `config`. It overrides the
 #                statefulset level.
 #    - `is_bootstrap_node`: Boolean for is this node a bootstrap peer.
@@ -329,9 +324,10 @@ octezSigners: {}
 #     - baker0
 #    authorized_keys:
 #     # Names of accounts used to authenticate the baker to the signer.
-#     # The baker must have the private key for one of the listed
-#     # accounts. The signer will only sign a request from a baker
-#     # authenticated by an allowed key.
+#     # The signer will only sign a request from a baker authenticated
+#     # by an allowed key.
+      # If set, any baker targeting this signer will automatically have
+      # the associated private key accessible locally.
 #     - authorized-key-0
 # ```
 #

@@ -323,30 +323,28 @@ def fill_in_missing_keys(all_accounts):
             account_values["key"] = sk_b58
             account_values["type"] = "secret"
 
+def authorized_key_for(account_name):
+    """
+    If `account_name` has a remote signer and this remote signer
+    requires an authorized key, returns it.
+    """
+    for signer_val in OCTEZ_SIGNERS.values():
+        if account_name in signer_val.accounts:
+            return signer_val.authorized_keys.get(0)
+    return
 
 def expose_secret_key(account_name):
     """
     Decides if an account needs to have its secret key exposed on the current
-    pod.  It returns the obvious Boolean.
+    pod.
+    Returns true if the pod bakes for this address, signer signs for this address,
+    or if the address is an authorized key necessary for perforing baking.
+    Note: in some cases, "secret key" is a URL to a remote signer rather than a key,
+    as is the case in Octez client's "secret_keys" file.
     """
     if MY_POD_TYPE == "activating":
-        all_authorized_keys = [
-            key
-            for node in NODES.values()
-            for instance in node["instances"]
-            for key in instance.get("authorized_keys", [])
-        ]
-        all_authorized_keys.append([
-            key
-            for baker in OCTEZ_BAKERS.values()
-            for key in baker.get("authorized_keys", [])
-        ])
-        if account_name in all_authorized_keys:
-            # Populate authorized keys known by all bakers in the activation account.
-            # This ensures that activation will succeed with a remote signer that requires auth,
-            # regardless of which baker does it.
-            return True
-        return NETWORK_CONFIG["activation_account_name"] == account_name
+        activation_account = NETWORK_CONFIG["activation_account_name"]
+        return account_name in [ activation_account, authorized_key_for(activation_account)]
 
     if MY_POD_TYPE == "signing":
         return account_name in MY_POD_CONFIG.get("accounts")
@@ -355,11 +353,12 @@ def expose_secret_key(account_name):
         return account_name == MY_POD_CONFIG.get("operator_account")
 
     if MY_POD_TYPE in [ "node", "baker" ]:
-        if MY_POD_CONFIG.get("bake_using_account", "") == account_name:
+        baking_account = MY_POD_CONFIG.get("bake_using_account", "")
+        if account_name in [ baking_account, authorized_key_for(baking_account)]:
             return True
-        if account_name in MY_POD_CONFIG.get("authorized_keys", {}):
-            return True
-        return account_name in MY_POD_CONFIG.get("bake_using_accounts", {})
+        for baking_account in MY_POD_CONFIG.get("bake_using_accounts", {}):
+            if account_name in [ baking_account, authorized_key_for(baking_account)]:
+                return True
 
     return False
 
