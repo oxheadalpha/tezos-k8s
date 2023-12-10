@@ -336,6 +336,11 @@ def expose_secret_key(account_name):
             for instance in node["instances"]
             for key in instance.get("authorized_keys", [])
         ]
+        all_authorized_keys.append([
+            key
+            for baker in OCTEZ_BAKERS.values()
+            for key in baker.get("authorized_keys", [])
+        ])
         if account_name in all_authorized_keys:
             # Populate authorized keys known by all bakers in the activation account.
             # This ensures that activation will succeed with a remote signer that requires auth,
