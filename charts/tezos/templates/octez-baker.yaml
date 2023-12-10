@@ -27,9 +27,7 @@ spec:
               name: tezos-config
         env:
           - name: MY_POD_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.name
+            value: {{ $k }}
           - name: MY_POD_TYPE
             value: baker
         volumeMounts:
