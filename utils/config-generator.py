@@ -25,6 +25,7 @@ NODE_GLOBALS = json.loads(os.environ["NODE_GLOBALS"]) or {}
 NODES = json.loads(os.environ["NODES"])
 NODE_IDENTITIES = json.loads(os.getenv("NODE_IDENTITIES", "{}"))
 OCTEZ_SIGNERS = json.loads(os.getenv("OCTEZ_SIGNERS", "{}"))
+OCTEZ_ROLLUP_NODES = json.loads(os.getenv("OCTEZ_ROLLUP_NODES", "{}"))
 TACOINFRA_SIGNERS = json.loads(os.getenv("TACOINFRA_SIGNERS", "{}"))
 
 MY_POD_NAME = os.environ["MY_POD_NAME"]
@@ -56,6 +57,8 @@ if not MY_POD_CLASS and "MY_NODE_CLASS" in os.environ:
 
 if MY_POD_TYPE == "signing":
     MY_POD_CONFIG = OCTEZ_SIGNERS[MY_POD_NAME]
+if MY_POD_TYPE == "rollup":
+    MY_POD_CONFIG = OCTEZ_ROLLUP_NODES[MY_POD_NAME]
 
 NETWORK_CONFIG = CHAIN_PARAMS["network"]
 
@@ -340,6 +343,9 @@ def expose_secret_key(account_name):
     if MY_POD_TYPE == "signing":
         return account_name in MY_POD_CONFIG.get("accounts")
 
+    if MY_POD_TYPE == "rollup":
+        return account_name == MY_POD_CONFIG.get("operator_account")
+
     if MY_POD_TYPE == "node":
         if MY_POD_CONFIG.get("bake_using_account", "") == account_name:
             return True
@@ -559,6 +565,10 @@ def create_protocol_parameters_json(accounts):
         for url in protocol_activation["bootstrap_contract_urls"]:
             print(f"Injecting bootstrap contract from {url}")
             protocol_params["bootstrap_contracts"].append(requests.get(url).json())
+
+    # Append any additional bootstrap params such as smart rollups, if any
+    if protocol_activation.get("bootstrap_parameters"):
+        protocol_params = { **protocol_params, **protocol_activation.get("bootstrap_parameters") }
 
     return protocol_params
 

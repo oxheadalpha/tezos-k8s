@@ -1,0 +1,235 @@
+{{- range $k, $v := .Values.smartRollupNodes }}
+
+{{- if $v.evm_proxy | default false }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: evm-proxy-{{ $k }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  type: NodePort
+  ports:
+    - port: 8545
+      name: evm-proxy
+  selector:
+    app: evm-proxy-{{ $k }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: evm-proxy-{{ $k }}
+  namespace: {{ $.Release.Namespace }}
+{{- if $v.evm_proxy.annotations | default false }}
+{{- with $v.evm_proxy.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+{{- end }}
+{{- end }}
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  serviceName: evm-proxy-{{ $k }}
+  selector:
+    matchLabels:
+      app: evm-proxy-{{ $k }}
+  template:
+    metadata:
+      labels:
+        app: evm-proxy-{{ $k }}
+    spec:
+      containers:
+      - name: octez-evm-proxy
+        image: "{{ $.Values.images.octez }}"
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8545
+          name: evm-proxy
+        command:
+          - /bin/sh
+        args:
+          - "-c"
+          - |
+{{ tpl ($.Files.Get "scripts/evm-proxy.sh") $ | indent 12 }}
+        env:
+          - name: MY_POD_NAME
+            value: {{ $k }}
+      securityContext:
+        fsGroup: 1000
+---
+{{- if $v.evm_proxy.ingress | default false }}
+{{- if $v.evm_proxy.ingress.enabled | default false }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: evm-proxy-{{ $k }}
+  namespace: {{ $.Release.Namespace }}
+{{- with $v.evm_proxy.ingress.labels }}
+  labels:
+    {{- toYaml . | nindent 4 }}
+{{- end }}
+{{- with $v.evm_proxy.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+{{- end }}
+spec:
+  ingressClassName: {{ $v.evm_proxy.ingress.className }}
+  {{- if $v.evm_proxy.ingress.tls }}
+  tls:
+    {{- range $v.evm_proxy.ingress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
+  rules:
+    - host: {{ $v.evm_proxy.ingress.host }}
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: evm-proxy-{{ $k }}
+                port:
+                  name: evm-proxy
+{{- end }}
+{{- end }}
+{{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rollup-{{ $k }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  type: NodePort
+  ports:
+    - port: 8932
+      name: rollup
+  selector:
+    app: rollup-{{ $k }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: rollup-{{ $k }}
+  namespace: {{ $.Release.Namespace }}
+{{- if $v.annotations | default false }}
+{{- with $v.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+{{- end }}
+{{- end }}
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  serviceName: rollup-{{ $k }}
+  selector:
+    matchLabels:
+      app: rollup-{{ $k }}
+  template:
+    metadata:
+      labels:
+        app: rollup-{{ $k }}
+    spec:
+      containers:
+      - name: octez-smart-rollup-node
+        image: "{{ $.Values.images.octez }}"
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8932
+          name: rollup
+        command:
+          - /bin/sh
+        volumeMounts:
+        - mountPath: /var/tezos
+          name: var-volume
+        args:
+          - "-c"
+          - |
+{{ tpl ($.Files.Get "scripts/smart-rollup-node.sh") $ | indent 12 }}
+        env:
+          - name: ROLLUP_ADDRESS
+            value: {{ $v.rollup_address }}
+          - name: OPERATOR_ACCOUNT
+            value: {{ $v.operator_account }}
+      initContainers:
+      - image: {{ $.Values.tezos_k8s_images.utils }}
+        imagePullPolicy: IfNotPresent
+        name: config-generator
+        args:
+          - "config-generator"
+        envFrom:
+          - configMapRef:
+              name: tezos-config
+        env:
+          - name: MY_POD_NAME
+            value: {{ $k }}
+          - name: MY_POD_TYPE
+            value: {{ $.Values.smart_rollup_node_statefulset.pod_type }}
+        volumeMounts:
+          - mountPath: /var/tezos
+            name: var-volume
+          - mountPath: /etc/secret-volume
+            name: tezos-accounts
+      securityContext:
+        fsGroup: 1000
+      volumes:
+        - volume: var-volume
+          name: var-volume
+        - name: tezos-accounts
+          secret:
+            secretName: tezos-secret
+  volumeClaimTemplates:
+    - metadata:
+        name: var-volume
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: "15Gi"
+---
+{{- if $v.ingress | default false }}
+{{- if $v.ingress.enabled | default false }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rollup-{{ $k }}
+  namespace: {{ $.Release.Namespace }}
+{{- with $v.ingress.labels }}
+  labels:
+    {{- toYaml . | nindent 4 }}
+{{- end }}
+{{- with $v.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+{{- end }}
+spec:
+  ingressClassName: {{ $v.ingress.className }}
+  {{- if $v.ingress.tls }}
+  tls:
+    {{- range $v.ingress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
+  rules:
+    - host: {{ $v.ingress.host }}
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: rollup-{{ $k }}
+                port:
+                  name: rollup
+{{- end }}
+{{- end }}
+{{- end }}

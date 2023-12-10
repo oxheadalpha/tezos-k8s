@@ -1,0 +1,135 @@
+{{- range $k, $v := .Values.dalNodes }}
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: dal-{{ $k }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  type: NodePort
+  ports:
+    - port: 10732
+      name: rpc
+    - port: 11732
+      name: p2p
+  selector:
+    app: dal-{{ $k }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: dal-{{ $k }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  serviceName: dal-{{ $k }}
+  selector:
+    matchLabels:
+      app: dal-{{ $k }}
+  template:
+    metadata:
+      labels:
+        app: dal-{{ $k }}
+    spec:
+      containers:
+      - name: octez-dal-node
+        image: "{{ $.Values.images.octez }}"
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 10732
+          name: rpc
+        - containerPort: 11732
+          name: p2p
+        command:
+          - /bin/sh
+        volumeMounts:
+        - mountPath: /var/tezos
+          name: var-volume
+        args:
+          - "-c"
+          - |
+{{ tpl ($.Files.Get "scripts/dal-node.sh") $ | indent 12 }}
+{{- if $v | default false }}
+        env:
+{{- if $v.bootstrapProfile | default false }}
+        - name: BOOTSTRAP_PROFILE
+          value: "true"
+{{- end }}
+{{- if $v.attesterProfiles | default false }}
+        - name: ATTESTER_PROFILES
+          value: "{{ $v.attesterProfiles }}"
+{{- end }}
+{{- if $v.peer | default false }}
+        - name: PEER
+          value: "{{ $v.peer }}"
+{{- end }}
+{{- if $v.publicAddr | default false }}
+        - name: PUBLIC_ADDR
+          value: "{{ $v.publicAddr }}"
+{{- end }}
+{{- if $v.identity | default false }}
+        - name: IDENTITY_JSON
+          value: {{ toJson $v.identity | quote }}
+{{- end }}
+{{- end }}
+      securityContext:
+        fsGroup: 1000
+  volumeClaimTemplates:
+    - metadata:
+        name: var-volume
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+{{- if $v.storageSize | default false }}
+            storage: "{{ $v.storageSize }}"
+{{- else }}
+            storage: "50Gi"
+{{- end }}
+---
+{{- if $v | default false }}
+{{- if $v.ingress | default false }}
+{{- if $v.ingress.enabled | default false }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dal-{{ $k }}
+  namespace: {{ $.Release.Namespace }}
+{{- with $v.ingress.labels }}
+  labels:
+    {{- toYaml . | nindent 4 }}
+{{- end }}
+{{- with $v.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+{{- end }}
+spec:
+  ingressClassName: {{ $v.ingress.className }}
+  {{- if $v.ingress.tls }}
+  tls:
+    {{- range $v.ingress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
+  rules:
+    - host: {{ $v.ingress.host }}
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: dal-{{ $k }}
+                port:
+                  name: rpc
+---
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

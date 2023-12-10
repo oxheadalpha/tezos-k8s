@@ -118,6 +118,8 @@ data:
     {}
   TACOINFRA_SIGNERS: |
     {}
+  OCTEZ_ROLLUP_NODES: |
+    {}
 ---
 # Source: tezos-chain/templates/static.yaml
 apiVersion: v1

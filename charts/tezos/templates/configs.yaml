@@ -59,6 +59,8 @@ data:
     {{- $_ := set $tacoinfraSigners $signerName (pick $signerConfig "accounts") }}
 {{- end }}
 {{ $tacoinfraSigners | default dict | mustToPrettyJson | indent 4 }}
+  OCTEZ_ROLLUP_NODES: |
+{{ $.Values.smartRollupNodes | default dict | mustToPrettyJson | indent 4 }}
 
 ---
 
@@ -93,6 +95,9 @@ data:
   {{- end }}
   {{- if $account.operations_pool }}
     {{ $accountName }}_operations_pool: {{ $account.operations_pool | quote }}
+  {{- end }}
+  {{- if $account.dal_node }}
+    {{ $accountName }}_dal_node: {{ $account.dal_node | quote }}
   {{- end }}
 {{- end }}
 kind: ConfigMap

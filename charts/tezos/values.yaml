@@ -18,6 +18,9 @@ octez_signer_statefulset:
 chain_initiator_job:
   name: chain-initiator
   pod_type: activating
+smart_rollup_node_statefulset:
+  name: smart-rollup
+  pod_type: rollup
 
 # For non-public chains the default mutez given to an account if the
 # account is not explicitly set below.
@@ -45,6 +48,8 @@ accounts: {}
 # mempool queries when baking a block. This is useful to run a Flashbake-capable baker.
 # The entry is passed to baker binaries using the `--operations-pool` flag.
 #
+# The `dal_node` field instructs the baker to target a url for a DAL node.
+#
 # - Public chains: Accounts do not get `is_bootstrap_baker_account` and
 # `bootstrap_balance` fields.
 # - Non-public chains: If you don't specify accounts needed by nodes, they can
@@ -66,6 +71,7 @@ accounts: {}
 #   baker1:
 #     key: edsk...
 #     operations_pool: http://flashbake-endpoint-baker-listener:12732
+#     dal_node: http://dal_node:10732
 #     protocols:
 #     - command: PtMumbai
 #       vote:
@@ -174,9 +180,8 @@ should_generate_unsafe_deterministic_data: false
 #                statefulset level.
 #    - `is_bootstrap_node`: Boolean for is this node a bootstrap peer.
 #    - `identity`: An optional map containing a pre-generated Tezos node
-#                 identity. This is useful for local storage nodes which would
-#                 need to generate an identity at every boot. The identity file
-#                 will be created at /var/tezos/node/data/identity.json.
+#                 identity. The identity file will be created at
+#                 /var/tezos/node/data/identity.json.
 #                 Required fields are `peer_id`, `public_key`, `secret_key`,
 #                 and `proof_of_work_timestamp`.
 #
@@ -337,6 +342,70 @@ tacoinfraSigners: {}
 #         eks.amazonaws.com/role-arn: <SIGNER_ROLE_ARN>
 # ```
 # End Signers
+
+# # Rollup nodes
+# Define Smart Rollup nodes. An operator account and rollup address
+# must be provided.
+# In private chains, you can create a rollup with the same address during
+# activation.
+# Optionally define an ingress for your rollup to be accessible from outside
+# the cluster.
+# If your rollup is an EVM rollup, you can also define an EVM proxy object,
+# which can in turn have an ingress.
+#
+smartRollupNodes: {}
+# Example:
+# ```
+# smartRollupNodes:
+#   rollup-node-0:
+#     operator_account: archive-baking-node-0
+#     rollup_address: sr1RYurGZtN8KNSpkMcCt9CgWeUaNkzsAfXf
+#     annotations: {}
+#     ingress:
+#       enabled: false
+#       host: ""
+#       annotations: {}
+#       className: ""
+#       labels: {}
+#       pathType: Prefix
+#       tls: []
+#     evm_proxy:
+#       annotations: {}
+#       ingress:
+#         enabled: false
+#         host: ""
+#         annotations: {}
+#         className: ""
+#         labels: {}
+#         pathType: Prefix
+#         tls: []
+# ```
+
+# End Rollup Nodes
+
+# DAL Nodes
+dalNodes: {}
+# Deploys DAL nodes in pods and maps them to L1 nodes.
+# Example:
+#  bootstrap:
+#    bootstrapProfile: true
+#    ingress:
+#       enabled: false
+#       host: ""
+#       annotations: {}
+#       className: ""
+#       labels: {}
+#       pathType: Prefix
+#       tls: []
+#    identity:
+#       # fill here the identity of the node, if you want it to persist
+#       peer_id:
+#       public_key:
+#       secret_key:
+#       proof_of_work_stamp:
+#  dal1:
+#    storageSize: 50Gi
+#    attesterProfiles: tz1foXHgRzdYdaLgX6XhpZGxbBv42LZ6ubvE
 
 # When spinning up nodes, tezos-k8s will attempt to download a snapshot from a
 # known source. This should be a url to a json metadata file in the format
@@ -516,6 +585,16 @@ protocols:
 #   # Pass url pointing to additional contracts that you want injected at activation.
 #   # This data is typically too large to pass it directly inside helm chart.
 #   bootstrap_contract_urls: []
+#
+#   # Pass additional structured data to add to parameters.json
+#   # This can be used to deploy smart rollup at bootstrap.
+#   bootstrap_parameters:
+#     bootstrap_smart_rollups:
+#       address: "sr1RYurGZtN8KNSpkMcCt9CgWeUaNkzsAfXf"
+#       pvm_kind: "arith"
+#       kernel: ""
+#       parameters_ty:
+#         prim: unit
 #
 ## Deploy an indexer with the chain. An indexer puts the chain
 ## contents in a database for efficient indexing. Most dapps need it.
