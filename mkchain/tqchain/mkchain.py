@@ -32,7 +32,7 @@ sys.path.insert(0, "tqchain")
 
 __version__ = get_versions()["version"]
 
-ARCHIVE_BAKER_NODE_NAME = "archive-baking-node"
+ARCHIVE_BAKER_NODE_NAME = "archive-node"
 ROLLING_REGULAR_NODE_NAME = "rolling-node"
 
 
@@ -142,11 +142,11 @@ def node_config(name, n, is_baker):
         },
         "authorized_keys": ["authorized-key-0"],
     }
-    if is_baker:
-        ret["bake_using_accounts"] = [f"{name}-{n}"]
-        if n < 2:
-            ret["is_bootstrap_node"] = True
-            ret["config"]["shell"]["history_mode"] = "archive"
+    return ret
+
+def baker_config(name, n):
+    ret = {"bake_using_accounts": [f"{name}-{n}"],
+        "node_rpc_url": "http://archive-node-0.archive.node:8732"}
     return ret
 
 
@@ -234,11 +234,16 @@ def main():
     # archive mode. Any other bakers will be in rolling mode.
     nodes = {
         ARCHIVE_BAKER_NODE_NAME: {
-            "runs": ["octez_node", "baker"],
+            "runs": ["octez_node"],
             "storage_size": "15Gi",
             "instances": [
-                node_config(ARCHIVE_BAKER_NODE_NAME, n, is_baker=True)
-                for n in range(args.number_of_bakers)
+                {
+                   "is_bootstrap_node": False,
+                   "config": {
+                       "shell": {"history_mode": "rolling"},
+                       "metrics_addr": [":9932"],
+                   },
+               } for _ in range(args.number_of_bakers)
             ],
         },
         ROLLING_REGULAR_NODE_NAME: None,
@@ -251,6 +256,10 @@ def main():
                 for n in range(args.number_of_nodes)
             ],
         }
+
+    bakers = {f"baker-{i}": {"bake_using_accounts": [f"{ARCHIVE_BAKER_NODE_NAME}-{i}"],
+        "node_rpc_url": "http://archive-node-0.archive-node:8732"} 
+           for i in range(args.number_of_bakers)}
 
     octezSigners = {
         "tezos-signer-0": {
@@ -286,6 +295,7 @@ def main():
         "bootstrap_peers": bootstrap_peers,
         "accounts": accounts["secret"],
         "octezSigners": octezSigners,
+        "bakers": bakers,
         "nodes": nodes,
         **activation,
     }

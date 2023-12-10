@@ -108,7 +108,7 @@ metadata:
 {{- end }}
 
 {{/* 
-  Get list of accounts that are being used to bake, including keys from bakers 
+  Get list of accounts that are being used to bake, including bake_using_accounts lists from bakers
   object if it is non-empty. Returned as a json serialized dict.
 */}}
 {{- define "tezos.getAccountsBaking" }}
@@ -123,8 +123,11 @@ metadata:
     {{- end }}
   {{- end }}
   {{- if ne (len .Values.bakers) 0 }}
-    {{- $bakerKeys := keys .Values.bakers }}
-    {{- $allAccounts = concat $allAccounts $bakerKeys }}
+    {{- range $baker := .Values.bakers }}
+      {{- if and $baker.bake_using_accounts (kindIs "slice" $baker.bake_using_accounts) }}
+        {{- $allAccounts = concat $allAccounts $baker.bake_using_accounts }}
+      {{- end }}
+    {{- end }}
   {{- end }}
   {{- dict "data" (uniq $allAccounts) | toJson }}
 {{- end }}
