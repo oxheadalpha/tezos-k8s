@@ -193,9 +193,9 @@ def main():
 
     if old_values.get("node_config_network", {}).get("genesis"):
         print("Using existing genesis parameters")
-        base_constants["node_config_network"]["genesis"] = old_values[
+        base_constants["node_config_network"] = old_values[
             "node_config_network"
-        ]["genesis"]
+        ]
     else:
         # create new chain genesis params if brand new chain
         base_constants["node_config_network"]["genesis"] = {
@@ -207,9 +207,9 @@ def main():
               "activated": True,
               "use_mock_srs_for_testing": {
                 "redundancy_factor": 16,
-                "page_size": 256,
-                "slot_size": 512,
-                "number_of_shards": 256
+                "page_size": 4096,
+                "slot_size": 1048756,
+                "number_of_shards": 2048
               },
               "bootstrap_peers": [ "dal-bootstrap:11732"]
             }
