@@ -37,15 +37,6 @@ L1_NODE_NAME = "l1-node"
 BAKER_NAME = "baker"
 
 cli_args = {
-    "should_generate_unsafe_deterministic_data": {
-        "help": (
-            "Should tezos-k8s generate deterministic account keys and genesis"
-            " block hash instead of mkchain using octez-client to generate"
-            " random ones. This option is helpful for testing purposes."
-        ),
-        "action": "store_true",
-        "default": False,
-    },
     "number_of_nodes": {
         "help": "number of peers in the cluster",
         "default": 1,
@@ -138,10 +129,12 @@ def node_config(n):
         ret["config"]["shell"]["history_mode"] = "archive"
     return ret
 
-def baker_config(name, n):
-    ret = {"bake_using_accounts": [f"{name}-{n}"],
-        "node_rpc_url": f"http://{L1_NODE_NAME}-0.{L1_NODE_NAME}:8732"}
-    return ret
+def baker_config(name, baker_index, num_nodes):
+    node_index = baker_index % num_nodes
+    return {
+        "bake_using_accounts": [f"{name}-{string.ascii_lowercase[baker_index]}"],
+        "node_rpc_url": f"http://{L1_NODE_NAME}-{node_index}.{L1_NODE_NAME}:8732"
+    }
 
 
 def main():
@@ -208,7 +201,7 @@ def main():
     if old_values.get("accounts"):
         print("Using existing secret keys")
         accounts["secret"] = old_values["accounts"]
-    elif not args.should_generate_unsafe_deterministic_data:
+    else:
         baking_accounts = {
             f"{BAKER_NAME}-{char}": {} for char in string.ascii_lowercase[:args.number_of_bakers]
         }
@@ -224,7 +217,7 @@ def main():
                     "bootstrap_balance": "4000000000000",
                 }
 
-    # First 2 bakers are acting as bootstrap nodes for the others, and run in
+    # First 2 nodes are acting as bootstrap nodes for the others, and run in
     # archive mode. Any other bakers will be in rolling mode.
     nodes = {
         L1_NODE_NAME: {
@@ -239,9 +232,11 @@ def main():
     }
 
         
-    bakers = {f"{char}": {"bake_using_accounts": [f"{BAKER_NAME}-{char}"], 
-                          "node_rpc_url": f"http://{L1_NODE_NAME}-0.{L1_NODE_NAME}:8732"} 
-              for char in string.ascii_lowercase[:args.number_of_bakers]}
+    bakers = {
+        f"{char}": baker_config(BAKER_NAME, i, args.number_of_nodes)
+        for i, char in enumerate(string.ascii_lowercase[:args.number_of_bakers])
+}
+
 
     octezSigners = {
         "tezos-signer-0": {
@@ -273,7 +268,6 @@ def main():
         "tezos_k8s_images": {
            "utils": "ghcr.io/oxheadalpha/tezos-k8s-utils:bake_remotely"
         },
-        "should_generate_unsafe_deterministic_data": args.should_generate_unsafe_deterministic_data,
         "expected_proof_of_work": args.expected_proof_of_work,
         **base_constants,
         "bootstrap_peers": bootstrap_peers,
