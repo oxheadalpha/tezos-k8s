@@ -164,7 +164,7 @@ def main():
         },
         "protocols": [
             {
-                "command": "PtNairob",
+                "command": "Proxford",
                 "vote": {"liquidity_baking_toggle_vote": "pass"},
             }
         ],
@@ -207,9 +207,9 @@ def main():
               "activated": True,
               "use_mock_srs_for_testing": {
                 "redundancy_factor": 16,
-                "page_size": 4096,
-                "slot_size": 1024,
-                "number_of_shards": 512
+                "page_size": 256,
+                "slot_size": 512,
+                "number_of_shards": 256
               },
               "bootstrap_peers": [ "dal-bootstrap:11732"]
             }
@@ -285,7 +285,7 @@ def main():
         parametersYaml = yaml.safe_load(yaml_file)
         activation = {
             "activation": {
-                "protocol_hash": "PtNairobiyssHuh87hEhfVBGCVrK3WnS8Z2FT4ymB5tAa4r1nQf",
+                "protocol_hash": "ProxfordYmVfjWnRcgjWH36fW6PArwqykTFzotUxRs6gmTcZDuH",
                 "protocol_parameters": parametersYaml,
             },
         }

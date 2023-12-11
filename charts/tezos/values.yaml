@@ -397,6 +397,7 @@ dalNodes: {}
 # Example:
 #  bootstrap:
 #    bootstrapProfile: true
+#    node_rpc_url: http://rolling-node-0:8732
 #    ingress:
 #       enabled: false
 #       host: ""

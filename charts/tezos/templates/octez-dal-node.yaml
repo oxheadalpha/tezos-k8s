@@ -52,6 +52,8 @@ spec:
 {{ tpl ($.Files.Get "scripts/dal-node.sh") $ | indent 12 }}
 {{- if $v | default false }}
         env:
+        - name: NODE_RPC_URL
+          value: "{{ $v.node_rpc_url }}"
 {{- if $v.bootstrapProfile | default false }}
         - name: BOOTSTRAP_PROFILE
           value: "true"
