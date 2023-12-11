@@ -33,7 +33,8 @@ sys.path.insert(0, "tqchain")
 
 __version__ = get_versions()["version"]
 
-ARCHIVE_BAKER_NODE_NAME = "archive-node"
+L1_NODE_NAME = "l1-node"
+BAKER_NAME = "baker"
 
 cli_args = {
     "should_generate_unsafe_deterministic_data": {
@@ -139,7 +140,7 @@ def node_config(n):
 
 def baker_config(name, n):
     ret = {"bake_using_accounts": [f"{name}-{n}"],
-        "node_rpc_url": "http://archive-node-0.archive.node:8732"}
+        "node_rpc_url": f"http://{L1_NODE_NAME}-0.{L1_NODE_NAME}:8732"}
     return ret
 
 
@@ -183,7 +184,7 @@ def main():
             old_values = yaml.safe_load(yaml_file)
 
         current_number_of_bakers = len(
-            old_values["nodes"][ARCHIVE_BAKER_NODE_NAME]["instances"]
+            old_values["nodes"][L1_NODE_NAME]["instances"]
         )
         if current_number_of_bakers != args.number_of_bakers:
             print("ERROR: the number of bakers must not change on a pre-existing chain")
@@ -209,7 +210,7 @@ def main():
         accounts["secret"] = old_values["accounts"]
     elif not args.should_generate_unsafe_deterministic_data:
         baking_accounts = {
-            f"baker-{char}": {} for char in string.ascii_lowercase[:args.number_of_bakers]
+            f"{BAKER_NAME}-{char}": {} for char in string.ascii_lowercase[:args.number_of_bakers]
         }
         for account in [*baking_accounts, "authorized-key-0"]:
             print(f"Generating keys for account {account}")
@@ -226,7 +227,7 @@ def main():
     # First 2 bakers are acting as bootstrap nodes for the others, and run in
     # archive mode. Any other bakers will be in rolling mode.
     nodes = {
-        ARCHIVE_BAKER_NODE_NAME: {
+        L1_NODE_NAME: {
             "runs": ["octez_node"],
             "storage_size": "15Gi",
             "instances": [
@@ -238,14 +239,14 @@ def main():
     }
 
         
-    bakers = {f"{char}": {"bake_using_accounts": [f"baker-{char}"], 
-                          "node_rpc_url": "http://archive-node-0.archive-node:8732"} 
+    bakers = {f"{char}": {"bake_using_accounts": [f"{BAKER_NAME}-{char}"], 
+                          "node_rpc_url": f"http://{L1_NODE_NAME}-0.{L1_NODE_NAME}:8732"} 
               for char in string.ascii_lowercase[:args.number_of_bakers]}
 
     octezSigners = {
         "tezos-signer-0": {
             "accounts": [
-                f"{ARCHIVE_BAKER_NODE_NAME}-{n}" for n in range(args.number_of_bakers)
+                f"{L1_NODE_NAME}-{n}" for n in range(args.number_of_bakers)
             ],
             "authorized_keys": ["authorized-key-0"],
         }
@@ -253,7 +254,7 @@ def main():
 
     base_constants["node_config_network"][
         "activation_account_name"
-    ] = "baker-a"
+    ] = f"{BAKER_NAME}-a"
 
     with open(
         f"{os.path.dirname(os.path.realpath(__file__))}/parameters.yaml", "r"
