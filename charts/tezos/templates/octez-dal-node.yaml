@@ -48,7 +48,7 @@ spec:
             value: baker
         volumeMounts:
           - mountPath: /var/tezos
-            name: baker-volume
+            name: var-volume
           - mountPath: /etc/secret-volume
             name: tezos-accounts
       containers:
@@ -96,6 +96,10 @@ spec:
 {{- end }}
       securityContext:
         fsGroup: 1000
+      volumes:
+        - name: tezos-accounts
+          secret:
+            secretName: tezos-secret
   volumeClaimTemplates:
     - metadata:
         name: var-volume
