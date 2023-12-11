@@ -36,7 +36,10 @@ spec:
           - mountPath: /etc/secret-volume
             name: tezos-accounts
       containers:
-      - name: octez-baker
+{{- $baker_name := index $v.bake_using_accounts 0 }}
+{{- $account := get $.Values.accounts $baker_name | default dict }}
+{{- range ( $account.protocols | default $.Values.protocols ) }}
+      - name: octez-baker-{{ lower .command  }}
         image: "{{ $.Values.images.octez }}"
         imagePullPolicy: IfNotPresent
         volumeMounts:
@@ -54,9 +57,9 @@ spec:
         - name: NODE_RPC_URL
           value: "{{ $v.node_rpc_url }}"
         - name: PROTO_COMMAND
-          value: "PtNairob"
+          value: "{{ .command }}"
         - name: BAKER_NAME
-          value: {{ index $v.bake_using_accounts 0 }}
+          value: {{ $baker_name }}
         - name: BAKE_USING_ACCOUNTS
           value: {{ join " " $v.bake_using_accounts }}
 {{- if $v.operations_pool | default false }}
@@ -66,6 +69,7 @@ spec:
 {{- if $v.dal_node | default false }}
         - name: DAL_NODE
           value: "{{ $v.dal_node }}"
+{{- end }}
 {{- end }}
       securityContext:
         fsGroup: 1000

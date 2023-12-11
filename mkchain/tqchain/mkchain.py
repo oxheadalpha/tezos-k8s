@@ -37,12 +37,12 @@ L1_NODE_NAME = "l1-node"
 BAKER_NAME = "baker"
 
 cli_args = {
-    "number_of_nodes": {
+    "nodes": {
         "help": "number of peers in the cluster",
         "default": 1,
         "type": int,
     },
-    "number_of_bakers": {
+    "bakers": {
         "help": "number of bakers in the cluster",
         "default": 1,
         "type": int,
@@ -101,16 +101,16 @@ def get_args():
 
 
 def validate_args(args):
-    if args.number_of_nodes < 1:
+    if args.nodes < 1:
         print(
-            f"Invalid argument --number-of-nodes ({args.number_of_nodes}) "
+            f"Invalid argument --nodes ({args.nodes}) "
             f"must be non-zero"
         )
         exit(1)
 
-    if args.number_of_bakers < 1:
+    if args.bakers < 1:
         print(
-            f"Invalid argument --number-of-bakers ({args.number_of_bakers}) "
+            f"Invalid argument --bakers ({args.bakers}) "
             f"must be non-zero"
         )
         exit(1)
@@ -176,13 +176,13 @@ def main():
         with open(f"{files_path}_values.yaml", "r") as yaml_file:
             old_values = yaml.safe_load(yaml_file)
 
-        current_number_of_bakers = len(
+        current_bakers = len(
             old_values["nodes"][L1_NODE_NAME]["instances"]
         )
-        if current_number_of_bakers != args.number_of_bakers:
+        if current_bakers != args.bakers:
             print("ERROR: the number of bakers must not change on a pre-existing chain")
-            print(f"Current number of bakers: {current_number_of_bakers}")
-            print(f"Attempted change to {args.number_of_bakers} bakers")
+            print(f"Current number of bakers: {current_bakers}")
+            print(f"Attempted change to {args.bakers} bakers")
             exit(1)
 
     if old_values.get("node_config_network", {}).get("genesis"):
@@ -203,7 +203,7 @@ def main():
         accounts["secret"] = old_values["accounts"]
     else:
         baking_accounts = {
-            f"{BAKER_NAME}-{char}": {} for char in string.ascii_lowercase[:args.number_of_bakers]
+            f"{BAKER_NAME}-{char}": {} for char in string.ascii_lowercase[:args.bakers]
         }
         for account in [*baking_accounts, "authorized-key-0"]:
             print(f"Generating keys for account {account}")
@@ -225,7 +225,7 @@ def main():
             "storage_size": "15Gi",
             "instances": [
                 node_config(n)
-                for n in range(args.number_of_nodes)
+                for n in range(args.nodes)
             ],
         },
         "rolling-node": None,
@@ -233,15 +233,15 @@ def main():
 
         
     bakers = {
-        f"{char}": baker_config(BAKER_NAME, i, args.number_of_nodes)
-        for i, char in enumerate(string.ascii_lowercase[:args.number_of_bakers])
+        f"{char}": baker_config(BAKER_NAME, i, args.nodes)
+        for i, char in enumerate(string.ascii_lowercase[:args.bakers])
 }
 
 
     octezSigners = {
         "tezos-signer-0": {
             "accounts": [
-                f"{L1_NODE_NAME}-{n}" for n in range(args.number_of_bakers)
+                f"{L1_NODE_NAME}-{n}" for n in range(args.bakers)
             ],
             "authorized_keys": ["authorized-key-0"],
         }
