@@ -35,6 +35,7 @@ __version__ = get_versions()["version"]
 
 L1_NODE_NAME = "l1-node"
 BAKER_NAME = "baker"
+DAL_NODE_NAME = "dal-node"
 
 cli_args = {
     "nodes": {
@@ -44,6 +45,11 @@ cli_args = {
     },
     "bakers": {
         "help": "number of bakers in the cluster",
+        "default": 1,
+        "type": int,
+    },
+    "dal_nodes": {
+        "help": "number of DAL nodes in the cluster",
         "default": 1,
         "type": int,
     },
@@ -59,7 +65,7 @@ cli_args = {
     },
     "octez_docker_image": {
         "help": "Version of the Octez docker image",
-        "default": "tezos/tezos:v17.3",
+        "default": "tezos/tezos:v17.1",
     },
     "use_docker": {
         "action": "store_true",
@@ -145,7 +151,7 @@ def main():
 
     base_constants = {
         "images": {
-            "octez": args.octez_docker_image,
+          "octez": "tezos/tezos:master_36959547_20231205233933",
         },
         "node_config_network": {"chain_name": args.chain_name},
         # Custom chains should not pull snapshots or tarballs
@@ -177,7 +183,7 @@ def main():
             old_values = yaml.safe_load(yaml_file)
 
         current_bakers = len(
-            old_values["nodes"][L1_NODE_NAME]["instances"]
+            old_values["bakers"]
         )
         if current_bakers != args.bakers:
             print("ERROR: the number of bakers must not change on a pre-existing chain")
@@ -196,6 +202,17 @@ def main():
             "protocol": "Ps9mPmXaRzmzk35gbAYNCAw6UXdE2qoABTHbN2oEEc1qM7CwT9P",
             "timestamp": datetime.utcnow().replace(tzinfo=timezone.utc).isoformat(),
         }
+        if args.dal_nodes:
+            base_constants["node_config_network"]["dal_config"] =  {
+              "activated": True,
+              "use_mock_srs_for_testing": {
+                "redundancy_factor": 16,
+                "page_size": 4096,
+                "slot_size": 1024,
+                "number_of_shards": 512
+              },
+              "bootstrap_peers": [ "dal-bootstrap:11732"]
+            }
 
     accounts = {"secret": {}, "public": {}}
     if old_values.get("accounts"):
@@ -235,8 +252,19 @@ def main():
     bakers = {
         f"{char}": baker_config(BAKER_NAME, i, args.nodes)
         for i, char in enumerate(string.ascii_lowercase[:args.bakers])
-}
+    }
 
+    dalNodes = {
+        f"{DAL_NODE_NAME}-{n}": {
+            "attesterProfile": "tretre"
+        }
+        for n in range(args.dal_nodes)
+    }
+    if args.dal_nodes:
+        # add bootstrap dal node
+        dalNodes["bootstrap"] = {
+            "bootstrapProfile": True
+        }
 
     octezSigners = {
         "tezos-signer-0": {
@@ -273,6 +301,7 @@ def main():
         "bootstrap_peers": bootstrap_peers,
         "accounts": accounts["secret"],
         "octezSigners": octezSigners,
+        "dalNodes": dalNodes,
         "bakers": bakers,
         "nodes": nodes,
         **activation,
