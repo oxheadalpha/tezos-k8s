@@ -108,17 +108,11 @@ def get_args():
 
 def validate_args(args):
     if args.nodes < 1:
-        print(
-            f"Invalid argument --nodes ({args.nodes}) "
-            f"must be non-zero"
-        )
+        print(f"Invalid argument --nodes ({args.nodes}) " f"must be non-zero")
         exit(1)
 
     if args.bakers < 1:
-        print(
-            f"Invalid argument --bakers ({args.bakers}) "
-            f"must be non-zero"
-        )
+        print(f"Invalid argument --bakers ({args.bakers}) " f"must be non-zero")
         exit(1)
 
 
@@ -135,11 +129,12 @@ def node_config(n):
         ret["config"]["shell"]["history_mode"] = "archive"
     return ret
 
+
 def baker_config(name, baker_index, num_nodes):
     node_index = baker_index % num_nodes
     return {
         "bake_using_accounts": [f"{name}-{string.ascii_lowercase[baker_index]}"],
-        "node_rpc_url": f"http://{L1_NODE_NAME}-{node_index}.{L1_NODE_NAME}:8732"
+        "node_rpc_url": f"http://{L1_NODE_NAME}-{node_index}.{L1_NODE_NAME}:8732",
     }
 
 
@@ -151,7 +146,7 @@ def main():
 
     base_constants = {
         "images": {
-          "octez": "tezos/tezos:master_36959547_20231205233933",
+            "octez": "tezos/tezos:master_36959547_20231205233933",
         },
         "node_config_network": {"chain_name": args.chain_name},
         # Custom chains should not pull snapshots or tarballs
@@ -182,9 +177,7 @@ def main():
         with open(f"{files_path}_values.yaml", "r") as yaml_file:
             old_values = yaml.safe_load(yaml_file)
 
-        current_bakers = len(
-            old_values["bakers"]
-        )
+        current_bakers = len(old_values["bakers"])
         if current_bakers != args.bakers:
             print("ERROR: the number of bakers must not change on a pre-existing chain")
             print(f"Current number of bakers: {current_bakers}")
@@ -193,9 +186,7 @@ def main():
 
     if old_values.get("node_config_network", {}).get("genesis"):
         print("Using existing genesis parameters")
-        base_constants["node_config_network"] = old_values[
-            "node_config_network"
-        ]
+        base_constants["node_config_network"] = old_values["node_config_network"]
     else:
         # create new chain genesis params if brand new chain
         base_constants["node_config_network"]["genesis"] = {
@@ -203,15 +194,15 @@ def main():
             "timestamp": datetime.utcnow().replace(tzinfo=timezone.utc).isoformat(),
         }
         if args.dal_nodes:
-            base_constants["node_config_network"]["dal_config"] =  {
-              "activated": True,
-              "use_mock_srs_for_testing": {
-                "redundancy_factor": 16,
-                "page_size": 4096,
-                "slot_size": 1048756,
-                "number_of_shards": 2048
-              },
-              "bootstrap_peers": [ "dal-bootstrap:11732"]
+            base_constants["node_config_network"]["dal_config"] = {
+                "activated": True,
+                "use_mock_srs_for_testing": {
+                    "redundancy_factor": 16,
+                    "page_size": 4096,
+                    "slot_size": 1048756,
+                    "number_of_shards": 2048,
+                },
+                "bootstrap_peers": ["dal-bootstrap:11732"],
             }
 
     accounts = {"secret": {}, "public": {}}
@@ -220,7 +211,7 @@ def main():
         accounts["secret"] = old_values["accounts"]
     else:
         baking_accounts = {
-            f"{BAKER_NAME}-{char}": {} for char in string.ascii_lowercase[:args.bakers]
+            f"{BAKER_NAME}-{char}": {} for char in string.ascii_lowercase[: args.bakers]
         }
         for account in [*baking_accounts, "authorized-key-0"]:
             print(f"Generating keys for account {account}")
@@ -240,24 +231,20 @@ def main():
         L1_NODE_NAME: {
             "runs": ["octez_node"],
             "storage_size": "15Gi",
-            "instances": [
-                node_config(n)
-                for n in range(args.nodes)
-            ],
+            "instances": [node_config(n) for n in range(args.nodes)],
         },
         "rolling-node": None,
     }
 
-        
     bakers = {
         f"{char}": baker_config(BAKER_NAME, i, args.nodes)
-        for i, char in enumerate(string.ascii_lowercase[:args.bakers])
+        for i, char in enumerate(string.ascii_lowercase[: args.bakers])
     }
 
     dalNodes = {
         f"{DAL_NODE_NAME}-{n}": {
             "attesterProfiles": "tz1fqR2X7iQSGD6ntLLDDrpAWMCcp74D39ut",
-            "node_rpc_url": f"http://{L1_NODE_NAME}-0.{L1_NODE_NAME}:8732"
+            "node_rpc_url": f"http://{L1_NODE_NAME}-0.{L1_NODE_NAME}:8732",
         }
         for n in range(args.dal_nodes)
     }
@@ -265,21 +252,17 @@ def main():
         # add bootstrap dal node
         dalNodes["bootstrap"] = {
             "bootstrapProfile": True,
-            "node_rpc_url": f"http://{L1_NODE_NAME}-0.{L1_NODE_NAME}:8732"
+            "node_rpc_url": f"http://{L1_NODE_NAME}-0.{L1_NODE_NAME}:8732",
         }
 
     octezSigners = {
         "tezos-signer-0": {
-            "accounts": [
-                f"{L1_NODE_NAME}-{n}" for n in range(args.bakers)
-            ],
+            "accounts": [f"{L1_NODE_NAME}-{n}" for n in range(args.bakers)],
             "authorized_keys": ["authorized-key-0"],
         }
     }
 
-    base_constants["node_config_network"][
-        "activation_account_name"
-    ] = f"{BAKER_NAME}-a"
+    base_constants["node_config_network"]["activation_account_name"] = f"{BAKER_NAME}-a"
 
     with open(
         f"{os.path.dirname(os.path.realpath(__file__))}/parameters.yaml", "r"
@@ -296,7 +279,7 @@ def main():
 
     protocol_constants = {
         "tezos_k8s_images": {
-           "utils": "ghcr.io/oxheadalpha/tezos-k8s-utils:bake_remotely"
+            "utils": "ghcr.io/oxheadalpha/tezos-k8s-utils:bake_remotely"
         },
         "expected_proof_of_work": args.expected_proof_of_work,
         **base_constants,
