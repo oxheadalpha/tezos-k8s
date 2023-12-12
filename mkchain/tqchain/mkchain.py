@@ -243,7 +243,7 @@ def main():
 
     dalNodes = {
         f"{DAL_NODE_NAME}-{n}": {
-            "attester_using_accounts": [ "baker-0"],
+            "attester_using_accounts": ["baker-0"],
             "node_rpc_url": f"http://{L1_NODE_NAME}-0.{L1_NODE_NAME}:8732",
         }
         for n in range(args.dal_nodes)

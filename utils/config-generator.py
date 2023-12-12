@@ -178,7 +178,7 @@ def main():
             attester_list += f"{all_accounts[account]['public_key_hash']} "
 
         with open("/var/tezos/dal_attester_config", "w") as attester_file:
-                    print(attester_list, file=attester_file)
+            print(attester_list, file=attester_file)
         print("Generated dal attester account list for this node: %s" % attester_list)
 
 
@@ -334,6 +334,7 @@ def fill_in_missing_keys(all_accounts):
             account_values["key"] = sk_b58
             account_values["type"] = "secret"
 
+
 def authorized_key_for(account_name):
     """
     If `account_name` has a remote signer and this remote signer
@@ -341,8 +342,13 @@ def authorized_key_for(account_name):
     """
     for signer_val in OCTEZ_SIGNERS.values():
         if account_name in signer_val["accounts"]:
-            return signer_val["authorized_keys"][0] if signer_val["authorized_keys"] else None
+            return (
+                signer_val["authorized_keys"][0]
+                if signer_val["authorized_keys"]
+                else None
+            )
     return
+
 
 def expose_secret_key(account_name):
     """
@@ -355,7 +361,10 @@ def expose_secret_key(account_name):
     """
     if MY_POD_TYPE == "activating":
         activation_account = NETWORK_CONFIG["activation_account_name"]
-        return account_name in [ activation_account, authorized_key_for(activation_account)]
+        return account_name in [
+            activation_account,
+            authorized_key_for(activation_account),
+        ]
 
     if MY_POD_TYPE == "signing":
         return account_name in MY_POD_CONFIG.get("accounts")
@@ -363,12 +372,12 @@ def expose_secret_key(account_name):
     if MY_POD_TYPE == "rollup":
         return account_name == MY_POD_CONFIG.get("operator_account")
 
-    if MY_POD_TYPE in [ "node", "baker" ]:
+    if MY_POD_TYPE in ["node", "baker"]:
         baking_account = MY_POD_CONFIG.get("bake_using_account", "")
-        if account_name in [ baking_account, authorized_key_for(baking_account)]:
+        if account_name in [baking_account, authorized_key_for(baking_account)]:
             return True
         for baking_account in MY_POD_CONFIG.get("bake_using_accounts", {}):
-            if account_name in [ baking_account, authorized_key_for(baking_account)]:
+            if account_name in [baking_account, authorized_key_for(baking_account)]:
                 return True
 
     return False
@@ -519,6 +528,7 @@ def import_keys(all_accounts):
 
     return accounts
 
+
 def create_node_identity_json():
     identity_file_path = f"{DATA_DIR}/identity.json"
 
@@ -589,7 +599,10 @@ def create_protocol_parameters_json(accounts):
 
     # Append any additional bootstrap params such as smart rollups, if any
     if protocol_activation.get("bootstrap_parameters"):
-        protocol_params = { **protocol_params, **protocol_activation.get("bootstrap_parameters") }
+        protocol_params = {
+            **protocol_params,
+            **protocol_activation.get("bootstrap_parameters"),
+        }
 
     return protocol_params
 
@@ -744,7 +757,10 @@ def create_node_snapshot_config_json(history_mode):
             response = requests.get(snapshot_source)
             response.raise_for_status()  # Raises an HTTPError if the HTTP request returned an unsuccessful status code
             all_snapshots = response.json()
-        except (requests.exceptions.RequestException, requests.exceptions.JSONDecodeError):  # Catches exceptions related to requests and invalid JSON
+        except (
+            requests.exceptions.RequestException,
+            requests.exceptions.JSONDecodeError,
+        ):  # Catches exceptions related to requests and invalid JSON
             print(f"Error: unable to retrieve snapshot metadata from {snapshot_source}")
             return
     else:
