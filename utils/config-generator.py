@@ -173,13 +173,14 @@ def main():
     # Create dal_config.json
     if MY_POD_TYPE == "dal":
         attest_using_accounts = json.loads(os.getenv("ATTEST_USING_ACCOUNTS", "[]"))
-        attester_list = ""
-        for account in attest_using_accounts:
-            attester_list += f"{all_accounts[account]['pkh']} "
+        if attest_using_accounts:
+            attester_list = ""
+            for account in attest_using_accounts:
+                attester_list += f"{all_accounts[account]['pkh']},"
 
-        with open("/var/tezos/dal_attester_config", "w") as attester_file:
-            print(attester_list, file=attester_file)
-        print("Generated dal attester account list for this node: %s" % attester_list)
+            with open("/var/tezos/dal_attester_config", "w") as attester_file:
+                print(attester_list, file=attester_file)
+            print("Generated dal attester account list for this node: %s" % attester_list)
 
 
 # If NETWORK_CONFIG["genesis"]["block"] hasn't been specified, we generate a
