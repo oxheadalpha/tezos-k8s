@@ -175,7 +175,7 @@ def main():
         attest_using_accounts = json.loads(os.getenv("ATTEST_USING_ACCOUNTS", "[]"))
         attester_list = ""
         for account in attest_using_accounts:
-            attester_list += f"{all_accounts[account]['public_key_hash']} "
+            attester_list += f"{all_accounts[account]['pkh']} "
 
         with open("/var/tezos/dal_attester_config", "w") as attester_file:
             print(attester_list, file=attester_file)
