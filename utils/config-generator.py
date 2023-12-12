@@ -91,7 +91,7 @@ def main():
         fill_in_missing_keys(all_accounts)
 
     fill_in_activation_account(all_accounts)
-    import_keys(all_accounts)
+    all_accounts = import_keys(all_accounts)
 
     if MY_POD_NAME in BAKING_NODES:
         # If this node is a baker, it must have an account with a secret key.
@@ -169,6 +169,17 @@ def main():
                 print(node_snapshot_config_json)
                 with open("/var/tezos/snapshot_config.json", "w") as json_file:
                     print(node_snapshot_config_json, file=json_file)
+
+    # Create dal_config.json
+    if MY_POD_TYPE == "dal":
+        attest_for_accounts = json.loads(os.getenv("ATTEST_FOR_ACCOUNTS", "[]"))
+        attester_list = ""
+        for account in attest_for_accounts:
+            attester_list += f"{all_accounts[account]['public_key_hash']} "
+
+        with open("/var/tezos/dal_attester_config", "w") as attester_file:
+                    print(attester_list, file=attester_file)
+        print("Generated dal attester account list for this node: %s" % attester_list)
 
 
 # If NETWORK_CONFIG["genesis"]["block"] hasn't been specified, we generate a
@@ -439,6 +450,7 @@ def import_keys(all_accounts):
     public_key_hashs = []
     authorized_keys = []
 
+    accounts = {}
     for account_name, account_values in all_accounts.items():
         print("\n  Importing keys for account: " + account_name)
         account_key = account_values.get("key")
@@ -487,6 +499,7 @@ def import_keys(all_accounts):
             f"    Is account a bootstrap baker: "
             + f"{account_values.get('is_bootstrap_baker_account', False)}"
         )
+        accounts[account_name] = account_values
 
     sk_path, pk_path, pkh_path, ak_path = (
         f"{tezdir}/secret_keys",
@@ -504,6 +517,7 @@ def import_keys(all_accounts):
         print(f"  Writing {ak_path}")
         json.dump(authorized_keys, open(ak_path, "w"), indent=4)
 
+    return accounts
 
 def create_node_identity_json():
     identity_file_path = f"{DATA_DIR}/identity.json"

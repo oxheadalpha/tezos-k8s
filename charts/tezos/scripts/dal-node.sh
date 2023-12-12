@@ -10,8 +10,9 @@ extra_args=""
 if [ "${BOOTSTRAP_PROFILE}" == "true" ]; then
   extra_args="--bootstrap-profile"
 fi
-if [ "${ATTESTER_PROFILES}" != "" ]; then
-  extra_args="${extra_args} --attester-profiles ${ATTESTER_PROFILES}"
+if [ -s "${TEZ_VAR}/dal_attester_config" ]; then
+  attester_config=$(cat "/var/tezos/dal_attester_config")
+  extra_args="${extra_args} --attester-profiles ${attester_config}"
 fi
 if [ "${PEER}" != "" ]; then
   extra_args="${extra_args} --peer ${PEER}"
