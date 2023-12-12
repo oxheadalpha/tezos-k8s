@@ -172,9 +172,9 @@ def main():
 
     # Create dal_config.json
     if MY_POD_TYPE == "dal":
-        attest_for_accounts = json.loads(os.getenv("ATTEST_FOR_ACCOUNTS", "[]"))
+        attest_using_accounts = json.loads(os.getenv("ATTEST_USING_ACCOUNTS", "[]"))
         attester_list = ""
-        for account in attest_for_accounts:
+        for account in attest_using_accounts:
             attester_list += f"{all_accounts[account]['public_key_hash']} "
 
         with open("/var/tezos/dal_attester_config", "w") as attester_file:

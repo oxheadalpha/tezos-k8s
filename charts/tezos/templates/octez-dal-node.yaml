@@ -45,7 +45,11 @@ spec:
           - name: MY_POD_NAME
             value: {{ $k }}
           - name: MY_POD_TYPE
-            value: baker
+            value: dal
+{{- if $v.attest_using_accounts | default false }}
+          - name: ATTEST_USING_ACCOUNTS
+            value: {{ toJson $v.attest_using_accounts | quote }}
+{{- end }}
         volumeMounts:
           - mountPath: /var/tezos
             name: var-volume
@@ -76,10 +80,6 @@ spec:
 {{- if $v.bootstrapProfile | default false }}
         - name: BOOTSTRAP_PROFILE
           value: "true"
-{{- end }}
-{{- if $v.attesterProfiles | default false }}
-        - name: ATTESTER_PROFILES
-          value: "{{ $v.attesterProfiles }}"
 {{- end }}
 {{- if $v.peer | default false }}
         - name: PEER
