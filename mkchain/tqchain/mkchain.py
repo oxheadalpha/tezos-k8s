@@ -257,7 +257,7 @@ def main():
 
     octezSigners = {
         "tezos-signer-0": {
-            "accounts": [f"{L1_NODE_NAME}-{n}" for n in range(args.bakers)],
+            "accounts": [f"baker-{char}" for char in string.ascii_lowercase[: args.bakers]],
             "authorized_keys": ["authorized-key-0"],
         }
     }
