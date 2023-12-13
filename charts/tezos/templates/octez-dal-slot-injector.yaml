@@ -125,6 +125,6 @@ spec:
           - ReadWriteOnce
         resources:
           requests:
-            storage: "15Gi"
+            storage: "1Gi"
 ---
 {{- end }}
