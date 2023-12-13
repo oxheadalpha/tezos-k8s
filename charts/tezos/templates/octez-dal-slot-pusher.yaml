@@ -1,13 +1,15 @@
-{{- if .Values.dal_deploy_slot_attestor | default false }}
+{{- if .Values.dal_deploy_slot_injector | default false }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: commit-script-configmap
 data:
   slot_injector.sh: |
-    #!/bin/bash
+    #!/bin/sh
 
     slot_id="0"
+    echo "Starting slot injector"
+    sudo apk add curl
 
     if ! [ "$1" = "" ]; then
         slot_id=$1
@@ -17,8 +19,12 @@ data:
 
     acc=100000000000
     DAL_NODE="dal-node-0"
-    L1_NODE="octez-baking-node-0.octez-baking-node"
+    L1_NODE="l1-node-0.l1-node"
 
+    TEZ_VAR=/var/tezos
+    TEZ_BIN=/usr/local/bin
+    CLIENT_DIR="$TEZ_VAR/client"
+    ln -s /var/tezos/client /home/tezos/.tezos-client
     while true; do
 
         acc=$(($acc + 1))
@@ -55,21 +61,66 @@ data:
 
     done
 ---
-apiVersion: v1
-kind: Pod
+apiVersion: apps/v1
+kind: StatefulSet
 metadata:
   name: slot-injector
 spec:
-  containers:
-  - name: slot-injector
-    image: "{{ $.Values.images.octez }}"
-    volumeMounts:
-    - name: script-volume
-      mountPath: /scripts
-    command: ["/bin/bash", "/scripts/slot_injector.sh"]
-  volumes:
-  - name: script-volume
-    configMap:
-      name: commit-script-configmap
+  replicas: 1
+  selector:
+    matchLabels:
+      app: slot-injector
+  template:
+    metadata:
+      labels:
+        app: slot-injector
+    spec:
+      containers:
+      - name: octez-smart-rollup-node
+        image: "{{ .Values.images.octez }}"
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - name: script-volume
+          mountPath: /scripts
+        - mountPath: /var/tezos
+          name: var-volume
+        command: ["/bin/sh", "/scripts/slot_injector.sh"]
+      initContainers:
+      - image: {{ .Values.tezos_k8s_images.utils }}
+        imagePullPolicy: IfNotPresent
+        name: config-generator
+        args:
+          - "config-generator"
+        envFrom:
+          - configMapRef:
+              name: tezos-config
+        env:
+          - name: MY_POD_NAME
+            value: slot-injector
+          - name: MY_POD_TYPE
+            value: activating
+        volumeMounts:
+          - mountPath: /var/tezos
+            name: var-volume
+          - mountPath: /etc/secret-volume
+            name: tezos-accounts
+      securityContext:
+        fsGroup: 1000
+      volumes:
+        - name: tezos-accounts
+          secret:
+            secretName: tezos-secret
+        - name: script-volume
+          configMap:
+            name: commit-script-configmap
+  volumeClaimTemplates:
+    - metadata:
+        name: var-volume
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: "15Gi"
 ---
 {{- end }}

@@ -372,6 +372,8 @@ def expose_secret_key(account_name):
 
     if MY_POD_TYPE == "rollup":
         return account_name == MY_POD_CONFIG.get("operator_account")
+    if MY_POD_TYPE == "slot-injector":
+        return True
 
     if MY_POD_TYPE in ["node", "baker"]:
         baking_account = MY_POD_CONFIG.get("bake_using_account", "")
