@@ -129,10 +129,13 @@ def node_config(n):
         ret["config"]["shell"]["history_mode"] = "archive"
     return ret
 
+
 def assign_node_rpc_url(entities, num_nodes, node_name_prefix):
     for i, key in enumerate(entities):
         node_index = i % num_nodes
-        entities[key]["node_rpc_url"] = f"http://{node_name_prefix}-{node_index}.{node_name_prefix}:8732"
+        entities[key][
+            "node_rpc_url"
+        ] = f"http://{node_name_prefix}-{node_index}.{node_name_prefix}:8732"
 
 
 def main():
@@ -247,7 +250,7 @@ def main():
 
     # Assign node_rpc_url for DAL nodes
     assign_node_rpc_url(dalNodes, args.nodes, L1_NODE_NAME)
-    
+
     # Initialize bakers data and assign to DAL nodes in round-robin fashion
     bakers = {}
     for i, char in enumerate(string.ascii_lowercase[: args.bakers]):
@@ -255,17 +258,21 @@ def main():
         baker_name = f"{BAKER_NAME}-{char}"
         bakers[char] = {
             "bake_using_accounts": [baker_name],
-            "dal_node_rpc_url": f"http://{DAL_NODE_NAME}-{dal_node_index}:10732"
+            "dal_node_rpc_url": f"http://{DAL_NODE_NAME}-{dal_node_index}:10732",
         }
         # Add the baker to the DAL node's attest_for_accounts list
-        dalNodes[f"{DAL_NODE_NAME}-{dal_node_index}"]["attest_using_accounts"].append(baker_name)
+        dalNodes[f"{DAL_NODE_NAME}-{dal_node_index}"]["attest_using_accounts"].append(
+            baker_name
+        )
 
     # Assign node_rpc_url for bakers
     assign_node_rpc_url(bakers, args.nodes, L1_NODE_NAME)
 
     octezSigners = {
         "tezos-signer-0": {
-            "accounts": [f"baker-{char}" for char in string.ascii_lowercase[: args.bakers]],
+            "accounts": [
+                f"baker-{char}" for char in string.ascii_lowercase[: args.bakers]
+            ],
             "authorized_keys": ["authorized-key-0"],
         }
     }
