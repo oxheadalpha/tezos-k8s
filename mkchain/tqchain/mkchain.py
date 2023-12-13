@@ -241,7 +241,7 @@ def main():
         }
     if args.dal_nodes:
         # add bootstrap dal node
-        dalNodes["bootstrap"] = {
+        dalNodes["dal-bootstrap"] = {
             "bootstrapProfile": True,
         }
 
