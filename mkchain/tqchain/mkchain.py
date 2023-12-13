@@ -129,14 +129,10 @@ def node_config(n):
         ret["config"]["shell"]["history_mode"] = "archive"
     return ret
 
-
-def baker_config(name, baker_index, num_nodes):
-    node_index = baker_index % num_nodes
-    return {
-        "bake_using_accounts": [f"{name}-{string.ascii_lowercase[baker_index]}"],
-        "node_rpc_url": f"http://{L1_NODE_NAME}-{node_index}.{L1_NODE_NAME}:8732",
-        "dal_node_rpc_url": f"http://dal-node-0:8732",
-    }
+def assign_node_rpc_url(entities, num_nodes, node_name_prefix):
+    for i, key in enumerate(entities):
+        node_index = i % num_nodes
+        entities[key]["node_rpc_url"] = f"http://{node_name_prefix}-{node_index}.{node_name_prefix}:8732"
 
 
 def main():
@@ -237,22 +233,20 @@ def main():
         "rolling-node": None,
     }
 
-           # Calculate the number of bakers per DAL node
-    bakers_per_dal_node = max(1, args.bakers // args.dal_nodes)
-
     # Initialize DAL nodes data
     dalNodes = {}
     for n in range(args.dal_nodes):
         dalNodes[f"{DAL_NODE_NAME}-{n}"] = {
             "attest_using_accounts": [],
-            "node_rpc_url": f"http://{L1_NODE_NAME}-0.{L1_NODE_NAME}:8732"
         }
     if args.dal_nodes:
         # add bootstrap dal node
         dalNodes["bootstrap"] = {
             "bootstrapProfile": True,
-            "node_rpc_url": f"http://{L1_NODE_NAME}-0.{L1_NODE_NAME}:8732",
         }
+
+    # Assign node_rpc_url for DAL nodes
+    assign_node_rpc_url(dalNodes, args.nodes, L1_NODE_NAME)
     
     # Initialize bakers data and assign to DAL nodes in round-robin fashion
     bakers = {}
@@ -261,12 +255,13 @@ def main():
         baker_name = f"{BAKER_NAME}-{char}"
         bakers[char] = {
             "bake_using_accounts": [baker_name],
-            "node_rpc_url": f"http://{L1_NODE_NAME}-{i % args.nodes}.{L1_NODE_NAME}:8732",
             "dal_node_rpc_url": f"http://{DAL_NODE_NAME}-{dal_node_index}:10732"
         }
         # Add the baker to the DAL node's attest_for_accounts list
         dalNodes[f"{DAL_NODE_NAME}-{dal_node_index}"]["attest_using_accounts"].append(baker_name)
 
+    # Assign node_rpc_url for bakers
+    assign_node_rpc_url(bakers, args.nodes, L1_NODE_NAME)
 
     octezSigners = {
         "tezos-signer-0": {
