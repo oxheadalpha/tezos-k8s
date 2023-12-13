@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: commit-script-configmap
+  name: slot-injector-configmap
 data:
   slot_injector.sh: |
     #!/bin/sh
@@ -101,6 +101,8 @@ spec:
             value: slot-injector
           - name: MY_POD_TYPE
             value: slot-injector
+          - name: INJECTOR_ACCOUNT
+            value: "{{ .Values.dal_deploy_slot_injector.inject_using_account }}"
         volumeMounts:
           - mountPath: /var/tezos
             name: var-volume
@@ -114,7 +116,7 @@ spec:
             secretName: tezos-secret
         - name: script-volume
           configMap:
-            name: commit-script-configmap
+            name: slot-injector-configmap
   volumeClaimTemplates:
     - metadata:
         name: var-volume
