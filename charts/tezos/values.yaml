@@ -414,7 +414,8 @@ dalNodes: {}
 #    attesterProfiles: tz1foXHgRzdYdaLgX6XhpZGxbBv42LZ6ubvE
 
 # Optional - a pod that injects slots for DAL - will go away once rollups do it
-#dal_deploy_slot_injector:
+dal_deploy_slot_injector:
+  enabled: false
 #  enabled: true
 #  inject_using_account: mybaker
 #  node_rpc_url: http://tezos-baking-node-0.tezos-baking-node:8732
