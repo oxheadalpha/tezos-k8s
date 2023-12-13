@@ -66,9 +66,9 @@ spec:
         - name: OPERATIONS_POOL
           value: "{{ $v.oprations_pool }}"
 {{- end }}
-{{- if $v.dal_node | default false }}
-        - name: DAL_NODE
-          value: "{{ $v.dal_node }}"
+{{- if $v.dal_node_rpc_url | default false }}
+        - name: DAL_NODE_RPC_URL
+          value: "{{ $v.dal_node_rpc_url }}"
 {{- end }}
 {{- end }}
       securityContext:

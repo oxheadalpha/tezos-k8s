@@ -98,8 +98,8 @@ data:
   {{- if $account.operations_pool }}
     {{ $accountName }}_operations_pool: {{ $account.operations_pool | quote }}
   {{- end }}
-  {{- if $account.dal_node }}
-    {{ $accountName }}_dal_node: {{ $account.dal_node | quote }}
+  {{- if $account.dal_node_rpc_url }}
+    {{ $accountName }}_dal_node_rpc_url: {{ $account.dal_node_rpc_url | quote }}
   {{- end }}
 {{- end }}
 kind: ConfigMap

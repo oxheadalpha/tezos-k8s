@@ -135,6 +135,7 @@ def baker_config(name, baker_index, num_nodes):
     return {
         "bake_using_accounts": [f"{name}-{string.ascii_lowercase[baker_index]}"],
         "node_rpc_url": f"http://{L1_NODE_NAME}-{node_index}.{L1_NODE_NAME}:8732",
+        "dal_node_rpc_url": f"http://dal-dal-node-0:8732",
     }
 
 

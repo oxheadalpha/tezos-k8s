@@ -20,8 +20,8 @@ if [ "${OPERATIONS_POOL}" != "" ]; then
   extra_args="${extra_args} --operations-pool ${OPERATIONS_POOL}"
 fi
 
-if [ "${DAL_NODE}" != "" ]; then
-  extra_args="${extra_args} --dal-node ${DAL_NODE}"
+if [ "${DAL_NODE_RPC_URL}" != "" ]; then
+  extra_args="${extra_args} --dal-node ${DAL_NODE_RPC_URL}"
 fi
 
 CLIENT="$TEZ_BIN/octez-client -d $CLIENT_DIR"
