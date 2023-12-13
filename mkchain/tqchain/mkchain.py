@@ -196,7 +196,7 @@ def main():
                 "use_mock_srs_for_testing": {
                     "redundancy_factor": 16,
                     "page_size": 4096,
-                    "slot_size": 1048756,
+                    "slot_size": 65536,
                     "number_of_shards": 2048,
                 },
                 "bootstrap_peers": ["dal-bootstrap:11732"],

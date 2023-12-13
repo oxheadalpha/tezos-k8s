@@ -67,7 +67,7 @@ dal_parametric:
   number_of_shards: 2048
   attestation_lag: 2
   attestation_threshold: 50
-  slot_size: 1048576
+  slot_size: 65536
   redundancy_factor: 16
   page_size: 4096
   blocks_per_epoch: 8
