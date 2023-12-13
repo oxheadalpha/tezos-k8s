@@ -413,6 +413,13 @@ dalNodes: {}
 #    storageSize: 50Gi
 #    attesterProfiles: tz1foXHgRzdYdaLgX6XhpZGxbBv42LZ6ubvE
 
+# Optional - a pod that injects slots for DAL - will go away once rollups do it
+#dal_deploy_slot_injector:
+#  enabled: true
+#  inject_using_account: mybaker
+#  node_rpc_url: http://tezos-baking-node-0.tezos-baking-node:8732
+#  dal_node_rpc_url: http://dal1:10732
+
 # When spinning up nodes, tezos-k8s will attempt to download a snapshot from a
 # known source. This should be a url to a json metadata file in the format
 # xtz-shots uses. If you want to sync from scratch or for a private chain, set

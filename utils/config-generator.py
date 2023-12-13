@@ -370,10 +370,11 @@ def expose_secret_key(account_name):
     if MY_POD_TYPE == "signing":
         return account_name in MY_POD_CONFIG.get("accounts")
 
-    if MY_POD_TYPE == "rollup":
+    if MY_POD_TYPE in [ "rollup", "slot-injector" ]:
         return account_name == MY_POD_CONFIG.get("operator_account")
     if MY_POD_TYPE == "slot-injector":
-        return True
+        # deploy all secret keys
+        return account_name == os.environ["INJECTOR_ACCOUNT"]
 
     if MY_POD_TYPE in ["node", "baker"]:
         baking_account = MY_POD_CONFIG.get("bake_using_account", "")
