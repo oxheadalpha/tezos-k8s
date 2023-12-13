@@ -57,10 +57,6 @@ data:
         octez-client -E ${L1_NODE} --wait 1  publish dal commitment $commitment from ${INJECTOR_ACCOUNT} for slot $slot_id with proof $proof
 
         echo "\n================="
-
-        sleep 3
-        curl -s ${L1_NODE}/chains/main/mempool/monitor_operations -o /dev/null
-
     done
 ---
 apiVersion: apps/v1
@@ -114,17 +110,10 @@ spec:
         - name: tezos-accounts
           secret:
             secretName: tezos-secret
+        - name: var-volume
+          emptyDir: {}
         - name: script-volume
           configMap:
             name: slot-injector-configmap
-  volumeClaimTemplates:
-    - metadata:
-        name: var-volume
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        resources:
-          requests:
-            storage: "1Gi"
 ---
 {{- end }}
