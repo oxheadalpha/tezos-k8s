@@ -1,4 +1,4 @@
-{{- if .Values.dal_deploy_slot_injector | default false }}
+{{- if .Values.dal_deploy_slot_injector.enabled | default false }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -18,8 +18,9 @@ data:
     echo slot id is $slot_id
 
     acc=100000000000
-    DAL_NODE="dal-node-0"
-    L1_NODE="l1-node-0.l1-node"
+    DAL_NODE="{{ .Values.dal_deploy_slot_injector.dal_node_rpc_url }}"
+    L1_NODE="{{ .Values.dal_deploy_slot_injector.node_rpc_url }}"
+    INJECTOR_ACCOUNT="{{ .Values.dal_deploy_slot_injector.inject_using_account }}"
 
     TEZ_VAR=/var/tezos
     TEZ_BIN=/usr/local/bin
@@ -39,25 +40,25 @@ data:
 
         echo "new data generated"
 
-        commitment=`curl -s -X POST http://$DAL_NODE:10732/commitments -H 'Content-Type: application/json' --data "@data-$slot_id.txt"`
+        commitment=`curl -s -X POST ${DAL_NODE}/commitments -H 'Content-Type: application/json' --data "@data-$slot_id.txt"`
         commitment=`echo $commitment | cut -d'"' -f2`
         echo commitment is $commitment
 
-        curl -s -X PUT http://$DAL_NODE:10732/commitments/$commitment/shards -H 'Content-Type: application/json' --data '{"with_proof": true}'
+        curl -s -X PUT ${DAL_NODE}/commitments/$commitment/shards -H 'Content-Type: application/json' --data '{"with_proof": true}'
 
         echo "shards stored"
 
-        proof=`curl -s -X GET http://$DAL_NODE:10732/commitments/$commitment/proof`
+        proof=`curl -s -X GET ${DAL_NODE}/commitments/$commitment/proof`
         proof=`echo $proof | cut -d '"' -f2`
 
         echo proof is $proof
 
-        octez-client -E http://${L1_NODE}:8732 --wait 1  publish dal commitment $commitment from baker-a for slot $slot_id with proof $proof
+        octez-client -E ${L1_NODE} --wait 1  publish dal commitment $commitment from ${INJECTOR_ACCOUNT} for slot $slot_id with proof $proof
 
         echo "\n================="
 
         sleep 3
-        curl -s http://${L1_NODE}:8732/chains/main/mempool/monitor_operations -o /dev/null
+        curl -s ${L1_NODE}/chains/main/mempool/monitor_operations -o /dev/null
 
     done
 ---
@@ -98,7 +99,7 @@ spec:
           - name: MY_POD_NAME
             value: slot-injector
           - name: MY_POD_TYPE
-            value: activating
+            value: slot-injector
         volumeMounts:
           - mountPath: /var/tezos
             name: var-volume
