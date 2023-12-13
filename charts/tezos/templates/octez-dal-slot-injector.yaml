@@ -21,6 +21,7 @@ data:
     DAL_NODE="{{ .Values.dal_deploy_slot_injector.dal_node_rpc_url }}"
     L1_NODE="{{ .Values.dal_deploy_slot_injector.node_rpc_url }}"
     INJECTOR_ACCOUNT="{{ .Values.dal_deploy_slot_injector.inject_using_account }}"
+    SLOT_SIZE="{{ .Values.dal_deploy_slot_injector.slot_size }}"
 
     TEZ_VAR=/var/tezos
     TEZ_BIN=/usr/local/bin
@@ -32,7 +33,7 @@ data:
 
         echo '"' > data-$slot_id.txt
         echo $acc >> data-$slot_id.txt
-        slot_size=65536
+        slot_size=${SLOT_SIZE}
         size=$(($slot_size - 6))
         for i in `seq 1 $size`; do printf "00"; done >> data-$slot_id.txt
 
