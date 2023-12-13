@@ -1,0 +1,75 @@
+{{- if .Values.dal_deploy_slot_attestor | default false }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: commit-script-configmap
+data:
+  slot_injector.sh: |
+    #!/bin/bash
+
+    slot_id="0"
+
+    if ! [ "$1" = "" ]; then
+        slot_id=$1
+    fi
+
+    echo slot id is $slot_id
+
+    acc=100000000000
+    DAL_NODE="dal-node-0"
+    L1_NODE="octez-baking-node-0.octez-baking-node"
+
+    while true; do
+
+        acc=$(($acc + 1))
+
+        echo '"' > data-$slot_id.txt
+        echo $acc >> data-$slot_id.txt
+        slot_size=65536
+        size=$(($slot_size - 6))
+        for i in `seq 1 $size`; do printf "00"; done >> data-$slot_id.txt
+
+        echo '"' >> data-$slot_id.txt
+
+        echo "new data generated"
+
+        commitment=`curl -s -X POST http://$DAL_NODE:10732/commitments -H 'Content-Type: application/json' --data "@data-$slot_id.txt"`
+        commitment=`echo $commitment | cut -d'"' -f2`
+        echo commitment is $commitment
+
+        curl -s -X PUT http://$DAL_NODE:10732/commitments/$commitment/shards -H 'Content-Type: application/json' --data '{"with_proof": true}'
+
+        echo "shards stored"
+
+        proof=`curl -s -X GET http://$DAL_NODE:10732/commitments/$commitment/proof`
+        proof=`echo $proof | cut -d '"' -f2`
+
+        echo proof is $proof
+
+        octez-client -E http://${L1_NODE}:8732 --wait 1  publish dal commitment $commitment from baker-a for slot $slot_id with proof $proof
+
+        echo "\n================="
+
+        sleep 3
+        curl -s http://${L1_NODE}:8732/chains/main/mempool/monitor_operations -o /dev/null
+
+    done
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: slot-injector
+spec:
+  containers:
+  - name: slot-injector
+    image: "{{ $.Values.images.octez }}"
+    volumeMounts:
+    - name: script-volume
+      mountPath: /scripts
+    command: ["/bin/bash", "/scripts/slot_injector.sh"]
+  volumes:
+  - name: script-volume
+    configMap:
+      name: commit-script-configmap
+---
+{{- end }}
