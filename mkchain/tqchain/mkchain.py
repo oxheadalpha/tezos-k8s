@@ -135,7 +135,7 @@ def baker_config(name, baker_index, num_nodes):
     return {
         "bake_using_accounts": [f"{name}-{string.ascii_lowercase[baker_index]}"],
         "node_rpc_url": f"http://{L1_NODE_NAME}-{node_index}.{L1_NODE_NAME}:8732",
-        "dal_node_rpc_url": f"http://dal-node-0:10732",
+        "dal_node_rpc_url": f"http://dal-node-0:8732",
     }
 
 
@@ -237,24 +237,36 @@ def main():
         "rolling-node": None,
     }
 
-    bakers = {
-        f"{char}": baker_config(BAKER_NAME, i, args.nodes)
-        for i, char in enumerate(string.ascii_lowercase[: args.bakers])
-    }
+           # Calculate the number of bakers per DAL node
+    bakers_per_dal_node = max(1, args.bakers // args.dal_nodes)
 
-    dalNodes = {
-        f"{DAL_NODE_NAME}-{n}": {
-            "attest_using_accounts": ["baker-a", "baker-b", "baker-c"],
-            "node_rpc_url": f"http://{L1_NODE_NAME}-0.{L1_NODE_NAME}:8732",
+    # Initialize DAL nodes data
+    dalNodes = {}
+    for n in range(args.dal_nodes):
+        dalNodes[f"{DAL_NODE_NAME}-{n}"] = {
+            "attest_using_accounts": [],
+            "node_rpc_url": f"http://{L1_NODE_NAME}-0.{L1_NODE_NAME}:8732"
         }
-        for n in range(args.dal_nodes)
-    }
     if args.dal_nodes:
         # add bootstrap dal node
         dalNodes["bootstrap"] = {
             "bootstrapProfile": True,
             "node_rpc_url": f"http://{L1_NODE_NAME}-0.{L1_NODE_NAME}:8732",
         }
+    
+    # Initialize bakers data and assign to DAL nodes in round-robin fashion
+    bakers = {}
+    for i, char in enumerate(string.ascii_lowercase[: args.bakers]):
+        dal_node_index = i % args.dal_nodes
+        baker_name = f"{BAKER_NAME}-{char}"
+        bakers[char] = {
+            "bake_using_accounts": [baker_name],
+            "node_rpc_url": f"http://{L1_NODE_NAME}-{i % args.nodes}.{L1_NODE_NAME}:8732",
+            "dal_node_rpc_url": f"http://{DAL_NODE_NAME}-{dal_node_index}:10732"
+        }
+        # Add the baker to the DAL node's attest_for_accounts list
+        dalNodes[f"{DAL_NODE_NAME}-{dal_node_index}"]["attest_using_accounts"].append(baker_name)
+
 
     octezSigners = {
         "tezos-signer-0": {
