@@ -5,6 +5,8 @@ kind: Service
 metadata:
   name: {{ $k }}
   namespace: {{ $.Release.Namespace }}
+  labels:
+    appType: octez-dal-node
 spec:
   type: NodePort
   ports:
@@ -157,4 +159,21 @@ spec:
 {{- end }}
 {{- end }}
 {{- end }}
+{{- end }}
+{{- if .Values.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+{{- toYaml .Values.serviceMonitor.labels | nindent 4 }}
+  name: tezos-service-monitor
+  namespace: {{ .Release.Namespace }}
+spec:
+  endpoints:
+  - interval: 15s
+    port: metrics
+    path: /metrics
+  selector:
+    matchLabels:
+      appType: octez-dal-node
 {{- end }}
