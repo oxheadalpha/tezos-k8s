@@ -1,6 +1,6 @@
 tezos_k8s_images:
   utils: ghcr.io/oxheadalpha/tezos-k8s-utils:master
-  tezos_signer_forwarder: ghcr.io/oxheadalpha/tezos-k8s-signerforwarder:dev
+  tezos_signer_forwarder: ghcr.io/oxheadalpha/tezos-k8s-signerforwarder:master
 
 # List the endpoints below.
 # Each endpoint represents a ssh server.

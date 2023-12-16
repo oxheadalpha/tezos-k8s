@@ -31,6 +31,7 @@ fi
 CMD="$TEZ_BIN/octez-dal-node run ${extra_args} --data-dir ${DAL_DATA_DIR} \
   --expected-pow 0 \
   --endpoint ${NODE_RPC_URL} \
+  --metrics-addr 0.0.0.0:11733 \
   --net-addr 0.0.0.0:11732 \
   --rpc-addr 0.0.0.0:10732"
 
