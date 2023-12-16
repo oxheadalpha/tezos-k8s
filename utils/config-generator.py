@@ -253,6 +253,7 @@ def expose_secret_key(account_name):
     if MY_POD_TYPE in ["node", "baker"]:
         for baking_account in MY_POD_CONFIG.get("bake_using_accounts", {}):
             if account_name in [baking_account, authorized_key_for(baking_account)]:
+                return True
 
 
 def get_accounts_signer(signers, account_name):
