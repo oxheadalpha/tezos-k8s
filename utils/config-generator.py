@@ -210,20 +210,6 @@ def verify_this_bakers_account(accounts):
 # public key hash as a side-effect.  These are used later.
 
 
-def authorized_key_for(account_name):
-    """
-    If `account_name` has a remote signer and this remote signer
-    requires an authorized key, returns it.
-    """
-    for signer_val in OCTEZ_SIGNERS.values():
-        if account_name in signer_val["accounts"]:
-            return (
-                signer_val["authorized_keys"][0]
-                if signer_val["authorized_keys"]
-                else None
-            )
-    return
-
 
 def expose_secret_key(account_name):
     """
@@ -235,10 +221,9 @@ def expose_secret_key(account_name):
     as is the case in Octez client's "secret_keys" file.
     """
     if MY_POD_TYPE == "activating":
-        activation_account = NETWORK_CONFIG["activation_account_name"]
         return account_name in [
-            activation_account,
-            authorized_key_for(activation_account),
+            NETWORK_CONFIG["activation_account_name"],
+            NETWORK_CONFIG["activation_account_authorized_key"]
         ]
 
     if MY_POD_TYPE == "signing":
@@ -251,9 +236,9 @@ def expose_secret_key(account_name):
         return account_name == os.environ["INJECTOR_ACCOUNT"]
 
     if MY_POD_TYPE in ["node", "baker"]:
-        for baking_account in MY_POD_CONFIG.get("bake_using_accounts", {}):
-            if account_name in [baking_account, authorized_key_for(baking_account)]:
-                return True
+        if account_name in MY_POD_CONFIG.get("authorized_keys", {}):
+            return True
+        return account_name in MY_POD_CONFIG.get("bake_using_accounts", {})
 
 
 def get_accounts_signer(signers, account_name):

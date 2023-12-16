@@ -466,6 +466,9 @@ expected_proof_of_work: 26
 #   # The name of the account who's public key will be set downstream in
 #   # config.json at `network.genesis_parameters.values.genesis_pubkey`.
 #   activation_account_name: baker0
+#   # if activation account is on a remote signer requiring authorization,
+#   # put authorized key account here
+#   activation_account_authorized_key: authorizedKey0
 #
 ## To join a public network you may set `chain_name` in one of two ways:
 ## - Specify the name of the network which must be recognized by the
