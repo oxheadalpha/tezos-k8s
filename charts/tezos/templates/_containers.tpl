@@ -279,11 +279,7 @@
     {{/* calculate the max number of bakers accross instances */}}
     {{- $max_baker_num := 0 }}
     {{- range $i := $.node_vals.instances }}
-      {{- if hasKey $i "bake_using_account" }}
-        {{- $max_baker_num = max 1 $max_baker_num }}
-      {{- else }}
-        {{- $max_baker_num = max (len (get $i "bake_using_accounts")) $max_baker_num }}
-      {{- end }}
+      {{- $max_baker_num = max (len (get $i "bake_using_accounts")) $max_baker_num }}
     {{- end }}
     {{- range $n := until (int $max_baker_num) }}
       {{- range $.Values.protocols }}

@@ -37,15 +37,6 @@ ROLLING_REGULAR_NODE_NAME = "rolling-node"
 
 
 cli_args = {
-    "should_generate_unsafe_deterministic_data": {
-        "help": (
-            "Should tezos-k8s generate deterministic account keys and genesis"
-            " block hash instead of mkchain using octez-client to generate"
-            " random ones. This option is helpful for testing purposes."
-        ),
-        "action": "store_true",
-        "default": False,
-    },
     "number_of_nodes": {
         "help": "number of peers in the cluster",
         "default": 0,

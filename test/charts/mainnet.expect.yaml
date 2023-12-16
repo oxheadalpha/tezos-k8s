@@ -22,8 +22,6 @@ data:
       "bootstrap_peers": [],
       "default_bootstrap_mutez": "4000000000000",
       "expected-proof-of-work": 26,
-
-      "should_generate_unsafe_deterministic_data": false,
       "network": {
           "chain_name": "mainnet"
         },

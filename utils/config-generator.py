@@ -62,10 +62,6 @@ if MY_POD_TYPE == "rollup":
 
 NETWORK_CONFIG = CHAIN_PARAMS["network"]
 
-SHOULD_GENERATE_UNSAFE_DETERMINISTIC_DATA = CHAIN_PARAMS.get(
-    "should_generate_unsafe_deterministic_data"
-)
-
 # If there are no genesis params, we are dealing with a public network.
 THIS_IS_A_PUBLIC_NET = True if not NETWORK_CONFIG.get("genesis") else False
 # Even if we are dealing with a public network, we may not want to join it in a
@@ -80,14 +76,6 @@ if not THIS_IS_A_PUBLIC_NET and JOIN_PUBLIC_NETWORK:
 def main():
     all_accounts = ACCOUNTS
 
-    if not THIS_IS_A_PUBLIC_NET:
-        fill_in_missing_genesis_block()
-
-    if SHOULD_GENERATE_UNSAFE_DETERMINISTIC_DATA:
-        all_accounts = fill_in_missing_accounts()
-        fill_in_missing_keys(all_accounts)
-
-    fill_in_activation_account(all_accounts)
     import_keys(all_accounts)
 
     if MY_POD_NAME in BAKING_NODES:
@@ -168,92 +156,12 @@ def main():
                     print(node_snapshot_config_json, file=json_file)
 
 
-# If NETWORK_CONFIG["genesis"]["block"] hasn't been specified, we generate a
-# deterministic one.
-def fill_in_missing_genesis_block():
-    genesis_config = NETWORK_CONFIG["genesis"]
-    if not genesis_config.get("block"):
-        print("Deterministically generating missing genesis_block")
-        if not NETWORK_CONFIG.get("chain_name"):
-            raise Exception("Genesis config is missing 'chain_name'.")
-        seed = NETWORK_CONFIG["chain_name"]
-        gbk = blake2b(seed.encode(), digest_size=32).digest()
-        gbk_b58 = b58encode_check(b"\x01\x34" + gbk).decode("utf-8")
-        genesis_config["block"] = gbk_b58
-
-
-def fill_in_activation_account(accts):
-    if "activation_account_name" not in NETWORK_CONFIG:
-        print("Activation account missing:")
-        for name, val in accts.items():
-            if val.get("is_bootstrap_baker_account", False):
-                print(f"    Setting activation account to {name}")
-                NETWORK_CONFIG["activation_account_name"] = name
-                return
-        print("    failed to find one")
-
-
-def get_baking_accounts(baker_values):
-    acct = baker_values.get("bake_using_account")
-    accts = baker_values.get("bake_using_accounts")
-
-    if acct and accts:
-        raise ValueError(
-            'Mustn\'t specify both "bake_using_account" and "bake_using_accounts"'
-        )
-
-    if acct:
-        accts = [acct]
-
-    return accts
-
-
-# Secret and public keys are matches and need be processed together. Neither key
-# must be specified, as later code will fill in the details if they are not.
-#
-# We create any missing accounts that are referred to by a node at
-# BAKING_NODES to ensure that all named accounts exist.
-def fill_in_missing_accounts():
-    print("\nFilling in any missing accounts...")
-    new_accounts = {}
-    init_balance = CHAIN_PARAMS["default_bootstrap_mutez"]
-    for baker_name, baker_values in BAKING_NODES.items():
-        accts = get_baking_accounts(baker_values)
-
-        if not accts:
-            print(f"Defaulting to baking with account: {baker_name}")
-            accts = [baker_name]
-
-        baker_values["bake_using_account"] = None
-        baker_values["bake_using_accounts"] = accts
-
-        for acct in accts:
-            if acct not in ACCOUNTS:
-                print(f"Creating account: {acct}")
-                new_accounts[acct] = {
-                    "bootstrap_balance": init_balance,
-                    "is_bootstrap_baker_account": True,
-                }
-
-    try:
-        acct = NETWORK_CONFIG["activation_account_name"]
-        if acct not in ACCOUNTS and acct not in new_accounts:
-            print(f"Creating activation account: {acct}")
-            new_accounts[acct] = {
-                "bootstrap_balance": CHAIN_PARAMS["default_bootstrap_mutez"],
-            }
-    except:
-        pass
-
-    return {**new_accounts, **ACCOUNTS}
-
-
 def verify_this_bakers_account(accounts):
     """
     Verify the current baker pod has an account with a secret key, unless the
     account is signed for via an external remote signer (e.g. Tacoinfra).
     """
-    accts = get_baking_accounts(MY_POD_CONFIG)
+    accts = MY_POD_CONFIG.get("bake_using_accounts")
 
     if not accts or len(accts) < 1:
         raise Exception("ERROR: No baker accounts specified")
@@ -279,46 +187,12 @@ def verify_this_bakers_account(accounts):
 # the keys for each of the accounts: secret_keys, public_keys, and
 # public_key_hashs.
 #
-# We iterate over fill_in_missing_baker_accounts() which ensures that we
-# have a full set of accounts for which to write keys.
-#
 # If the account has a private key specified, we parse it and use it to
 # derive the public key and its hash.  If a public key is also specified,
-# we check to ensure that it matches the secret key.  If neither a secret
-# nor a public key are specified, then we derive one from a hash of
-# the account name and the gensis_block (which may be generated above.)
-#
-# Both specified and generated keys are stable for the same _values.yaml
-# files.  The specified keys for obvious reasons.  The generated keys
-# are stable because we take care not to use any information that is not
-# specified in the _values.yaml file in the seed used to generate them.
+# we check to ensure that it matches the secret key.
 #
 # import_keys() also fills in "pk" and "pkh" as the public key and
 # public key hash as a side-effect.  These are used later.
-
-edsk = b"\x0d\x0f\x3a\x07"
-
-
-def fill_in_missing_keys(all_accounts):
-    print("\nFill in missing keys")
-
-    for account_name, account_values in all_accounts.items():
-        if "type" in account_values:
-            raise Exception(
-                "Deprecated field 'type' passed by helm, but helm should have pruned it."
-            )
-        account_key = account_values.get("key")
-
-        if account_key == None:
-            print(
-                f"  Deriving secret key for account "
-                + f"{account_name} from genesis_block"
-            )
-            seed = account_name + ":" + NETWORK_CONFIG["genesis"]["block"]
-            sk = blake2b(seed.encode(), digest_size=32).digest()
-            sk_b58 = b58encode_check(edsk + sk).decode("utf-8")
-            account_values["key"] = sk_b58
-            account_values["type"] = "secret"
 
 
 def expose_secret_key(account_name):
@@ -347,8 +221,6 @@ def expose_secret_key(account_name):
         return account_name == MY_POD_CONFIG.get("operator_account")
 
     if MY_POD_TYPE == "node":
-        if MY_POD_CONFIG.get("bake_using_account", "") == account_name:
-            return True
         if account_name in MY_POD_CONFIG.get("authorized_keys", {}):
             return True
         return account_name in MY_POD_CONFIG.get("bake_using_accounts", {})
@@ -568,7 +440,10 @@ def create_protocol_parameters_json(accounts):
 
     # Append any additional bootstrap params such as smart rollups, if any
     if protocol_activation.get("bootstrap_parameters"):
-        protocol_params = { **protocol_params, **protocol_activation.get("bootstrap_parameters") }
+        protocol_params = {
+            **protocol_params,
+            **protocol_activation.get("bootstrap_parameters"),
+        }
 
     return protocol_params
 
@@ -723,7 +598,10 @@ def create_node_snapshot_config_json(history_mode):
             response = requests.get(snapshot_source)
             response.raise_for_status()  # Raises an HTTPError if the HTTP request returned an unsuccessful status code
             all_snapshots = response.json()
-        except (requests.exceptions.RequestException, requests.exceptions.JSONDecodeError):  # Catches exceptions related to requests and invalid JSON
+        except (
+            requests.exceptions.RequestException,
+            requests.exceptions.JSONDecodeError,
+        ):  # Catches exceptions related to requests and invalid JSON
             print(f"Error: unable to retrieve snapshot metadata from {snapshot_source}")
             return
     else:
