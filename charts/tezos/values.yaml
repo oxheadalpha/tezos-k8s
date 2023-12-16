@@ -168,6 +168,11 @@ should_generate_unsafe_deterministic_data: false
 #                            Don't also set `bake_using_accounts`.
 #    - `bake_using_accounts`: List of account names that should be used for baking.
 #                            Don't also set `bake_using_account`.
+#    - `authorized_keys`: List of account names that should be used as keys to
+#                         authenticate a baker to a signer.
+#                         When a baker uses a remote signer that requires
+#                         authentication, the relevant key from this list
+#                         will be used to sign every signature request.
 #    - `config`: Same as the outer statefulset level `config`. It overrides the
 #                statefulset level.
 #    - `is_bootstrap_node`: Boolean for is this node a bootstrap peer.
@@ -470,6 +475,9 @@ expected_proof_of_work: 26
 #   # The name of the account who's public key will be set downstream in
 #   # config.json at `network.genesis_parameters.values.genesis_pubkey`.
 #   activation_account_name: baker0
+#   # if activation account is on a remote signer requiring authorization,
+#   # put authorized key account here
+#   activation_account_authorized_key: authorizedKey0
 #
 ## To join a public network you may set `chain_name` in one of two ways:
 ## - Specify the name of the network which must be recognized by the
