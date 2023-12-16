@@ -71,6 +71,16 @@ data:
     {}
   OCTEZ_ROLLUP_NODES: |
     {}
+  OCTEZ_BAKERS: |
+    {}
+---
+# Source: tezos-chain/templates/configs.yaml
+apiVersion: v1
+data:
+kind: ConfigMap
+metadata:
+  name: baker-config
+  namespace: testing
 ---
 # Source: tezos-chain/templates/static.yaml
 apiVersion: v1

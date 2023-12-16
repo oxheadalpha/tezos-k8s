@@ -48,8 +48,6 @@ accounts: {}
 # mempool queries when baking a block. This is useful to run a Flashbake-capable baker.
 # The entry is passed to baker binaries using the `--operations-pool` flag.
 #
-# The `dal_node` field instructs the baker to target a url for a DAL node.
-#
 # - Public chains: Accounts do not get `is_bootstrap_baker_account` and
 # `bootstrap_balance` fields.
 # - Non-public chains: If you don't specify accounts needed by nodes, they can
@@ -71,7 +69,6 @@ accounts: {}
 #   baker1:
 #     key: edsk...
 #     operations_pool: http://flashbake-endpoint-baker-listener:12732
-#     dal_node: http://dal_node:10732
 #     protocols:
 #     - command: PtMumbai
 #       vote:
@@ -261,6 +258,18 @@ nodes:
           metrics_addr: ["0.0.0.0:9932"]
 # End nodes
 
+# Bakers
+# This deploys "remote bakers" that only bake through RPC.
+# Since octez 17.0, it is possible to bake with RPC only.
+# This is an alternative to defining bakers inside the node pods,
+# as above.
+bakers: {}
+  # baker0:
+  #   bake_using_accounts: [baker0]
+  #   node_rpc_url: http://octez-node-0:8732
+  #   operations_pool: http://flashbake-endpoint:10732
+  #   dal_node_rpc_url: http://dal-node:8732
+
 ## Configuration for K8s Service resources. Configuring the labels selector of a
 ## service will result in the service forwarding traffic only to pods that have
 ## matching labels.
@@ -308,9 +317,10 @@ octezSigners: {}
 #     - baker0
 #    authorized_keys:
 #     # Names of accounts used to authenticate the baker to the signer.
-#     # The baker must have the private key for one of the listed
-#     # accounts. The signer will only sign a request from a baker
-#     # authenticated by an allowed key.
+#     # The signer will only sign a request from a baker authenticated
+#     # by an allowed key.
+      # If set, any baker targeting this signer will automatically have
+      # the associated private key accessible locally.
 #     - authorized-key-0
 # ```
 #
@@ -380,6 +390,7 @@ dalNodes: {}
 # Example:
 #  bootstrap:
 #    bootstrapProfile: true
+#    node_rpc_url: http://rolling-node-0:8732
 #    ingress:
 #       enabled: false
 #       host: ""
@@ -397,6 +408,14 @@ dalNodes: {}
 #  dal1:
 #    storageSize: 50Gi
 #    attesterProfiles: tz1foXHgRzdYdaLgX6XhpZGxbBv42LZ6ubvE
+
+# Optional - a pod that injects slots for DAL - will go away once rollups do it
+dal_deploy_slot_injector:
+  enabled: false
+#  enabled: true
+#  inject_using_account: mybaker
+#  node_rpc_url: http://tezos-baking-node-0.tezos-baking-node:8732
+#  dal_node_rpc_url: http://dal1:10732
 
 # When spinning up nodes, tezos-k8s will attempt to download a snapshot from a
 # known source. This should be a url to a json metadata file in the format

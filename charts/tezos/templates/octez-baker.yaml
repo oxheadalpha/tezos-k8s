@@ -1,0 +1,93 @@
+{{- range $k, $v := .Values.bakers }}
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: baker-{{ $k }}
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  serviceName: baker-{{ $k }}
+  selector:
+    matchLabels:
+      app: baker-{{ $k }}
+  template:
+    metadata:
+      labels:
+        app: baker-{{ $k }}
+    spec:
+      initContainers:
+      - image: {{ $.Values.tezos_k8s_images.utils }}
+        imagePullPolicy: Always
+        name: config-generator
+        args:
+          - config-generator
+        envFrom:
+          - configMapRef:
+              name: tezos-config
+        env:
+          - name: MY_POD_NAME
+            value: {{ $k }}
+          - name: MY_POD_TYPE
+            value: baker
+        volumeMounts:
+          - mountPath: /var/tezos
+            name: baker-volume
+          - mountPath: /etc/secret-volume
+            name: tezos-accounts
+      containers:
+{{- $baker_name := index $v.bake_using_accounts 0 }}
+{{- $account := get $.Values.accounts $baker_name | default dict }}
+{{- range ( $account.protocols | default $.Values.protocols ) }}
+      - name: octez-baker-{{ lower .command  }}
+        image: "{{ $.Values.images.octez }}"
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - mountPath: /var/tezos
+          name: baker-volume
+        - mountPath: /etc/tezos/baker-config
+          name: baker-config
+        command:
+          - /bin/sh
+        args:
+          - "-c"
+          - |
+{{ tpl ($.Files.Get "scripts/rpc-baker.sh") $ | indent 12 }}
+        env:
+        - name: NODE_RPC_URL
+          value: "{{ $v.node_rpc_url }}"
+        - name: PROTO_COMMAND
+          value: "{{ .command }}"
+        - name: BAKER_NAME
+          value: {{ $baker_name }}
+        - name: BAKE_USING_ACCOUNTS
+          value: {{ join " " $v.bake_using_accounts }}
+{{- if $v.operations_pool | default false }}
+        - name: OPERATIONS_POOL
+          value: "{{ $v.oprations_pool }}"
+{{- end }}
+{{- if $v.dal_node_rpc_url | default false }}
+        - name: DAL_NODE_RPC_URL
+          value: "{{ $v.dal_node_rpc_url }}"
+{{- end }}
+{{- end }}
+      securityContext:
+        fsGroup: 1000
+      volumes:
+        - name: baker-config
+          configMap:
+            name: baker-config
+        - name: tezos-accounts
+          secret:
+            secretName: tezos-secret
+  volumeClaimTemplates:
+    - metadata:
+        name: baker-volume
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: "1Gi"
+---
+{{- end }}

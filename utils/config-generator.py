@@ -26,6 +26,7 @@ NODES = json.loads(os.environ["NODES"])
 NODE_IDENTITIES = json.loads(os.getenv("NODE_IDENTITIES", "{}"))
 OCTEZ_SIGNERS = json.loads(os.getenv("OCTEZ_SIGNERS", "{}"))
 OCTEZ_ROLLUP_NODES = json.loads(os.getenv("OCTEZ_ROLLUP_NODES", "{}"))
+OCTEZ_BAKERS = json.loads(os.getenv("OCTEZ_BAKERS", "{}"))
 TACOINFRA_SIGNERS = json.loads(os.getenv("TACOINFRA_SIGNERS", "{}"))
 
 MY_POD_NAME = os.environ["MY_POD_NAME"]
@@ -59,6 +60,8 @@ if MY_POD_TYPE == "signing":
     MY_POD_CONFIG = OCTEZ_SIGNERS[MY_POD_NAME]
 if MY_POD_TYPE == "rollup":
     MY_POD_CONFIG = OCTEZ_ROLLUP_NODES[MY_POD_NAME]
+if MY_POD_TYPE == "baker":
+    MY_POD_CONFIG = OCTEZ_BAKERS[MY_POD_NAME]
 
 NETWORK_CONFIG = CHAIN_PARAMS["network"]
 
@@ -155,6 +158,18 @@ def main():
                 with open("/var/tezos/snapshot_config.json", "w") as json_file:
                     print(node_snapshot_config_json, file=json_file)
 
+    # Create dal_config.json
+    if MY_POD_TYPE == "dal":
+        attest_using_accounts = json.loads(os.getenv("ATTEST_USING_ACCOUNTS", "[]"))
+        if attest_using_accounts:
+            attester_list = ""
+            for account in attest_using_accounts:
+                attester_list += f"{all_accounts[account]['pkh']},"
+
+            with open("/var/tezos/dal_attester_config", "w") as attester_file:
+                print(attester_list, file=attester_file)
+            print("Generated dal attester account list for this node: %s" % attester_list)
+
 
 def verify_this_bakers_account(accounts):
     """
@@ -195,37 +210,49 @@ def verify_this_bakers_account(accounts):
 # public key hash as a side-effect.  These are used later.
 
 
+def authorized_key_for(account_name):
+    """
+    If `account_name` has a remote signer and this remote signer
+    requires an authorized key, returns it.
+    """
+    for signer_val in OCTEZ_SIGNERS.values():
+        if account_name in signer_val["accounts"]:
+            return (
+                signer_val["authorized_keys"][0]
+                if signer_val["authorized_keys"]
+                else None
+            )
+    return
+
+
 def expose_secret_key(account_name):
     """
     Decides if an account needs to have its secret key exposed on the current
-    pod.  It returns the obvious Boolean.
+    pod.
+    Returns true if the pod bakes for this address, signer signs for this address,
+    or if the address is an authorized key necessary for perforing baking.
+    Note: in some cases, "secret key" is a URL to a remote signer rather than a key,
+    as is the case in Octez client's "secret_keys" file.
     """
     if MY_POD_TYPE == "activating":
-        all_authorized_keys = [
-            key
-            for node in NODES.values()
-            for instance in node["instances"]
-            for key in instance.get("authorized_keys", [])
+        activation_account = NETWORK_CONFIG["activation_account_name"]
+        return account_name in [
+            activation_account,
+            authorized_key_for(activation_account),
         ]
-        if account_name in all_authorized_keys:
-            # Populate authorized keys known by all bakers in the activation account.
-            # This ensures that activation will succeed with a remote signer that requires auth,
-            # regardless of which baker does it.
-            return True
-        return NETWORK_CONFIG["activation_account_name"] == account_name
 
     if MY_POD_TYPE == "signing":
         return account_name in MY_POD_CONFIG.get("accounts")
 
     if MY_POD_TYPE == "rollup":
         return account_name == MY_POD_CONFIG.get("operator_account")
+    if MY_POD_TYPE == "slot-injector":
+        # deploy secret key for injector account
+        return account_name == os.environ["INJECTOR_ACCOUNT"]
 
-    if MY_POD_TYPE == "node":
-        if account_name in MY_POD_CONFIG.get("authorized_keys", {}):
-            return True
-        return account_name in MY_POD_CONFIG.get("bake_using_accounts", {})
-
-    return False
+    if MY_POD_TYPE in ["node", "baker"]:
+        for baking_account in MY_POD_CONFIG.get("bake_using_accounts", {}):
+            if account_name in [baking_account, authorized_key_for(baking_account)]:
 
 
 def get_accounts_signer(signers, account_name):
@@ -281,7 +308,7 @@ def get_secret_key(account, key: Key):
     account_name, _ = account
 
     sk = (key.is_secret or None) and f"unencrypted:{key.secret_key()}"
-    if MY_POD_TYPE in ("node", "activating"):
+    if MY_POD_TYPE != "signing":
         signer_url = get_remote_signer_url(account, key)
         octez_signer = get_accounts_signer(OCTEZ_SIGNERS, account_name)
         if (sk and signer_url) and not octez_signer:
@@ -304,6 +331,7 @@ def import_keys(all_accounts):
     public_key_hashs = []
     authorized_keys = []
 
+    accounts = {}
     for account_name, account_values in all_accounts.items():
         print("\n  Importing keys for account: " + account_name)
         account_key = account_values.get("key")
@@ -352,6 +380,7 @@ def import_keys(all_accounts):
             f"    Is account a bootstrap baker: "
             + f"{account_values.get('is_bootstrap_baker_account', False)}"
         )
+        accounts[account_name] = account_values
 
     sk_path, pk_path, pkh_path, ak_path = (
         f"{tezdir}/secret_keys",
@@ -368,6 +397,8 @@ def import_keys(all_accounts):
     if MY_POD_TYPE == "signing" and len(authorized_keys) > 0:
         print(f"  Writing {ak_path}")
         json.dump(authorized_keys, open(ak_path, "w"), indent=4)
+
+    return accounts
 
 
 def create_node_identity_json():
