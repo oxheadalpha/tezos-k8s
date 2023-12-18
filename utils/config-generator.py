@@ -347,10 +347,9 @@ def expose_secret_key(account_name):
     as is the case in Octez client's "secret_keys" file.
     """
     if MY_POD_TYPE == "activating":
-        return account_name in [
-            NETWORK_CONFIG["activation_account_name"],
-            NETWORK_CONFIG["activation_account_authorized_key"]
-        ]
+        if "activation_account_authorized_key" in NETWORK_CONFIG:
+            return account_name == NETWORK_CONFIG["activation_account_authorized_key"]
+        return account_name == NETWORK_CONFIG["activation_account_name"]
 
     if MY_POD_TYPE == "signing":
         return account_name in MY_POD_CONFIG.get("accounts")
