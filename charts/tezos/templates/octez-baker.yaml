@@ -64,7 +64,7 @@ spec:
           value: {{ join " " $v.bake_using_accounts }}
 {{- if $v.operations_pool | default false }}
         - name: OPERATIONS_POOL
-          value: "{{ $v.oprations_pool }}"
+          value: "{{ $v.operations_pool }}"
 {{- end }}
 {{- if $v.dal_node_rpc_url | default false }}
         - name: DAL_NODE_RPC_URL
