@@ -115,14 +115,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish package to PyPI
-        if: github.event_name == 'release' && github.event.action == 'created'
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_TOKEN }}
-          packages_dir: mkchain/dist/
-
   list_containers_to_publish:
     # based on
     # https://stackoverflow.com/a/62953566/207209
