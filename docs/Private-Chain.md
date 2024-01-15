@@ -89,8 +89,8 @@ At the statefulset level, the following parameters are allowed:
    - runs: a list of containers to run, e.g. "baker", "accuser"
    - instances: a list of nodes to fire up, each is a dictionary
      defining:
-     - `bake_using_account`: The name of the account that should be used
-                             for baking.
+     - `bake_using_accounts`: The name of the accounts that should be used
+                              for baking.
      - `is_bootstrap_node`: Is this node a bootstrap peer.
      - config: The `config` property should mimic the structure
                of a node's config.json.
@@ -108,7 +108,7 @@ nodes:
       - baker
       - logger
     instances:
-      - bake_using_account: baker0
+      - bake_using_accounts: [baker0]
         is_bootstrap_node: true
         config:
           shell:

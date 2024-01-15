@@ -1,19 +1,14 @@
 - [Helm Chart Development](#helm-chart-development)
   - [Prerequisites](#prerequisites)
-- [Using devspace](#using-devspace)
-  - [Notes](#notes)
 - [Helm Charts](#helm-charts)
   - [Creating Charts](#creating-charts)
   - [Run local development chart](#run-local-development-chart)
-  - [Notes](#notes-1)
 - [Creating Docker Images](#creating-docker-images)
 - [Releases](#releases)
 
 # Helm Chart Development
 
 ## Prerequisites
-
-- Install [devspace](https://devspace.sh/cli/docs/introduction).
 
 - Ensure minikube is running:
 
@@ -26,42 +21,6 @@
   ```shell
   eval $(minikube docker-env)
   ```
-
-# Using devspace
-
-- Tell devspace which namespace to use:
-
-  ```shell
-  devspace use namespace oxheadalpha
-  ```
-
-- Run `mkchain` to generate your Helm values. (Note: Devspace will only deploy `rpc-auth` if you use the `rpc-auth` profile, regardless if you set it in mkchain. This is to avoid devspace deployment issues. See more below.)
-
-- Set a `CHAIN_NAME` env var.
-
-- Run `devspace dev --var CHAIN_NAME=$CHAIN_NAME` (you can leave out the `--var` flag if you used `export CHAIN_NAME=my-chain`).
-
-- You may add the `rpc-auth` devspace [profile](https://devspace.sh/cli/docs/configuration/profiles/basics) by using the `-p rpc-auth` flag in the `devspace dev` command. This tells devspace deploy `rpc-auth` and to redeploy it if its files change. You can also pass another `--var` flag for `rpc-auth` like so: `--var FLASK_ENV=<development|production>`. Devpsace defaults it to `development`. Running with `development` will allow the python server to hot reload on file changes. Devspace does not need to restart the pod on file changes as the python server file is [synced](https://devspace.sh/cli/docs/configuration/development/file-synchronization) to the container.
-
-Devspace will now do a few things:
-
-- Create namespace if it doesn't already exist.
-- Runs a hook to enable the minikube nginx ingress addon. This is the gateway for external users to access the `rpc-auth` backend and to then make RPC calls to the Tezos node.
-- Runs a hook to increase `fs.inotify.max_user_watches` to 1048576 in minikube. This is to avoid a "no space left on device" error. See [here](https://serverfault.com/questions/963529/minikube-k8s-kubectl-failed-to-watch-file-no-space-left-on-device) for more.
-- Builds docker images and tags them.
-- Deploys Helm charts.
-- Starts [sync](https://devspace.sh/cli/docs/configuration/development/file-synchronization), [logging](https://devspace.sh/cli/docs/configuration/development/log-streaming), and [port-forwarding](https://devspace.sh/cli/docs/configuration/development/port-forwarding) services.
-  - Right now just `rpc-auth` produces logs from the python server.
-  - Port-forwarding allows you to directly communicate with containers, allowing for easy bootstrap node RPC calls, as well as requests to the `rpc-auth` server instead of having to go through the NGINX ingress. Example: `curl localhost:8732/chains/main/chain_id`
-- Will automatically redeploy Helm charts and rebuild docker images depending upon the files you modify.
-
-## Notes
-
-- Devspace recommends to run [devspace purge](https://devspace.sh/cli/docs/commands/devspace_purge) to delete deployments. Keep in mind though that it currently does not delete persistent volumes and claims. They currently don't mention this in their docs. If you want to delete all resources including persistent volumes and claims, run `kubectl delete namespace <NAMESPACE>`. Even with this command, there are times where PV's/PVC's do not get deleted. This is important to know because you may be spinning up nodes that get old volumes attached with old state, and you may encounter Tezos pod errors. I have experienced this in situations where I left my cluster running for a long time, say overnight, and I shut my laptop and/or it went to sleep. After logging back in and deleting the namespace, the PV's/PVC's are still there and need to be manually deleted.
-
-- If you would like to build all of our images without using Devspace to deploy (you might want to do a `helm install` instead), you can run `devspace build -t dev --skip-push`.
-
-- If you find that you have images built but Devspace is having a hard time getting them and/or is producing errors that don't seem to make sense, you can try `rm -rf .devspace` to remove any potentially wrong state.
 
 # Helm Charts
 
@@ -82,10 +41,6 @@ Instructions as per README install the latest release of tezos-k8s helm chart fr
 ```
 helm install tezos-mainnet charts/tezos --namespace oxheadalpha --create-namespace
 ```
-
-## Notes
-
-If you use `helm install|upgrade` (instead of devspace) for local charts, make sure you `helm dependency update <chart>` to get the latest local dependency chart changes that you've made packaged into the parent chart.
 
 # Creating Docker Images
 

@@ -101,12 +101,6 @@ accounts: {}
 #     bootstrap_balance: "4000000000000"
 # ```
 #
-# When running bakers for a public net, you must provide your own secret keys.
-# For non public networks you can change the
-# `should_generate_unsafe_deterministic_data` setting to true, and deterministic
-# keys will be generated for your nodes automatically. This is helpful to spin up
-# local testnets.
-should_generate_unsafe_deterministic_data: false
 # # End Accounts
 
 # # Nodes
@@ -164,10 +158,7 @@ should_generate_unsafe_deterministic_data: false
 #                    Otherwise, the chain may become unreachable externally
 #                    while waiting for other nodes to come online.
 # - `instances`: A list of nodes to fire up, each is a dictionary defining:
-#    - `bake_using_account`: Account name that should be used for baking.
-#                            Don't also set `bake_using_accounts`.
 #    - `bake_using_accounts`: List of account names that should be used for baking.
-#                            Don't also set `bake_using_account`.
 #    - `authorized_keys`: List of account names that should be used as keys to
 #                         authenticate a baker to a signer.
 #                         When a baker uses a remote signer that requires
@@ -226,7 +217,7 @@ should_generate_unsafe_deterministic_data: false
 #       limits:
 #         memory: 16192Mi
 #     instances:
-#       - bake_using_account: baker0
+#       - bake_using_accounts: [baker0]
 #         is_bootstrap_node: true
 #         # Note the following config section overrides the above one even
 #         # if we make them the same in this example.

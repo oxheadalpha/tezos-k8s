@@ -117,8 +117,6 @@ metadata:
     {{- range $instance := $node.instances }}
       {{- if and .bake_using_accounts (kindIs "slice" .bake_using_accounts) }}
         {{- $allAccounts = concat $allAccounts .bake_using_accounts }}
-      {{- else if and .bake_using_account (kindIs "string" .bake_using_account) }}
-        {{- $allAccounts = append $allAccounts .bake_using_account }}
       {{- end }}
     {{- end }}
   {{- end }}

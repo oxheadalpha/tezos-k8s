@@ -64,8 +64,6 @@ Make hyperkit the default minikube driver:
 minikube config set driver hyperkit
 ```
 
-(Note: We do not use Docker itself as the minikube driver due to an [issue](https://github.com/kubernetes/minikube/issues/7332) regarding the minikube ingress addon that is required by rpc-auth.)
-
 ### Other Operating Systems
 
 If in the next step minikube does not start correctly, you may need to configure a different driver for it. Please see the minikube docs [here](https://minikube.sigs.k8s.io/docs/drivers/) for more information.
