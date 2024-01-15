@@ -384,7 +384,7 @@ spec:
         fsGroup: 999
       initContainers:
         - name: copy-accounts
-          image: ghcr.io/oxheadalpha/tacoinfra-remote-signer:0.1.0
+          image: ghcr.io/tacoinfra/tacoinfra-remote-signer:0.1.0
           imagePullPolicy: IfNotPresent
           securityContext:
             runAsNonRoot: false
@@ -412,7 +412,7 @@ spec:
             - name: file-ratchet
               mountPath: /etc/file_ratchets
         - name: create-keys-json
-          image: ghcr.io/oxheadalpha/tacoinfra-remote-signer:0.1.0
+          image: ghcr.io/tacoinfra/tacoinfra-remote-signer:0.1.0
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -469,7 +469,7 @@ spec:
               mountPath: /app/signer-config
       containers:
         - name: remote-signer
-          image: ghcr.io/oxheadalpha/tacoinfra-remote-signer:0.1.0
+          image: ghcr.io/tacoinfra/tacoinfra-remote-signer:0.1.0
           imagePullPolicy: IfNotPresent
           args: ["kms"]
           securityContext:
@@ -577,7 +577,7 @@ spec:
               path: /is_synced
               port: 31732                                
         - name: sidecar
-          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
+          image: "ghcr.io/tacoinfra/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - sidecar
@@ -611,7 +611,7 @@ spec:
               memory: 80Mi        
       initContainers:                
         - name: config-generator
-          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
+          image: "ghcr.io/tacoinfra/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - config-generator
@@ -641,7 +641,7 @@ spec:
             - mountPath: /etc/secret-volume
               name: tezos-accounts                        
         - name: wait-for-dns
-          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
+          image: "ghcr.io/tacoinfra/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - wait-for-dns
@@ -1180,7 +1180,7 @@ spec:
             - mountPath: /etc/tezos/baker-config
               name: baker-config        
         - name: logger
-          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
+          image: "ghcr.io/tacoinfra/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - logger
@@ -1208,7 +1208,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume        
         - name: sidecar
-          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
+          image: "ghcr.io/tacoinfra/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - sidecar
@@ -1242,7 +1242,7 @@ spec:
               memory: 80Mi        
       initContainers:                
         - name: config-generator
-          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
+          image: "ghcr.io/tacoinfra/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - config-generator
@@ -1272,7 +1272,7 @@ spec:
             - mountPath: /etc/secret-volume
               name: tezos-accounts                        
         - name: wait-for-dns
-          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
+          image: "ghcr.io/tacoinfra/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - wait-for-dns
@@ -1408,7 +1408,7 @@ spec:
               port: 31732                
                             
         - name: sidecar
-          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
+          image: "ghcr.io/tacoinfra/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - sidecar
@@ -1442,7 +1442,7 @@ spec:
               memory: 80Mi        
       initContainers:                
         - name: config-generator
-          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
+          image: "ghcr.io/tacoinfra/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - config-generator
@@ -1472,7 +1472,7 @@ spec:
             - mountPath: /etc/secret-volume
               name: tezos-accounts                        
         - name: wait-for-dns
-          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
+          image: "ghcr.io/tacoinfra/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - wait-for-dns
@@ -1588,7 +1588,7 @@ spec:
             exec $CMD
             
       initContainers:
-      - image: ghcr.io/oxheadalpha/tezos-k8s-utils:master
+      - image: ghcr.io/tacoinfra/tezos-k8s-utils:master
         imagePullPolicy: IfNotPresent
         name: config-generator
         args:
@@ -1745,7 +1745,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume
       initContainers:
-        - image: ghcr.io/oxheadalpha/tezos-k8s-utils:master
+        - image: ghcr.io/tacoinfra/tezos-k8s-utils:master
           imagePullPolicy: IfNotPresent
           name: config-generator
           args:

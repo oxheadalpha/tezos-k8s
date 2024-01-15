@@ -1,10 +1,10 @@
 # Images not part of the tezos-k8s repo go here
 images:
   octez: tezos/tezos:v17.3
-  tacoinfraRemoteSigner: ghcr.io/oxheadalpha/tacoinfra-remote-signer:0.1.0
+  tacoinfraRemoteSigner: ghcr.io/tacoinfra/tacoinfra-remote-signer:0.1.0
 # Images that are part of the tezos-k8s repo go here with 'dev' tag
 tezos_k8s_images:
-  utils: ghcr.io/oxheadalpha/tezos-k8s-utils:master
+  utils: ghcr.io/tacoinfra/tezos-k8s-utils:master
 
 ## Properties that are templated for some k8s resources. There are container
 ## scripts that will look up some of these values. They should not be modified.
@@ -316,7 +316,7 @@ octezSigners: {}
 #
 # Deploys a signer using AWS KMS to sign operations.
 # The `AWS_REGION` env var must be set.
-# https://github.com/oxheadalpha/tacoinfra-remote-signer
+# https://github.com/tacoinfra/tacoinfra-remote-signer
 tacoinfraSigners: {}
 # Example:
 # ```

@@ -1,5 +1,5 @@
 images:
-  tz_proto_vanity: ghcr.io/oxheadalpha/tz-proto-vanity:latest
+  tz_proto_vanity: ghcr.io/tacoinfra/tz-proto-vanity:latest
 # tezos-proto-cruncher downloads a protocol in binary format
 # from a S3 bucket, and writes the results in the same bucket.
 # Put the credentials for access to your bucket below.
@@ -26,7 +26,7 @@ numNonceDigits: 16
 # numParallelProcesses: 8
 
 tezos_k8s_images:
-  utils: ghcr.io/oxheadalpha/tezos-k8s-utils:master
+  utils: ghcr.io/tacoinfra/tezos-k8s-utils:master
 
 nameOverride: ""
 fullnameOverride: ""

@@ -91,7 +91,7 @@ eval $(minikube docker-env -u)
 ## Adding the Oxhead Alpha Helm Chart Repository
 
 ```
-helm repo add oxheadalpha https://oxheadalpha.github.io/tezos-helm-charts/
+helm repo add tacoinfra https://tacoinfra.github.io/tezos-helm-charts/
 ```
 
 ## Using a custom Tezos build
@@ -133,4 +133,4 @@ Then install the chart as above.
 
 - We recommend using a very nice GUI for your k8s Tezos chain infrastructure called [Lens](https://k8slens.dev/). This allows you to easily see all of the k8s resources that have been spun up as well as to view the logs for your Tezos nodes. Checkout a similar tool called [k9s](https://k9scli.io/) that works in the CLI.
 
-- Check out Oxheadalpha's Typescript node module [tezos-pulumi](https://github.com/oxheadalpha/tezos-pulumi) to deploy tezos-k8s in [AWS EKS](https://aws.amazon.com/eks/).
+- Check out Oxheadalpha's Typescript node module [tezos-pulumi](https://github.com/tacoinfra/tezos-pulumi) to deploy tezos-k8s in [AWS EKS](https://aws.amazon.com/eks/).

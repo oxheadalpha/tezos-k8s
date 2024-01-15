@@ -13,7 +13,7 @@ const config = {
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
-  organizationName: 'oxheadalpha', // Usually your GitHub org/user name.
+  organizationName: 'tacoinfra', // Usually your GitHub org/user name.
   projectName: 'tezos-k8s', // Usually your repo name.
 
   presets: [
@@ -53,7 +53,7 @@ const config = {
           // },
           // {to: '/blog', label: 'Blog', position: 'left'},
           {
-            href: 'https://github.com/oxheadalpha/tezos-k8s',
+            href: 'https://github.com/tacoinfra/tezos-k8s',
             label: 'GitHub',
             position: 'right',
           },
@@ -80,7 +80,7 @@ const config = {
               },
               {
                 label: 'Twitter',
-                href: 'https://twitter.com/oxheadalpha',
+                href: 'https://twitter.com/tacoinfra',
               },
             ],
           },

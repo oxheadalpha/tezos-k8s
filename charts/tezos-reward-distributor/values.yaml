@@ -5,7 +5,7 @@ tezos_k8s_images:
   # snapshotEngine is needed for upload of logs to bucket
   # since it already exists, we do not create a new container
   # just for this task.
-  snapshotEngine: ghcr.io/oxheadalpha/tezos-k8s-snapshotengine:master
+  snapshotEngine: ghcr.io/tacoinfra/tezos-k8s-snapshotengine:master
 
 # The node endpoint. It must be an archive node.
 # May start with https://
