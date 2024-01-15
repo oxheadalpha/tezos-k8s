@@ -34,11 +34,7 @@ fi
 
 if [ "$AM_I_BAKER" -eq 1 ]; then
     my_baker_account=$(echo $MY_CLASS | \
-	    jq -r ".instances[${MY_POD_NAME#$MY_NODE_CLASS-}]
-		   |if .bake_using_accounts
-		    then .bake_using_accounts[]
-		    else .bake_using_account
-		    end")
+      jq -r ".instances[${MY_POD_NAME#$MY_NODE_CLASS-}].bake_using_accounts[]")
 
     # If no account to bake for was specified in the node's settings,
     # config-generator defaults the account name to the pod's name.

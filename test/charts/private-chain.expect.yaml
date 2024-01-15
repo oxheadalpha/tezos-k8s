@@ -43,8 +43,6 @@ data:
       "bootstrap_peers": [],
       "default_bootstrap_mutez": "4000000000000",
       "expected-proof-of-work": 0,
-
-      "should_generate_unsafe_deterministic_data": true,
       "network": {
           "activation_account_name": "tezos-baking-node-0",
           "chain_name": "elric",
@@ -225,7 +223,6 @@ data:
     b-013-PtJakart-per-block-votes.json: "{\"liquidity_baking_toggle_vote\":\"pass\"}"
     c-013-PtJakart-per-block-votes.json: "{\"liquidity_baking_toggle_vote\":\"pass\"}"
     d-013-PtJakart-per-block-votes.json: "{\"liquidity_baking_toggle_vote\":\"pass\"}"
-    tacoinfraSigner-013-PtJakart-per-block-votes.json: "{\"liquidity_baking_toggle_vote\":\"pass\"}"
 kind: ConfigMap
 metadata:
   name: baker-config
