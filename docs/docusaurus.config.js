@@ -8,7 +8,7 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 const config = {
   title: 'Tezos K8s',
   tagline: 'Deploy a Tezos Blockchain on Kubernetes',
-  url: 'https://tacoinfra.github.io/tezos-k8s/',
+  url: 'https://tacoinfra.github.io/',
   baseUrl: '/tezos-k8s/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
