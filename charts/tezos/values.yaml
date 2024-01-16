@@ -452,17 +452,10 @@ expected_proof_of_work: 26
 ## - Specify the name of the network which must be recognized by the
 ##   octez-node binary of the Octez image being used.
 ## - Pass a url that returns the config.json of the network. Example:
-##   "https://teztnets.xyz/weeklynet". It is helpful for running
+##   "https://teztnets.com/weeklynet". It is helpful for running
 ##   testnets and shouldn't be needed in general.
 node_config_network:
   chain_name: mainnet
-  ## When joining a public network, a tezos node will by default
-  ## connect to the boot-nodes of the selected chain. This may not
-  ## always be desired. For example, you may want to run a mainnet
-  ## replica in isolation with yes-nodes. Uncomment the line below to
-  ## stop the node from connecting to the chain's default boot-nodes.
-  ## You can still specify boot-nodes with the `bootstrap_peers` field.
-  # join_public_network: false
 
 protocols:
   ## Tezos builds baker binaries for every supported protocol.
