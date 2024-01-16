@@ -41,8 +41,8 @@ const config = {
       navbar: {
         title: 'Tezos-k8s',
         logo: {
-          alt: 'Oxhead Alpha Logo',
-          src: 'img/logo.svg',
+          alt: 'Tezos Logo',
+          src: 'img/tezos-black.svg',
         },
         items: [
           // {
@@ -98,7 +98,7 @@ const config = {
             ],
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} Oxhead Alpha, Inc.`,
+        copyright: `Copyright © 2021-2023 Oxhead Alpha, Inc. Copyright © ${new Date().getFullYear()} Tezos Foundation.`,
       },
       prism: {
         theme: lightCodeTheme,

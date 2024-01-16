@@ -13,15 +13,13 @@ Use it to deploy:
 
 on your laptop or in a cloud platform such as AWS, Digitalocean or GCP.
 
-Tezos-k8s is actively maintained by the team at [Oxhead Alpha](https://tacoinfra.com), a Tezos core development company.
-
 ## Quick start
 
 We assume you have access to a Kubernetes cluster and helm installed (see [Prerequisites](Prerequisites)).
 
 To deploy a Tezos mainnet node:
 
-1. Add the Oxhead Alpha Helm chart repository to your local Helm installation:
+1. Add the Tacoinfra Helm chart repository to your local Helm installation:
 
 ```
 helm repo add tacoinfra https://tacoinfra.github.io/tezos-helm-charts/
