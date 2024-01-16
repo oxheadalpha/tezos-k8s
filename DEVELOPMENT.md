@@ -68,7 +68,6 @@ Here is an example of the flow for creating new images and how they are publishe
 
 Upon release, every component of the tezos-k8s repo will be bumped to that version. This is regardless if there were changes or not to that particular component. This is because tezos-k8s is a monorepo and we'd like to keep the versions consistent across the different components.
 
-- mkchain will be published to pypi
 - Docker images will be deployed to Docker Hub
 - Helm charts will be deployed to our Github Pages [repo](https://github.com/tacoinfra/tezos-helm-charts)
 
