@@ -4,7 +4,7 @@ Tezos-k8s is a collection of Helm charts and container images that can be used t
 
 ## Documentation
 
-All documentation is at [Tezos-k8s.xyz](https://tezos-k8s.xyz).
+All documentation is at [Tezos-k8s.io](https://tezos-k8s.io).
 
 ## Development
 
