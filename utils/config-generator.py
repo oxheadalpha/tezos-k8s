@@ -66,6 +66,7 @@ def main():
     all_accounts = ACCOUNTS
 
     import_keys(all_accounts)
+    fill_in_missing_genesis_block()
 
     if MY_POD_NAME in BAKING_NODES:
         # If this node is a baker, it must have an account with a secret key.
@@ -145,6 +146,18 @@ def main():
                     print(node_snapshot_config_json, file=json_file)
 
 
+# If NETWORK_CONFIG["genesis"]["block"] hasn't been specified, we generate a
+# deterministic one.
+def fill_in_missing_genesis_block():
+    genesis_config = NETWORK_CONFIG["genesis"]
+    if not genesis_config.get("block"):
+        print("Deterministically generating missing genesis_block")
+        if not NETWORK_CONFIG.get("chain_name"):
+            raise Exception("Genesis config is missing 'chain_name'.")
+        seed = NETWORK_CONFIG["chain_name"]
+        gbk = blake2b(seed.encode(), digest_size=32).digest()
+        gbk_b58 = b58encode_check(b"\x01\x34" + gbk).decode("utf-8")
+        genesis_config["block"] = gbk_b58
 def verify_this_bakers_account(accounts):
     """
     Verify the current baker pod has an account with a secret key, unless the
