@@ -6,7 +6,7 @@ Current supported indexers:
 
 - [TzKT](https://github.com/baking-bad/tzkt)
 
-The [Tezos Helm chart's values.yaml](https://github.com/tacoinfra/tezos-k8s/blob/master/charts/tezos/values.yaml) has an `indexer` section for how to deploy an indexer.
+The [Tezos Helm chart's values.yaml](https://github.com/tacoinfra/tezos-k8s/blob/main/charts/tezos/values.yaml) has an `indexer` section for how to deploy an indexer.
 
 You must spin up an archive node in your cluster if you want to your indexer to index it. You would do so by configuring a new node's `history_mode` to be `archive`.
 
