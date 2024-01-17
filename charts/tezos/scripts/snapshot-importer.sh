@@ -25,7 +25,7 @@ if [ -f ${node_dir}/chain.snapshot.block_hash ]; then
     block_hash_arg="--block $(cat ${node_dir}/chain.snapshot.block_hash)"
 fi
 
-${node} snapshot import ${snapshot_file} --data-dir ${node_data_dir}
+${node} snapshot import ${snapshot_file} --data-dir ${node_data_dir} --no-check
 find ${node_dir}
 
 rm -rvf ${snapshot_file}
