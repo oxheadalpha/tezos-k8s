@@ -92,13 +92,13 @@ You can explicitly specify some values by:
 Make sure you have the Tezos Helm chart repo:
 
 ```shell
-helm repo add oxheadalpha https://oxheadalpha.github.io/tezos-helm-charts
+helm repo add tacoinfra https://tacoinfra.github.io/tezos-helm-charts
 ```
 
 Then install the Tezos Helm chart:
 
 ```shell
-helm install $CHAIN_NAME oxheadalpha/tezos-chain \
+helm install $CHAIN_NAME tacoinfra/tezos-chain \
 --values ./${CHAIN_NAME}_values.yaml \
---namespace oxheadalpha --create-namespace
+--namespace tacoinfra --create-namespace
 ```

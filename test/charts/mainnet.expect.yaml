@@ -34,7 +34,7 @@ data:
   ARCHIVE_TARBALL_URL: ""
   PREFER_TARBALLS: "false"
   SNAPSHOT_METADATA_NETWORK_NAME: ""
-  SNAPSHOT_SOURCE: "https://xtz-shots.io/tezos-snapshots.json"
+  SNAPSHOT_SOURCE: "https://snapshots.tezos.marigold.dev/api/tezos-snapshots.json"
   OCTEZ_VERSION: "tezos/tezos:v17.3"
   NODE_GLOBALS: |
     {
@@ -71,6 +71,16 @@ data:
     {}
   OCTEZ_ROLLUP_NODES: |
     {}
+  OCTEZ_BAKERS: |
+    {}
+---
+# Source: tezos-chain/templates/configs.yaml
+apiVersion: v1
+data:
+kind: ConfigMap
+metadata:
+  name: baker-config
+  namespace: testing
 ---
 # Source: tezos-chain/templates/static.yaml
 apiVersion: v1
@@ -177,7 +187,7 @@ spec:
               path: /is_synced
               port: 31732                                
         - name: sidecar
-          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
+          image: "ghcr.io/tacoinfra/tezos-k8s-utils:main"
           imagePullPolicy: IfNotPresent
           args:
             - sidecar
@@ -264,7 +274,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume        
         - name: config-generator
-          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
+          image: "ghcr.io/tacoinfra/tezos-k8s-utils:main"
           imagePullPolicy: IfNotPresent
           args:
             - config-generator
@@ -294,7 +304,7 @@ spec:
             - mountPath: /etc/secret-volume
               name: tezos-accounts        
         - name: snapshot-downloader
-          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
+          image: "ghcr.io/tacoinfra/tezos-k8s-utils:main"
           imagePullPolicy: IfNotPresent
           args:
             - snapshot-downloader
@@ -356,7 +366,7 @@ spec:
                   block_hash_arg="--block $(cat ${node_dir}/chain.snapshot.block_hash)"
               fi
               
-              ${node} snapshot import ${snapshot_file} --data-dir ${node_data_dir}
+              ${node} snapshot import ${snapshot_file} --data-dir ${node_data_dir} --no-check
               find ${node_dir}
               
               rm -rvf ${snapshot_file}

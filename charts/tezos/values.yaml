@@ -1,10 +1,10 @@
 # Images not part of the tezos-k8s repo go here
 images:
   octez: tezos/tezos:v17.3
-  tacoinfraRemoteSigner: ghcr.io/oxheadalpha/tacoinfra-remote-signer:0.1.0
+  tacoinfraRemoteSigner: ghcr.io/tacoinfra/tacoinfra-remote-signer:0.1.0
 # Images that are part of the tezos-k8s repo go here with 'dev' tag
 tezos_k8s_images:
-  utils: ghcr.io/oxheadalpha/tezos-k8s-utils:master
+  utils: ghcr.io/tacoinfra/tezos-k8s-utils:main
 
 ## Properties that are templated for some k8s resources. There are container
 ## scripts that will look up some of these values. They should not be modified.
@@ -48,8 +48,6 @@ accounts: {}
 # mempool queries when baking a block. This is useful to run a Flashbake-capable baker.
 # The entry is passed to baker binaries using the `--operations-pool` flag.
 #
-# The `dal_node` field instructs the baker to target a url for a DAL node.
-#
 # - Public chains: Accounts do not get `is_bootstrap_baker_account` and
 # `bootstrap_balance` fields.
 # - Non-public chains: If you don't specify accounts needed by nodes, they can
@@ -71,7 +69,6 @@ accounts: {}
 #   baker1:
 #     key: edsk...
 #     operations_pool: http://flashbake-endpoint-baker-listener:12732
-#     dal_node: http://dal_node:10732
 #     protocols:
 #     - command: PtMumbai
 #       vote:
@@ -261,6 +258,18 @@ nodes:
           metrics_addr: ["0.0.0.0:9932"]
 # End nodes
 
+# Bakers
+# This deploys "remote bakers" that only bake through RPC.
+# Since octez 17.0, it is possible to bake with RPC only.
+# This is an alternative to defining bakers inside the node pods,
+# as above.
+bakers: {}
+  # baker0:
+  #   bake_using_accounts: [baker0]
+  #   node_rpc_url: http://octez-node-0:8732
+  #   operations_pool: http://flashbake-endpoint:10732
+  #   dal_node_rpc_url: http://dal-node:8732
+
 ## Configuration for K8s Service resources. Configuring the labels selector of a
 ## service will result in the service forwarding traffic only to pods that have
 ## matching labels.
@@ -308,15 +317,16 @@ octezSigners: {}
 #     - baker0
 #    authorized_keys:
 #     # Names of accounts used to authenticate the baker to the signer.
-#     # The baker must have the private key for one of the listed
-#     # accounts. The signer will only sign a request from a baker
-#     # authenticated by an allowed key.
+#     # The signer will only sign a request from a baker authenticated
+#     # by an allowed key.
+      # If set, any baker targeting this signer will automatically have
+      # the associated private key accessible locally.
 #     - authorized-key-0
 # ```
 #
 # Deploys a signer using AWS KMS to sign operations.
 # The `AWS_REGION` env var must be set.
-# https://github.com/oxheadalpha/tacoinfra-remote-signer
+# https://github.com/tacoinfra/tacoinfra-remote-signer
 tacoinfraSigners: {}
 # Example:
 # ```
@@ -380,6 +390,7 @@ dalNodes: {}
 # Example:
 #  bootstrap:
 #    bootstrapProfile: true
+#    node_rpc_url: http://rolling-node-0:8732
 #    ingress:
 #       enabled: false
 #       host: ""
@@ -398,11 +409,19 @@ dalNodes: {}
 #    storageSize: 50Gi
 #    attesterProfiles: tz1foXHgRzdYdaLgX6XhpZGxbBv42LZ6ubvE
 
+# Optional - a pod that injects slots for DAL - will go away once rollups do it
+dal_deploy_slot_injector:
+  enabled: false
+#  enabled: true
+#  inject_using_account: mybaker
+#  node_rpc_url: http://tezos-baking-node-0.tezos-baking-node:8732
+#  dal_node_rpc_url: http://dal1:10732
+
 # When spinning up nodes, tezos-k8s will attempt to download a snapshot from a
 # known source. This should be a url to a json metadata file in the format
 # xtz-shots uses. If you want to sync from scratch or for a private chain, set
 # to `null`.
-snapshot_source: https://xtz-shots.io/tezos-snapshots.json
+snapshot_source: https://snapshots.tezos.marigold.dev/api/tezos-snapshots.json
 
 # By default, tezos-k8s will download and unpack snapshots.
 # A tarball is a LZ4-compressed filesystem tar of a node's data directory.
@@ -447,22 +466,18 @@ expected_proof_of_work: 26
 #   # The name of the account who's public key will be set downstream in
 #   # config.json at `network.genesis_parameters.values.genesis_pubkey`.
 #   activation_account_name: baker0
+#   # if activation account is on a remote signer requiring authorization,
+#   # put authorized key account here
+#   activation_account_authorized_key: authorizedKey0
 #
 ## To join a public network you may set `chain_name` in one of two ways:
 ## - Specify the name of the network which must be recognized by the
 ##   octez-node binary of the Octez image being used.
 ## - Pass a url that returns the config.json of the network. Example:
-##   "https://teztnets.xyz/weeklynet". It is helpful for running
+##   "https://teztnets.com/weeklynet". It is helpful for running
 ##   testnets and shouldn't be needed in general.
 node_config_network:
   chain_name: mainnet
-  ## When joining a public network, a tezos node will by default
-  ## connect to the boot-nodes of the selected chain. This may not
-  ## always be desired. For example, you may want to run a mainnet
-  ## replica in isolation with yes-nodes. Uncomment the line below to
-  ## stop the node from connecting to the chain's default boot-nodes.
-  ## You can still specify boot-nodes with the `bootstrap_peers` field.
-  # join_public_network: false
 
 protocols:
   ## Tezos builds baker binaries for every supported protocol.

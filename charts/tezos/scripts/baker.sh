@@ -42,8 +42,8 @@ if [ -f /etc/tezos/baker-config/${my_baker_account}_operations_pool ]; then
   extra_args="${extra_args} --operations-pool $(cat /etc/tezos/baker-config/${my_baker_account}_operations_pool)"
 fi
 
-if [ -f /etc/tezos/baker-config/${my_baker_account}_dal_node ]; then
-  extra_args="${extra_args} --dal-node $(cat /etc/tezos/baker-config/${my_baker_account}_dal_node)"
+if [ -f /etc/tezos/baker-config/${my_baker_account}_dal_node_rpc_url ]; then
+  extra_args="${extra_args} --dal-node $(cat /etc/tezos/baker-config/${my_baker_account}_dal_node_rpc_url)"
 fi
 
 CLIENT="$TEZ_BIN/octez-client -d $CLIENT_DIR"

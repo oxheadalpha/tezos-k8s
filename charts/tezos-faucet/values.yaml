@@ -1,9 +1,9 @@
-# Faucet backend: https://github.com/oxheadalpha/tezos-faucet-backend
-# Faucet frontend: https://github.com/oxheadalpha/tezos-faucet
+# Faucet backend: https://github.com/tacoinfra/tezos-faucet-backend
+# Faucet frontend: https://github.com/tacoinfra/tezos-faucet
 
 images:
-  tezosFaucet: ghcr.io/oxheadalpha/tezos-faucet:2.2.1
-  tezosFaucetBackend: ghcr.io/oxheadalpha/tezos-faucet-backend:2.2.0
+  tezosFaucet: ghcr.io/tacoinfra/tezos-faucet:2.2.1
+  tezosFaucetBackend: ghcr.io/tacoinfra/tezos-faucet-backend:2.2.0
 
 # Frontend app configuration. You can optionally deploy only the faucet backend.
 enableUI: true
@@ -13,7 +13,7 @@ config:
     googleCaptchaSiteKey: "" # 6LefC8QmAAAAAIX...
     # Default value assumes faucet backend is available on localhost.
     backendUrl: http://localhost:3000
-    githubRepo: https://github.com/oxheadalpha/tezos-faucet
+    githubRepo: https://github.com/tacoinfra/tezos-faucet
   network:
     name: Custom
     # Default value assumes node RPC is available on localhost.

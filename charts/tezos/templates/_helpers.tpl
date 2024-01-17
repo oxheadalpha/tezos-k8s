@@ -50,16 +50,13 @@
 {{/*
   Checks if we need to run octez-node config init to help config-generator
   obtain the appropriate parameters to run a network. If there are no genesis
-  params, we are dealing with a public network and want its default config.json
-  to be created. If we are dealing with a custom chain, we validate that the
-  `join_public_network` field is not set to true.
+  params, config-init will run `octez-node config init` and grab the resulting
+  network params.
   Returns a string "true" or empty string which is falsey.
 */}}
 {{- define "tezos.shouldConfigInit" }}
   {{- if not .Values.node_config_network.genesis }}
     {{- "true" }}
-  {{- else if .Values.node_config_network.join_public_network }}
-    {{- fail "'node_config_network' is defining a custom chain while being instructed to join a public network" }}
   {{- else }}
     {{- "" }}
   {{- end }}
@@ -89,31 +86,41 @@ metadata:
   {{- end }}
 {{- end }}
 
-{{/*
-  Is there a baker?
+{{/* 
+  Is there a baker in nodes or is the bakers object not empty?
 */}}
 {{- define "tezos.shouldDeployBakerConfig" }}
+  {{- $hasBakerInNodes := false }}
   {{- range .Values.nodes }}
     {{- if (has "baker" .runs) }}
-      {{- "true" }}
+      {{- $hasBakerInNodes = true }}
     {{- end }}
+  {{- end }}
+  {{- $hasBakersObject := ne (len .Values.bakers) 0 }}
+  {{- if or $hasBakerInNodes $hasBakersObject }}
+    {{- "true" }}
+  {{- else }}
+    {{- "false" }}
   {{- end }}
 {{- end }}
 
-{{/*
-  Get list of accounts that are being used to bake. Returned as a json
-  serialized dict because of how Helm renders everything returned from
-  a template as string. Function callers need to parse the returned
-  value like so: `fromJson | values | first`. A dict and not list is
-  returned because of the way `fromJson` works which expects a type of
-  map[string]interface {}.
+{{/* 
+  Get list of accounts that are being used to bake, including bake_using_accounts lists from bakers
+  object if it is non-empty. Returned as a json serialized dict.
 */}}
 {{- define "tezos.getAccountsBaking" }}
   {{- $allAccounts := list }}
   {{- range $node := .Values.nodes }}
     {{- range $instance := $node.instances }}
-    {{- if and .bake_using_accounts (kindIs "slice" .bake_using_accounts) }}
+      {{- if and .bake_using_accounts (kindIs "slice" .bake_using_accounts) }}
         {{- $allAccounts = concat $allAccounts .bake_using_accounts }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- if ne (len .Values.bakers) 0 }}
+    {{- range $baker := .Values.bakers }}
+      {{- if and $baker.bake_using_accounts (kindIs "slice" $baker.bake_using_accounts) }}
+        {{- $allAccounts = concat $allAccounts $baker.bake_using_accounts }}
       {{- end }}
     {{- end }}
   {{- end }}
