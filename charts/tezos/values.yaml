@@ -402,7 +402,7 @@ dalNodes: {}
 # known source. This should be a url to a json metadata file in the format
 # xtz-shots uses. If you want to sync from scratch or for a private chain, set
 # to `null`.
-snapshot_source: https://xtz-shots.io/tezos-snapshots.json
+snapshot_source: https://snapshots.tezos.marigold.dev/api/tezos-snapshots.json
 
 # By default, tezos-k8s will download and unpack snapshots.
 # A tarball is a LZ4-compressed filesystem tar of a node's data directory.
