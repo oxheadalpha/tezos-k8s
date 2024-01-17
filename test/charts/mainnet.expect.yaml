@@ -34,7 +34,7 @@ data:
   ARCHIVE_TARBALL_URL: ""
   PREFER_TARBALLS: "false"
   SNAPSHOT_METADATA_NETWORK_NAME: ""
-  SNAPSHOT_SOURCE: "https://xtz-shots.io/tezos-snapshots.json"
+  SNAPSHOT_SOURCE: "https://snapshots.tezos.marigold.dev/api/tezos-snapshots.json"
   OCTEZ_VERSION: "tezos/tezos:v17.3"
   NODE_GLOBALS: |
     {
@@ -356,7 +356,7 @@ spec:
                   block_hash_arg="--block $(cat ${node_dir}/chain.snapshot.block_hash)"
               fi
               
-              ${node} snapshot import ${snapshot_file} --data-dir ${node_data_dir}
+              ${node} snapshot import ${snapshot_file} --data-dir ${node_data_dir} --no-check
               find ${node_dir}
               
               rm -rvf ${snapshot_file}
