@@ -66,7 +66,8 @@ def main():
     all_accounts = ACCOUNTS
 
     import_keys(all_accounts)
-    fill_in_missing_genesis_block()
+    if "genesis" in NETWORK_CONFIG:
+        fill_in_missing_genesis_block()
 
     if MY_POD_NAME in BAKING_NODES:
         # If this node is a baker, it must have an account with a secret key.
