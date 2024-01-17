@@ -76,52 +76,6 @@ jobs:
   #     - name: pytest
   #       run: pytest tests
 
-  publish_mkchain:
-    needs: check-lint-and-format
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      # after we test that the module works on all systems we only need to build one since this is a pure python module
-      matrix:
-        python-version: [3.8]
-        os: [ubuntu-latest]
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pyyaml
-          pip install wheel
-
-      - name: Build Python package
-        run: python setup.py bdist_wheel
-        working-directory: mkchain
-
-      - name: Install wheels
-        run: pip install dist/*.whl
-        working-directory: mkchain
-
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          files: "**/mkchain/dist/*.whl"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Publish package to PyPI
-        if: github.event_name == 'release' && github.event.action == 'created'
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_TOKEN }}
-          packages_dir: mkchain/dist/
 
   list_containers_to_publish:
     # based on
@@ -272,13 +226,13 @@ jobs:
             # Update Chart.yaml with release version
             yq e ".version = \"$RELEASE_VERSION\"" -i "$chart/Chart.yaml"
 
-            # Get oxheadalpha/tezos-k8s images specified in values.yaml
+            # Get tacoinfra/tezos-k8s images specified in values.yaml
             tq_images=$(yq e '(.tezos_k8s_images[]) | path | .[-1]' "$chart/values.yaml")
 
             # Update the release version of each of tezos-k8s images
             for image in $tq_images; do
-              image_name=$(yq e ".tezos_k8s_images.$image" $chart/values.yaml | sed -E "s/ghcr.io\/oxheadalpha\/tezos-k8s-(.*):.*/\1/")
-              yq e ".tezos_k8s_images.$image = \"ghcr.io/oxheadalpha/tezos-k8s-$image_name:$RELEASE_VERSION\"" -i $chart/values.yaml
+              image_name=$(yq e ".tezos_k8s_images.$image" $chart/values.yaml | sed -E "s/ghcr.io\/tacoinfra\/tezos-k8s-(.*):.*/\1/")
+              yq e ".tezos_k8s_images.$image = \"ghcr.io/tacoinfra/tezos-k8s-$image_name:$RELEASE_VERSION\"" -i $chart/values.yaml
             done
           done
 

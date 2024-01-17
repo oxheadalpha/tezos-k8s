@@ -65,21 +65,14 @@ if MY_POD_TYPE == "baker":
 
 NETWORK_CONFIG = CHAIN_PARAMS["network"]
 
-# If there are no genesis params, we are dealing with a public network.
-THIS_IS_A_PUBLIC_NET = True if not NETWORK_CONFIG.get("genesis") else False
-# Even if we are dealing with a public network, we may not want to join it in a
-# case such as when creating a network replica.
-JOIN_PUBLIC_NETWORK = NETWORK_CONFIG.get("join_public_network", THIS_IS_A_PUBLIC_NET)
-if not THIS_IS_A_PUBLIC_NET and JOIN_PUBLIC_NETWORK:
-    raise ValueError(
-        "Instruction was given to join a public network while defining a private chain"
-    )
-
 
 def main():
     all_accounts = ACCOUNTS
 
     all_accounts = import_keys(all_accounts)
+    import_keys(all_accounts)
+    if "genesis" in NETWORK_CONFIG:
+        fill_in_missing_genesis_block()
 
     if MY_POD_NAME in BAKING_NODES:
         # If this node is a baker, it must have an account with a secret key.
@@ -106,7 +99,7 @@ def main():
         print("\nStarting config.json file generation")
         bootstrap_peers = CHAIN_PARAMS.get("bootstrap_peers", [])
 
-        if JOIN_PUBLIC_NETWORK:
+        if not "genesis" in NETWORK_CONFIG:
             with open("/etc/tezos/data/config.json", "r") as f:
                 bootstrap_peers.extend(json.load(f)["p2p"]["bootstrap-peers"])
         else:
@@ -169,6 +162,20 @@ def main():
             with open("/var/tezos/dal_attester_config", "w") as attester_file:
                 print(attester_list, file=attester_file)
             print("Generated dal attester account list for this node: %s" % attester_list)
+
+
+# If NETWORK_CONFIG["genesis"]["block"] hasn't been specified, we generate a
+# deterministic one.
+def fill_in_missing_genesis_block():
+    genesis_config = NETWORK_CONFIG["genesis"]
+    if not genesis_config.get("block"):
+        print("Deterministically generating missing genesis_block")
+        if not NETWORK_CONFIG.get("chain_name"):
+            raise Exception("Genesis config is missing 'chain_name'.")
+        seed = NETWORK_CONFIG["chain_name"]
+        gbk = blake2b(seed.encode(), digest_size=32).digest()
+        gbk_b58 = b58encode_check(b"\x01\x34" + gbk).decode("utf-8")
+        genesis_config["block"] = gbk_b58
 
 
 def verify_this_bakers_account(accounts):
@@ -521,7 +528,7 @@ def create_node_config_json(
     node_config = recursive_update(node_config, MY_POD_CONFIG.get("config", {}))
     node_config = recursive_update(node_config, computed_node_config)
 
-    if THIS_IS_A_PUBLIC_NET:
+    if not "genesis" in NETWORK_CONFIG:
         # `octez-node config --network ...` will have been run in config-init.sh
         #  producing a config.json. The value passed to the `--network` flag may
         #  have been the chain name or a url to the config.json of the chain.
@@ -545,7 +552,6 @@ def create_node_config_json(
         node_config["network"] = dict(NETWORK_CONFIG)
         # Delete props that are not part of the node config.json spec
         node_config["network"].pop("activation_account_name")
-        node_config["network"].pop("join_public_network", None)
 
         node_config["network"]["sandboxed_chain_name"] = "SANDBOXED_TEZOS"
         node_config["network"]["default_bootstrap_peers"] = []

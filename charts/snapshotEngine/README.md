@@ -28,7 +28,7 @@ Check out [xtz-shots.io](xtz-shots.io) for an example.
 
 ## What is it?
 
-The Snapshot Engine is a Helm Chart to be deployed on a Kubernetes Cluster.  It will deploy snapshottable Tezos nodes [tezos-k8s](https://github.com/oxheadalpha/tezos-k8s) and produce Tezos `.rolling` snapshot files as well as a new archive and rolling finalized filesystem tarballs in LZ4 format for fast Tezos node syncing.
+The Snapshot Engine is a Helm Chart to be deployed on a Kubernetes Cluster.  It will deploy snapshottable Tezos nodes [tezos-k8s](https://github.com/tacoinfra/tezos-k8s) and produce Tezos `.rolling` snapshot files as well as a new archive and rolling finalized filesystem tarballs in LZ4 format for fast Tezos node syncing.
 
 ## Requirements
 
@@ -129,7 +129,7 @@ The Snapshot Engine is a Helm Chart to be deployed on a Kubernetes Cluster.  It 
 5. Add our Helm repository.
 
 ```bash
-helm repo add oxheadalpha https://oxheadalpha.github.io/tezos-helm-charts/
+helm repo add tacoinfra https://tacoinfra.github.io/tezos-helm-charts/
 ```
 
 6. Deploy the chart feeding in the ARN of the IAM role you created above inline, or as as value in a values.yaml file.

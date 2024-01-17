@@ -5,7 +5,7 @@ of a vanity protocol name.
 
 It leverages this project:
 
-https://github.com/oxheadalpha/tz-proto-vanity
+https://github.com/tacoinfra/tz-proto-vanity
 
 It runs in a daemonset and uploads matches to a bucket.
 

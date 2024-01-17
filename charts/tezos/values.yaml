@@ -1,10 +1,10 @@
 # Images not part of the tezos-k8s repo go here
 images:
   octez: tezos/tezos:v17.3
-  tacoinfraRemoteSigner: ghcr.io/oxheadalpha/tacoinfra-remote-signer:0.1.0
+  tacoinfraRemoteSigner: ghcr.io/tacoinfra/tacoinfra-remote-signer:0.1.0
 # Images that are part of the tezos-k8s repo go here with 'dev' tag
 tezos_k8s_images:
-  utils: ghcr.io/oxheadalpha/tezos-k8s-utils:master
+  utils: ghcr.io/tacoinfra/tezos-k8s-utils:master
 
 ## Properties that are templated for some k8s resources. There are container
 ## scripts that will look up some of these values. They should not be modified.
@@ -326,7 +326,7 @@ octezSigners: {}
 #
 # Deploys a signer using AWS KMS to sign operations.
 # The `AWS_REGION` env var must be set.
-# https://github.com/oxheadalpha/tacoinfra-remote-signer
+# https://github.com/tacoinfra/tacoinfra-remote-signer
 tacoinfraSigners: {}
 # Example:
 # ```
@@ -421,7 +421,7 @@ dal_deploy_slot_injector:
 # known source. This should be a url to a json metadata file in the format
 # xtz-shots uses. If you want to sync from scratch or for a private chain, set
 # to `null`.
-snapshot_source: https://xtz-shots.io/tezos-snapshots.json
+snapshot_source: https://snapshots.tezos.marigold.dev/api/tezos-snapshots.json
 
 # By default, tezos-k8s will download and unpack snapshots.
 # A tarball is a LZ4-compressed filesystem tar of a node's data directory.
@@ -474,17 +474,10 @@ expected_proof_of_work: 26
 ## - Specify the name of the network which must be recognized by the
 ##   octez-node binary of the Octez image being used.
 ## - Pass a url that returns the config.json of the network. Example:
-##   "https://teztnets.xyz/weeklynet". It is helpful for running
+##   "https://teztnets.com/weeklynet". It is helpful for running
 ##   testnets and shouldn't be needed in general.
 node_config_network:
   chain_name: mainnet
-  ## When joining a public network, a tezos node will by default
-  ## connect to the boot-nodes of the selected chain. This may not
-  ## always be desired. For example, you may want to run a mainnet
-  ## replica in isolation with yes-nodes. Uncomment the line below to
-  ## stop the node from connecting to the chain's default boot-nodes.
-  ## You can still specify boot-nodes with the `bootstrap_peers` field.
-  # join_public_network: false
 
 protocols:
   ## Tezos builds baker binaries for every supported protocol.

@@ -8,12 +8,12 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 const config = {
   title: 'Tezos K8s',
   tagline: 'Deploy a Tezos Blockchain on Kubernetes',
-  url: 'https://tezos-k8s.xyz',
+  url: 'https://tezos-k8s.io/',
   baseUrl: '/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
-  organizationName: 'oxheadalpha', // Usually your GitHub org/user name.
+  organizationName: 'tacoinfra', // Usually your GitHub org/user name.
   projectName: 'tezos-k8s', // Usually your repo name.
 
   presets: [
@@ -41,8 +41,8 @@ const config = {
       navbar: {
         title: 'Tezos-k8s',
         logo: {
-          alt: 'Oxhead Alpha Logo',
-          src: 'img/logo.svg',
+          alt: 'Tezos Logo',
+          src: 'img/tezos-black.svg',
         },
         items: [
           // {
@@ -53,7 +53,7 @@ const config = {
           // },
           // {to: '/blog', label: 'Blog', position: 'left'},
           {
-            href: 'https://github.com/oxheadalpha/tezos-k8s',
+            href: 'https://github.com/tacoinfra/tezos-k8s',
             label: 'GitHub',
             position: 'right',
           },
@@ -80,7 +80,7 @@ const config = {
               },
               {
                 label: 'Twitter',
-                href: 'https://twitter.com/oxheadalpha',
+                href: 'https://twitter.com/tacoinfra',
               },
             ],
           },
@@ -98,7 +98,7 @@ const config = {
             ],
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} Oxhead Alpha, Inc.`,
+        copyright: `Copyright © 2021-2023 Oxhead Alpha, Inc. Copyright © ${new Date().getFullYear()} Tezos Foundation.`,
       },
       prism: {
         theme: lightCodeTheme,

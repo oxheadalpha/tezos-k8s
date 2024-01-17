@@ -34,7 +34,7 @@ data:
   ARCHIVE_TARBALL_URL: ""
   PREFER_TARBALLS: "false"
   SNAPSHOT_METADATA_NETWORK_NAME: ""
-  SNAPSHOT_SOURCE: "https://xtz-shots.io/tezos-snapshots.json"
+  SNAPSHOT_SOURCE: "https://snapshots.tezos.marigold.dev/api/tezos-snapshots.json"
   OCTEZ_VERSION: "tezos/tezos:v17.3"
   NODE_GLOBALS: |
     {
@@ -258,7 +258,7 @@ spec:
               path: /is_synced
               port: 31732                        
         - name: logger
-          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
+          image: "ghcr.io/tacoinfra/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - logger
@@ -288,7 +288,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume        
         - name: sidecar
-          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
+          image: "ghcr.io/tacoinfra/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - sidecar
@@ -379,7 +379,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume        
         - name: config-generator
-          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
+          image: "ghcr.io/tacoinfra/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - config-generator
@@ -411,7 +411,7 @@ spec:
             - mountPath: /etc/secret-volume
               name: tezos-accounts        
         - name: snapshot-downloader
-          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
+          image: "ghcr.io/tacoinfra/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - snapshot-downloader
@@ -475,7 +475,7 @@ spec:
                   block_hash_arg="--block $(cat ${node_dir}/chain.snapshot.block_hash)"
               fi
               
-              ${node} snapshot import ${snapshot_file} --data-dir ${node_data_dir}
+              ${node} snapshot import ${snapshot_file} --data-dir ${node_data_dir} --no-check
               find ${node_dir}
               
               rm -rvf ${snapshot_file}
@@ -632,7 +632,7 @@ spec:
             requests:
               memory: 16192Mi                        
         - name: logger
-          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
+          image: "ghcr.io/tacoinfra/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - logger
@@ -662,7 +662,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume        
         - name: sidecar
-          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
+          image: "ghcr.io/tacoinfra/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - sidecar
@@ -753,7 +753,7 @@ spec:
             - mountPath: /var/tezos
               name: var-volume        
         - name: config-generator
-          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
+          image: "ghcr.io/tacoinfra/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - config-generator
@@ -785,7 +785,7 @@ spec:
             - mountPath: /etc/secret-volume
               name: tezos-accounts        
         - name: snapshot-downloader
-          image: "ghcr.io/oxheadalpha/tezos-k8s-utils:master"
+          image: "ghcr.io/tacoinfra/tezos-k8s-utils:master"
           imagePullPolicy: IfNotPresent
           args:
             - snapshot-downloader
@@ -849,7 +849,7 @@ spec:
                   block_hash_arg="--block $(cat ${node_dir}/chain.snapshot.block_hash)"
               fi
               
-              ${node} snapshot import ${snapshot_file} --data-dir ${node_data_dir}
+              ${node} snapshot import ${snapshot_file} --data-dir ${node_data_dir} --no-check
               find ${node_dir}
               
               rm -rvf ${snapshot_file}
