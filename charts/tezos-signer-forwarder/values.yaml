@@ -1,5 +1,5 @@
 tezos_k8s_images:
-  utils: ghcr.io/tacoinfra/tezos-k8s-utils:master
+  utils: ghcr.io/tacoinfra/tezos-k8s-utils:main
   tezos_signer_forwarder: ghcr.io/tacoinfra/tezos-k8s-signerforwarder:dev
 
 # List the endpoints below.

@@ -4,7 +4,7 @@ images:
   tacoinfraRemoteSigner: ghcr.io/tacoinfra/tacoinfra-remote-signer:0.1.0
 # Images that are part of the tezos-k8s repo go here with 'dev' tag
 tezos_k8s_images:
-  utils: ghcr.io/tacoinfra/tezos-k8s-utils:master
+  utils: ghcr.io/tacoinfra/tezos-k8s-utils:main
 
 ## Properties that are templated for some k8s resources. There are container
 ## scripts that will look up some of these values. They should not be modified.

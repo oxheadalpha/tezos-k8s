@@ -26,7 +26,7 @@ numNonceDigits: 16
 # numParallelProcesses: 8
 
 tezos_k8s_images:
-  utils: ghcr.io/tacoinfra/tezos-k8s-utils:master
+  utils: ghcr.io/tacoinfra/tezos-k8s-utils:main
 
 nameOverride: ""
 fullnameOverride: ""
