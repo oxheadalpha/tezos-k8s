@@ -62,6 +62,7 @@ if MY_POD_TYPE == "rollup":
 
 NETWORK_CONFIG = CHAIN_PARAMS["network"]
 
+
 def main():
     all_accounts = ACCOUNTS
 
@@ -159,6 +160,8 @@ def fill_in_missing_genesis_block():
         gbk = blake2b(seed.encode(), digest_size=32).digest()
         gbk_b58 = b58encode_check(b"\x01\x34" + gbk).decode("utf-8")
         genesis_config["block"] = gbk_b58
+
+
 def verify_this_bakers_account(accounts):
     """
     Verify the current baker pod has an account with a secret key, unless the
