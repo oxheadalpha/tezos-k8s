@@ -1,5 +1,7 @@
 #!/bin/bash
 
+CONTENT_ENCODING="gzip,compress,deflate,br"
+
 BLOCK_HEIGHT=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HEIGHT)
 BLOCK_HASH=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_HASH)
 BLOCK_TIMESTAMP=$(cat /"${HISTORY_MODE}"-snapshot-cache-volume/BLOCK_TIMESTAMP)
@@ -83,7 +85,7 @@ if [[ "${HISTORY_MODE}" = archive ]]; then
     --exclude='./lost+found' \
     -C /var/tezos \
     | lz4 | tee >(sha256sum | awk '{print $1}' > archive-tarball.sha256) \
-    | eval "$(set_aws_command_creds) s3 cp - s3://${S3_BUCKET}/${ARCHIVE_TARBALL_FILENAME} --expected-size ${EXPECTED_SIZE} --acl public-read"
+    | eval "$(set_aws_command_creds) s3 cp - s3://${S3_BUCKET}/${ARCHIVE_TARBALL_FILENAME} --expected-size ${EXPECTED_SIZE} --acl public-read --content-encoding ${CONTENT_ENCODING}"
 
     SHA256=$(cat archive-tarball.sha256)
 
@@ -148,7 +150,7 @@ if [[ "${HISTORY_MODE}" = archive ]]; then
             printf "%s Archive Tarball : ${ARCHIVE_TARBALL_FILENAME}.json created.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
 
             # Upload archive tarball metadata json
-            if ! eval "$(set_aws_command_creds)"  s3 cp "${ARCHIVE_TARBALL_FILENAME}".json s3://"${S3_BUCKET}"/"${ARCHIVE_TARBALL_FILENAME}".json --acl public-read; then
+            if ! eval "$(set_aws_command_creds)"  s3 cp "${ARCHIVE_TARBALL_FILENAME}".json s3://"${S3_BUCKET}"/"${ARCHIVE_TARBALL_FILENAME}".json --acl public-read --content-encoding "${CONTENT_ENCODING}"; then
                 printf "%s Archive Tarball : Error uploading ${ARCHIVE_TARBALL_FILENAME}.json to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
             else
                 printf "%s Archive Tarball : Artifact JSON ${ARCHIVE_TARBALL_FILENAME}.json uploaded to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
@@ -265,7 +267,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
     --exclude='./lost+found' \
     -C /rolling-tarball-restore/var/tezos \
     | lz4 | tee >(sha256sum | awk '{print $1}' > rolling-tarball.sha256) \
-    | eval "$(set_aws_command_creds) s3 cp - s3://${S3_BUCKET}/${ROLLING_TARBALL_FILENAME} --expected-size ${EXPECTED_SIZE} --acl public-read" 
+    | eval "$(set_aws_command_creds) s3 cp - s3://${S3_BUCKET}/${ROLLING_TARBALL_FILENAME} --expected-size ${EXPECTED_SIZE} --acl public-read --content-encoding ${CONTENT_ENCODING}" 
 
 
     SHA256=$(cat rolling-tarball.sha256)
@@ -330,7 +332,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
             printf "%s Rolling Tarball : ${ROLLING_TARBALL_FILENAME}.json created.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
             
             # upload metadata json
-            if ! eval "$(set_aws_command_creds)" s3 cp "${ROLLING_TARBALL_FILENAME}".json s3://"${S3_BUCKET}"/"${ROLLING_TARBALL_FILENAME}".json --acl public-read; then
+            if ! eval "$(set_aws_command_creds)" s3 cp "${ROLLING_TARBALL_FILENAME}".json s3://"${S3_BUCKET}"/"${ROLLING_TARBALL_FILENAME}".json --acl public-read --content-encoding "${CONTENT_ENCODING}"; then
                 printf "%s Rolling Tarball : Error uploading ${ROLLING_TARBALL_FILENAME}.json to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
             else
                 printf "%s Rolling Tarball : Metadata JSON ${ROLLING_TARBALL_FILENAME}.json uploaded to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
@@ -377,7 +379,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
         printf "%s ${ROLLING_SNAPSHOT} exists!\n" "$(date "+%Y-%m-%d %H:%M:%S")"
 
         # Upload rolling snapshot to S3 and error on failure
-        if ! eval "$(set_aws_command_creds)" s3 cp "${ROLLING_SNAPSHOT}" s3://"${S3_BUCKET}" --acl public-read; then
+        if ! eval "$(set_aws_command_creds)" s3 cp "${ROLLING_SNAPSHOT}" s3://"${S3_BUCKET}" --acl public-read --content-encoding "${CONTENT_ENCODING}"; then
             printf "%s Rolling Tezos : Error uploading ${ROLLING_SNAPSHOT} to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
         else
             printf "%s Rolling Tezos : Successfully uploaded ${ROLLING_SNAPSHOT} to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
@@ -449,7 +451,7 @@ if [ "${HISTORY_MODE}" = rolling ]; then
                 printf "%s Rolling Snapshot : ${ROLLING_SNAPSHOT_FILENAME}.json created.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
 
                 # Upload Rolling Snapshot metadata json
-                if ! eval "$(set_aws_command_creds)" s3 cp "${ROLLING_SNAPSHOT_FILENAME}".json s3://"${S3_BUCKET}"/"${ROLLING_SNAPSHOT_FILENAME}".json --acl public-read; then
+                if ! eval "$(set_aws_command_creds)" s3 cp "${ROLLING_SNAPSHOT_FILENAME}".json s3://"${S3_BUCKET}"/"${ROLLING_SNAPSHOT_FILENAME}".json --acl public-read --content-encoding "${CONTENT_ENCODING}"; then
                     printf "%s Rolling Snapshot : Error uploading ${ROLLING_SNAPSHOT_FILENAME}.json to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
                 else
                     printf "%s Rolling Snapshot : Artifact JSON ${ROLLING_SNAPSHOT_FILENAME}.json uploaded to S3.\n" "$(date "+%Y-%m-%d %H:%M:%S")"
@@ -526,7 +528,7 @@ if [[ -n "${SNAPSHOT_WEBSITE_DOMAIN_NAME}" ]]; then
     done
 
     #Upload base.json
-    if ! eval "$(set_aws_command_creds)" s3 cp base.json s3://"${S3_BUCKET}"/base.json --acl public-read; then
+    if ! eval "$(set_aws_command_creds)" s3 cp base.json s3://"${S3_BUCKET}"/base.json --acl public-read --content-encoding "${CONTENT_ENCODING}"; then
         printf "%s Upload base.json : Error uploading file base.json to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S")"
     else
         printf "%s Upload base.json : File base.json successfully uploaded to S3.  \n" "$(date "+%Y-%m-%d %H:%M:%S")"
